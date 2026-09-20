@@ -95,7 +95,14 @@
     }
 
     var fill = document.getElementById('preloader-bar-fill');
-    var MIN_MS = 450;   // floor so it never just flashes on a fast connection
+    // 1300ms floor, not 450 — this is still a FLOOR, not a fake fixed
+    // duration (real loads that take longer still take exactly as long as
+    // they take, see the Promise.all below). But on a fast connection
+    // there's nothing to wait for, and 450ms read as an accidental flicker
+    // rather than a deliberate beat before the site's own hero entrance —
+    // the whole point of a premium preloader is that brief pause/breath,
+    // not disappearing before anyone registers it.
+    var MIN_MS = 1300;
     var MAX_MS = 8000;  // ceiling so a stalled font/asset load can't trap the visitor
     var start = performance.now();
     var raf = 0;
@@ -106,7 +113,7 @@
     // window load + MIN_MS), which is what this bar eventually snaps to.
     function tick() {
       var elapsed = performance.now() - start;
-      var pct = Math.min(90, (elapsed / 1200) * 90);
+      var pct = Math.min(90, (elapsed / MIN_MS) * 90);
       if (fill) fill.style.width = pct + '%';
       if (elapsed < MAX_MS) raf = requestAnimationFrame(tick);
     }
@@ -129,7 +136,7 @@
         el.classList.add('is-hidden');
         sessionStorage.setItem(KEY, '1');
         el.addEventListener('transitionend', function () { el.hidden = true; }, { once: true });
-      }, 150); // brief hold at 100% — reads as deliberate, not an instant cut
+      }, 300); // hold at 100% — reads as deliberate, not an instant cut
     });
   })();
 </script>
