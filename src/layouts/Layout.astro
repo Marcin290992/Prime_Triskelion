@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import '../styles/global.css';
+import Preloader from '../components/Preloader.astro';
 import Logo from '../components/Logo.astro';
 import TopBarCta from '../components/TopBarCta.astro';
 import OxygenMenu from '../components/OxygenMenu.astro';
@@ -174,6 +175,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 		</style>
 	</head>
 	<body class="text-white">
+		<Preloader />
 		<GridLines />
 		<Logo />
 		<TopBarCta />
