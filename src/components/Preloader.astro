@@ -39,7 +39,15 @@
   </div>
 </div>
 
-<style>
+<style is:global>
+  /* is:global, not scoped — this component is the very first thing
+     rendered in <body>, and Astro's dev-mode scoped-style injection (a JS
+     module appending a <style> tag, rather than a blocking <link> —
+     see the button reset comment in Layout.astro for the same class of
+     issue) was apparently never catching up for it, leaving it
+     permanently unstyled in dev with no console error. All selectors
+     below are already uniquely prefixed (#preloader, .pl-*), so nothing
+     is lost by dropping Astro's automatic scoping here. */
   #preloader {
     position: fixed;
     inset: 0;
