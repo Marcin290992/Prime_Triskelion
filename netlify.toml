@@ -2,6 +2,17 @@
   command = "npm run build"
   publish = "dist"
 
+# Branch deploy for "dev" — same build as production, but Netlify still
+# needs "Branch deploys" turned on for this branch in the dashboard
+# (Site configuration -> Build & deploy -> Continuous deployment ->
+# Branches and deploy contexts) before it actually starts building it.
+# This context block just makes the settings explicit per-branch so they
+# don't silently drift from [build] later (e.g. once real env vars are
+# added for email sending, a staging-only key would go under here).
+[context.dev]
+  command = "npm run build"
+  publish = "dist"
+
 # HTTP → HTTPS redirect
 [[redirects]]
   from = "http://primetriskelion.com/*"
