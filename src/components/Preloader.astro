@@ -36,7 +36,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.75rem;
+    gap: clamp(2rem, 3.5vw, 3.25rem);
     opacity: 1;
     transition: opacity 0.5s ease, filter 0.5s ease;
   }
@@ -54,17 +54,13 @@
   }
 
   .preloader-mark {
-    width: 56px;
+    width: clamp(140px, 16vw, 220px);
     height: auto;
-    animation: preloader-spin 2.4s linear infinite;
-  }
-  @keyframes preloader-spin {
-    to { transform: rotate(360deg); }
   }
 
   .preloader-bar-track {
-    width: 140px;
-    height: 1px;
+    width: clamp(220px, 20vw, 320px);
+    height: 2px;
     background: rgba(255, 255, 255, 0.12);
     overflow: hidden;
   }
