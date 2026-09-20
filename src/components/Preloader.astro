@@ -11,10 +11,19 @@
  * below), never on a fixed fake timer — a safety timeout is the one
  * exception, purely so a stalled font/asset load can't trap a visitor
  * behind a black screen forever.
+ *
+ * The #preloader div carries transition:persist — without it, Astro's
+ * client-side router builds a BRAND NEW element from scratch on every
+ * internal navigation (clicking the logo, a nav link, etc.), fully visible
+ * by default, with no script left to ever hide it again (this one only
+ * ever runs once, on the original element, at first load). That read as
+ * the preloader "freezing" back on for every subsequent navigation.
+ * Persisting means the same element (already hidden after its one real
+ * run) just carries that state forward through every later page.
  */
 ---
 
-<div id="preloader" aria-hidden="true">
+<div id="preloader" transition:persist aria-hidden="true">
   <svg class="preloader-mark" viewBox="128 152 744 644" fill="rgb(var(--c-cream))">
     <defs><polygon id="preloader-arm-shape" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
     <use href="#preloader-arm-shape" transform="rotate(0 500 577.259)"/>

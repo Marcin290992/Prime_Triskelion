@@ -20,3 +20,17 @@ for (const path of pages) {
     expect(pageErrors, `${path} threw: ${pageErrors.map((e) => e.message).join('; ')}`).toHaveLength(0);
   });
 }
+
+test('preloader does not reappear stuck-visible after an internal navigation', async ({ page }) => {
+  // Regression guard: #preloader needs transition:persist (Preloader.astro).
+  // Without it, Astro's router builds a brand-new, fully-visible preloader
+  // element on every internal nav with no script left to ever hide it —
+  // reported as "click the logo, preloader turns on and freezes".
+  await page.goto('/');
+  await page.locator('#preloader').waitFor({ state: 'hidden' });
+
+  await page.locator('#h-title').click();
+  await page.waitForTimeout(800);
+
+  await expect(page.locator('#preloader')).toBeHidden();
+});
