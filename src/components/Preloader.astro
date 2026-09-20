@@ -23,8 +23,6 @@
 ---
 
 <div id="preloader" transition:persist aria-hidden="true">
-  <div class="pl-glow" aria-hidden="true"></div>
-
   <div class="pl-percent" id="pl-percent">0%</div>
 
   <div class="pl-status" id="pl-status">
@@ -33,9 +31,6 @@
 
   <div class="pl-controls">
     <button type="button" class="pl-btn pl-btn--enter" id="pl-enter" disabled aria-label="Enter site">Enter</button>
-    <button type="button" class="pl-btn pl-btn--silent" id="pl-silent" aria-pressed="false" aria-label="Toggle silent mode (decorative, no audio on this site yet)">
-      Silent Mode<span class="pl-silent-dot" aria-hidden="true"></span>
-    </button>
   </div>
 </div>
 
@@ -64,16 +59,6 @@
   }
   @media (pointer: coarse) {
     #preloader.is-hidden { filter: blur(8px); transition-duration: 0.35s; }
-  }
-
-  /* Subtle brand-red glow instead of the colourful blurred blobs some
-     "system boot" references use — keeps this on-palette (black/cream/red)
-     rather than introducing colours nowhere else on the site uses. */
-  .pl-glow {
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 60% 50% at 50% 55%, rgb(var(--c-red) / 0.12), transparent 70%);
-    pointer-events: none;
   }
 
   .pl-percent {
@@ -114,9 +99,7 @@
     display: flex;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 999px;
     padding: 4px;
-    gap: 4px;
   }
   .pl-btn {
     font-family: var(--f-body);
@@ -127,7 +110,7 @@
     color: rgb(var(--c-cream) / 0.5);
     background: transparent;
     border: none;
-    border-radius: 999px;
+    border-radius: 0;
     padding: 0.7rem 1.4rem;
     cursor: pointer;
     display: flex;
@@ -146,18 +129,6 @@
   }
   @media (hover: hover) {
     .pl-btn--enter:not(:disabled):hover { background: rgb(var(--c-red)); color: rgb(var(--c-cream)); }
-    .pl-btn--silent:hover { color: rgb(var(--c-cream) / 0.85); }
-  }
-  .pl-silent-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: rgb(var(--c-cream) / 0.3);
-    transition: background 0.3s ease, box-shadow 0.3s ease;
-  }
-  .pl-btn--silent[aria-pressed="true"] .pl-silent-dot {
-    background: rgb(var(--c-red));
-    box-shadow: 0 0 6px rgb(var(--c-red) / 0.7);
   }
 
   @media (max-width: 640px) {
@@ -181,14 +152,6 @@
     var percentEl = document.getElementById('pl-percent');
     var statusEl = document.getElementById('pl-status-line');
     var enterBtn = document.getElementById('pl-enter');
-    var silentBtn = document.getElementById('pl-silent');
-
-    // Decorative only (no audio wired up on this site yet) — just a
-    // pressed-state toggle, see the aria-label on the button itself.
-    silentBtn.addEventListener('click', function () {
-      var pressed = silentBtn.getAttribute('aria-pressed') === 'true';
-      silentBtn.setAttribute('aria-pressed', String(!pressed));
-    });
 
     // 1300ms floor — still a FLOOR, not a fake fixed duration (a real load
     // that takes longer still takes exactly as long as it takes, see the
