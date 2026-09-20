@@ -1,0 +1,1424 @@
+---
+/**
+ * OxygenMenu — fullscreen overlay menu with GSAP animations,
+ * sidebar hover descriptions, magnetic buttons, and ambient clock.
+ */
+
+const navLinks = [
+  { href: '/', label: 'Home', service: 'home' },
+  { href: '/projects', label: 'Projects', service: 'work' },
+  { href: '/services', label: 'Services', service: 'services' },
+  { href: '/about', label: 'About', service: 'about' },
+  { href: '/contact', label: 'Contact', service: 'contact' },
+];
+
+
+---
+
+<div id="oxygen-menu-root">
+  <!-- ═══ HUD NAV ═══ -->
+  <div id="ox-hud-mobile">
+    <!-- Desktop side labels -->
+    <div class="hud-side hud-side--left" id="hud-location">
+      <span class="hud-location__city">Based in London, UK</span>
+      <span class="hud-location__tag">Est. 2024 · Branding &amp; Digital for ambitious brands</span>
+    </div>
+    <!-- Hamburger button — centered -->
+    <button id="hud-menu-btn" transition:persist class="hud-icon-btn hud-menu-btn" type="button" aria-label="Toggle menu" aria-expanded="false">
+      <span class="specular-button__fx" aria-hidden="true"></span>
+      <span class="hud-spin-border hud-menu-spin-border" aria-hidden="true"></span>
+      <span class="hud-ico" aria-hidden="true">
+        <span class="hud-ico__line"></span>
+        <span class="hud-ico__line"></span>
+        <span class="hud-ico__line"></span>
+      </span>
+    </button>
+    <!-- Contact button — right side (mobile only: swaps in on scroll).
+         Tapping it doesn't navigate anywhere itself anymore — it opens a
+         flyout with the same 3 actions as the desktop dock (.hud-right-col
+         below), sliding out from behind it. -->
+    <div class="hud-contact-link" id="hud-contact-dock" aria-label="Contact us">
+      <a href="https://wa.me/YOURPHONE" class="hud-icon-btn hud-contact-item" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+      <button type="button" class="hud-icon-btn hud-contact-item hud-contact-modal-trigger" aria-label="Email us">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </button>
+      <a href="tel:+44YOURPHONE" class="hud-icon-btn hud-contact-item" aria-label="Call us">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </a>
+      <button type="button" class="hud-icon-btn hud-contact-main" id="hud-contact-toggle" aria-label="Contact" aria-expanded="false">
+        <span class="hud-spin-border"></span>
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Desktop: contact icons — vertical dock, centered right -->
+  <div class="hud-right-col" id="hud-right-col">
+    <div class="hud-icon-row">
+      <a href="https://wa.me/YOURPHONE" class="hud-icon-btn" aria-label="WhatsApp" target="_blank" rel="noopener noreferrer">
+        <span class="hud-spin-border"></span>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </a>
+      <a href="tel:+44YOURPHONE" class="hud-icon-btn" aria-label="Call us">
+        <span class="hud-spin-border"></span>
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      </a>
+      <button type="button" class="hud-icon-btn hud-contact-modal-trigger" aria-label="Contact us" id="hud-email-btn">
+        <span class="hud-spin-border"></span>
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Desktop: clock — fixed bottom right -->
+  <div class="hud-time-text" id="hud-time">--:--</div>
+
+  <!-- Fullscreen overlay — Crysis HUD style -->
+  <div class="fixed inset-0 z-999 opacity-0 invisible overflow-hidden ox-menu-overlay" id="ox-menu-overlay">
+    <!-- Background -->
+    <div class="absolute inset-0 bg-black"></div>
+    <div class="ox-overlay-grain absolute inset-0 pointer-events-none opacity-[0.04]"></div>
+
+    <!-- Content -->
+    <div class="relative z-10 h-full grid grid-rows-[auto_1fr_auto] px-8 lg:px-16 py-10 lg:py-14 ox-menu-content">
+
+      <!-- Top bar -->
+      <div class="ox-menu-topbar opacity-0 translate-y-5">
+        <div class="h-px bg-linear-to-r from-[rgba(188,198,208,0.4)] via-white/8 to-transparent"></div>
+      </div>
+
+      <!-- Main nav + right panel -->
+      <div class="flex items-center gap-0 self-center">
+        <nav class="flex-1">
+          <ul class="list-none p-0 m-0">
+            {navLinks.map((link) => (
+              <li class="ox-menu-item overflow-hidden">
+                <a href={link.href} class="ox-menu-link no-underline relative">
+                  <span class="ox-link-text-wrap relative overflow-hidden inline-block">
+                    <span class="ox-link-text ox-link-text--base block text-white uppercase leading-none">{link.label}</span>
+                    <span class="ox-link-text ox-link-text--red block uppercase leading-none" aria-hidden="true">{link.label}</span>
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <!-- Right panel (desktop only) -->
+        <aside class="hidden lg:flex flex-col justify-between self-stretch py-2 w-72 pl-12 border-l border-white/6">
+          <div class="flex flex-col gap-7">
+            <div>
+              <p class="ox-panel-label">Currently</p>
+              <div class="flex items-center gap-2 mt-2.5">
+                <span class="ox-avail-dot"></span>
+                <span class="ox-panel-value">Open for projects</span>
+              </div>
+            </div>
+            <div>
+              <p class="ox-panel-label">Studio</p>
+              <p class="ox-panel-value mt-2.5">London, UK</p>
+              <p class="ox-panel-sub mt-1">Est. 2024</p>
+            </div>
+            <div>
+              <p class="ox-panel-label">Contact</p>
+              <a href="mailto:hello@primetriskelion.com" class="ox-panel-email mt-2.5 block">hello@primetriskelion.com</a>
+            </div>
+          </div>
+          <div>
+            <a href="/winds-of-sinai" class="block group ox-featured-link">
+              <div class="ox-featured-visual"></div>
+              <div class="flex justify-between items-baseline mt-2.5">
+                <span class="ox-panel-value group-hover:text-white/75 transition-colors duration-300">Winds Of Sinai</span>
+                <span class="ox-panel-sub">2025</span>
+              </div>
+            </a>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Bottom -->
+      <div class="ox-menu-bottom opacity-0 translate-y-5">
+        <div class="h-px bg-linear-to-r from-[rgba(188,198,208,0.25)] via-white/5 to-transparent mb-5"></div>
+        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex gap-6 items-center">
+            <!-- Instagram -->
+            <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="Instagram">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg>
+            </a>
+            <!-- X -->
+            <a href="https://x.com" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="X">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <!-- LinkedIn -->
+            <a href="https://www.linkedin.com" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="LinkedIn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+            </a>
+            <!-- Behance -->
+            <a href="https://www.behance.net" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="Behance">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.938 4.503c.702 0 1.34.06 1.92.188.577.13 1.07.33 1.485.61.41.28.733.65.96 1.12.225.47.34 1.05.34 1.73 0 .74-.17 1.36-.507 1.86-.338.5-.837.9-1.502 1.22.906.26 1.576.72 2.022 1.37.448.66.665 1.45.665 2.36 0 .75-.13 1.39-.41 1.93-.28.55-.67 1-1.16 1.35-.48.348-1.05.6-1.69.75-.63.16-1.3.23-1.99.23H0V4.51h6.938zm-.41 5.44c.59 0 1.07-.14 1.44-.43.37-.29.55-.72.55-1.31 0-.32-.06-.59-.16-.81-.11-.22-.26-.4-.46-.53-.19-.14-.42-.23-.67-.29-.26-.06-.54-.08-.84-.08H3.24v3.46h3.29zm.19 5.76c.32 0 .62-.03.9-.09.29-.06.54-.16.76-.31.22-.15.4-.36.53-.62.14-.26.2-.6.2-1.01 0-.81-.22-1.39-.67-1.74-.44-.35-1.02-.52-1.74-.52H3.24v4.29h3.49zm10.86-1.5c.29.28.71.42 1.28.42.4 0 .74-.1 1.03-.31.29-.2.47-.43.55-.67h2.32c-.37 1.15-.94 1.96-1.7 2.45-.77.49-1.7.74-2.79.74-.76 0-1.44-.12-2.05-.36-.6-.24-1.12-.58-1.54-1.02-.42-.44-.74-.97-.97-1.59-.22-.62-.33-1.3-.33-2.05 0-.73.12-1.4.35-2.01.24-.62.57-1.15 1-1.59.44-.44.96-.79 1.57-1.04.61-.25 1.29-.38 2.04-.38.84 0 1.57.16 2.19.48.62.33 1.13.77 1.53 1.32.4.55.69 1.18.87 1.88.18.7.25 1.43.2 2.19h-6.87c.04.63.24 1.1.52 1.38zm2.22-5.1c-.24-.26-.63-.39-1.17-.39-.34 0-.62.06-.85.17-.23.11-.41.25-.56.42-.14.17-.24.35-.31.55-.07.2-.11.38-.12.56h3.55c-.09-.57-.3-.99-.54-1.31zM15.64 3.9h5.02v1.39h-5.02V3.9z"/></svg>
+            </a>
+            <!-- Dribbble -->
+            <a href="https://dribbble.com" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="Dribbble">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm9.985 11.078h-3.543c-.162-2.132-.88-4.107-1.998-5.77 1.74.93 3.123 2.415 3.93 4.217.226.484.405.99.528 1.514a9.98 9.98 0 011.083.039zm-5.574-6.804c1.24 1.692 2.03 3.722 2.198 5.944h-3.39c-.148-2.21-.878-4.241-2.028-5.944 1.1.002 2.26.078 3.22 0zM12 2.015c1.156 0 2.27.198 3.31.556-1.13 1.698-1.866 3.722-2.015 5.938h-2.59c-.149-2.216-.885-4.24-2.015-5.938A9.963 9.963 0 0112 2.015zm-4.61 6.494H4.015A9.985 9.985 0 018.29 4.274c-1.12 1.663-1.84 3.638-2 5.77a9.933 9.933 0 01-.9-.535zm-3.36 1.56h3.54c.148 2.22.876 4.248 2.024 5.944-1.74-.93-3.12-2.415-3.926-4.217a9.99 9.99 0 01-.526-1.515 9.954 9.954 0 01-1.112-.212zM8.7 20.727c-1.238-1.693-2.027-3.723-2.196-5.943h3.39c.148 2.207.877 4.237 2.026 5.942-1.1-.002-2.264-.076-3.22.001zm3.3 1.258a9.969 9.969 0 01-3.31-.556c1.13-1.698 1.865-3.722 2.014-5.938h2.59c.149 2.216.886 4.24 2.016 5.938A9.97 9.97 0 0112 21.985zm4.61-6.494h3.375a9.987 9.987 0 01-4.275 4.235c1.12-1.663 1.84-3.638 2-5.77.3.17.604.35.9.535zM15.3 13.96h3.685c-.148 2.218-.876 4.246-2.025 5.942 1.239-1.693 2.028-3.722 2.197-5.942h-3.857z"/></svg>
+            </a>
+          </div>
+          <span class="text-[9px] uppercase tracking-[3px] text-white/20" style="font-family:var(--f-body)">© 2026 All Rights Reserved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #oxygen-menu-root {
+    --ox-menu-btn-size: 68px;
+    --ox-contact-btn-size: 54px;
+    --ox-menu-icon-width: 24px;
+    --ox-menu-icon-height: 20px;
+    --ox-menu-line-height: 2px;
+    --ox-menu-line-1-top: 0;
+    --ox-menu-line-2-top: 9px;
+    --ox-menu-line-3-top: 18px;
+    --ox-menu-line-2-width: 17px;
+    --ox-menu-line-3-width: 11px;
+  }
+
+  /* ═══════════════════════════════════════
+     OXYGEN MENU — Only custom CSS that can't be Tailwind
+     ═══════════════════════════════════════ */
+
+  /* Pre-promote fixed elements as GPU compositor layers */
+  #ox-menu-overlay { will-change: transform; transform: translateZ(0); }
+
+  /* ── Overlay active state ── */
+  .ox-menu-overlay { transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), visibility 0.6s cubic-bezier(0.4,0,0.2,1); }
+  .ox-menu-overlay.active { opacity: 1; visibility: visible; }
+
+  /* ── Overlay ambient glow ── */
+  /* ── Availability dot ── */
+  .ox-avail-dot {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74,222,128,0.6);
+    flex-shrink: 0;
+    animation: ox-pulse 2.5s ease-in-out infinite;
+  }
+  @keyframes ox-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  /* ── Panel email link ── */
+  .ox-panel-email {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.4);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    word-break: break-all;
+  }
+  .ox-panel-email:hover { color: rgba(255,255,255,0.85); }
+
+  /* ── Overlay ambient effects ── */
+  .ox-overlay-grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 128px;
+  }
+  /* ── Top bar ── clears the fixed logo (#h-title, top+height both scale
+     with vw and can outgrow this grid's own padding-top on wide screens),
+     so push it down a bit further instead of letting it sit right under /
+     through the wordmark. */
+  .ox-menu-topbar { margin-top: clamp(0.9rem, 5.2vw, 3.2rem); }
+
+  /* ── Menu link styles ── */
+  .ox-menu-item { text-align: left; }
+  .ox-menu-link {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    font-family: var(--f-display);
+    transform: translateY(100%);
+    transition: none;
+    padding: 0.2rem 0;
+    position: relative;
+  }
+  .ox-link-text {
+    font-size: clamp(3.8rem, min(9vw, 12vh), 9rem);
+    font-weight: 400;
+    letter-spacing: 0.04em;
+  }
+  /* ── Right panel labels / values ── */
+  .ox-panel-label {
+    font-family: var(--f-body);
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+  }
+  .ox-panel-value {
+    font-family: var(--f-body);
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.52);
+  }
+  .ox-panel-sub {
+    font-family: var(--f-body);
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.24);
+  }
+  /* ── Featured project card ── */
+  .ox-featured-visual {
+    aspect-ratio: 16 / 10;
+    background: linear-gradient(135deg, #141418 0%, #0e0e12 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease;
+  }
+  .ox-featured-visual::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(135deg, rgb(var(--c-red) / 0.05) 0%, transparent 55%),
+      repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.018) 19px, rgba(255,255,255,0.018) 20px),
+      repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(255,255,255,0.018) 19px, rgba(255,255,255,0.018) 20px);
+  }
+  .ox-featured-link:hover .ox-featured-visual { border-color: rgba(255,255,255,0.16); }
+  /* Frozen "active" state after a click (JS-added, see bindMenuNavLink) —
+     mirrors the :hover/.group-hover styles above so the card stays lit
+     while the menu content blurs out instead of resetting to idle. */
+  .ox-featured-link--active .ox-featured-visual { border-color: rgba(255,255,255,0.16); }
+  .ox-featured-link--active .ox-panel-value { color: rgba(255,255,255,0.75); }
+  /* Rolling text — white on top, red below; both slide up on hover */
+  .ox-link-text--base {
+    color: rgba(255, 255, 255, 0.88);
+    transform: translateY(0);
+    transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+  }
+  .ox-link-text--red {
+    color: rgb(var(--c-red) / 1);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    transform: translateY(0);
+    transition: transform 0.55s cubic-bezier(0.16,1,0.3,1);
+  }
+  @media (hover: hover) {
+    .ox-menu-link:hover .ox-link-text--base { transform: translateY(-100%); }
+    .ox-menu-link:hover .ox-link-text--red  { transform: translateY(-100%); }
+  }
+  /* Touch active state */
+  .ox-link--active .ox-link-text--base { transform: translateY(-100%); }
+  .ox-link--active .ox-link-text--red  { transform: translateY(-100%); }
+  /* text-wrap inherits height from base text for proper clipping */
+  .ox-link-text-wrap { vertical-align: bottom; }
+
+  .ox-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 0;
+    border: 1px solid rgb(var(--c-cream) / 0.16);
+    background: rgba(0,0,0,0.32);
+    color: rgb(var(--c-cream) / 0.6);
+    text-decoration: none;
+    transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  }
+    .ox-social:hover {
+    color: rgb(var(--c-red) / 0.9);
+    border-color: rgb(var(--c-red) / 0.45);
+    background: rgb(var(--c-red) / 0.06);
+  }
+
+  /* ── Responsive ── */
+
+  /* Mobile + Tablet (≤ 1024px) */
+  @media (max-width: 1024px) {
+    .ox-link-text { font-size: 14vw; letter-spacing: 0.03em; }
+    .ox-menu-link { padding: 6px 0; }
+    .ox-menu-bottom { padding-bottom: 80px; }
+    /* Logo is pinned at a constant height/offset below 1024px (no vw scaling
+       there), so a flat value clears it reliably instead of the desktop clamp. */
+    .ox-menu-topbar { margin-top: 26px; }
+  }
+
+  /* Landscape mobile — prevent oversized menu items */
+  @media (max-width: 1024px) and (max-height: 500px) {
+    .ox-link-text { font-size: clamp(1.6rem, 8vh, 3rem); }
+    .ox-menu-link { padding: 2px 0; }
+    .ox-menu-bottom { padding-bottom: 0.5rem !important; }
+    #ox-menu-overlay > div:last-child {
+      padding-top: 0.75rem !important;
+      padding-bottom: 0.75rem !important;
+    }
+    /* Center nav block vertically in the 1fr row (override Tailwind self-end) */
+    #ox-menu-overlay > div:last-child > *:nth-child(2) {
+      align-self: center !important;
+    }
+    /* Stretch nav to fill and distribute items evenly */
+    #ox-menu-overlay > div:last-child > *:nth-child(2) > nav {
+      display: flex;
+      flex-direction: column;
+    }
+    #ox-menu-overlay > div:last-child > *:nth-child(2) > nav > ul {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0;
+    }
+    .ox-menu-item { overflow: hidden; text-align: center; }
+  }
+
+  /* ═══════════════════════════════════════
+     HUD — bottom nav (desktop: center + labels, mobile: center only)
+     ═══════════════════════════════════════ */
+  #ox-hud-mobile {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 0;
+    right: 0;
+    z-index: 9100;
+    /* No transform/will-change hint here — it promotes this bar to its own
+       compositing layer, which then caps what backdrop-filter on the menu
+       button (and any other .hud-icon-btn inside) can see behind it. GSAP's
+       own transform during the one-shot entrance animation below already
+       gets its own layer for that brief moment; a static hint isn't needed
+       for something that animates once per page load. */
+    opacity: 0;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    padding: 0 2rem;
+  }
+
+  /* Side labels — location left, time right */
+  .hud-side {
+    pointer-events: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  .hud-side--left  {
+    left: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .hud-location__city {
+    font-size: 13px;
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.6);
+  }
+  .hud-location__tag {
+    font-size: 9px;
+    letter-spacing: 0.28em;
+    color: rgba(255,255,255,0.28);
+  }
+  .hud-side--right { right: 2rem; font-size: 16px; letter-spacing: 0.08em; }
+
+  /* ── Hamburger menu button — labeled chip: icon + "Menu" caption ──
+     Selector uses .hud-icon-btn.hud-menu-btn (not just .hud-menu-btn) so this
+     wins over the plain .hud-icon-btn width/height rule declared further down,
+     regardless of source order. */
+  .hud-icon-btn.hud-menu-btn {
+    pointer-events: auto;
+    width: auto;
+    height: var(--ox-menu-btn-size);
+    padding: 0 24px 0 20px;
+    gap: 13px;
+    justify-content: flex-start;
+    position: relative;
+    overflow: visible;
+    isolation: isolate;
+    -webkit-tap-highlight-color: transparent;
+    /* Specular-button beam (specularButtonFx.ts) replaces the plain static
+       border this chip used to have — border stays none so the beam is the
+       only edge treatment. Background/blur keep the original glassmorphism
+       panel (unrelated to --sb-* vars, which only drive the beam itself). */
+    border: none;
+    border-radius: var(--sb-radius, 0px);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  /* While the HUD bar's own entrance fade (showHeader(), below) is animating
+     this button's opacity, backdrop-filter briefly comes off in favour of the
+     mobile-style solid fill. Animating opacity on an element that's actively
+     backdrop-filtering is the other known trigger for Chromium painting it
+     flat gray/white instead of blurring — same failure mode as the
+     view-transition snapshot bug, just from a GSAP tween instead of a page
+     nav. Once the fade lands (onComplete below) the element is static again
+     and blur is safe to switch back on. */
+  .hud-icon-btn.hud-menu-btn.hud-menu-btn--settling {
+    background: rgba(0, 0, 0, 0.82);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* No red hover on the button chrome itself — the shared .hud-icon-btn:hover
+     rule (background/border tint) still fires otherwise, since equal-specificity
+     rules resolve by source order and it comes later in the stylesheet. */
+  .hud-icon-btn.hud-menu-btn:hover {
+    border-color: transparent;
+    background: rgba(0, 0, 0, 0.82);
+  }
+
+  .hud-menu-btn .hud-ico { flex-shrink: 0; }
+
+  /* Spin-border beam (same one as the phone/social icon buttons) — mobile
+     only; desktop keeps its existing SpecularButton canvas beam untouched. */
+  .hud-menu-spin-border { display: none; }
+
+  .hud-menu-btn::after {
+    content: "Menu";
+    font-family: var(--f-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.8);
+    transition: color 0.3s ease;
+  }
+
+  @media (hover: hover) {
+    .hud-menu-btn:hover .hud-ico__line {
+      background: rgb(var(--c-red) / 0.9);
+      box-shadow: 0 0 6px rgb(var(--c-red) / 0.6);
+    }
+    .hud-menu-btn:hover .hud-ico__line:nth-child(2) { width: 100% !important; }
+    .hud-menu-btn:hover .hud-ico__line:nth-child(3) { width: 100% !important; }
+    .hud-menu-btn:hover::after { color: rgb(var(--c-red) / 0.9); }
+  }
+
+  /* ── Desktop right column: contact cluster + clock ── */
+  .hud-right-col {
+    position: fixed;
+    right: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    z-index: 9100;
+    opacity: 0;
+    will-change: transform;
+  }
+
+  .hud-icon-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .hud-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--ox-contact-btn-size);
+    height: var(--ox-contact-btn-size);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: border-color 0.3s ease, background 0.3s ease, color 0.3s ease, transform 0.15s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.25);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hud-icon-btn:active { transform: scale(0.97); }
+
+  @media (hover: hover) {
+    /* Hover lives on the icon only — no border/background change on the
+       button chrome, that red frame was unnecessary. */
+    .hud-icon-btn:hover {
+      color: rgb(var(--c-red) / 0.9);
+    }
+    .hud-icon-btn:hover svg {
+      /* fill/stroke inherit currentColor from above — keeps outline icons
+         (phone, email) as outlines instead of solid-filling their shapes */
+      filter: drop-shadow(0 0 6px rgb(var(--c-red) / 0.5));
+    }
+  }
+
+  /* Touch devices have no hover — :active gives the same icon-only feedback on tap */
+  .hud-icon-btn:active {
+    color: rgb(var(--c-red) / 0.9);
+  }
+  .hud-icon-btn:active svg {
+    filter: drop-shadow(0 0 6px rgb(var(--c-red) / 0.5));
+  }
+
+  /* See the ox-vt-active toggle in the script below — swaps the glass blur
+     for a plain opaque fill only while a View Transition is in flight.
+     NOTE: this class gets wiped by Astro's own swapRootAttributes() before
+     the "new" page snapshot is ever captured (it strips + reapplies every
+     <html> attribute mid-swap), so it doesn't actually cover the moment it
+     was written for — global.css's `html:active-view-transition` rule is
+     the real fix now (browser-native, can't be raced by the DOM swap).
+     Left in place as a harmless no-op / extra safety net, not removed. */
+  html.ox-vt-active .hud-icon-btn {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(0, 0, 0, 0.85);
+  }
+
+  /* Contact button — mobile only: swaps in on scroll-down (must be after
+     .hud-icon-btn). Also the flyout dock: closed, this is just the main
+     button's own footprint (fixed width, clipped) exactly like before —
+     .hud-contact-item / .hud-contact-main below carry the actual
+     .hud-icon-btn sizing now, this is only the flex wrapper. Width/overflow
+     toggle between "closed" (52px, clipped — matches the old single-<a>
+     footprint the scroll-swap animation expects) and "open" (auto, visible)
+     via inline styles set in JS rather than pure CSS, because closing needs
+     to keep overflow:visible for the retreat animation's duration instead
+     of clipping it instantly — see setContactDockOpen() below. */
+  .hud-contact-link {
+    position: absolute;
+    right: 2rem;
+    bottom: 0;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    width: var(--ox-contact-btn-size);
+    height: var(--ox-contact-btn-size);
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .hud-contact-item {
+    flex-shrink: 0;
+    opacity: 0;
+    transform: translateY(var(--ox-contact-btn-size)) scale(0.5);
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hud-contact-link.is-open .hud-contact-item {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  /* Nearest-to-main item moves first, furthest last — a small cascade
+     instead of all three popping out in lockstep. */
+  .hud-contact-item:nth-child(1) { transition-delay: 0.09s; }
+  .hud-contact-item:nth-child(2) { transition-delay: 0.05s; }
+  .hud-contact-item:nth-child(3) { transition-delay: 0s; }
+
+  .hud-contact-main {
+    flex-shrink: 0;
+    transition: border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+  }
+  /* The main icon lights up red while the dock is open — same idea as the
+     hamburger turning into an X, so the "expanded" state reads at a glance. */
+  .hud-contact-link.is-open .hud-contact-main {
+    color: rgb(var(--c-red));
+    border-color: rgb(var(--c-red) / 0.7);
+    box-shadow: 0 0 0 1px rgb(var(--c-red) / 0.35), 0 0 20px rgb(var(--c-red) / 0.4);
+  }
+  /* The spinning white beam fights with the red glow above instead of
+     reading as a coherent "active" state — off while open. */
+  .hud-contact-link.is-open .hud-contact-main .hud-spin-border {
+    display: none;
+  }
+
+  .hud-icon-btn svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hud-time-text {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.55);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    z-index: 9100;
+    opacity: 0;
+  }
+
+  /* Hamburger icon */
+  .hud-ico {
+    position: relative;
+    display: block;
+    width: var(--ox-menu-icon-width);
+    height: var(--ox-menu-icon-height);
+  }
+  .hud-ico__line {
+    position: absolute;
+    left: 0;
+    height: var(--ox-menu-line-height);
+    background: white;
+    transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease, top 0.3s ease;
+  }
+  .hud-ico__line:nth-child(1) { width: var(--ox-menu-icon-width); top: var(--ox-menu-line-1-top); }
+  .hud-ico__line:nth-child(2) { width: var(--ox-menu-line-2-width); top: var(--ox-menu-line-2-top); }
+  .hud-ico__line:nth-child(3) { width: var(--ox-menu-line-3-width); top: var(--ox-menu-line-3-top); }
+
+  /* Active → X */
+  .hud-menu-btn.active .hud-ico__line              { width: var(--ox-menu-icon-width) !important; background: rgb(var(--c-red) / 0.9); }
+  .hud-menu-btn.active .hud-ico__line:nth-child(1) { transform: rotate(45deg);  top: var(--ox-menu-line-2-top); }
+  .hud-menu-btn.active .hud-ico__line:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .hud-menu-btn.active .hud-ico__line:nth-child(3) { transform: rotate(-45deg); top: var(--ox-menu-line-2-top); }
+
+  /* Mobile + Tablet overrides: solid bg (no backdrop-filter = no jank), smaller, labels hidden */
+  @media (max-width: 1024px) {
+    #oxygen-menu-root {
+      --ox-menu-btn-size: 52px;
+      --ox-contact-btn-size: 52px;
+      --ox-menu-icon-width: 17px;
+      --ox-menu-icon-height: 13px;
+      --ox-menu-line-2-top: 6px;
+      --ox-menu-line-3-top: 12px;
+      --ox-menu-line-2-width: 13px;
+      --ox-menu-line-3-width: 8px;
+    }
+
+    #ox-hud-mobile { bottom: 1.25rem; padding: 0 1rem; }
+    .hud-side { display: none; }
+    .hud-right-col { display: none; }
+    .hud-time-text { display: none; }
+    .hud-icon-btn.hud-menu-btn { padding: 0 14px 0 12px; gap: 9px; }
+    .hud-menu-btn::after { font-size: 9px; letter-spacing: 0.26em; }
+    .hud-menu-btn .specular-button__fx { display: none; }
+    .hud-menu-spin-border { display: block; }
+    .hud-icon-btn {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      background: rgba(0, 0, 0, 0.92) !important;
+    }
+    .hud-contact-link { right: 1rem; }
+  }
+
+
+</style>
+
+<style is:global>
+  .oxygen-menu-open {
+    overscroll-behavior: none;
+  }
+
+  /* specularButtonFx.ts mount point — genuinely global (unlike the block
+     above, which Astro scopes to this component's own DOM), so it also
+     applies to instances rendered by other components (e.g. HeroSection's
+     CTA button). Without is:global here, the rule gets an Astro
+     data-astro-cid scoping attribute that only matches elements from THIS
+     component's own template — everywhere else it silently no-ops, the
+     canvas is never taken out of flow, and its ResizeObserver enters a
+     runaway feedback loop (canvas grows the button, which grows the canvas...). */
+  .specular-button__fx {
+    position: absolute;
+    inset: -20px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .specular-button__fx canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Spinning white beam border — global, works on any element ── */
+  .hud-spin-border {
+    position: absolute;
+    inset: 0;
+    border-radius: 0;
+    padding: 1px;
+    background: linear-gradient(90deg, transparent, transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 1;
+  }
+  .hud-spin-border::before {
+    content: "";
+    position: absolute;
+    inset: -200%;
+    background: conic-gradient(from 0deg at 50% 50%,
+      transparent 0deg,
+      rgba(255,255,255,0.12) 30deg,
+      rgba(255,255,255,0.55) 60deg,
+      rgba(255,255,255,0.12) 90deg,
+      transparent 130deg,
+      transparent 360deg);
+    animation: global-spin 4s linear infinite;
+  }
+  @keyframes global-spin { 100% { transform: rotate(360deg); } }
+
+  /* Shared CTA button: no spinning beam — plain static border only (the
+     small circular icon buttons below keep the animated one; the menu
+     button no longer uses .hud-spin-border at all — see specularButtonFx.ts). */
+  .h-hero-cta .hud-spin-border::before {
+    display: none;
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import { navigate } from 'astro:transitions/client';
+  import { SpecularButton } from '../utils/specularButtonFx';
+
+  // Chromium can render backdrop-filter as solid white during the native
+  // View Transition (used by Astro's <ClientRouter/>) instead of blurring
+  // correctly — most visible on these glassy HUD buttons during
+  // back/forward navigation. Swap to a plain opaque fill for the brief
+  // transition window instead (see the .ox-vt-active rule below); guarded
+  // on window so re-running this script on every page load doesn't stack
+  // duplicate listeners.
+  if (!(window as any).__oxVtFlashFixInit) {
+    (window as any).__oxVtFlashFixInit = true;
+    document.addEventListener('astro:before-swap', () => {
+      document.documentElement.classList.add('ox-vt-active');
+    });
+    document.addEventListener('astro:after-swap', () => {
+      document.documentElement.classList.remove('ox-vt-active');
+    });
+  }
+
+  // The menu button itself is torn down and rebuilt on every navigation
+  // (it lives inside the page content Astro swaps), and its click listener
+  // only gets reattached once initOxygenMenu() runs on astro:page-load —
+  // which fires after the swap is already visible, and after the page's
+  // own module script has loaded on a hard refresh. That leaves a short
+  // window where the button is on screen but not yet wired up (why it can
+  // feel dead right after going back or reloading). A single delegated
+  // listener on `document`, bound once and never torn down, closes that
+  // gap: it always resolves the current #hud-menu-btn / #ox-menu-overlay
+  // live (see openMenu/closeMenu below), so it works the instant the new
+  // button exists in the DOM, regardless of which generation of
+  // initOxygenMenu() last ran.
+  if (!(window as any).__oxMenuBtnDelegated) {
+    (window as any).__oxMenuBtnDelegated = true;
+    document.addEventListener('click', (e) => {
+      const target = e.target as Element | null;
+      if (!target?.closest('#hud-menu-btn')) return;
+      (window as any).__oxygenMenuToggle?.();
+    });
+  }
+
+  // Same reasoning as above, and also sidesteps a real bug it would
+  // otherwise have: Astro fires astro:page-load on the very first load
+  // too (not just SPA navigations), and this component's own
+  // readyState-based immediate-call path ALSO runs on first load — so
+  // initOxygenMenu() genuinely runs twice back to back before any
+  // navigation has happened at all. A listener bound directly to
+  // #hud-contact-toggle each init would end up attached twice on that
+  // same, not-yet-replaced button, so every tap toggled it open then
+  // immediately closed again (net: looked like the button did nothing).
+  // hud-menu-btn never showed this because __oxygenMenuToggle is
+  // reassigned, not appended to, on every init — same fix here.
+  if (!(window as any).__oxContactDockDelegated) {
+    (window as any).__oxContactDockDelegated = true;
+    document.addEventListener('click', (e) => {
+      const target = e.target as Element | null;
+      const dock = document.getElementById('hud-contact-dock');
+      if (!dock) return;
+      if (target?.closest('#hud-contact-toggle')) {
+        e.stopPropagation();
+        (window as any).__oxygenContactSetOpen?.(!dock.classList.contains('is-open'));
+      } else if (dock.classList.contains('is-open') && !dock.contains(target)) {
+        (window as any).__oxygenContactSetOpen?.(false);
+      }
+    });
+  }
+
+  function initOxygenMenu() {
+    const state = {
+      isMenuOpen: false,
+      lastScrollTop: 0,
+      barHidden: false,
+      scrollAccum: 0,
+      timeInterval: null as ReturnType<typeof setInterval> | null,
+      scrollPosition: 0,
+      releaseScrollLock: null as (() => void) | null,
+    };
+    // Holds the in-flight swapBtns() timeline (hud-menu-btn <-> contact
+    // button crossfade) so resetHudMenuBtn() can kill it outright instead
+    // of only killTweensOf-ing whichever half of it happens to already
+    // exist — see the comment on swapBtns() for why that distinction matters.
+    let swapTl: gsap.core.Timeline | null = null;
+
+    const menuOverlay = document.getElementById('ox-menu-overlay');
+    const menuLocation = document.getElementById('hud-location');
+    const menuTime    = document.getElementById('hud-time');
+    const hudMenuBtn    = document.getElementById('hud-menu-btn') as HTMLButtonElement | null;
+    const hudContactBtn = document.querySelector<HTMLElement>('.hud-contact-link');
+
+    if (!menuOverlay || !hudMenuBtn) return;
+
+    // ── Cleanup previous instance (View Transitions) ──
+    if ((window as any).__oxygenMenuCleanup) {
+      (window as any).__oxygenMenuCleanup();
+    }
+
+    function getLenis() {
+      return (window as any).__lenis;
+    }
+
+    function getCurrentScrollY() {
+      const lenis = getLenis();
+      const lenisPos = Number(lenis?.animatedScroll ?? lenis?.scroll ?? lenis?.targetScroll);
+      return Number.isFinite(lenisPos) ? lenisPos : window.scrollY;
+    }
+
+    function createScrollLockRelease() {
+      const scrollKeys = new Set([' ', 'PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown']);
+
+      const shouldIgnoreTarget = (target: EventTarget | null) => {
+        if (!(target instanceof HTMLElement)) return false;
+        return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      };
+
+      const onWheel = (e: WheelEvent) => {
+        if (state.isMenuOpen) e.preventDefault();
+      };
+      const onTouchMove = (e: TouchEvent) => {
+        if (state.isMenuOpen) e.preventDefault();
+      };
+      const onKeyScroll = (e: KeyboardEvent) => {
+        if (!state.isMenuOpen) return;
+        if (shouldIgnoreTarget(e.target)) return;
+        if (scrollKeys.has(e.key)) e.preventDefault();
+      };
+
+      window.addEventListener('wheel', onWheel, { passive: false, capture: true });
+      window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
+      document.addEventListener('keydown', onKeyScroll, { capture: true });
+
+      return () => {
+        window.removeEventListener('wheel', onWheel, true);
+        window.removeEventListener('touchmove', onTouchMove, true);
+        document.removeEventListener('keydown', onKeyScroll, true);
+      };
+    }
+
+    function lockBodyScroll() {
+      state.scrollPosition = getCurrentScrollY();
+      document.body.classList.add('oxygen-menu-open');
+
+      if (!state.releaseScrollLock) {
+        state.releaseScrollLock = createScrollLockRelease();
+      }
+
+      const lenis = getLenis();
+      if (lenis) {
+        lenis.scrollTo(state.scrollPosition, { immediate: true });
+        lenis.stop();
+      }
+    }
+
+    function unlockBodyScroll() {
+      document.body.classList.remove('oxygen-menu-open');
+
+      if (state.releaseScrollLock) {
+        state.releaseScrollLock();
+        state.releaseScrollLock = null;
+      }
+
+      const lenis = getLenis();
+      if (lenis) {
+        lenis.start();
+        requestAnimationFrame(() => {
+          lenis.scrollTo(state.scrollPosition, { immediate: true });
+        });
+      } else {
+        window.scrollTo(0, state.scrollPosition);
+      }
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-GB', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/London',
+      });
+      if (menuTime) menuTime.textContent = timeString;
+    }
+
+    function showHeader() {
+      const hudEl = document.getElementById('ox-hud-mobile');
+      const hudRightCol = document.getElementById('hud-right-col');
+      const hudTimeEl = document.getElementById('hud-time');
+      if (hudEl) {
+        gsap.set(hudEl, { y: 12 });
+        // hud-menu-btn rides along with this fade (it's a child of hudEl,
+        // and persists across navigations — see transition:persist on it
+        // in the markup) — keep its backdrop-filter off for the duration,
+        // see the --settling rule in the <style> block above for why.
+        hudMenuBtn?.classList.add('hud-menu-btn--settling');
+        gsap.to(hudEl, {
+          opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.3,
+          onComplete: () => hudMenuBtn?.classList.remove('hud-menu-btn--settling'),
+        });
+      }
+      if (hudRightCol) {
+    gsap.set(hudRightCol, { x: 30 });
+    gsap.to(hudRightCol, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out', delay: 0.45 });
+      }
+      if (hudTimeEl) {
+        gsap.to(hudTimeEl, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 0.55 });
+      }
+      // Fade in left location label (desktop only, no-op if hidden via CSS) —
+      // skipped on the homepage, where HeroSection's own reveal timeline
+      // already owns #hud-location so the two don't race each other.
+      if (!document.getElementById('hero')) {
+        setTimeout(() => {
+          if (menuLocation) { menuLocation.style.opacity = '1'; }
+        }, 700);
+      }
+    }
+
+    const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+
+    // ── Mobile contact flyout (WhatsApp / email / call tucked behind the
+    // contact button) ──
+    let contactDockCloseTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Live-looked-up rather than closed over hudContactBtn — this is called
+    // from the permanent, module-level delegated listener near the top of
+    // the file (window.__oxygenContactSetOpen), which can
+    // outlive this exact generation of initOxygenMenu() the same way
+    // toggleMenu() has to for the hamburger button (see the comment up
+    // there for why).
+    function setContactDockOpen(open: boolean) {
+      const dock = document.getElementById('hud-contact-dock');
+      const toggle = document.getElementById('hud-contact-toggle');
+      if (!dock || !toggle) return;
+      if (contactDockCloseTimer) { clearTimeout(contactDockCloseTimer); contactDockCloseTimer = null; }
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) {
+        // Has to happen BEFORE the class toggle below (same tick is fine —
+        // both land in the same style recalc) so the items sliding out
+        // aren't clipped by the closed-state overflow:hidden.
+        dock.style.overflow = 'visible';
+        dock.style.height = 'auto';
+        dock.classList.add('is-open');
+      } else {
+        dock.classList.remove('is-open');
+        // Keep overflow:visible/height:auto until the retreat animation
+        // (0.38s + up to 0.09s stagger delay) has actually finished —
+        // reverting them immediately would hard-clip the items mid-slide
+        // instead of letting them visibly tuck back behind the main button.
+        contactDockCloseTimer = setTimeout(() => {
+          dock.style.overflow = '';
+          dock.style.height = '';
+          contactDockCloseTimer = null;
+        }, 480);
+      }
+    }
+    (window as any).__oxygenContactSetOpen = setContactDockOpen;
+
+    // Crysis HUD swap: blur out the outgoing icon, then blur in the incoming one.
+    // Built as ONE timeline (not a gsap.to().onComplete() that creates a
+    // second, independent tween for phase 2) so a single swapTl.kill() call
+    // — see resetHudMenuBtn() — can reliably cancel it from either phase.
+    // The old two-tween version left a gap: killTweensOf(hudMenuBtn) during
+    // resetHudMenuBtn() had nothing to kill if phase 2 (the tween that
+    // actually targets hudMenuBtn) hadn't been created yet — it only comes
+    // into existence inside phase 1's onComplete. Since hudMenuBtn persists
+    // across navigations (transition:persist) but GSAP's ticker keeps
+    // running uninterrupted through an Astro client-side nav (no full
+    // reload), that onComplete could still fire on the OLD page's timeline
+    // after the NEW page's astro:page-load had already reset the button —
+    // spawning a fresh opacity:0/blur(12px) tween on it with no reset left
+    // to catch it, which is what read as the button "stuck in blur" after
+    // returning from a subpage.
+    function swapBtns(hide: HTMLElement | null, show: HTMLElement | null, showLabels?: boolean) {
+      if (hide) hide.style.pointerEvents = 'none';
+      swapTl?.kill();
+      swapTl = gsap.timeline()
+        .to(hide, { opacity: 0, filter: 'blur(12px)', duration: 0.2, ease: 'power2.in' })
+        .call(() => {
+          if (showLabels !== undefined) {
+            const target = showLabels ? '1' : '0';
+            if (menuLocation) menuLocation.style.opacity = target;
+            if (menuTime)     menuTime.style.opacity = target;
+          }
+        });
+      if (show) {
+        swapTl.fromTo(show,
+          { opacity: 0, filter: 'blur(12px)' },
+          { opacity: 1, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out',
+            onComplete: () => { show.style.pointerEvents = 'auto'; }
+          }
+        );
+      }
+    }
+
+    function handleScroll() {
+      if (!isMobile) return; // Desktop: nothing hides on scroll
+      // Any scroll intent closes the flyout first — it shouldn't stay
+      // open while the bar itself is about to swap/hide underneath it.
+      if (hudContactBtn?.classList.contains('is-open')) setContactDockOpen(false);
+      const scrollTop = window.scrollY;
+      if (state.isMenuOpen) {
+        state.lastScrollTop = scrollTop;
+        state.scrollAccum = 0;
+        return;
+      }
+
+      const delta = scrollTop - state.lastScrollTop;
+      state.lastScrollTop = scrollTop;
+
+      // Reset accumulator on direction change, otherwise keep adding
+      if ((delta > 0 && state.scrollAccum < 0) || (delta < 0 && state.scrollAccum > 0)) {
+        state.scrollAccum = delta;
+      } else {
+        state.scrollAccum += delta;
+      }
+
+      const THRESHOLD = isMobile ? 20 : 30;
+
+      if (state.scrollAccum > THRESHOLD && !state.barHidden && scrollTop > 50) {
+        state.barHidden = true;
+        // Scroll down: menu btn collapses → contact materializes; labels fade simultaneously
+        if (menuLocation) menuLocation.style.opacity = '0';
+        if (menuTime)     menuTime.style.opacity = '0';
+        swapBtns(hudMenuBtn, hudContactBtn);
+      } else if (state.scrollAccum < -THRESHOLD && state.barHidden) {
+        state.barHidden = false;
+        // Scroll up: contact collapses → menu btn materializes; labels return after
+        swapBtns(hudContactBtn, hudMenuBtn, true);
+      }
+    }
+
+    function openMenu() {
+      // Resolved live (not the hudMenuBtn/menuOverlay captured when this
+      // closure was created) so this still targets the right elements even
+      // if a stale generation ends up calling it — see the delegated
+      // listener above.
+      const btn = document.getElementById('hud-menu-btn');
+      const overlay = document.getElementById('ox-menu-overlay');
+      state.isMenuOpen = true;
+      state.scrollAccum = 0;
+      btn?.classList.add('active');
+      btn?.setAttribute('aria-expanded', 'true');
+      overlay?.classList.add('active');
+
+      // If menu btn was hidden (user scrolled down), restore it when opening menu
+      if (state.barHidden) {
+        state.barHidden = false;
+        swapBtns(hudContactBtn, btn, true);
+      }
+      lockBodyScroll();
+
+      // Hide HUD labels, right col and start btn so they don't overlap the overlay
+      const hudEl = document.getElementById('ox-hud-mobile');
+      if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 0, duration: 0.2 });
+      const hudRightCol = document.getElementById('hud-right-col');
+      if (hudRightCol) gsap.to(hudRightCol, { opacity: 0, duration: 0.2 });
+      const hudTimeHide = document.getElementById('hud-time');
+      if (hudTimeHide) gsap.to(hudTimeHide, { opacity: 0, duration: 0.2 });
+      gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
+      gsap.timeline()
+        .to('.ox-menu-topbar', { y: 0, opacity: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
+        .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out' }, '-=0.2')
+        .to('.ox-menu-bottom', { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.3');
+    }
+
+    // blurOut is the nav-link-click path: instead of sliding the topbar/
+    // links/bottom out individually, the whole menu content blurs+fades as
+    // one block (matching the ::view-transition-new(root) blur-in Layout.astro
+    // does right after) while the clicked link stays frozen in its red hover
+    // state — see the .ox-link--active class added in the click handler below.
+    function closeMenu(keepOverlay = false, blurOut = false): Promise<void> {
+      return new Promise((resolve) => {
+        const btn = document.getElementById('hud-menu-btn');
+        const overlay = document.getElementById('ox-menu-overlay');
+        const content = overlay?.querySelector<HTMLElement>('.ox-menu-content') ?? null;
+        state.isMenuOpen = false;
+        btn?.classList.remove('active');
+        btn?.setAttribute('aria-expanded', 'false');
+
+        if (!keepOverlay) {
+          // Restore HUD side labels and right col
+          const hudEl = document.getElementById('ox-hud-mobile');
+          if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 1, duration: 0.4, delay: 0.3 });
+          const hudRightCol = document.getElementById('hud-right-col');
+          if (hudRightCol) gsap.to(hudRightCol, { opacity: 1, duration: 0.4, delay: 0.3 });
+          const hudTimeRestore = document.getElementById('hud-time');
+          if (hudTimeRestore) gsap.to(hudTimeRestore, { opacity: 1, duration: 0.4, delay: 0.35 });
+        }
+
+        if (blurOut && content) {
+          // Lighter blur radius on mobile — same reasoning as the root page
+          // transition in Layout.astro: full-viewport blur is expensive on
+          // mobile GPUs.
+          const blurPx = isMobile ? 8 : 20;
+          gsap.timeline({
+            onComplete: () => {
+              if (!keepOverlay) {
+                overlay?.classList.remove('active');
+              }
+              // No idle-state reset here (unlike the branch below): this
+              // path is only ever used right before navigate() — see the
+              // click handlers — and #ox-menu-overlay is NOT
+              // transition:persist, so this whole DOM node is torn down by
+              // the page swap a moment later anyway. Resetting content back
+              // to opacity:1/no-blur here used to snap the right-panel
+              // <aside> (never given its own closed state, unlike
+              // .ox-menu-link/.ox-menu-topbar/.ox-menu-bottom) back to
+              // fully visible for one frame before teardown — a visible
+              // flash right as the page was navigating away.
+              unlockBodyScroll();
+              resolve();
+            },
+          }).to(content, { opacity: 0, filter: `blur(${blurPx}px)`, duration: 0.3, ease: 'power2.in' });
+          return;
+        }
+
+        const links = gsap.utils.toArray('.ox-menu-link') as HTMLElement[];
+
+        gsap.timeline({
+          onComplete: () => {
+            if (!keepOverlay) {
+              overlay?.classList.remove('active');
+            }
+            gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
+            gsap.set('.ox-menu-topbar, .ox-menu-bottom', {
+              y: 20, opacity: 0,
+            });
+            unlockBodyScroll();
+            resolve();
+          },
+        })
+          // Same shape as before (topbar out, links reversed-stagger out,
+          // bottom out), just tightened to ~60% of the original durations —
+          // this timeline has to finish before navigate() fires (see the
+          // nav-link click handler below), so it was directly adding to how
+          // long "click a link" took to actually leave the page.
+          .to('.ox-menu-topbar', { y: -15, opacity: 0, duration: 0.24, ease: 'power3.inOut' })
+          .to(links.reverse(), { y: 80, opacity: 0, duration: 0.3, stagger: 0.024, ease: 'power3.inOut' }, '-=0.15')
+          .to('.ox-menu-bottom', { y: 20, opacity: 0, duration: 0.21, ease: 'power3.inOut' }, '-=0.18');
+      });
+    }
+
+    function toggleMenu() {
+      // Read the live overlay's class rather than state.isMenuOpen so this
+      // stays correct even when called via the permanently-delegated click
+      // listener from a stale generation (see top of file).
+      const overlay = document.getElementById('ox-menu-overlay');
+      overlay?.classList.contains('active') ? closeMenu() : openMenu();
+    }
+
+    // ── Events ──
+    // The actual click → toggle wiring lives in the single delegated
+    // listener registered once at the top of this file; we just keep the
+    // pointer to this generation's toggleMenu fresh.
+    (window as any).__oxygenMenuToggle = toggleMenu;
+
+    menuOverlay.addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeMenu();
+    });
+
+    // Shared by the main nav links AND the right-panel featured-project
+    // link (.ox-featured-link) — previously only .ox-menu-link got this
+    // treatment, so clicking the featured card fell through to Astro's
+    // default link interception and skipped the close+blur-out entirely
+    // (the overlay just jump-cut instead of blurring away with everything
+    // else).
+    function bindMenuNavLink(link: HTMLAnchorElement, activeClass: string) {
+      // Mobile: touchstart gives immediate visual feedback before click fires
+      link.addEventListener('touchstart', () => {
+        link.classList.add(activeClass);
+      }, { passive: true });
+      link.addEventListener('touchend', () => {
+        setTimeout(() => link.classList.remove(activeClass), 400);
+      }, { passive: true });
+
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        // Freeze this link's hover state so it doesn't snap back while the
+        // content blurs out underneath it.
+        link.classList.add(activeClass);
+        // On touch: hold the active state briefly so the user sees the highlight
+        const isTouchNav = navigator.maxTouchPoints > 0;
+        if (isTouchNav) await new Promise(r => setTimeout(r, 120));
+        await closeMenu(true, true);  // keep black overlay visible, blur out
+        if (href) navigate(href); // View Transition starts from black screen
+      });
+    }
+
+    document.querySelectorAll<HTMLAnchorElement>('.ox-menu-link').forEach((link) => {
+      bindMenuNavLink(link, 'ox-link--active');
+    });
+    document.querySelectorAll<HTMLAnchorElement>('.ox-featured-link').forEach((link) => {
+      bindMenuNavLink(link, 'ox-featured-link--active');
+    });
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'Escape') return;
+      if (state.isMenuOpen) closeMenu();
+      if (hudContactBtn?.classList.contains('is-open')) setContactDockOpen(false);
+    }
+    document.addEventListener('keydown', onKeyDown);
+
+    let ticking = false;
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // ── Init ──
+    // hud-menu-btn carries transition:persist (see below), so unlike
+    // hudContactBtn it's the SAME DOM node across navigations — meaning
+    // whatever inline opacity/filter/pointer-events swapBtns() left on it
+    // mid-animation on the PREVIOUS page (e.g. the user scrolled down,
+    // hiding it behind a blur, then tapped a nav link before scrolling
+    // back up) carries straight over instead of resetting with a fresh
+    // DOM node the way it used to. state below is a brand-new object
+    // every init (barHidden: false), so handleScroll() has no way to know
+    // the button is stuck mid-blur unless a scroll actually crosses a
+    // threshold — until then it just stays there, permanently blurred.
+    // Force it back to the state.barHidden === false default explicitly
+    // before handleScroll() runs, rather than trusting leftover inline
+    // styles on a node that's lived across the swap. killTweensOf first —
+    // if the user navigated away WHILE the hide tween was still mid-flight
+    // (before its 0.2s finished), that tween was never completed or
+    // killed, and GSAP's ticker is global: it kept driving this same
+    // persisted element's opacity back down on the very next frame,
+    // fighting the clearProps reset below.
+    function resetHudMenuBtn() {
+      if (!hudMenuBtn) return;
+      swapTl?.kill();
+      swapTl = null;
+      gsap.killTweensOf(hudMenuBtn);
+      gsap.set(hudMenuBtn, { clearProps: 'opacity,filter' });
+      hudMenuBtn.style.pointerEvents = 'auto';
+      state.barHidden = false;
+      state.scrollAccum = 0;
+    }
+    resetHudMenuBtn();
+    showHeader();
+    updateClock();
+    state.timeInterval = setInterval(updateClock, 1000);
+    handleScroll();
+
+    // Mobile bfcache restore (e.g. swiping back after the hamburger was
+    // mid blur-out from a scroll-down swap) freezes the page — including
+    // whatever inline opacity/filter/pointer-events swapBtns() had just
+    // set — and thaws it later WITHOUT re-running this script, so the
+    // reset above never gets a second chance to run on its own. pageshow
+    // with event.persisted is the one signal that fires on that restore;
+    // this closure (state, hudMenuBtn, resetHudMenuBtn) is still alive
+    // since bfcache freezes JS memory rather than tearing it down, so
+    // re-running the same reset here is enough to un-stick it.
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) {
+        resetHudMenuBtn();
+        handleScroll();
+      }
+    }
+    window.addEventListener('pageshow', onPageShow);
+
+    // hud-menu-btn carries transition:persist (see markup above), so this
+    // is the SAME DOM node across every navigation — Astro never tears it
+    // down and Chromium never has to snapshot it into a View Transition
+    // frame, which is what was rendering it as a flat gray box for a
+    // moment (a browser-level snapshot bug, not something fixable from
+    // this script alone). That only pays off if the canvas riding along
+    // inside it also stays put: build the beam effect once per page
+    // session and leave it running, instead of destroying and recreating
+    // its WebGL context on every init like the rest of this component does.
+    if (hudMenuBtn && !(window as any).__oxMenuSpecular) {
+      (window as any).__oxMenuSpecular = new SpecularButton(hudMenuBtn, {
+        radius: 0,
+        lineColor: '#ffffff',
+        baseColor: '#525252',
+        intensity: 1,
+        shineSize: 10,
+        shineFade: 40,
+        thickness: 1,
+        speed: 0.35,
+        proximity: 250,
+      });
+    }
+
+    // ── Cleanup for View Transitions ──
+    function cleanup() {
+      // Kill THIS generation's swap timeline before the page swap — GSAP's
+      // ticker keeps running uninterrupted across an Astro client-side nav
+      // (no full reload), so an in-flight phase of it would otherwise
+      // survive into the next page and fire its onComplete there, spawning
+      // a fresh blur tween on the persisted hud-menu-btn that the next
+      // generation's resetHudMenuBtn() has no way to reach (it only owns
+      // ITS OWN swapTl variable, not this closure's). This is the actual
+      // fix for the "menu button stuck in blur after coming back from a
+      // subpage" report — resetHudMenuBtn() alone wasn't enough because it
+      // never saw the OLD generation's pending timeline.
+      swapTl?.kill();
+      if (state.isMenuOpen) {
+        menuOverlay?.classList.remove('active');
+        hudMenuBtn?.classList.remove('active');
+        unlockBodyScroll();
+      }
+      if (state.releaseScrollLock) {
+        state.releaseScrollLock();
+        state.releaseScrollLock = null;
+      }
+      if (state.timeInterval) clearInterval(state.timeInterval);
+      if (contactDockCloseTimer) { clearTimeout(contactDockCloseTimer); contactDockCloseTimer = null; }
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('pageshow', onPageShow);
+      document.removeEventListener('keydown', onKeyDown);
+      // menuSpecular is intentionally NOT destroyed here — see above.
+    }
+
+    (window as any).__oxygenMenuCleanup = cleanup;
+    document.addEventListener('astro:before-swap', cleanup, { once: true });
+  }
+
+  // Run on first load & after View Transitions
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initOxygenMenu);
+  } else {
+    initOxygenMenu();
+  }
+  document.addEventListener('astro:page-load', initOxygenMenu);
+
+</script>

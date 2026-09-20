@@ -1,0 +1,84 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HeroSection from '../components/sections/HeroSection.astro';
+import ManifestoSection from '../components/sections/ManifestoSection.astro';
+import SelectedWorkSection from '../components/sections/SelectedWorkSection.astro';
+import ServicesSection from '../components/sections/ServicesSection.astro';
+import TestimonialsSection from '../components/sections/TestimonialsSection.astro';
+import ShowcaseSection from '../components/sections/ShowcaseSection.astro';
+import MarqueeSection from '../components/sections/MarqueeSection.astro';
+import SplitCardsSection from '../components/sections/SplitCardsSection.astro';
+import FaqSection from '../components/sections/FaqSection.astro';
+import CtaSection from '../components/sections/CtaSection.astro';
+---
+
+<Layout title="Prime Triskelion">
+	<HeroSection />
+	<div class="relative" style="z-index:30">
+		<ManifestoSection />
+		<SelectedWorkSection />
+		<ServicesSection />
+		<TestimonialsSection />
+		<ShowcaseSection />
+		<MarqueeSection />
+		<SplitCardsSection />
+		<FaqSection />
+		<CtaSection />
+	</div>
+
+	<script>
+		import Lenis from 'lenis';
+		import gsap from 'gsap';
+		import ScrollTrigger from 'gsap/ScrollTrigger';
+
+		let lenisInstance: Lenis | null = null;
+		let lenisTickerCb: ((time: number) => void) | null = null;
+		let _isTraverseNav = false;
+
+		function initLenis() {
+			if (lenisInstance) { lenisInstance.destroy(); lenisInstance = null; }
+			if (lenisTickerCb) { gsap.ticker.remove(lenisTickerCb); lenisTickerCb = null; }
+
+			const isTouch = window.matchMedia('(pointer: coarse)').matches;
+
+			gsap.registerPlugin(ScrollTrigger);
+			ScrollTrigger.config({ ignoreMobileResize: true });
+
+			if (!_isTraverseNav) window.scrollTo(0, 0);
+
+			if (isTouch) {
+				// Na mobile natywny scroll — compositor thread, zero janku przy WebGL hero
+				(window as any).__lenis = null;
+							} else {
+				lenisInstance = new Lenis({
+					duration: 2.4,
+					easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+					smoothWheel: true,
+					wheelMultiplier: 0.65,
+				});
+				(window as any).__lenis = lenisInstance;
+				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
+				gsap.ticker.add(lenisTickerCb);
+				gsap.ticker.lagSmoothing(0);
+				lenisInstance.on('scroll', ScrollTrigger.update);
+			}
+
+			requestAnimationFrame(() => ScrollTrigger.refresh());
+
+			_isTraverseNav = false;
+		}
+
+		document.addEventListener('astro:before-swap', (event: any) => {
+			const navType: string = event.navigationType ?? '';
+			_isTraverseNav = navType === 'traverse';
+			if (!_isTraverseNav) window.scrollTo(0, 0);
+			if (lenisTickerCb) { gsap.ticker.remove(lenisTickerCb); lenisTickerCb = null; }
+			if (lenisInstance) { lenisInstance.destroy(); lenisInstance = null; }
+						});
+
+		document.addEventListener('astro:page-load', () => {
+			initLenis();
+		});
+	</script>
+</Layout>
+

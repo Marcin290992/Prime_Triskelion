@@ -1,0 +1,82 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="404 — Prime Triskelion">
+  <main class="nf-wrap">
+
+    <span class="nf-ghost" aria-hidden="true">404</span>
+
+    <div class="nf-content">
+      <h1 class="nf-title">Page not<br /><em>found.</em></h1>
+      <p class="nf-body">The page you're looking for doesn't exist or has been moved.</p>
+
+      <a href="/" class="h-hero-cta-wrap" style="max-width:260px;display:block;margin-top:2.5rem">
+        <span class="h-hero-cta-grad-top"></span>
+        <span class="h-hero-cta-grad-bottom"></span>
+        <span class="h-hero-cta">
+          <span class="h-hero-cta__text">Back to Home</span>
+          <span class="h-hero-cta__arrow">→</span>
+        </span>
+      </a>
+    </div>
+
+  </main>
+</Layout>
+
+<style>
+  .nf-wrap {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    padding: clamp(6rem, 14vh, 10rem) var(--site-gutter) clamp(8rem, 16vh, 12rem);
+    overflow: hidden;
+  }
+
+  .nf-ghost {
+    position: absolute;
+    right: -0.05em;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(18rem, 40vw, 36rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: rgb(var(--c-cream) / 0.03);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .nf-content {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+  }
+
+  .nf-title {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(4rem, 10vw, 9rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+    margin: 0 0 2rem;
+  }
+  .nf-title em {
+    font-style: normal;
+    color: rgb(var(--c-red));
+  }
+
+  .nf-body {
+    font-family: var(--f-body);
+    font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgb(var(--c-cream) / 0.45);
+    margin: 0;
+    max-width: 38ch;
+  }
+</style>

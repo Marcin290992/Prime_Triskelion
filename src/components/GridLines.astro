@@ -1,0 +1,40 @@
+---
+---
+
+<div id="grid-lines" aria-hidden="true"></div>
+
+<style>
+  #grid-lines {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
+      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%);
+    background-size: 1px 100%, 1px 100%, 1px 100%, 1px 100%;
+    background-position: 20% 0, 40% 0, 60% 0, 80% 0;
+    background-repeat: no-repeat;
+    opacity: 0;
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+
+  function initGridLines() {
+    const el = document.getElementById('grid-lines');
+    if (!el) return;
+    gsap.set(el, { opacity: 0 });
+    gsap.to(el, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.2 });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGridLines);
+  } else {
+    initGridLines();
+  }
+  document.addEventListener('astro:page-load', initGridLines);
+</script>

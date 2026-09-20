@@ -1,0 +1,109 @@
+<!-- ═══════ MANIFESTO ═══════ -->
+<section id="manifesto" class="relative" style="height:180vh;height:180lvh;height:calc(var(--app-stable-vh) * 180);z-index:10">
+	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 lg:px-32" style="height:calc(var(--app-stable-vh) * 100)">
+		<h2
+			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
+			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
+			aria-label="I craft digital experiences that push boundaries, challenge conventions, and leave a lasting mark on the world."
+		>
+			<span class="mw">I</span>
+			<span class="mw">craft</span>
+			<span class="mw">digital</span>
+			<span class="mw">experiences</span>
+			<span class="mw">that</span>
+			<span class="mw">push</span>
+			<span class="mw">boundaries,</span>
+			<span class="mw br"></span>
+			<span class="mw">challenge</span>
+			<span class="mw">conventions,</span>
+			<span class="mw">and</span>
+			<span class="mw">leave</span>
+			<span class="mw">a</span>
+			<span class="mw">lasting</span>
+			<span class="mw">mark</span>
+			<span class="mw">on</span>
+			<span class="mw">the</span>
+			<span class="mw">world.</span>
+		</h2>
+	</div>
+</section>
+
+<style>
+	#manifesto > .sticky {
+		width: 100%;
+		padding-left: var(--site-gutter) !important;
+		padding-right: var(--site-gutter) !important;
+		box-sizing: border-box;
+	}
+	@media (max-width: 1024px) {
+		#manifesto {
+			height: auto !important;
+		}
+		#manifesto > .sticky {
+			position: relative !important;
+			top: auto !important;
+			height: auto !important;
+			min-height: 0 !important;
+			padding-top: clamp(3.5rem, 12vw, 5rem);
+			padding-bottom: clamp(3.5rem, 12vw, 5rem);
+		}
+	}
+	.mw {
+		display: inline-block;
+		margin-right: 0.3em;
+	}
+	.mw.br {
+		display: block;
+		height: 0;
+		margin: 0;
+		pointer-events: none;
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
+
+	let _manifestoST: ReturnType<typeof ScrollTrigger.create> | null = null;
+
+	function initManifesto() {
+		const section = document.getElementById('manifesto');
+		if (!section) return;
+		const content = section.querySelector<HTMLElement>(':scope > div');
+		if (!content) return;
+
+		gsap.registerPlugin(ScrollTrigger);
+
+		const isMobile = window.matchMedia('(max-width: 1024px)').matches
+			|| navigator.maxTouchPoints > 0
+			|| window.matchMedia('(pointer: coarse)').matches;
+		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
+
+		_manifestoST?.kill();
+
+		if (isMobile) {
+			gsap.set(words, { filter: 'none', opacity: 1, y: 0 });
+			gsap.set(content, { opacity: 1, y: 0, filter: 'none' });
+			return;
+		} else {
+			gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
+		}
+
+		_manifestoST = ScrollTrigger.create({
+			animation: gsap.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' }),
+			trigger: section,
+			start: 'top top',
+			end: 'bottom bottom',
+			scrub: true,
+		});
+	}
+
+	document.addEventListener('astro:page-load', () => {
+		setTimeout(() => { initManifesto(); ScrollTrigger.refresh(); }, 200);
+	});
+
+	document.addEventListener('astro:before-swap', () => {
+		_manifestoST?.kill();
+		_manifestoST = null;
+	});
+</script>

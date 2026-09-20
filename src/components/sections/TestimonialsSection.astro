@@ -1,0 +1,250 @@
+<!-- ═══════ TESTIMONIALS ═══════ -->
+<section id="testimonials">
+
+	<div class="tst__inner">
+
+		<div class="tst__top">
+			<div class="tst__label">(Client Stories)</div>
+			<div class="tst__controls-wrap">
+				<div class="tst__controls">
+					<button type="button" class="tst__btn" data-dir="prev" aria-label="Previous testimonial">←</button>
+					<button type="button" class="tst__btn" data-dir="next" aria-label="Next testimonial">→</button>
+				</div>
+				<div class="tst__progress-track">
+					<div class="tst__progress-fill" id="tstProgress"></div>
+				</div>
+				<div class="tst__counter" id="tstCounter">01/03</div>
+			</div>
+		</div>
+
+		<div class="tst__content" id="tstContent">
+			<p class="tst__quote" id="tstText"></p>
+			<div class="tst__author">
+				<div class="tst__avatar" aria-hidden="true"></div>
+				<div class="tst__details">
+					<p class="tst__name" id="tstName"></p>
+					<p class="tst__role" id="tstRole"></p>
+				</div>
+			</div>
+		</div>
+
+	</div>
+
+</section>
+
+<style>
+	#testimonials {
+		position: relative;
+		z-index: 44;
+		color: rgb(var(--c-cream));
+	}
+	.tst__inner {
+		width: 100%;
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
+		box-sizing: border-box;
+		opacity: 0;
+		filter: blur(8px);
+		transform: translateY(14px);
+		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
+	}
+	.tst__inner.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
+
+	.tst__top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: 2rem;
+		margin-bottom: clamp(2.5rem, 5vw, 4rem);
+	}
+	.tst__label {
+		font-family: var(--f-body);
+		font-size: 0.8rem;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.4);
+		flex-shrink: 0;
+	}
+	.tst__controls-wrap {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		flex: 1;
+		max-width: 320px;
+		margin-left: auto;
+	}
+	.tst__controls { display: flex; gap: 1rem; flex-shrink: 0; }
+	.tst__btn {
+		background: none;
+		border: none;
+		padding: 0;
+		color: rgb(var(--c-cream));
+		font-size: 1.2rem;
+		line-height: 1;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: opacity 0.25s ease;
+	}
+	.tst__btn:hover { opacity: 0.6; }
+	.tst__progress-track {
+		flex-grow: 1;
+		height: 2px;
+		border-radius: 2px;
+		background: rgba(255, 255, 255, 0.12);
+		overflow: hidden;
+	}
+	.tst__progress-fill { height: 100%; width: 0%; background: rgb(var(--c-cream)); }
+	.tst__counter {
+		font-family: var(--f-body);
+		font-size: 0.8rem;
+		letter-spacing: 0.05em;
+		color: rgb(var(--c-cream) / 0.45);
+		flex-shrink: 0;
+	}
+
+	.tst__content { transition: opacity 0.3s ease, transform 0.3s ease; }
+	.tst__quote {
+		font-family: var(--f-body);
+		font-weight: 500;
+		font-size: clamp(1.8rem, 3.4vw, 3.4rem);
+		line-height: 1.25;
+		letter-spacing: -0.01em;
+		color: rgb(var(--c-cream) / 0.92);
+		max-width: 62rem;
+		min-height: 3.5em;
+		margin: 0 0 2.5rem;
+	}
+	.tst__author { display: flex; align-items: center; gap: 1rem; }
+	.tst__avatar { width: 3.2rem; height: 3.2rem; border-radius: 0; background: #333; flex-shrink: 0; }
+	.tst__details p { margin: 0; }
+	.tst__name { font-family: var(--f-body); font-size: 1rem; font-weight: 600; color: rgb(var(--c-cream)); }
+	.tst__role { font-family: var(--f-body); font-size: 0.85rem; color: rgb(var(--c-cream) / 0.45); }
+
+	@media (max-width: 1024px) {
+		.tst__inner { padding: clamp(3rem, 8vw, 5rem) var(--site-gutter) clamp(3rem, 8vw, 5rem); }
+		.tst__top {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 1.2rem;
+			margin-bottom: 1.5rem;
+		}
+		.tst__controls-wrap { width: 100%; max-width: none; margin-left: 0; }
+		.tst__quote {
+			font-family: var(--f-body);
+			font-weight: 300;
+			font-size: clamp(0.95rem, 3.6vw, 1.05rem);
+			line-height: 1.6;
+			letter-spacing: normal;
+			color: rgb(var(--c-cream) / 0.7);
+			max-width: none;
+			min-height: 7.5rem;
+			margin: 0 0 1.6rem;
+		}
+		.tst__avatar { width: 2.6rem; height: 2.6rem; }
+		.tst__name { font-size: 0.9rem; }
+		.tst__role { font-size: 0.78rem; }
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+	import { onReady } from '../../utils/onReady';
+
+	// Placeholder content — swap for real client quotes/names/roles (and add
+	// real photos to .tst__avatar) once available.
+	const testimonialsData = [
+		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
+		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
+		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
+	];
+
+	const AUTOPLAY_DURATION = 6;
+
+	function initTestimonials() {
+		const section = document.getElementById('testimonials');
+		if (!section) return;
+
+		const counter = section.querySelector<HTMLElement>('#tstCounter');
+		const content = section.querySelector<HTMLElement>('#tstContent');
+		const textEl = section.querySelector<HTMLElement>('#tstText');
+		const nameEl = section.querySelector<HTMLElement>('#tstName');
+		const roleEl = section.querySelector<HTMLElement>('#tstRole');
+		const progressFill = section.querySelector<HTMLElement>('#tstProgress');
+		const btns = section.querySelectorAll<HTMLButtonElement>('.tst__btn');
+		if (!counter || !content || !textEl || !nameEl || !roleEl || !progressFill || !btns.length) return;
+
+		let index = 0;
+		let progressTween: ReturnType<typeof gsap.to> | null = null;
+
+		function render() {
+			const data = testimonialsData[index];
+			textEl!.textContent = data.text;
+			nameEl!.textContent = data.name;
+			roleEl!.textContent = data.role;
+			counter!.textContent = `${String(index + 1).padStart(2, '0')}/${String(testimonialsData.length).padStart(2, '0')}`;
+		}
+
+		function startProgress() {
+			progressTween?.kill();
+			gsap.set(progressFill, { width: '0%' });
+			progressTween = gsap.to(progressFill, {
+				width: '100%',
+				duration: AUTOPLAY_DURATION,
+				ease: 'none',
+				onComplete: () => goTo('next'),
+			});
+		}
+
+		function goTo(dir: 'next' | 'prev') {
+			progressTween?.kill();
+			content!.style.opacity = '0';
+			content!.style.transform = dir === 'next' ? 'translateX(-12px)' : 'translateX(12px)';
+			window.setTimeout(() => {
+				index = dir === 'next'
+					? (index + 1) % testimonialsData.length
+					: (index - 1 + testimonialsData.length) % testimonialsData.length;
+				render();
+				content!.style.transform = dir === 'next' ? 'translateX(12px)' : 'translateX(-12px)';
+				requestAnimationFrame(() => {
+					content!.style.opacity = '1';
+					content!.style.transform = 'translateX(0)';
+					startProgress();
+				});
+			}, 220);
+		}
+
+		btns.forEach(btn => {
+			btn.addEventListener('click', () => goTo(btn.dataset.dir === 'prev' ? 'prev' : 'next'));
+		});
+
+		render();
+		startProgress();
+
+		document.addEventListener('astro:before-swap', () => {
+			progressTween?.kill();
+		}, { once: true });
+
+		// Desktop-only blur-up reveal on scroll — mobile gets instant
+		// visibility from the global mobile override (global.css), same
+		// convention as every other section's .xxx__header.
+		if (!window.matchMedia('(max-width: 1024px)').matches) {
+			const inner = section.querySelector<HTMLElement>('.tst__inner');
+			if (inner) {
+				const io = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							inner.classList.add('visible');
+							io.unobserve(entry.target);
+						}
+					});
+				}, { threshold: 0.15 });
+				io.observe(inner);
+			}
+		}
+	}
+
+	onReady(initTestimonials);
+</script>

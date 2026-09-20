@@ -1,0 +1,257 @@
+<!-- ═══════ ZOOM STATS ═══════ -->
+<section id="zoom-stats">
+	<div class="zoom-stats__inner">
+		<div class="zoom-stats__bg" id="zoom-stats-bg"></div>
+		<div class="zoom-stats__meta" id="zoom-stats-meta">
+			<span class="zoom-stats__meta-kicker">
+				<span class="zoom-stats__meta-kicker-word zoom-stats__meta-kicker-word--light">KEY</span>
+				<span class="zoom-stats__meta-kicker-word zoom-stats__meta-kicker-word--accent">FACTS</span>
+			</span>
+			<p class="zoom-stats__meta-subtitle">Real numbers from shipped, live work.</p>
+		</div>
+		<div class="zoom-stats__grid">
+			<div class="zoom-col">
+				<div class="zoom-col__content">
+					<span class="zoom-col__label">PROJECTS SHIPPED</span>
+					<span class="zoom-col__num">20<em>+</em></span>
+				</div>
+			</div>
+			<div class="zoom-col">
+				<div class="zoom-col__content">
+					<span class="zoom-col__label">USERS REACHED</span>
+					<span class="zoom-col__num">7.5<em>M+</em></span>
+				</div>
+			</div>
+			<div class="zoom-col">
+				<div class="zoom-col__content">
+					<span class="zoom-col__label">PAGESPEED SCORE</span>
+					<span class="zoom-col__num">100</span>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	#zoom-stats {
+		position: relative;
+		height: 250vh;
+		z-index: 44;
+		color: rgb(var(--c-cream));
+	}
+	.zoom-stats__inner {
+		position: sticky;
+		top: 0;
+		height: 100vh;
+		overflow: hidden;
+	}
+	.zoom-stats__bg {
+		position: absolute;
+		inset: -12%;
+		background: url('../../img/scroll-bckg.webp') center/cover no-repeat;
+		z-index: 1;
+		will-change: transform;
+		transform: scale(1.8);
+	}
+	.zoom-stats__grid {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+	}
+	.zoom-stats__meta {
+		position: absolute;
+		left: 50%;
+		top: clamp(4rem, 12vh, 9rem);
+		transform: translateX(-50%);
+		z-index: 5;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 1.2rem;
+		max-width: min(60rem, 90vw);
+		pointer-events: none;
+	}
+	.zoom-stats__meta-kicker {
+		font-family: var(--f-display);
+		font-size: clamp(3.2rem, 6vw, 7rem);
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		text-transform: uppercase;
+		line-height: 1;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3em;
+	}
+	.zoom-stats__meta-kicker-word {
+		display: inline-block;
+	}
+	.zoom-stats__meta-kicker-word--light {
+		color: rgb(var(--c-cream));
+	}
+	.zoom-stats__meta-kicker-word--accent {
+		color: #FF3E1E;
+	}
+	.zoom-stats__meta-subtitle {
+		margin: 0;
+		font-family: var(--f-body);
+		font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+		font-weight: 300;
+		letter-spacing: 0.04em;
+		color: rgb(var(--c-cream) / 0.45);
+	}
+	.zoom-col {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		padding: 10vh clamp(2rem, 5vw, 5rem);
+		border-right: 1px solid rgba(255,255,255,0.05);
+		overflow: hidden;
+		cursor: default;
+		transition: background-color 0.5s ease, backdrop-filter 0.5s ease;
+	}
+	.zoom-col:last-child { border-right: none; }
+	.zoom-col__content {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		transform: translateY(64px);
+		opacity: 0;
+		transition: transform 0.55s cubic-bezier(0.2,0.8,0.2,1), opacity 0.55s ease;
+	}
+	.zoom-col__label {
+		font-family: var(--f-body);
+		font-size: 9px;
+		font-weight: 300;
+		letter-spacing: 0.45em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.28);
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		transition: color 0.45s ease;
+	}
+	.zoom-col__label::before {
+		content: '';
+		display: inline-block;
+		width: 6px; height: 6px;
+		background: rgb(var(--c-red) / 0.4);
+		flex-shrink: 0;
+		transition: background 0.45s ease;
+	}
+	.zoom-col__num {
+		font-family: var(--f-display);
+		font-size: clamp(3.8rem, 7.2vw, 8.5rem);
+		font-weight: 700;
+		color: rgb(var(--c-cream) / 0.22);
+		line-height: 0.88;
+		letter-spacing: -0.02em;
+		transition: color 0.45s ease;
+	}
+	.zoom-col__num em {
+		font-style: normal;
+		color: rgb(var(--c-red) / 0.35);
+		font-size: 0.5em;
+		vertical-align: super;
+		transition: color 0.45s ease;
+	}
+	@media (hover: hover) {
+		.zoom-col:hover { background-color: rgba(8,5,4,0.55); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); }
+		.zoom-col:hover .zoom-col__content { transform: translateY(0); opacity: 1; }
+		.zoom-col:hover .zoom-col__label { color: rgb(var(--c-cream) / 0.75); }
+		.zoom-col:hover .zoom-col__label::before { background: #FF3E1E; }
+		.zoom-col:hover .zoom-col__num { color: rgb(var(--c-cream)); }
+		.zoom-col:hover .zoom-col__num em { color: #FF3E1E; }
+	}
+	@media (max-width: 1024px) {
+		#zoom-stats { height: auto; }
+		.zoom-stats__inner { position: relative; top: auto; height: auto; overflow: visible; }
+		.zoom-stats__bg { transform: scale(1) !important; }
+		.zoom-stats__bg::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: rgba(0,0,0,0.65);
+		}
+		.zoom-stats__meta {
+			position: relative;
+			top: auto;
+			left: auto;
+			transform: none;
+			opacity: 1 !important;
+			visibility: visible !important;
+			padding: clamp(4rem, 10vh, 7rem) var(--site-gutter) clamp(2rem, 4vh, 3rem);
+			align-items: flex-start;
+			text-align: left;
+			max-width: none;
+		}
+		.zoom-stats__grid { position: relative; grid-template-columns: 1fr; min-height: auto; }
+		.zoom-col {
+			border-right: none;
+			padding: clamp(3rem, 8vh, 5rem) var(--site-gutter);
+			justify-content: center;
+			cursor: default;
+			transition: none;
+		}
+		.zoom-col__content { transform: translateY(0) !important; opacity: 1 !important; }
+		.zoom-col__label { color: rgb(var(--c-cream) / 0.75); }
+		.zoom-col__label::before { background: #FF3E1E; }
+		.zoom-col__num { color: rgb(var(--c-cream)); }
+		.zoom-col__num em { color: #FF3E1E; }
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
+
+	let _zoomStatsST: ReturnType<typeof ScrollTrigger.create> | null = null;
+	let _zoomStatsMetaST: ReturnType<typeof ScrollTrigger.create> | null = null;
+
+	function initZoomStats() {
+		const bg = document.getElementById('zoom-stats-bg');
+		const meta = document.getElementById('zoom-stats-meta');
+		if (!bg) return;
+		gsap.registerPlugin(ScrollTrigger);
+
+		_zoomStatsST?.kill();
+		_zoomStatsMetaST?.kill();
+
+		const contents = document.querySelectorAll<HTMLElement>('#zoom-stats .zoom-col__content');
+
+		if (window.matchMedia('(max-width: 1024px)').matches) {
+			gsap.set(bg, { scale: 1 });
+			gsap.set(contents, { y: 0, opacity: 1 });
+			if (meta) gsap.set(meta, { autoAlpha: 1, y: 0 });
+			return;
+		}
+
+		gsap.set(bg, { scale: 1.8 });
+		gsap.set(contents, { y: 64, opacity: 0 });
+		if (meta) gsap.set(meta, { autoAlpha: 0, y: 16 });
+
+		const tl = gsap.timeline({ paused: true });
+		tl.to(bg, { scale: 1, ease: 'power2.out', duration: 1 }, 0)
+		  .to(meta, { autoAlpha: 1, y: 0, ease: 'power2.out', duration: 0.4 }, 0.08)
+		  .to(contents, { y: 0, opacity: 1, ease: 'power3.out', duration: 0.6 }, 0.28);
+
+		_zoomStatsST = ScrollTrigger.create({
+			trigger: '#zoom-stats',
+			start: 'top top',
+			end: 'bottom bottom',
+			scrub: 1.8,
+			animation: tl,
+		}) as any;
+	}
+
+	document.addEventListener('astro:page-load', initZoomStats);
+	document.addEventListener('astro:before-swap', () => {
+		_zoomStatsST?.kill();
+		_zoomStatsMetaST?.kill();
+		_zoomStatsST = null;
+		_zoomStatsMetaST = null;
+	});
+</script>

@@ -1,0 +1,226 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import TopBarCta from '../components/TopBarCta.astro';
+import OxygenMenu from '../components/OxygenMenu.astro';
+import GridLines from '../components/GridLines.astro';
+import Footer from '../components/Footer.astro';
+import ContactModal from '../components/ContactModal.astro';
+
+interface Props {
+	title: string;
+	description?: string;
+	topBar?: boolean;
+}
+
+const { title, description = "Prime Triskelion — one-person design studio crafting digital experiences for ambitious brands.", topBar = true } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" style="background:#000">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content={description} />
+		<meta name="color-scheme" content="dark" />
+		<script is:inline>
+			(function () {
+				var root = document.documentElement;
+				var lockWidth = window.innerWidth || 0;
+				var isTraverseNav = false;
+
+				function measureHeight() {
+					var ih = window.innerHeight || 0;
+					var vv = window.visualViewport ? window.visualViewport.height : 0;
+					return Math.max(ih, vv);
+				}
+
+				function setLockedHeight() {
+					var h = measureHeight();
+					if (!h) return;
+					root.style.setProperty('--app-stable-vh', (h * 0.01) + 'px');
+				}
+
+				setLockedHeight();
+
+				window.addEventListener('orientationchange', function () {
+					setTimeout(setLockedHeight, 160);
+				}, { passive: true });
+
+				window.addEventListener('resize', function () {
+					var w = window.innerWidth || 0;
+					if (Math.abs(w - lockWidth) > 80) {
+						lockWidth = w;
+						setLockedHeight();
+					}
+				}, { passive: true });
+
+				// Astro's swap() unconditionally wipes every attribute on <html>
+				// (including this script's own `style.setProperty` additions) and
+				// replaces them with the new document's server-rendered ones —
+				// see swapRootAttributes() in astro/dist/transitions/swap-functions.js.
+				// The server-rendered <html> never has --app-stable-vh (it's only
+				// ever added client-side), so after EVERY client-side navigation —
+				// traverse (back/forward) included — this custom property is gone
+				// until JS restores it. Previously this listener skipped the
+				// restore on traverse specifically (theory: avoid baking in a
+				// chrome-collapsed measurement from a restored scroll position) —
+				// that was wrong: skipping it doesn't preserve the old value, it
+				// just leaves the property missing, so #hero's
+				// calc(var(--app-stable-vh) * 100) fell back to global.css's
+				// `--app-stable-vh: 1vh` — a live, chrome-reactive unit, i.e.
+				// exactly the unstable behavior this whole mechanism exists to
+				// avoid. Always restore it, on every swap, no exceptions.
+				document.addEventListener('astro:before-swap', function (event) {
+					isTraverseNav = (event && event.navigationType) === 'traverse';
+				});
+				// astro:after-swap fires right after the attribute wipe above,
+				// before astro:page-load — restoring here (rather than waiting
+				// for page-load) minimizes the window where CSS reads the raw
+				// `1vh` fallback.
+				document.addEventListener('astro:after-swap', setLockedHeight);
+				// Traverse restores a previous scroll position instead of 0 (see
+				// index.astro's matching isTraverseNav skip of scrollTo(0,0)) — if
+				// that position is scrolled down, mobile chrome may still be
+				// mid-collapse at the instant of the measurement above. One more
+				// measurement shortly after lets chrome settle into its resting
+				// state for that scroll position before trusting the value —
+				// same reasoning as the existing orientationchange delay below.
+				document.addEventListener('astro:page-load', function () {
+					if (isTraverseNav) setTimeout(setLockedHeight, 160);
+				});
+			})();
+		</script>
+		<title>{title}</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon-triskelion.svg" />
+		<link rel="preload" href="/fonts/dm-sans-latin.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href="/fonts/clash-display-600.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href="/fonts/clash-display-700.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href="/logo-white.svg" as="image" type="image/svg+xml" />
+		<ClientRouter />
+		<slot name="head" />
+		<script is:inline>
+			if ('scrollRestoration' in history) {
+				history.scrollRestoration = 'auto';
+			}
+		</script>
+		<style>
+		html, body { margin: 0; padding: 0; background: #000; }
+	</style>
+	<style is:global>
+			/* In dev, Vite injects component CSS via JS modules (not a blocking
+			   <link>), so the browser briefly paints raw HTML with the UA default
+			   button style (light/white box) before that JS runs — most visible on
+			   #hud-menu-btn (lives in a child component, so this must be :global to
+			   reach it). Reset synchronously here so nothing flashes. */
+			button { background: transparent; border: 0; margin: 0; padding: 0; font: inherit; color: inherit; -webkit-appearance: none; appearance: none; }
+
+			/* ── View Transition: fade out to black, then blur-in from black ── */
+			@keyframes vt-fade-out {
+				from { opacity: 1; }
+				to   { opacity: 0; }
+			}
+			@keyframes vt-blur-in {
+				from { opacity: 0; filter: blur(20px); }
+				to   { opacity: 1; filter: blur(0px); }
+			}
+			@keyframes vt-blur-in-mobile {
+				from { opacity: 0; filter: blur(8px); }
+				to   { opacity: 1; filter: blur(0px); }
+			}
+
+			/* The old/new snapshots (below) only ever animate `opacity` and
+			   `filter` — neither one paints a background. `::view-transition-old`
+			   fades OUT to fully transparent over the first 0.2s while
+			   `::view-transition-new` is still sitting at opacity:0 (its
+			   animation-delay hasn't ended yet), so for that whole 0.2s window
+			   nothing in the old/new pair is opaque. What shows through is
+			   whatever's behind them — and Chromium's UA stylesheet gives
+			   ::view-transition-group(root) no background-color of its own, so
+			   that gap defaults to white instead of our page background. Result:
+			   every single navigation fades to a flash of white instead of to
+			   black before the new page blurs in. Setting it explicitly here is
+			   the fix — this is the same root ancestor both old and new paint
+			   on top of, so it covers the gap regardless of which one is
+			   transparent at any given moment. */
+			::view-transition-group(root) {
+				background-color: rgb(var(--c-bg));
+			}
+
+			/* Root page transition — same fade-out/blur-in as before, just
+			   tightened (~60% of the original durations/delay) so navigating
+			   feels snappier without changing the style of the transition. */
+			::view-transition-old(root) {
+				animation: vt-fade-out 0.2s ease-in both;
+			}
+			::view-transition-new(root) {
+				animation: vt-blur-in 0.32s ease-out 0.2s both;
+			}
+
+			/* Mobile: lighter/shorter blur — full-viewport blur on a page snapshot
+			   is expensive on mobile GPUs and was causing scroll stutter right after
+			   navigation, only on the first section(s) of the new page. */
+			@media (max-width: 1024px) {
+				::view-transition-new(root) {
+					animation: vt-blur-in-mobile 0.2s ease-out 0.15s both;
+				}
+			}
+
+		</style>
+	</head>
+	<body class="text-white">
+		<GridLines />
+		<Logo />
+		<TopBarCta />
+		<OxygenMenu />
+		<ContactModal />
+		<slot />
+		<Footer />
+	</body>
+</html>
+
+<script>
+  import Lenis from 'lenis';
+  import gsap from 'gsap';
+
+  let _layoutLenis: Lenis | null = null;
+  let _layoutRaf: ((t: number) => void) | null = null;
+
+  function initLayoutLenis() {
+    // Poczekaj jeden frame — strony które mają własny Lenis (index, winds-of-sinai)
+    // zdążą ustawić window.__lenis przed tym sprawdzeniem
+    requestAnimationFrame(() => {
+      if ((window as any).__lenis) return;
+
+      const isTouch = window.matchMedia('(pointer: coarse)').matches;
+      _layoutLenis = new Lenis(isTouch ? {
+        duration: 0.7,
+        easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
+        smoothWheel: false,
+        touchMultiplier: 1.8,
+      } : {
+        duration: 2.4,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 0.65,
+      });
+
+      (window as any).__lenis = _layoutLenis;
+      _layoutRaf = (t: number) => _layoutLenis?.raf(t * 1000);
+      gsap.ticker.add(_layoutRaf);
+      gsap.ticker.lagSmoothing(0);
+    });
+  }
+
+  function destroyLayoutLenis() {
+    if (!_layoutLenis) return;
+    if ((window as any).__lenis === _layoutLenis) (window as any).__lenis = null;
+    if (_layoutRaf) { gsap.ticker.remove(_layoutRaf); _layoutRaf = null; }
+    _layoutLenis.destroy();
+    _layoutLenis = null;
+  }
+
+  document.addEventListener('astro:page-load', initLayoutLenis);
+  document.addEventListener('astro:before-swap', destroyLayoutLenis);
+</script>

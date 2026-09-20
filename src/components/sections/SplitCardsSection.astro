@@ -1,0 +1,425 @@
+<!--
+  Split Cards v4 — premium edition
+  ───────────────────────────────────────────────
+  • Bez stockowego zdjęcia (nie pasowało do reszty strony — i dublowało ZoomStats).
+  • Każda karta = własny "filar" z palety projektu (cream / red / black).
+  • Awers: zdjęcie projektu (scroll-bckg) rozłożone na 3 karty + wielki numer w Clash Display.
+  • Rewers: stat label + duża liczba w tej samej palecie (kontynuacja, nie reset).
+  • Sterowanie: sticky scene + GSAP scrub (3 fazy: zoom → split → flip).
+-->
+
+<section id="sc-root" aria-label="Three pillars one ascent section">
+  <div id="sc-sticky">
+    <div id="sc-scene">
+      <h2 id="sc-title">Three pillars.<br /><em>One ascent.</em></h2>
+
+      <div id="sc-cards">
+        <div class="sc-card card-1">
+          <div class="sc-flipper">
+            <div class="sc-front"></div>
+            <div class="sc-back">
+              <h3 class="sc-name">Strategy</h3>
+              <p class="sc-desc">I map the mountain before the first step — positioning, narrative and the route that gets you to the top without burning the team.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="sc-card card-2">
+          <div class="sc-flipper">
+            <div class="sc-front"></div>
+            <div class="sc-back">
+              <h3 class="sc-name">Design</h3>
+              <p class="sc-desc">I make the climb visible. Brand systems, sites and product surfaces engineered to look inevitable and earn trust on first contact.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="sc-card card-3">
+          <div class="sc-flipper">
+            <div class="sc-front"></div>
+            <div class="sc-back">
+              <h3 class="sc-name">Engineering</h3>
+              <p class="sc-desc">I ship. Fast, clean, performant code — built so the next ten thousand users feel the same craft as the first ten.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mobile fallback -->
+<div id="sc-mobile" aria-label="Three pillars one ascent mobile">
+  <h2 class="sc-title-m">Three pillars.<br /><em>One ascent.</em></h2>
+
+  <div class="sc-cards-m">
+    <article class="sc-card-m c1">
+      <div class="sc-card-m__body">
+        <h3 class="sc-name">Strategy</h3>
+        <p class="sc-desc">I map the mountain before the first step — positioning, narrative and the route that gets you to the top without burning the team.</p>
+      </div>
+    </article>
+    <article class="sc-card-m c2">
+      <div class="sc-card-m__body">
+        <h3 class="sc-name">Design</h3>
+        <p class="sc-desc">I make the climb visible. Brand systems, sites and product surfaces engineered to look inevitable and earn trust on first contact.</p>
+      </div>
+    </article>
+    <article class="sc-card-m c3">
+      <div class="sc-card-m__body">
+        <h3 class="sc-name">Engineering</h3>
+        <p class="sc-desc">I ship. Fast, clean, performant code — built so the next ten thousand users feel the same craft as the first ten.</p>
+      </div>
+    </article>
+  </div>
+</div>
+
+<style>
+  /* ───────── Desktop ───────── */
+  #sc-root {
+    position: relative;
+    height: 300vh;
+    background: rgb(var(--c-bg));
+  }
+  #sc-sticky {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #sc-scene {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    perspective: 1600px;
+    pointer-events: none;
+    --zoom: 0;
+    --split: 0;
+    --flip: 0;
+  }
+
+  #sc-title {
+    position: absolute;
+    top: 9%;
+    left: 50%;
+    transform: translate(-50%, calc(28px - 28px * var(--zoom)));
+    opacity: var(--zoom);
+    text-align: center;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(1.8rem, 3.5vw, 4rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+    margin: 0;
+    white-space: nowrap;
+    z-index: 1;
+    will-change: transform, opacity;
+  }
+  #sc-title em { font-style: normal; color: rgb(var(--c-red)); }
+
+  #sc-cards {
+    display: flex;
+    gap: calc(var(--split) * 28px);
+    transform: scale(calc(1.5 - 0.2 * var(--zoom)));
+    transform-style: preserve-3d;
+    will-change: transform, gap;
+  }
+
+  .sc-card {
+    width: clamp(180px, 22vw, 360px);
+    aspect-ratio: 5 / 7;
+    position: relative;
+    transform-style: preserve-3d;
+    flex-shrink: 0;
+    transform:
+      translateX(calc(var(--flip) * var(--x-off, 0px)))
+      translateY(calc(var(--flip) * var(--y-off, 0px)))
+      translateZ(calc(var(--flip) * var(--z-off, 0px)))
+      rotateZ(calc(var(--flip) * var(--z-rot, 0deg)));
+    will-change: transform;
+  }
+  .card-1 { z-index: 1; --x-off:  36px; --y-off:  20px; --z-off: -28px; --z-rot: -8deg; }
+  .card-2 { z-index: 2; --x-off:   0px; --y-off:  -8px; --z-off:   0px; --z-rot:  0deg; }
+  .card-3 { z-index: 3; --x-off: -36px; --y-off:  20px; --z-off:  28px; --z-rot:  8deg; }
+
+  /* Zakrywa subpikselowy szew między kartami dopóki się nie rozjeżdżają */
+  .card-2,
+  .card-3 { margin-left: calc(-2px * (1 - var(--split))); }
+
+  .sc-flipper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transform-origin: right center;
+    transform:
+      translateX(calc(var(--flip) * -100%))
+      rotateY(calc(var(--flip) * -180deg));
+    will-change: transform;
+  }
+
+  .sc-front,
+  .sc-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    isolation: isolate;
+    /* cień wchodzi dopiero po --split = 0.6 (próg + liniowa rampa do 1.0),
+       żeby na pełnym obrazie nie tworzył żadnych szwów */
+    box-shadow:
+      0 30px 60px -24px rgba(0, 0, 0, calc(0.65 * max(0, (var(--split, 0) - 0.6) * 2.5))),
+      0 12px 24px -12px rgba(0, 0, 0, calc(0.45 * max(0, (var(--split, 0) - 0.6) * 2.5))),
+      0 2px 6px -2px rgba(0, 0, 0, calc(0.35 * max(0, (var(--split, 0) - 0.6) * 2.5)));
+  }
+
+  /* ── AWERS: tylko numer, bez chrome ── */
+  .sc-front {
+    padding: clamp(1.4rem, 2.4vw, 2.4rem);
+    justify-content: flex-end;
+  }
+
+  /* miękka winieta */
+  .sc-front::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 90% at 50% 0%, transparent 0%, rgb(0 0 0 / 0.22) 100%);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    z-index: 1;
+  }
+
+  .sc-front__num { display: none; }
+
+  /* Tła awersów — jedno zdjęcie z projektu rozłożone na 3 karty (premium kontynuacja) */
+  .sc-front {
+    background-image: url('../../img/scroll-bckg.webp');
+    background-repeat: no-repeat;
+    background-size: 300% 100%;
+    color: rgb(var(--c-cream));
+  }
+  .card-1 .sc-front { background-position:   0% center; }
+  .card-2 .sc-front { background-position:  50% center; }
+  .card-3 .sc-front { background-position: 100% center; }
+
+  /* Mocniejsza winieta na zdjęciach + lekki bottom gradient pod typografię.
+     Przy --split=0 (karty stykają się) winieta MUSI być w pełni pionowa,
+     żeby na styku 3 kart nie tworzyć podwójnego ciemnienia → szwów.
+     Promień radialny ujawnia się dopiero gdy karty się rozjeżdżają. */
+  .sc-front::after {
+    background:
+      linear-gradient(180deg, rgb(0 0 0 / 0) 55%, rgb(0 0 0 / 0.55) 100%),
+      radial-gradient(120% 90% at 50% 0%, transparent 0%, rgb(0 0 0 / calc(0.35 * var(--split, 0))) 100%);
+    mix-blend-mode: normal;
+  }
+
+  /* ── REWERS: stat reveal ── */
+  .sc-back {
+    transform: rotateY(-180deg);
+    padding: clamp(1.4rem, 2.4vw, 2.4rem);
+    justify-content: flex-end;
+  }
+
+  .sc-back__kicker {
+    display: none;
+  }
+
+  .sc-stat {
+    position: relative;
+    z-index: 3;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 5.6vw, 6.5rem);
+    line-height: 0.85;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .sc-stat em {
+    font-style: normal;
+    font-size: 0.38em;
+    vertical-align: super;
+    opacity: 0.55;
+  }
+  .card-3 .sc-stat em { color: rgb(var(--c-red)); opacity: 1; }
+
+  /* Pillar name (rewers) */
+  .sc-name {
+    position: relative;
+    z-index: 3;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(2rem, 3.2vw, 3.4rem);
+    line-height: 0.95;
+    letter-spacing: -0.025em;
+    margin: 0.4rem 0 0.9rem;
+  }
+
+  /* Pillar description (rewers) */
+  .sc-desc {
+    position: relative;
+    z-index: 3;
+    font-family: var(--f-body);
+    font-weight: 400;
+    font-size: clamp(0.78rem, 0.92vw, 0.95rem);
+    line-height: 1.45;
+    letter-spacing: 0.005em;
+    margin: 0;
+    opacity: 0.78;
+    max-width: 32ch;
+  }
+
+  /* Tła rewersów: ta sama paleta co awers, niżej saturacja → kontynuacja */
+  .card-1 .sc-back {
+    background: linear-gradient(160deg, #ecece8 0%, #b9b3a9 100%);
+    color: rgb(var(--c-bg));
+  }
+  .card-2 .sc-back {
+    background: linear-gradient(160deg, #b81813 0%, #5e0604 100%);
+    color: rgb(var(--c-cream));
+  }
+  .card-3 .sc-back {
+    background: linear-gradient(160deg, #1a1a1c 0%, #050505 100%);
+    color: rgb(var(--c-cream));
+  }
+
+  /* ── Mniejsze monitory i laptopy ── */
+  @media (min-width: 1025px) and (max-width: 1600px) {
+    .sc-card { width: clamp(140px, 18vw, 300px); }
+  }
+
+  /* Laptop-height viewports (≤1100px tall): the 1.3× zoomed card stack is
+     too tall to sit between the fixed logo + overlaid title (top) and the
+     fixed MENU button + status dock (bottom), so the title ended up
+     covering the top of the image. Fix, in order:
+       • lift the title higher and shrink it so it needs less vertical band
+       • size the cards off viewport HEIGHT (not width) so they always
+         leave headroom, and ease the zoom scale
+       • symmetric scene padding so the flex-centred stack lands clear of
+         both fixed bars
+       • more inset for the flipped copy. */
+  @media (min-width: 1025px) and (max-height: 1100px) {
+    #sc-title {
+      top: 3.5%;
+      font-size: clamp(1.5rem, 2.9vw, 3.1rem);
+    }
+    #sc-scene { padding-top: 12vh; padding-bottom: 12vh; }
+    #sc-cards { transform: scale(calc(1.34 - 0.18 * var(--zoom))); }
+    .sc-card {
+      width: auto;
+      height: clamp(300px, 45vh, 500px);
+    }
+    .sc-back { padding: clamp(1.7rem, 2.1vw, 2.2rem); }
+    .sc-name {
+      font-size: clamp(1.6rem, 2.3vw, 2.3rem);
+      overflow-wrap: break-word;
+    }
+  }
+
+  /* ───────── Mobile fallback ───────── */
+  #sc-mobile { display: none; }
+
+  @media (max-width: 1024px) {
+    #sc-root { display: none; }
+    #sc-mobile {
+      display: block;
+      padding: clamp(3.5rem, 9vh, 6rem) var(--site-gutter) clamp(3rem, 8vh, 5rem);
+      background: rgb(var(--c-bg));
+    }
+    .sc-title-m {
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(1.6rem, 8vw, 2.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      text-transform: uppercase;
+      color: rgb(var(--c-cream));
+      margin: 0 0 1.75rem;
+    }
+    .sc-title-m em { font-style: normal; color: rgb(var(--c-red)); }
+
+    .sc-cards-m {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .sc-card-m {
+      width: 100%;
+      padding: 1.1rem 1.25rem 1.25rem;
+      position: relative;
+      display: block;
+      overflow: hidden;
+      box-shadow:
+        0 16px 32px -18px rgba(0, 0, 0, 0.55),
+        0 6px 12px -6px rgba(0, 0, 0, 0.35);
+    }
+    .sc-card-m__body {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .c1 { background: linear-gradient(165deg, #f5efe7 0%, #b9b3a9 100%); color: rgb(var(--c-bg)); }
+    .c2 { background: linear-gradient(165deg, #ff4a2a 0%, #7a0a05 100%); color: rgb(var(--c-cream)); }
+    .c3 { background: linear-gradient(165deg, #1a1a1c 0%, #050505 100%); color: rgb(var(--c-cream)); }
+    .sc-card-m .sc-name { font-size: 1.6rem; line-height: 1; margin: 0 0 0.55rem; }
+    .sc-card-m .sc-desc { font-size: 0.82rem; line-height: 1.45; opacity: 0.78; max-width: none; }
+
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+  import ScrollTrigger from 'gsap/ScrollTrigger';
+  gsap.registerPlugin(ScrollTrigger);
+
+  let _st: ScrollTrigger | null = null;
+
+  function initSplitCards() {
+    if (_st) { _st.kill(); _st = null; }
+
+    if (window.matchMedia('(max-width: 1024px)').matches) return;
+
+    const root  = document.getElementById('sc-root');
+    const scene = document.getElementById('sc-scene');
+    if (!root || !scene) return;
+
+    const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+    const phase = (p: number, start: number, end: number) =>
+      clamp01((p - start) / (end - start));
+
+    const apply = (p: number) => {
+      // 0.00–0.30  zoom-in (title + full image landing)
+      // 0.30–0.48  HOLD full image  (no cuts visible)
+      // 0.48–0.72  split (cards separate)
+      // 0.72–1.00  flip (reveal pillar copy)
+      scene.style.setProperty('--zoom',  phase(p, 0.00, 0.30).toFixed(4));
+      scene.style.setProperty('--split', phase(p, 0.48, 0.72).toFixed(4));
+      scene.style.setProperty('--flip',  phase(p, 0.72, 1.00).toFixed(4));
+    };
+
+    apply(0);
+
+    _st = ScrollTrigger.create({
+      trigger: root,
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 0.6,
+      onUpdate: (self) => apply(self.progress),
+    });
+  }
+
+  document.addEventListener('astro:page-load', initSplitCards);
+
+  document.addEventListener('astro:before-swap', () => {
+    if (_st) { _st.kill(); _st = null; }
+  });
+</script>

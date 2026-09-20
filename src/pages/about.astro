@@ -1,0 +1,1891 @@
+---
+import { Image } from 'astro:assets';
+import Layout from '../layouts/Layout.astro';
+import CtaSection from '../components/sections/CtaSection.astro';
+import portraitTop from '../img/portrait-top.webp';
+import portraitBottom from '../img/portrait-bottom.webp';
+---
+
+<Layout title="About — Prime Triskelion">
+  <Fragment slot="head">
+    <link rel="preload" href={portraitTop.src} as="image" />
+    <link rel="preload" href={portraitBottom.src} as="image" media="(min-width: 1025px)" />
+  </Fragment>
+  <div id="about-wrap">
+    <canvas id="about-canvas" data-top={portraitTop.src} data-bot={portraitBottom.src}></canvas>
+  </div>
+  <!-- Dark overlay that fades away on scroll, revealing the portrait -->
+  <div id="about-overlay">
+    <p class="about-title">
+      <span class="about-title__l">Who's</span>
+      <span class="about-title__r">Behind?</span>
+    </p>
+  </div>
+  <!-- Scroll space so the page can actually scroll -->
+  <div id="about-space"></div>
+
+  <!-- Intro text over portrait -->
+  <section id="about-intro">
+    <div class="ai-text">
+      <p class="ai-greeting">Hi, my name is</p>
+      <p class="ai-name">Martin.</p>
+    </div>
+  </section>
+
+  <!-- Bio items -->
+  <section id="about-bio">
+    <div class="ab-items">
+      <span class="ab-item">Creative Director & Developer</span>
+      <span class="ab-item">Blender · 3D · Motion</span>
+      <span class="ab-item">Brand Identity · Web Dev</span>
+      <span class="ab-item">London, UK · Est. 2024</span>
+    </div>
+  </section>
+
+  <!-- Mobile/tablet layout (shown below 1024px). No scroll-jacking (native
+       scroll, no Lenis/GSAP pin) and no fluid-sim canvas — just the static
+       portrait. -->
+  <div id="about-mobile">
+    <div class="am-hero">
+      <p class="am-who"><span class="am-who-l">Who's</span><span class="am-who-r">Behind?</span></p>
+    </div>
+    <div class="am-intro">
+      <p class="am-greeting">Hi, my name is</p>
+      <p class="am-name">Martin.</p>
+    </div>
+    <div class="am-bio">
+      <span class="am-item">Creative Director &amp; Developer</span>
+      <span class="am-item">Blender · 3D · Motion</span>
+      <span class="am-item">Brand Identity · Web Dev</span>
+      <span class="am-item">London, UK · Est. 2024</span>
+    </div>
+    <div class="am-portrait-stack">
+      <Image
+        class="am-portrait am-portrait-img"
+        src={portraitTop}
+        alt="Martin — Prime Triskelion"
+        widths={[480, 768, 1080]}
+        sizes="100vw"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  </div>
+
+  <!-- Content: canvas has scrolled away, normal page resumes -->
+  <section id="about-content">
+    <div class="ac-grid">
+      <h2 class="ac-label">About</h2>
+      <div class="ac-body-col">
+        <p class="ac-body">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+        <p class="ac-body">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+      </div>
+    </div>
+  </section>
+
+  <CtaSection />
+</Layout>
+
+<style is:global>
+  body:has(#about-wrap) #site-footer { background: rgb(var(--c-bg)); }
+</style>
+
+<style>
+  #about-mobile { display: none; }
+
+  #about-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: rgb(var(--c-bg));
+    /* Scrubbed by GSAP (y: -100vh, tied to scroll position) the whole way
+       down the page — without an upfront layer hint the browser has to
+       keep re-deciding whether to promote this (and its ::before bottom
+       gradient) to its own compositor layer every frame, which is what
+       read as the bottom bar flickering during scroll. */
+    will-change: transform;
+  }
+  #about-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    /* Masked by #about-overlay while it's opaque anyway, but fading in
+       only once its textures are actually loaded (see initFluidPortrait's
+       onReady) keeps it consistent with the mobile canvas instead of
+       popping straight to its 1x1 placeholder texture on first render. */
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+  #about-canvas.is-ready {
+    opacity: 1;
+  }
+  /* Subtle grain + vignette over the fluid-sim canvas — the mobile portrait
+     already gets a film-grain overlay (see .am-hero::before further down);
+     this ties the desktop WebGL render to the same filmic treatment
+     instead of reading as a flat, purely digital render. pointer-events:
+     none so it never blocks the paint interaction on the canvas below it. */
+  #about-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(ellipse at center, transparent 45%, rgb(var(--c-bg) / 0.55) 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: cover, 200px 200px;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+  }
+  /* Fades the portrait into solid black right at the bottom of the
+     viewport, where the fixed canvas hands off to #about-content's own
+     background as it scrolls in underneath — without this the handoff is
+     a hard, visible seam (crop edge meeting flat background) instead of a
+     smooth transition into darkness. Lives on #about-wrap itself (not a
+     fixed sibling) so it exits together with the canvas during its
+     y:-100vh scroll-away instead of staying pinned after the canvas is gone. */
+  #about-wrap::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 28vh;
+    z-index: 2;
+    pointer-events: none;
+    background: linear-gradient(to top, rgb(var(--c-bg)) 0%, transparent 100%);
+  }
+  #about-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    background: rgb(var(--c-bg));
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .about-title {
+    display: flex;
+    align-items: baseline;
+    gap: 1.5vw;
+    margin: 0;
+    user-select: none;
+  }
+  .about-title__l,
+  .about-title__r {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 8.5vw, 9rem);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .about-title__l { color: rgb(var(--c-cream)); }
+  .about-title__r { color: rgb(var(--c-red)); }
+  #about-space {
+    height: 200svh;
+  }
+
+  /* -- Intro text -- */
+  #about-intro {
+    position: relative;
+    height: 100svh;
+    display: flex;
+    align-items: center;
+    padding-left: var(--site-gutter, 2rem);
+    z-index: 1;
+  }
+  .ai-text {
+    max-width: 48%;
+  }
+  .ai-greeting {
+    font-family: var(--f-body);
+    font-size: clamp(0.95rem, 1.6vw, 1.4rem);
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    color: rgb(var(--c-cream) / 0.65);
+    margin: 0 0 0.6rem;
+  }
+  .ai-name {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(4rem, 9.5vw, 10.5rem);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: rgb(var(--c-red));
+    line-height: 0.9;
+    margin: 0;
+  }
+
+  /* -- Bio section -- */
+  #about-bio {
+    position: relative;
+    height: 100svh;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* Extra clearance beyond the gutter: OxygenMenu's #hud-right-col contact
+       dock is fixed at right:1.5rem, width 54px (~78px from the viewport
+       edge total) on every desktop width (it only hides below 1024px,
+       where this whole section is display:none anyway) — the plain gutter
+       alone left the right-aligned bio lines running underneath it. */
+    padding-right: calc(var(--site-gutter, 2rem) + 5.5rem);
+    z-index: 1;
+  }
+  .ab-items {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: right;
+    max-width: 52%;
+  }
+  .ab-item {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(1.2rem, 2.2vw, 2.4rem);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+    line-height: 1.1;
+    will-change: transform, opacity;
+  }
+
+  /* -- Content section -- */
+  #about-content {
+    position: relative;
+    z-index: 1;
+    background: rgb(var(--c-bg));
+    padding: clamp(6rem, 14vw, 14rem) var(--site-gutter, 2rem);
+  }
+  .ac-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+  .ac-label {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3.5rem, 8vw, 9rem);
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+    line-height: 0.9;
+    margin: 0;
+    position: sticky;
+    top: 2rem;
+  }
+  .ac-body-col {
+    padding-top: 0.5rem;
+  }
+  .ac-body {
+    font-family: var(--f-body);
+    font-size: clamp(1.1rem, 1.7vw, 1.55rem);
+    font-weight: 300;
+    line-height: 1.75;
+    color: rgb(var(--c-cream) / 0.6);
+    margin: 0 0 2rem;
+  }
+  .ac-body:last-child { margin: 0; }
+
+
+  /* -- Laptop (1024-1536px) — zmniejszone czcionki, żeby nie nachodziły na twarz -- */
+  @media (min-width: 1025px) and (max-width: 1536px) {
+    .ai-text { max-width: 38%; }
+    .ai-name { font-size: clamp(3rem, 6.5vw, 7rem); }
+    .about-title__l,
+    .about-title__r { font-size: clamp(2.5rem, 6vw, 6.5rem); }
+    .ab-items { max-width: 44%; }
+    .ab-item { font-size: clamp(1rem, 1.7vw, 2rem); }
+  }
+
+  /* -- Mobile / tablet (≤1023px) — po wszystkich desktopowych regułach -- */
+  @media (max-width: 1024px) {
+    #about-wrap,
+    #about-overlay,
+    #about-space,
+    #about-intro,
+    #about-bio    { display: none !important; }
+
+    #about-mobile { display: block; background: rgb(var(--c-bg)); }
+
+    /* Hero z grain i fade */
+    .am-hero {
+      padding: clamp(5rem, 14vw, 8rem) var(--site-gutter, 1.5rem) 0;
+      position: relative;
+    }
+    .am-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 200px 200px;
+      opacity: 0.045;
+      pointer-events: none;
+      z-index: 1;
+    }
+    /* "Who's Behind?" obok siebie */
+    .am-who {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.22em;
+      margin: 0 0 0.9rem;
+      position: relative;
+      z-index: 2;
+    }
+    .am-who-l, .am-who-r {
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(2.6rem, 10.5vw, 5rem);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .am-who-l { color: rgb(var(--c-cream)); }
+    .am-who-r { color: rgb(var(--c-red)); }
+
+    .am-portrait-stack {
+      position: relative;
+      width: 100%;
+      height: 80svh;
+      overflow: hidden;
+    }
+    .am-portrait-stack::after {
+      content: '';
+      position: absolute;
+      inset: auto 0 0;
+      height: 40%;
+      background: linear-gradient(
+        to top,
+        rgba(0, 0, 0, 1)    0%,
+        rgba(0, 0, 0, 0.94) 18%,
+        rgba(0, 0, 0, 0.8)  34%,
+        rgba(0, 0, 0, 0.6)  48%,
+        rgba(0, 0, 0, 0.38) 62%,
+        rgba(0, 0, 0, 0.2)  76%,
+        rgba(0, 0, 0, 0.08) 88%,
+        rgba(0, 0, 0, 0)    100%
+      );
+      pointer-events: none;
+      z-index: 3;
+    }
+    .am-portrait {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .am-portrait-img {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      object-fit: cover;
+      object-position: center 72%;
+      transform-origin: 50% 72%;
+      /* Mobile-only reveal (see initAboutMobilePortrait) — #about-mobile
+         is display:none on desktop, so this never shows/matters there;
+         desktop gets its own fluid-sim canvas reveal instead. */
+      opacity: 0;
+      filter: blur(14px);
+      transform: scale(1.08);
+      transition:
+        opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+        filter 1.1s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .am-portrait-img.is-visible {
+      opacity: 1;
+      filter: blur(0);
+      transform: scale(1);
+    }
+    /* Intro */
+    .am-intro {
+      padding: clamp(2.5rem, 7vw, 4rem) var(--site-gutter, 1.5rem);
+    }
+    .am-greeting {
+      font-family: var(--f-body);
+      font-size: clamp(0.85rem, 3vw, 1rem);
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: rgb(var(--c-cream) / 0.55);
+      margin: 0 0 0.5rem;
+    }
+    .am-name {
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(2rem, 7.5vw, 3.2rem);
+      letter-spacing: -0.02em;
+      text-transform: uppercase;
+      color: rgb(var(--c-red));
+      line-height: 0.9;
+      margin: 0;
+    }
+
+    /* Bio z red-dash itemami */
+    .am-bio {
+      padding: 0 var(--site-gutter, 1.5rem) clamp(2.5rem, 7vw, 4rem);
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .am-item {
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(0.95rem, 4.2vw, 1.5rem);
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      color: rgb(var(--c-cream));
+      line-height: 1.1;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: clamp(0.9rem, 2.8vw, 1.2rem) 0;
+    }
+    .am-item::before {
+      content: '';
+      display: block;
+      width: 18px;
+      height: 1px;
+      background: rgb(var(--c-red) / 0.45);
+      flex-shrink: 0;
+    }
+
+    #about-content { padding: clamp(3rem, 8vw, 5rem) var(--site-gutter, 1.5rem); }
+    .ac-grid      { grid-template-columns: 1fr; gap: 2rem; }
+    .ac-label     { font-size: clamp(2.5rem, 10vw, 5rem); position: static; }
+  }
+
+</style>
+
+<script>
+  import Lenis from 'lenis';
+  import gsap from 'gsap';
+  import ScrollTrigger from 'gsap/ScrollTrigger';
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  let _lenis: InstanceType<typeof Lenis> | null = null;
+  let _lenisRaf: ((time: number) => void) | null = null;
+
+  interface FluidPortraitOpts {
+    topUrl: string;
+    botUrl: string;
+    // Multiplies SIM_RESOLUTION/DYE_RESOLUTION — mobile GPUs get a
+    // fraction of desktop's to keep the (continuous, always-running) sim
+    // affordable there.
+    resolutionScale: number;
+    pressureIterations: number;
+    // IntersectionObserver root deciding when to pause the render loop —
+    // desktop passes the whole pinned #about-wrap; mobile (no pin) just
+    // passes the canvas itself.
+    visibilityRoot: Element | null;
+    // true: starts revealing immediately (mobile — there's no scroll
+    // gesture gating it the way the desktop reveal-then-pin timeline
+    // does). false: starts inert until setPainting(true) is called.
+    autoPaint: boolean;
+    // 'window' (desktop): the canvas fills the fixed, full viewport, so
+    // pointer/touch tracked anywhere on the page is tracked as being over
+    // it. 'canvas' (mobile): the canvas is a normal in-flow element, not
+    // the full page — listening on `window` would (a) map touches
+    // elsewhere on the page onto the wrong canvas position and (b) call
+    // preventDefault() on touchmove globally, blocking page scroll
+    // entirely. Scoping to the canvas itself avoids both.
+    eventTarget: 'window' | 'canvas';
+    // touchmove calls preventDefault() only when this is true (desktop —
+    // its canvas covers the whole pinned viewport, nothing to scroll past
+    // while it's up). Mobile leaves native scrolling alone (touch-action:
+    // pan-y on its canvas handles the rest — see the CSS comment there).
+    preventTouchScroll: boolean;
+    // Reveal radius of a single finger/mouse stroke (texcoord units).
+    // Defaults to 0.2; mobile bumps it up since a fingertip covers a much
+    // smaller share of the small canvas and the face was hard to uncover.
+    splatRadius?: number;
+    // Fires once both portraits have actually finished loading — before
+    // that the canvas is rendering its 1x1 placeholder texture, which the
+    // caller shouldn't show yet (see the "empty flash" comment above
+    // textureReady()).
+    onReady?: () => void;
+    // CSS object-position-style vertical focal point (0..1, "top X%"
+    // convention — 0.5 is a plain centered crop). Match this to whatever
+    // object-position the fallback <img> underneath uses, otherwise the
+    // WebGL cover-crop frames the portrait differently and the picture
+    // visibly jumps the instant the canvas fades in over the fallback.
+    focalY?: number;
+    // Extra crop-in zoom on top of the plain cover-fit (1 = none). Match
+    // this to whatever CSS transform: scale() the fallback <img> uses.
+    zoom?: number;
+    // Vertical band (0 = bottom of canvas, 1 = top) where painting is
+    // allowed to reveal the front portrait. Everything below revealMinY
+    // stays fully masked (back portrait only) no matter how much paint
+    // lands there — keeps the reveal confined to the face/mask instead of
+    // also wiping the shirt. Leave both unset to disable gating entirely.
+    revealMinY?: number;
+    revealMaxY?: number;
+  }
+
+  interface FluidPortraitHandle {
+    setPainting(enabled: boolean): void;
+    // Gates ONLY the auto-drift, independent of setPainting (which gates
+    // both auto + finger).
+    setAutoPaint(enabled: boolean): void;
+    // 0..1 — smoothly overrides the fluid mask toward a full reveal
+    // regardless of what's actually been painted. See the u_forceReveal
+    // shader comment.
+    setForceReveal(amount: number): void;
+    // Freezes the render loop on its current frame without touching the
+    // GL context or any listeners — see the astro:before-preparation hook
+    // below for why this exists as its own thing, separate from destroy().
+    pause(): void;
+    resume(): void;
+    destroy(): void;
+  }
+
+  // The WebGL2 fluid-sim engine — ported from a React SplashCursor
+  // component. Desktop-only (#about-canvas, pinned behind a scroll-driven
+  // reveal) — mobile just shows the plain portrait, no masking/reveal at
+  // all. Parameterized by `opts` instead of hardcoding the resolution/URLs.
+  // Returns null if WebGL2 isn't available.
+  function initFluidPortrait(canvasEl: HTMLCanvasElement, opts: FluidPortraitOpts): FluidPortraitHandle | null {
+    const glCtx = canvasEl.getContext('webgl2', {
+      alpha: true,
+      depth: false,
+      stencil: false,
+      antialias: false,
+      preserveDrawingBuffer: false,
+    }) as WebGL2RenderingContext | null;
+    if (!glCtx) return null;
+
+    const cv: HTMLCanvasElement = canvasEl;
+    const gl: WebGL2RenderingContext = glCtx;
+
+    let topSz = [1, 1], botSz = [1, 1];
+    let paintingEnabled = opts.autoPaint;
+    // Set via setForceReveal — see the u_forceReveal shader comment.
+    let forceReveal = 0;
+    // Gates just the auto-drift (not finger input). Desktop-only — mobile
+    // doesn't use this engine at all.
+    let autoPaintEnabled = true;
+    let autoActivatedAt = opts.autoPaint ? performance.now() : 0;
+
+    function loadTex(url: string, onSize: (w: number, h: number) => void): WebGLTexture {
+      const tex = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([10,10,10,255]));
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      const img = new Image();
+      img.onload = () => {
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        // Premultiply RGB by alpha on upload — the display shader's LINEAR
+        // filtering blends RGB and alpha independently, so whatever color
+        // sits under a fully-transparent cutout pixel normally bleeds into
+        // the edge (this is what caused the white/red/blue fringe artifacts
+        // on every portrait export so far, regardless of matte color).
+        // Premultiplying forces any (r,g,b,0) texel to (0,0,0,0) at upload
+        // time, so it no longer matters what garbage color a future export
+        // leaves under its transparent background.
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        onSize(img.naturalWidth, img.naturalHeight);
+      };
+      img.src = url;
+      return tex;
+    }
+
+    // Both portraits load async — until then the canvas would otherwise
+    // render its 1x1 placeholder texture (a solid near-black square) over
+    // whatever sits behind it (mobile's fallback <Image>, desktop's
+    // background), which is what read as an empty flash during page
+    // transitions. opts.onReady fires once both are actually in, so the
+    // caller can fade the canvas in only then instead of the moment it
+    // starts rendering.
+    let texturesLoaded = 0;
+    function textureReady() {
+      texturesLoaded++;
+      if (texturesLoaded === 2) opts.onReady?.();
+    }
+    const topTex = loadTex(opts.topUrl, (w, h) => { topSz = [w, h]; textureReady(); });
+    const botTex = loadTex(opts.botUrl, (w, h) => { botSz = [w, h]; textureReady(); });
+
+    // -- Fluid solver (ported from a React SplashCursor component — full
+    // Navier-Stokes: curl/vorticity confinement, divergence, jacobi pressure
+    // projection, BFECC-less advection). Instead of displaying the dye
+    // buffer as raw colored smoke, the composite pass uses its intensity as
+    // a reveal mask between the two portrait textures, same idea as the
+    // simpler version this replaces, just driven by a real fluid sim. --
+
+    const config = {
+      SIM_RESOLUTION: Math.round(128 * opts.resolutionScale),
+      DYE_RESOLUTION: Math.round(1440 * opts.resolutionScale),
+      DENSITY_DISSIPATION: 2.2,
+      VELOCITY_DISSIPATION: 2,
+      PRESSURE: 0.1,
+      PRESSURE_ITERATIONS: opts.pressureIterations,
+      CURL: 3,
+      SPLAT_RADIUS: opts.splatRadius ?? 0.2,
+      SPLAT_FORCE: 6000,
+      COLOR_UPDATE_SPEED: 10,
+      RAINBOW_MODE: false,
+      COLOR: '#A855F7',
+      // Auto-drift: paints continuously on its own, independent of real
+      // pointer activity — never pauses or hands off, just runs alongside it.
+      AUTO_SPLAT_RADIUS: 0.08,
+      AUTO_SPLAT_FORCE: 85000, // aggressive push — the fluid carries it
+      // further before dissipating and masks more thoroughly before fading
+      AUTO_SPEED: 2.2,
+      AUTO_MARGIN: 0.1,
+      AUTO_RAMP_MS: 700,
+      // Zigzag pattern: diagonal pulls, alternating left-to-right /
+      // right-to-left. Only AUTO_STROKES_PER_BURST strokes, then a long
+      // rest (AUTO_BURST_PAUSE_MS), then the burst repeats in the opposite
+      // vertical direction. AUTO_PAUSE_MS is the short gap within a burst.
+      AUTO_ZIGZAG_ROWS: 6,
+      AUTO_PAUSE_MS: 200,
+      AUTO_STROKES_PER_BURST: 3,
+      AUTO_BURST_PAUSE_MS: 3000,
+    };
+
+    class Pointer {
+      id = -1;
+      texcoordX = 0.5;
+      texcoordY = 0.5;
+      prevTexcoordX = 0.5;
+      prevTexcoordY = 0.5;
+      deltaX = 0;
+      deltaY = 0;
+      down = false;
+      moved = false;
+      color = { r: 0, g: 0, b: 0 };
+      isAuto = false;
+    }
+
+    const pointer = new Pointer();
+    const autoPointer = new Pointer();
+    autoPointer.isAuto = true;
+
+    // Each stroke is a diagonal pull: full width sideways while also
+    // stepping down (or up) by one band, alternating left-to-right /
+    // right-to-left each time — bounces back upward once it hits bottom.
+    const zigzagStep = (1 - config.AUTO_MARGIN * 2) / (config.AUTO_ZIGZAG_ROWS - 1);
+    // texcoordY runs bottom(0)-to-top(1), so starting one step above the
+    // very bottom puts the first stroke a bit higher up the portrait.
+    let zigzagY = config.AUTO_MARGIN + zigzagStep;
+    let zigzagDir = 1;
+    let zigzagStrokeIndex = -1;
+    let zigzagPhase: 'stroke' | 'pause' = 'stroke';
+    let zigzagPauseUntil = 0;
+    let zigzagBurstCount = 0;
+    let autoTarget: [number, number] = [0.5, 0.5];
+    // The pointer that actually paints (autoPointer) follows this base
+    // position plus a wobble offset (see updateAutoPointer) — kept
+    // separate so "how far along the stroke" stays a clean straight-line
+    // measure even though the painted path itself curves.
+    let zigzagBaseX = 0.5, zigzagBaseY = 0.5;
+    let zigzagStrokeStartX = 0.5, zigzagStrokeStartY = 0.5;
+    let zigzagStrokeLen = 1;
+    // Per-stroke variation so consecutive strokes don't read as an
+    // identical, mechanically repeating scan.
+    let zigzagSpeedMult = 1;
+    const AUTO_WOBBLE_AMPLITUDE = 0.03; // texcoord units, perpendicular to the stroke
+    const AUTO_WOBBLE_FREQ = 2.4; // oscillations per stroke
+
+    // Jumps the auto pointer to the start of the next diagonal (without
+    // painting a connecting line — prevTexcoord is reset too, so no delta
+    // this frame) and points it at the far end, alternating direction and
+    // stepping the vertical band, bouncing at the top/bottom edge.
+    function startNextZigzagStroke() {
+      zigzagStrokeIndex++;
+      const leftToRight = zigzagStrokeIndex % 2 === 0;
+      const startX = leftToRight ? config.AUTO_MARGIN : 1 - config.AUTO_MARGIN;
+      const endX = leftToRight ? 1 - config.AUTO_MARGIN : config.AUTO_MARGIN;
+      const startY = zigzagY;
+      let endY = zigzagY + zigzagStep * zigzagDir;
+      if (endY > 1 - config.AUTO_MARGIN) { endY = 1 - config.AUTO_MARGIN; zigzagDir = -1; }
+      else if (endY < config.AUTO_MARGIN) { endY = config.AUTO_MARGIN; zigzagDir = 1; }
+      zigzagBaseX = startX;
+      zigzagBaseY = startY;
+      zigzagStrokeStartX = startX;
+      zigzagStrokeStartY = startY;
+      zigzagStrokeLen = Math.max(0.0001, Math.hypot(endX - startX, endY - startY));
+      zigzagSpeedMult = 0.8 + Math.random() * 0.4;
+      autoPointer.texcoordX = startX;
+      autoPointer.texcoordY = startY;
+      autoPointer.prevTexcoordX = startX;
+      autoPointer.prevTexcoordY = startY;
+      autoTarget = [endX, endY];
+      zigzagY = endY;
+    }
+
+    startNextZigzagStroke();
+
+    gl.getExtension('EXT_color_buffer_float');
+    const supportLinearFiltering = !!gl.getExtension('OES_texture_float_linear');
+    gl.clearColor(0, 0, 0, 1);
+    const halfFloatTexType = gl.HALF_FLOAT;
+
+    function supportRenderTextureFormat(internalFormat: number, format: number, type: number): boolean {
+      const texture = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, 4, 4, 0, format, type, null);
+      const fbo = gl.createFramebuffer()!;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      return gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    }
+
+    function getSupportedFormat(
+      internalFormat: number,
+      format: number,
+      type: number,
+    ): { internalFormat: number; format: number } | null {
+      if (!supportRenderTextureFormat(internalFormat, format, type)) {
+        if (internalFormat === gl.R16F) return getSupportedFormat(gl.RG16F, gl.RG, type);
+        if (internalFormat === gl.RG16F) return getSupportedFormat(gl.RGBA16F, gl.RGBA, type);
+        return null;
+      }
+      return { internalFormat, format };
+    }
+
+    const formatRGBA = getSupportedFormat(gl.RGBA16F, gl.RGBA, halfFloatTexType)!;
+    const formatRG = getSupportedFormat(gl.RG16F, gl.RG, halfFloatTexType)!;
+    const formatR = getSupportedFormat(gl.R16F, gl.RED, halfFloatTexType)!;
+
+    function compileShader(type: number, source: string, keywords?: string[]): WebGLShader {
+      if (keywords && keywords.length) {
+        source = keywords.map((k) => '#define ' + k + '\n').join('') + source;
+      }
+      const shader = gl.createShader(type)!;
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(shader));
+      return shader;
+    }
+
+    function createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): WebGLProgram {
+      const program = gl.createProgram()!;
+      gl.attachShader(program, vertexShader);
+      gl.attachShader(program, fragmentShader);
+      gl.linkProgram(program);
+      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(program));
+      return program;
+    }
+
+    function getUniforms(program: WebGLProgram): Record<string, WebGLUniformLocation | null> {
+      const uniforms: Record<string, WebGLUniformLocation | null> = {};
+      const count = gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+      for (let i = 0; i < count; i++) {
+        const info = gl.getActiveUniform(program, i)!;
+        uniforms[info.name] = gl.getUniformLocation(program, info.name);
+      }
+      return uniforms;
+    }
+
+    class Program {
+      program: WebGLProgram;
+      uniforms: Record<string, WebGLUniformLocation | null>;
+      constructor(vertexShader: WebGLShader, fragmentShader: WebGLShader) {
+        this.program = createProgram(vertexShader, fragmentShader);
+        this.uniforms = getUniforms(this.program);
+      }
+      bind() { gl.useProgram(this.program); }
+    }
+
+    const baseVertexShader = compileShader(gl.VERTEX_SHADER, `
+      precision highp float;
+      attribute vec2 aPosition;
+      varying vec2 vUv;
+      varying vec2 vL;
+      varying vec2 vR;
+      varying vec2 vT;
+      varying vec2 vB;
+      uniform vec2 texelSize;
+
+      void main () {
+          vUv = aPosition * 0.5 + 0.5;
+          vL = vUv - vec2(texelSize.x, 0.0);
+          vR = vUv + vec2(texelSize.x, 0.0);
+          vT = vUv + vec2(0.0, texelSize.y);
+          vB = vUv - vec2(0.0, texelSize.y);
+          gl_Position = vec4(aPosition, 0.0, 1.0);
+      }
+    `);
+
+    const copyShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      uniform sampler2D uTexture;
+
+      void main () {
+          gl_FragColor = texture2D(uTexture, vUv);
+      }
+    `);
+
+    const clearShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      uniform sampler2D uTexture;
+      uniform float value;
+
+      void main () {
+          gl_FragColor = value * texture2D(uTexture, vUv);
+      }
+    `);
+
+    const displayShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision highp float;
+      precision highp sampler2D;
+      varying vec2 vUv;
+      uniform sampler2D u_fluid, u_top, u_bot;
+      uniform vec2 u_res, u_tsz, u_bsz;
+      // CSS object-position-style vertical focal point (0..1, same
+      // convention as "top X%"): 0.5 = centered crop, lower values keep
+      // more of the top of the image visible. Lets the WebGL cover-crop
+      // match a fallback <img>'s object-position exactly instead of always
+      // cropping symmetrically, which is what caused the framing to visibly
+      // jump the moment the canvas faded in over the mobile fallback image.
+      uniform float u_focalY;
+      // Vertical band, in IMAGE texcoord space (0 = bottom of the source
+      // photo, 1 = top), where the fluid paint is allowed to reveal the
+      // front portrait at all. Below it the mask is forced to 0 regardless
+      // of how much paint sits there, so dragging/painting over the
+      // shirt/neck never reveals anything — only the face + mask does.
+      // Deliberately in IMAGE space rather than screen/vUv space: vUv is
+      // screen-relative, so where the collar physically lands there shifts
+      // with the viewport's aspect ratio (cover-fit crops differently on a
+      // short/wide window than a tall one) — a threshold tuned against one
+      // viewport would cut the chin on another. Texcoord space is tied to
+      // the photo itself, so the same values hold at any viewport size.
+      uniform float u_revealMinY, u_revealMaxY;
+      // Extra zoom on top of the plain cover-fit (1.0 = no extra zoom).
+      // Crops in further around the focal point set above — used on
+      // mobile to make the portrait read bigger/closer without changing
+      // the container size.
+      uniform float u_zoom;
+      // 0 = normal fluid-driven mask below; 1 = fully uncovered regardless
+      // of what the fluid sim has painted. Driven from scroll progress for
+      // a final, guaranteed-clean reveal of the whole portrait (see
+      // setForceReveal) instead of leaving the payoff to how much the
+      // fluid happened to paint — smoothly mixed in, not a hard cut.
+      uniform float u_forceReveal;
+
+      vec2 cover(vec2 uv, vec2 sz) {
+          float sc = max(u_res.x / sz.x, u_res.y / sz.y) * u_zoom;
+          return (uv * u_res - (u_res - sz * sc) * vec2(0.5, 1.0 - u_focalY)) / (sz * sc);
+      }
+
+      void main () {
+          vec3 c = texture2D(u_fluid, vUv).rgb;
+          float f = max(c.r, max(c.g, c.b));
+          // Was smoothstep(0.02, 0.024, f) — a band 0.004 wide, basically a
+          // hard cutout with almost no gradient between the two portraits.
+          // A much wider band turns that into a soft, painterly blend
+          // instead of a stencil edge. The 0.9 cap keeps a faint trace of
+          // the "back" portrait showing through even at full paint
+          // intensity, rather than fully replacing it — a veil, not a
+          // hard swap.
+          float mask = smoothstep(0.0, 0.16, f) * 0.9;
+          vec2 botUV = cover(vUv, u_bsz);
+          float faceGate = smoothstep(u_revealMinY, u_revealMaxY, botUV.y);
+          mask *= faceGate;
+          mask = mix(mask, 1.0, u_forceReveal);
+          vec4 back = texture2D(u_bot, botUV);
+          vec4 front = texture2D(u_top, cover(vUv, u_tsz));
+          gl_FragColor = mix(back, front, mask);
+      }
+    `);
+
+    const splatShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision highp float;
+      precision highp sampler2D;
+      varying vec2 vUv;
+      uniform sampler2D uTarget;
+      uniform float aspectRatio;
+      uniform vec3 color;
+      uniform vec2 point;
+      uniform float radius;
+
+      void main () {
+          vec2 p = vUv - point.xy;
+          p.x *= aspectRatio;
+          vec3 splat = exp(-dot(p, p) / radius) * color;
+          vec3 base = texture2D(uTarget, vUv).xyz;
+          gl_FragColor = vec4(base + splat, 1.0);
+      }
+    `);
+
+    const advectionShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision highp float;
+      precision highp sampler2D;
+      varying vec2 vUv;
+      uniform sampler2D uVelocity;
+      uniform sampler2D uSource;
+      uniform vec2 texelSize;
+      uniform vec2 dyeTexelSize;
+      uniform float dt;
+      uniform float dissipation;
+
+      vec4 bilerp (sampler2D sam, vec2 uv, vec2 tsize) {
+          vec2 st = uv / tsize - 0.5;
+          vec2 iuv = floor(st);
+          vec2 fuv = fract(st);
+
+          vec4 a = texture2D(sam, (iuv + vec2(0.5, 0.5)) * tsize);
+          vec4 b = texture2D(sam, (iuv + vec2(1.5, 0.5)) * tsize);
+          vec4 c = texture2D(sam, (iuv + vec2(0.5, 1.5)) * tsize);
+          vec4 d = texture2D(sam, (iuv + vec2(1.5, 1.5)) * tsize);
+
+          return mix(mix(a, b, fuv.x), mix(c, d, fuv.x), fuv.y);
+      }
+
+      void main () {
+          #ifdef MANUAL_FILTERING
+              vec2 coord = vUv - dt * bilerp(uVelocity, vUv, texelSize).xy * texelSize;
+              vec4 result = bilerp(uSource, coord, dyeTexelSize);
+          #else
+              vec2 coord = vUv - dt * texture2D(uVelocity, vUv).xy * texelSize;
+              vec4 result = texture2D(uSource, coord);
+          #endif
+          float decay = 1.0 + dissipation * dt;
+          gl_FragColor = result / decay;
+      }
+    `, supportLinearFiltering ? undefined : ['MANUAL_FILTERING']);
+
+    const divergenceShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      varying highp vec2 vL;
+      varying highp vec2 vR;
+      varying highp vec2 vT;
+      varying highp vec2 vB;
+      uniform sampler2D uVelocity;
+
+      void main () {
+          float L = texture2D(uVelocity, vL).x;
+          float R = texture2D(uVelocity, vR).x;
+          float T = texture2D(uVelocity, vT).y;
+          float B = texture2D(uVelocity, vB).y;
+
+          vec2 C = texture2D(uVelocity, vUv).xy;
+          if (vL.x < 0.0) { L = -C.x; }
+          if (vR.x > 1.0) { R = -C.x; }
+          if (vT.y > 1.0) { T = -C.y; }
+          if (vB.y < 0.0) { B = -C.y; }
+
+          float div = 0.5 * (R - L + T - B);
+          gl_FragColor = vec4(div, 0.0, 0.0, 1.0);
+      }
+    `);
+
+    const curlShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      varying highp vec2 vL;
+      varying highp vec2 vR;
+      varying highp vec2 vT;
+      varying highp vec2 vB;
+      uniform sampler2D uVelocity;
+
+      void main () {
+          float L = texture2D(uVelocity, vL).y;
+          float R = texture2D(uVelocity, vR).y;
+          float T = texture2D(uVelocity, vT).x;
+          float B = texture2D(uVelocity, vB).x;
+          float vorticity = R - L - T + B;
+          gl_FragColor = vec4(0.5 * vorticity, 0.0, 0.0, 1.0);
+      }
+    `);
+
+    const vorticityShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision highp float;
+      precision highp sampler2D;
+      varying vec2 vUv;
+      varying vec2 vL;
+      varying vec2 vR;
+      varying vec2 vT;
+      varying vec2 vB;
+      uniform sampler2D uVelocity;
+      uniform sampler2D uCurl;
+      uniform float curl;
+      uniform float dt;
+
+      void main () {
+          float L = texture2D(uCurl, vL).x;
+          float R = texture2D(uCurl, vR).x;
+          float T = texture2D(uCurl, vT).x;
+          float B = texture2D(uCurl, vB).x;
+          float C = texture2D(uCurl, vUv).x;
+
+          vec2 force = 0.5 * vec2(abs(T) - abs(B), abs(R) - abs(L));
+          force /= length(force) + 0.0001;
+          force *= curl * C;
+          force.y *= -1.0;
+
+          vec2 velocity = texture2D(uVelocity, vUv).xy;
+          velocity += force * dt;
+          velocity = min(max(velocity, -1000.0), 1000.0);
+          gl_FragColor = vec4(velocity, 0.0, 1.0);
+      }
+    `);
+
+    const pressureShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      varying highp vec2 vL;
+      varying highp vec2 vR;
+      varying highp vec2 vT;
+      varying highp vec2 vB;
+      uniform sampler2D uPressure;
+      uniform sampler2D uDivergence;
+
+      void main () {
+          float L = texture2D(uPressure, vL).x;
+          float R = texture2D(uPressure, vR).x;
+          float T = texture2D(uPressure, vT).x;
+          float B = texture2D(uPressure, vB).x;
+          float C = texture2D(uPressure, vUv).x;
+          float divergence = texture2D(uDivergence, vUv).x;
+          float pressure = (L + R + B + T - divergence) * 0.25;
+          gl_FragColor = vec4(pressure, 0.0, 0.0, 1.0);
+      }
+    `);
+
+    const gradientSubtractShader = compileShader(gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      precision mediump sampler2D;
+      varying highp vec2 vUv;
+      varying highp vec2 vL;
+      varying highp vec2 vR;
+      varying highp vec2 vT;
+      varying highp vec2 vB;
+      uniform sampler2D uPressure;
+      uniform sampler2D uVelocity;
+
+      void main () {
+          float L = texture2D(uPressure, vL).x;
+          float R = texture2D(uPressure, vR).x;
+          float T = texture2D(uPressure, vT).x;
+          float B = texture2D(uPressure, vB).x;
+          vec2 velocity = texture2D(uVelocity, vUv).xy;
+          velocity.xy -= vec2(R - L, T - B);
+          gl_FragColor = vec4(velocity, 0.0, 1.0);
+      }
+    `);
+
+    const copyProgram = new Program(baseVertexShader, copyShader);
+    const clearProgram = new Program(baseVertexShader, clearShader);
+    const splatProgram = new Program(baseVertexShader, splatShader);
+    const advectionProgram = new Program(baseVertexShader, advectionShader);
+    const divergenceProgram = new Program(baseVertexShader, divergenceShader);
+    const curlProgram = new Program(baseVertexShader, curlShader);
+    const vorticityProgram = new Program(baseVertexShader, vorticityShader);
+    const pressureProgram = new Program(baseVertexShader, pressureShader);
+    const gradientSubtractProgram = new Program(baseVertexShader, gradientSubtractShader);
+    const displayProgram = new Program(baseVertexShader, displayShader);
+
+    interface FBO {
+      texture: WebGLTexture;
+      fbo: WebGLFramebuffer;
+      width: number;
+      height: number;
+      texelSizeX: number;
+      texelSizeY: number;
+      attach(id: number): number;
+    }
+    interface DoubleFBO {
+      width: number;
+      height: number;
+      texelSizeX: number;
+      texelSizeY: number;
+      read: FBO;
+      write: FBO;
+      swap(): void;
+    }
+
+    const blit = (() => {
+      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, 1, 1, -1]), gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array([0, 1, 2, 0, 2, 3]), gl.STATIC_DRAW);
+      gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(0);
+      return (target: FBO | null, clear = false) => {
+        if (target == null) {
+          gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        } else {
+          gl.viewport(0, 0, target.width, target.height);
+          gl.bindFramebuffer(gl.FRAMEBUFFER, target.fbo);
+        }
+        if (clear) {
+          gl.clearColor(0, 0, 0, 1);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+        gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+      };
+    })();
+
+    function createFBO(w: number, h: number, internalFormat: number, format: number, type: number, param: number): FBO {
+      gl.activeTexture(gl.TEXTURE0);
+      const texture = gl.createTexture()!;
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, param);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, param);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, w, h, 0, format, type, null);
+
+      const fbo = gl.createFramebuffer()!;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+      gl.viewport(0, 0, w, h);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+
+      return {
+        texture, fbo, width: w, height: h,
+        texelSizeX: 1.0 / w, texelSizeY: 1.0 / h,
+        attach(id: number) {
+          gl.activeTexture(gl.TEXTURE0 + id);
+          gl.bindTexture(gl.TEXTURE_2D, texture);
+          return id;
+        },
+      };
+    }
+
+    function createDoubleFBO(w: number, h: number, internalFormat: number, format: number, type: number, param: number): DoubleFBO {
+      let fbo1 = createFBO(w, h, internalFormat, format, type, param);
+      let fbo2 = createFBO(w, h, internalFormat, format, type, param);
+      return {
+        width: w, height: h, texelSizeX: fbo1.texelSizeX, texelSizeY: fbo1.texelSizeY,
+        get read() { return fbo1; },
+        set read(value: FBO) { fbo1 = value; },
+        get write() { return fbo2; },
+        set write(value: FBO) { fbo2 = value; },
+        swap() { const t = fbo1; fbo1 = fbo2; fbo2 = t; },
+      };
+    }
+
+    function resizeFBO(target: FBO, w: number, h: number, internalFormat: number, format: number, type: number, param: number): FBO {
+      const newFBO = createFBO(w, h, internalFormat, format, type, param);
+      copyProgram.bind();
+      gl.uniform1i(copyProgram.uniforms.uTexture, target.attach(0));
+      blit(newFBO);
+      return newFBO;
+    }
+
+    function resizeDoubleFBO(target: DoubleFBO, w: number, h: number, internalFormat: number, format: number, type: number, param: number): DoubleFBO {
+      if (target.width === w && target.height === h) return target;
+      target.read = resizeFBO(target.read, w, h, internalFormat, format, type, param);
+      target.write = createFBO(w, h, internalFormat, format, type, param);
+      target.width = w; target.height = h;
+      target.texelSizeX = 1.0 / w; target.texelSizeY = 1.0 / h;
+      return target;
+    }
+
+    function getResolution(resolution: number) {
+      let aspectRatio = gl.drawingBufferWidth / gl.drawingBufferHeight;
+      if (aspectRatio < 1) aspectRatio = 1.0 / aspectRatio;
+      const min = Math.round(resolution);
+      const max = Math.round(resolution * aspectRatio);
+      if (gl.drawingBufferWidth > gl.drawingBufferHeight) return { width: max, height: min };
+      return { width: min, height: max };
+    }
+
+    let dye: DoubleFBO;
+    let velocity: DoubleFBO;
+    let divergence: FBO;
+    let curl: FBO;
+    let pressure: DoubleFBO;
+
+    function initFramebuffers() {
+      const simRes = getResolution(config.SIM_RESOLUTION);
+      const dyeRes = getResolution(config.DYE_RESOLUTION);
+      const texType = halfFloatTexType;
+      const filtering = supportLinearFiltering ? gl.LINEAR : gl.NEAREST;
+      gl.disable(gl.BLEND);
+
+      dye = dye
+        ? resizeDoubleFBO(dye, dyeRes.width, dyeRes.height, formatRGBA.internalFormat, formatRGBA.format, texType, filtering)
+        : createDoubleFBO(dyeRes.width, dyeRes.height, formatRGBA.internalFormat, formatRGBA.format, texType, filtering);
+
+      velocity = velocity
+        ? resizeDoubleFBO(velocity, simRes.width, simRes.height, formatRG.internalFormat, formatRG.format, texType, filtering)
+        : createDoubleFBO(simRes.width, simRes.height, formatRG.internalFormat, formatRG.format, texType, filtering);
+
+      divergence = createFBO(simRes.width, simRes.height, formatR.internalFormat, formatR.format, texType, gl.NEAREST);
+      curl = createFBO(simRes.width, simRes.height, formatR.internalFormat, formatR.format, texType, gl.NEAREST);
+      pressure = createDoubleFBO(simRes.width, simRes.height, formatR.internalFormat, formatR.format, texType, gl.NEAREST);
+    }
+
+    initFramebuffers();
+
+    function correctRadius(radius: number) {
+      const aspectRatio = cv.width / cv.height;
+      if (aspectRatio > 1) radius *= aspectRatio;
+      return radius;
+    }
+
+    function correctDeltaX(delta: number) {
+      const aspectRatio = cv.width / cv.height;
+      if (aspectRatio < 1) delta *= aspectRatio;
+      return delta;
+    }
+    function correctDeltaY(delta: number) {
+      const aspectRatio = cv.width / cv.height;
+      if (aspectRatio > 1) delta /= aspectRatio;
+      return delta;
+    }
+
+    function hexToRGB(hex: string) {
+      let val = hex.replace('#', '');
+      if (val.length === 3) val = val[0] + val[0] + val[1] + val[1] + val[2] + val[2];
+      const r = parseInt(val.slice(0, 2), 16) / 255;
+      const g = parseInt(val.slice(2, 4), 16) / 255;
+      const b = parseInt(val.slice(4, 6), 16) / 255;
+      return { r: r * 0.15, g: g * 0.15, b: b * 0.15 };
+    }
+
+    function HSVtoRGB(h: number, s: number, v: number) {
+      let r = 0, g = 0, b = 0;
+      const i = Math.floor(h * 6);
+      const f = h * 6 - i;
+      const p = v * (1 - s);
+      const q = v * (1 - f * s);
+      const t = v * (1 - (1 - f) * s);
+      switch (i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+      }
+      return { r, g, b };
+    }
+
+    function generateColor() {
+      if (!config.RAINBOW_MODE) return hexToRGB(config.COLOR);
+      const c = HSVtoRGB(Math.random(), 1.0, 1.0);
+      c.r *= 0.15; c.g *= 0.15; c.b *= 0.15;
+      return c;
+    }
+
+    function wrapValue(value: number, min: number, max: number) {
+      const range = max - min;
+      if (range === 0) return min;
+      return ((value - min) % range) + min;
+    }
+
+    autoPointer.color = generateColor();
+
+    function splat(x: number, y: number, dx: number, dy: number, color: { r: number; g: number; b: number }, radius: number) {
+      splatProgram.bind();
+      gl.uniform1i(splatProgram.uniforms.uTarget, velocity.read.attach(0));
+      gl.uniform1f(splatProgram.uniforms.aspectRatio, cv.width / cv.height);
+      gl.uniform2f(splatProgram.uniforms.point, x, y);
+      gl.uniform3f(splatProgram.uniforms.color, dx, dy, 0.0);
+      gl.uniform1f(splatProgram.uniforms.radius, correctRadius(radius / 100.0));
+      blit(velocity.write);
+      velocity.swap();
+
+      gl.uniform1i(splatProgram.uniforms.uTarget, dye.read.attach(0));
+      gl.uniform3f(splatProgram.uniforms.color, color.r, color.g, color.b);
+      blit(dye.write);
+      dye.swap();
+    }
+
+    function splatPointer(p: Pointer) {
+      const force = p.isAuto ? config.AUTO_SPLAT_FORCE : config.SPLAT_FORCE;
+      const dx = p.deltaX * force;
+      const dy = p.deltaY * force;
+      const radius = p.isAuto ? config.AUTO_SPLAT_RADIUS : config.SPLAT_RADIUS;
+      splat(p.texcoordX, p.texcoordY, dx, dy, p.color, radius);
+    }
+
+    function clickSplat(p: Pointer) {
+      const color = generateColor();
+      color.r *= 10.0; color.g *= 10.0; color.b *= 10.0;
+      const dx = 10 * (Math.random() - 0.5);
+      const dy = 30 * (Math.random() - 0.5);
+      splat(p.texcoordX, p.texcoordY, dx, dy, color, config.SPLAT_RADIUS);
+    }
+
+    function updateAutoPointer(dt: number) {
+      const now = performance.now();
+
+      if (zigzagPhase === 'pause') {
+        autoPointer.moved = false;
+        if (now < zigzagPauseUntil) return;
+        zigzagPhase = 'stroke';
+        startNextZigzagStroke();
+        return;
+      }
+
+      autoPointer.prevTexcoordX = autoPointer.texcoordX;
+      autoPointer.prevTexcoordY = autoPointer.texcoordY;
+      const dx = autoTarget[0] - zigzagBaseX;
+      const dy = autoTarget[1] - zigzagBaseY;
+      const dist = Math.hypot(dx, dy);
+      if (dist < 0.01) {
+        autoPointer.moved = false;
+        zigzagPhase = 'pause';
+        zigzagBurstCount++;
+        if (zigzagBurstCount >= config.AUTO_STROKES_PER_BURST) {
+          zigzagBurstCount = 0;
+          zigzagDir *= -1; // next burst sweeps the other way
+          zigzagPauseUntil = now + config.AUTO_BURST_PAUSE_MS;
+        } else {
+          zigzagPauseUntil = now + config.AUTO_PAUSE_MS;
+        }
+        return;
+      }
+      const ramp = autoActivatedAt
+        ? Math.min(1, (now - autoActivatedAt) / config.AUTO_RAMP_MS)
+        : 1;
+      const step = Math.min(config.AUTO_SPEED * dt * ramp * zigzagSpeedMult, dist);
+      zigzagBaseX += (dx / dist) * step;
+      zigzagBaseY += (dy / dist) * step;
+
+      // Perpendicular wobble around the straight base path, tapered to
+      // zero at both ends of the stroke (sin(t·π) envelope) so it joins
+      // cleanly with the pause points instead of a hand-painted line that
+      // mechanically snaps straight at the very start/end of every stroke.
+      const traveled = Math.hypot(zigzagBaseX - zigzagStrokeStartX, zigzagBaseY - zigzagStrokeStartY);
+      const t = Math.min(1, traveled / zigzagStrokeLen);
+      const dirX = dx / dist, dirY = dy / dist;
+      const perpX = -dirY, perpY = dirX;
+      const wobble = AUTO_WOBBLE_AMPLITUDE * Math.sin(t * Math.PI) * Math.sin(t * Math.PI * AUTO_WOBBLE_FREQ);
+      autoPointer.texcoordX = zigzagBaseX + perpX * wobble;
+      autoPointer.texcoordY = zigzagBaseY + perpY * wobble;
+      autoPointer.deltaX = correctDeltaX(autoPointer.texcoordX - autoPointer.prevTexcoordX);
+      autoPointer.deltaY = correctDeltaY(autoPointer.texcoordY - autoPointer.prevTexcoordY);
+      autoPointer.moved = true;
+    }
+
+    function updatePointerDownData(p: Pointer, id: number, posX: number, posY: number) {
+      p.id = id;
+      p.down = true;
+      p.moved = false;
+      p.texcoordX = posX / cv.width;
+      p.texcoordY = 1.0 - posY / cv.height;
+      p.prevTexcoordX = p.texcoordX;
+      p.prevTexcoordY = p.texcoordY;
+      p.deltaX = 0;
+      p.deltaY = 0;
+      p.color = generateColor();
+    }
+
+    function updatePointerMoveData(p: Pointer, posX: number, posY: number, color: { r: number; g: number; b: number }) {
+      p.prevTexcoordX = p.texcoordX;
+      p.prevTexcoordY = p.texcoordY;
+      p.texcoordX = posX / cv.width;
+      p.texcoordY = 1.0 - posY / cv.height;
+      p.deltaX = correctDeltaX(p.texcoordX - p.prevTexcoordX);
+      p.deltaY = correctDeltaY(p.texcoordY - p.prevTexcoordY);
+      p.moved = Math.abs(p.deltaX) > 0 || Math.abs(p.deltaY) > 0;
+      p.color = color;
+    }
+
+    function updatePointerUpData(p: Pointer) {
+      p.down = false;
+    }
+
+    function scaleByPixelRatio(input: number) {
+      return Math.floor(input * (window.devicePixelRatio || 1));
+    }
+
+    // Converts viewport-relative client coordinates to canvas-buffer
+    // pixels. Desktop's canvas is position:fixed, inset:0 (rect is exactly
+    // the viewport), so this reduces to the old plain
+    // scaleByPixelRatio(clientX/Y) there — but mobile's canvas is a normal
+    // in-flow element (not full-viewport), so without subtracting its own
+    // rect offset first, every touch would map to the wrong spot on it.
+    function toCanvasPx(clientX: number, clientY: number): [number, number] {
+      const rect = cv.getBoundingClientRect();
+      return [scaleByPixelRatio(clientX - rect.left), scaleByPixelRatio(clientY - rect.top)];
+    }
+
+    let firstMouseMoveHandled = false;
+    function onMouseMove(e: MouseEvent) {
+      const [posX, posY] = toCanvasPx(e.clientX, e.clientY);
+      if (!firstMouseMoveHandled) {
+        pointer.color = generateColor();
+        firstMouseMoveHandled = true;
+      }
+      updatePointerMoveData(pointer, posX, posY, pointer.color);
+    }
+    function onMouseDown(e: MouseEvent) {
+      if (!paintingEnabled) return;
+      const [posX, posY] = toCanvasPx(e.clientX, e.clientY);
+      updatePointerDownData(pointer, -1, posX, posY);
+      clickSplat(pointer);
+    }
+    function onTouchStart(e: TouchEvent) {
+      const touches = e.targetTouches;
+      for (let i = 0; i < touches.length; i++) {
+        const [posX, posY] = toCanvasPx(touches[i].clientX, touches[i].clientY);
+        updatePointerDownData(pointer, touches[i].identifier, posX, posY);
+      }
+    }
+    function onTouchMove(e: TouchEvent) {
+      if (opts.preventTouchScroll) e.preventDefault();
+      const touches = e.targetTouches;
+      for (let i = 0; i < touches.length; i++) {
+        const [posX, posY] = toCanvasPx(touches[i].clientX, touches[i].clientY);
+        updatePointerMoveData(pointer, posX, posY, pointer.color);
+      }
+    }
+    function onTouchEnd(e: TouchEvent) {
+      const touches = e.changedTouches;
+      for (let i = 0; i < touches.length; i++) updatePointerUpData(pointer);
+    }
+
+    const evtTarget: EventTarget = opts.eventTarget === 'canvas' ? cv : window;
+    evtTarget.addEventListener('mousedown', onMouseDown as EventListener);
+    evtTarget.addEventListener('mousemove', onMouseMove as EventListener);
+    evtTarget.addEventListener('touchstart', onTouchStart as EventListener, { passive: true });
+    evtTarget.addEventListener('touchmove', onTouchMove as EventListener, { passive: false });
+    evtTarget.addEventListener('touchend', onTouchEnd as EventListener);
+
+    function resizeCanvas(): boolean {
+      const width = scaleByPixelRatio(cv.clientWidth);
+      const height = scaleByPixelRatio(cv.clientHeight);
+      if (cv.width !== width || cv.height !== height) {
+        cv.width = width;
+        cv.height = height;
+        return true;
+      }
+      return false;
+    }
+
+    let lastUpdateTime = Date.now();
+    function calcDeltaTime() {
+      const now = Date.now();
+      const dt = Math.min((now - lastUpdateTime) / 1000, 0.016666);
+      lastUpdateTime = now;
+      return dt;
+    }
+
+    let colorUpdateTimer = 0;
+    function updateColors(dt: number) {
+      colorUpdateTimer += dt * config.COLOR_UPDATE_SPEED;
+      if (colorUpdateTimer >= 1) {
+        colorUpdateTimer = wrapValue(colorUpdateTimer, 0, 1);
+        pointer.color = generateColor();
+      }
+    }
+
+    function applyInputs(dt: number) {
+      if (paintingEnabled && autoPaintEnabled) updateAutoPointer(dt);
+      if (paintingEnabled && autoPaintEnabled && autoPointer.moved) {
+        autoPointer.moved = false;
+        splatPointer(autoPointer);
+      }
+      if (paintingEnabled && pointer.moved) {
+        pointer.moved = false;
+        splatPointer(pointer);
+      }
+    }
+
+    function step(dt: number) {
+      gl.disable(gl.BLEND);
+
+      curlProgram.bind();
+      gl.uniform2f(curlProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i(curlProgram.uniforms.uVelocity, velocity.read.attach(0));
+      blit(curl);
+
+      vorticityProgram.bind();
+      gl.uniform2f(vorticityProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i(vorticityProgram.uniforms.uVelocity, velocity.read.attach(0));
+      gl.uniform1i(vorticityProgram.uniforms.uCurl, curl.attach(1));
+      gl.uniform1f(vorticityProgram.uniforms.curl, config.CURL);
+      gl.uniform1f(vorticityProgram.uniforms.dt, dt);
+      blit(velocity.write);
+      velocity.swap();
+
+      divergenceProgram.bind();
+      gl.uniform2f(divergenceProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i(divergenceProgram.uniforms.uVelocity, velocity.read.attach(0));
+      blit(divergence);
+
+      clearProgram.bind();
+      gl.uniform1i(clearProgram.uniforms.uTexture, pressure.read.attach(0));
+      gl.uniform1f(clearProgram.uniforms.value, config.PRESSURE);
+      blit(pressure.write);
+      pressure.swap();
+
+      pressureProgram.bind();
+      gl.uniform2f(pressureProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i(pressureProgram.uniforms.uDivergence, divergence.attach(0));
+      for (let i = 0; i < config.PRESSURE_ITERATIONS; i++) {
+        gl.uniform1i(pressureProgram.uniforms.uPressure, pressure.read.attach(1));
+        blit(pressure.write);
+        pressure.swap();
+      }
+
+      gradientSubtractProgram.bind();
+      gl.uniform2f(gradientSubtractProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      gl.uniform1i(gradientSubtractProgram.uniforms.uPressure, pressure.read.attach(0));
+      gl.uniform1i(gradientSubtractProgram.uniforms.uVelocity, velocity.read.attach(1));
+      blit(velocity.write);
+      velocity.swap();
+
+      advectionProgram.bind();
+      gl.uniform2f(advectionProgram.uniforms.texelSize, velocity.texelSizeX, velocity.texelSizeY);
+      if (!supportLinearFiltering) {
+        gl.uniform2f(advectionProgram.uniforms.dyeTexelSize, velocity.texelSizeX, velocity.texelSizeY);
+      }
+      const velocityId = velocity.read.attach(0);
+      gl.uniform1i(advectionProgram.uniforms.uVelocity, velocityId);
+      gl.uniform1i(advectionProgram.uniforms.uSource, velocityId);
+      gl.uniform1f(advectionProgram.uniforms.dt, dt);
+      gl.uniform1f(advectionProgram.uniforms.dissipation, config.VELOCITY_DISSIPATION);
+      blit(velocity.write);
+      velocity.swap();
+
+      if (!supportLinearFiltering) {
+        gl.uniform2f(advectionProgram.uniforms.dyeTexelSize, dye.texelSizeX, dye.texelSizeY);
+      }
+      gl.uniform1i(advectionProgram.uniforms.uVelocity, velocity.read.attach(0));
+      gl.uniform1i(advectionProgram.uniforms.uSource, dye.read.attach(1));
+      gl.uniform1f(advectionProgram.uniforms.dissipation, config.DENSITY_DISSIPATION);
+      blit(dye.write);
+      dye.swap();
+    }
+
+    function drawDisplay(target: FBO | null) {
+      displayProgram.bind();
+      gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, topTex);
+      gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, botTex);
+      gl.uniform1i(displayProgram.uniforms.u_fluid, dye.read.attach(0));
+      gl.uniform1i(displayProgram.uniforms.u_top, 1);
+      gl.uniform1i(displayProgram.uniforms.u_bot, 2);
+      gl.uniform2f(displayProgram.uniforms.u_res, cv.width, cv.height);
+      gl.uniform2fv(displayProgram.uniforms.u_tsz, topSz);
+      gl.uniform2fv(displayProgram.uniforms.u_bsz, botSz);
+      gl.uniform1f(displayProgram.uniforms.u_focalY, opts.focalY ?? 0.5);
+      gl.uniform1f(displayProgram.uniforms.u_zoom, opts.zoom ?? 1);
+      gl.uniform1f(displayProgram.uniforms.u_revealMinY, opts.revealMinY ?? 0);
+      gl.uniform1f(displayProgram.uniforms.u_revealMaxY, opts.revealMaxY ?? 0.001);
+      gl.uniform1f(displayProgram.uniforms.u_forceReveal, forceReveal);
+      blit(target);
+    }
+
+    function render(target: FBO | null) {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      drawDisplay(target);
+    }
+
+    let raf = 0;
+
+    function frame() {
+      raf = requestAnimationFrame(frame);
+      const dt = calcDeltaTime();
+      if (resizeCanvas()) initFramebuffers();
+      updateColors(dt);
+      applyInputs(dt);
+      step(dt);
+      render(null);
+    }
+
+    // Pause the fluid sim once it's scrolled off-screen (wrap moves via
+    // transform: translateY(-100vh)) or the tab is backgrounded — otherwise
+    // it keeps rendering at full rate for the rest of the visit.
+    let wrapVisible = true;
+    function stopFrame() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+    function startFrame() { if (!raf && !document.hidden && wrapVisible) frame(); }
+
+    frame();
+
+    let wrapIO: IntersectionObserver | null = null;
+    if (opts.visibilityRoot) {
+      wrapIO = new IntersectionObserver(([entry]) => {
+        wrapVisible = entry.isIntersecting;
+        wrapVisible ? startFrame() : stopFrame();
+      }, { threshold: 0 });
+      wrapIO.observe(opts.visibilityRoot);
+    }
+
+    function onVisibilityChange() { document.hidden ? stopFrame() : startFrame(); }
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return {
+      setPainting(enabled: boolean) {
+        const was = paintingEnabled;
+        paintingEnabled = enabled;
+        if (enabled && !was) autoActivatedAt = performance.now();
+      },
+      setAutoPaint(enabled: boolean) {
+        autoPaintEnabled = enabled;
+      },
+      setForceReveal(amount: number) {
+        forceReveal = amount;
+      },
+      pause() { stopFrame(); },
+      resume() { startFrame(); },
+      destroy() {
+        stopFrame();
+        wrapIO?.disconnect();
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        evtTarget.removeEventListener('mousedown', onMouseDown as EventListener);
+        evtTarget.removeEventListener('mousemove', onMouseMove as EventListener);
+        evtTarget.removeEventListener('touchstart', onTouchStart as EventListener);
+        evtTarget.removeEventListener('touchmove', onTouchMove as EventListener);
+        evtTarget.removeEventListener('touchend', onTouchEnd as EventListener);
+        // Stopping the render loop doesn't free the WebGL2 context itself —
+        // it stays resident (same as any other live context) until GC gets
+        // to it, which isn't synchronous with navigation. Leaving this page
+        // holds that context open right as OxygenMenu's own WebGL canvas
+        // (the menu button's specular beam) tries to open a new one on the
+        // incoming page, which is what pushes it over Chromium's live-context
+        // budget and gets IT lost instead — see the webglcontextlost handling
+        // in specularButtonFx.ts for what that looks like on screen.
+        const ext = gl.getExtension('WEBGL_lose_context');
+        if (ext) ext.loseContext();
+      },
+    };
+  }
+
+  // ── Desktop: pinned canvas + scroll-driven reveal choreography ──
+  function initAboutDesktop() {
+    // Must match the CSS breakpoint (@media max-width: 1024px) exactly —
+    // otherwise devices at exactly 1024px (e.g. iPad landscape) get the
+    // WebGL fluid sim running invisibly behind the CSS-hidden mobile DOM.
+    if (window.matchMedia('(max-width: 1024px)').matches) return;
+
+    const canvasEl = document.getElementById('about-canvas') as HTMLCanvasElement | null;
+    if (!canvasEl) return;
+    const engine = initFluidPortrait(canvasEl, {
+      topUrl: canvasEl.dataset.top || '',
+      botUrl: canvasEl.dataset.bot || '',
+      resolutionScale: 1,
+      pressureIterations: 20,
+      visibilityRoot: document.getElementById('about-wrap'),
+      autoPaint: false,
+      eventTarget: 'window',
+      preventTouchScroll: true,
+      // Confines the reveal to the face/mask band — below it (neck/shirt)
+      // stays on the back portrait no matter how much gets painted there.
+      // In image-texcoord space (see u_revealMinY's shader comment), so
+      // this holds regardless of viewport aspect ratio — measured against
+      // the current portrait-bottom.webp (visor helmet): collar starts
+      // around texcoord 0.167, chin/helmet edge sits around 0.235.
+      revealMinY: 0.17,
+      revealMaxY: 0.24,
+      onReady: () => canvasEl.classList.add('is-ready'),
+    });
+    if (!engine) return;
+
+    // -- Lenis --
+
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    _lenis = new Lenis(isTouch ? {
+      duration: 0.7,
+      easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
+    } : {
+      duration: 2.4,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      wheelMultiplier: 0.65,
+    });
+    (window as any).__lenis = _lenis;
+    _lenis.on('scroll', ScrollTrigger.update);
+    _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
+    gsap.ticker.add(_lenisRaf);
+    gsap.ticker.lagSmoothing(0);
+
+    // -- Scroll scrub: overlay fades → portrait emerges from darkness --
+
+    const overlay = document.getElementById('about-overlay');
+    const wordL   = overlay?.querySelector<HTMLElement>('.about-title__l');
+    const wordR   = overlay?.querySelector<HTMLElement>('.about-title__r');
+
+    if (overlay && wordL && wordR) {
+      gsap.set(overlay, { opacity: 1 });
+      gsap.set(wordL, { x: 0 });
+      gsap.set(wordR, { x: 0 });
+
+      const tl = gsap.timeline()
+        .to(wordL,   { x: '-42vw', ease: 'none', duration: 0.4 }, 0)
+        .to(wordR,   { x:  '42vw', ease: 'none', duration: 0.4 }, 0)
+        .to(overlay, { opacity: 0, ease: 'none', duration: 0.6 }, 0);
+
+      // end stretched from the original 0.85 so the reveal tracks the
+      // scroll gesture instead of finishing almost instantly.
+      ScrollTrigger.create({
+        animation: tl,
+        start: 0,
+        end: () => window.innerHeight * 1.0,
+        scrub: 1.2,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          engine.setPainting(self.progress >= 0.98);
+        },
+      });
+    }
+
+    // -- Intro text: slide in from left --
+
+    const intro    = document.getElementById('about-intro');
+    const greeting = intro?.querySelector<HTMLElement>('.ai-greeting');
+    const aiName   = intro?.querySelector<HTMLElement>('.ai-name');
+
+    if (intro && greeting && aiName) {
+      gsap.set([greeting, aiName], { x: -30, opacity: 0 });
+
+      const introTl = gsap.timeline()
+        .to(greeting, { x: 0, opacity: 1, ease: 'power2.out', duration: 0.6 }, 0)
+        .to(aiName,   { x: 0, opacity: 1, ease: 'power2.out', duration: 0.6 }, 0.1);
+
+      ScrollTrigger.create({
+        trigger: intro,
+        start: 'top 90%',
+        end: 'top 50%',
+        animation: introTl,
+        scrub: 1.2,
+      });
+    }
+
+    // -- Bio items: slide in from right --
+
+    const bio      = document.getElementById('about-bio');
+    const bioItems = bio ? Array.from(bio.querySelectorAll<HTMLElement>('.ab-item')) : [];
+
+    if (bio && bioItems.length) {
+      gsap.set(bioItems, { x: 30, opacity: 0 });
+
+      const bioTl = gsap.timeline()
+        .to(bioItems, { x: 0, opacity: 1, ease: 'power2.out', stagger: 0.1, duration: 0.5 });
+
+      ScrollTrigger.create({
+        trigger: bio,
+        start: 'top 90%',
+        end: 'top 45%',
+        animation: bioTl,
+        scrub: 1.2,
+      });
+    }
+
+    // -- Full reveal: smoothly overrides the fluid mask to fully uncover
+    // the portrait, finishing before the canvas starts sliding away below
+    // — a guaranteed "there he is" payoff instead of leaving it to however
+    // much the fluid sim happened to paint. --
+
+    if (bio) {
+      ScrollTrigger.create({
+        trigger: bio,
+        start: 'top 75%',
+        end: 'top 15%',
+        scrub: 1.2,
+        onUpdate: (self) => engine.setForceReveal(self.progress),
+      });
+    }
+
+    // -- Canvas: scrolls away upward while bio is in view --
+
+    const wrap = document.getElementById('about-wrap');
+
+    if (wrap && bio) {
+      gsap.to(wrap, {
+        y: '-100vh',
+        ease: 'none',
+        scrollTrigger: {
+          trigger: bio,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      });
+    }
+
+    // -- Cleanup --
+
+    // Freeze the fluid-sim render loop the instant a navigation AWAY from
+    // this page starts — not on astro:before-swap below, which is much too
+    // late for this: that event fires from inside the view transition's
+    // update callback, i.e. AFTER document.startViewTransition() has
+    // already synchronously captured this page's "old" snapshot. A canvas
+    // that's still being actively redrawn by requestAnimationFrame right up
+    // to (and probably through) that capture is exactly the kind of thing
+    // Chromium's view-transition snapshotting doesn't handle reliably —
+    // this is the one page on the site with a continuously-animating,
+    // full-viewport WebGL surface, which lines up with the white flash only
+    // ever showing up when leaving /about. astro:before-preparation fires
+    // synchronously on click, before the next page's HTML is even
+    // fetched — freezing the canvas here (same last frame, just no longer
+    // being mutated) leaves plenty of time before the snapshot is taken,
+    // with zero visible change to the user. If the navigation gets aborted
+    // (e.g. a second click cancels this one — see abortAndRecreateMostRecentTransition
+    // in astro's router) resume so the page doesn't stay frozen.
+    document.addEventListener('astro:before-preparation', (e: any) => {
+      engine.pause();
+      e.signal?.addEventListener('abort', () => engine.resume());
+    });
+
+    document.addEventListener('astro:before-swap', () => {
+      engine.destroy();
+      if (_lenisRaf) { gsap.ticker.remove(_lenisRaf); _lenisRaf = null; }
+      _lenis?.destroy();
+      _lenis = null;
+      (window as any).__lenis = null;
+      ScrollTrigger.getAll().forEach(st => st.kill());
+    }, { once: true });
+  }
+
+  // Mobile: the hero portrait just sat there fully visible with no
+  // reveal at all (desktop's fluid-sim canvas reveal doesn't run below
+  // 1024px — see initAboutDesktop's early return above). One-shot
+  // IntersectionObserver fade/blur-in instead, same mechanism
+  // ShowcaseSection already uses for its own title reveal, so it scrolls
+  // into view at a natural point instead of popping in already fully
+  // rendered before the user has scrolled anywhere near it.
+  function initAboutMobilePortrait() {
+    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+    const stack = document.querySelector('.am-portrait-stack');
+    const img = document.querySelector('.am-portrait-img');
+    if (!stack || !img) return;
+
+    // The portrait sits right under the intro text and is often already
+    // roughly half on-screen at load (tall 80svh block, short text above
+    // it) — checking "any pixel visible" (or even a % of the target's own
+    // area, since so much of it is already showing) fired instantly
+    // instead of on scroll. Shrinking the observed root down to just its
+    // OWN top half means the portrait's top edge has to actually travel
+    // up into that region before it counts as intersecting — a real,
+    // felt scroll distance, not a hair-trigger on the first pixel of motion.
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          img.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -55% 0px', threshold: 0 });
+    io.observe(stack);
+
+    document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
+  }
+
+  function initAbout() {
+    initAboutDesktop();
+    initAboutMobilePortrait();
+  }
+
+  document.addEventListener('astro:page-load', initAbout);
+</script>
+

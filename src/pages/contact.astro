@@ -1,0 +1,686 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Contact — Prime Triskelion">
+
+  <main id="contact-page">
+
+    <!-- ── Page header ──────────────────────────────────────────────── -->
+    <!-- Desktop only: .cp-header-pin reserves the header's FULL (unshrunk)
+         height, set once in JS as an explicit inline height rather than
+         left to shrink along with the title — the form grid's position
+         comes from that reserved height, not from .cp-header's own live
+         (shrinking) size. Keeping them decoupled is what leaves the form
+         actually visible under the collapsed header instead of tucked
+         behind it: if the reserved space shrank in lockstep with the
+         header, the grid would always sit exactly at the header's current
+         covered height, however small — meaning content directly below
+         would be hidden the instant the shrink finished, no matter how
+         short the shrink or how small the final size (this was tried; see
+         git history/prior notes). Reserving the full height up front means
+         there's real slack for the small, pinned header and the fully
+         visible form to coexist, for as long as that slack lasts.
+         .cp-header itself is sticky (top:0) inside that reserved space and
+         shrinks (font-size, via --cp-title-scale, on .cp-header-content —
+         .cp-header's own padding-top, which clears the fixed logo, stays
+         constant) tied to raw window.scrollY rather than its own position,
+         since a stuck sticky element's getBoundingClientRect().top doesn't
+         move — it'd never see the shrink finish.
+         Mobile is untouched: see the mobile media query, which resets both
+         back to normal (non-pinned, non-shrinking) flow. -->
+    <div class="cp-header-pin">
+    <div class="cp-header">
+      <canvas id="contact-flame-canvas" aria-hidden="true"></canvas>
+      <div class="cp-header-content">
+        <h1 class="cp-title">Let's build<br>something<br><span class="cta-red">sharp.</span></h1>
+      </div>
+    </div>
+    </div>
+
+    <!-- ── Two-column grid ──────────────────────────────────────────── -->
+    <div class="cp-grid">
+
+      <!-- LEFT: brand info -->
+      <aside class="cp-info">
+        <div class="cp-info__body">
+          <p class="cp-info__label">Direct line</p>
+          <a href="mailto:hello@primetriskelion.com" class="cp-info__email">
+            hello@primetriskelion.com
+          </a>
+
+          <p class="cp-info__label">Location</p>
+          <p class="cp-info__val">London, UK</p>
+          <p class="cp-info__val cp-info__val--sub">Est. 2024</p>
+
+          <p class="cp-info__label">Availability</p>
+          <p class="cp-info__val">
+            <span class="cp-info__dot"></span>Open for new projects
+          </p>
+        </div>
+      </aside>
+
+      <!-- RIGHT: form -->
+      <div class="cp-form-col">
+        <form id="contact-form" class="cp-form" novalidate>
+
+          <div class="cp-row cp-row--2">
+            <div class="cp-field">
+              <label for="cf-name" class="cp-label">
+                Full Name <span class="cp-req" aria-hidden="true">*</span>
+              </label>
+              <input
+                type="text"
+                id="cf-name"
+                name="name"
+                placeholder="First &amp; Last Name"
+                autocomplete="name"
+                required
+              />
+            </div>
+
+            <div class="cp-field">
+              <label for="cf-company" class="cp-label">Company / Brand</label>
+              <input
+                type="text"
+                id="cf-company"
+                name="company"
+                placeholder="Your brand name"
+                autocomplete="organization"
+              />
+            </div>
+          </div>
+
+          <div class="cp-row cp-row--2">
+            <div class="cp-field">
+              <label for="cf-email" class="cp-label">
+                Email <span class="cp-req" aria-hidden="true">*</span>
+              </label>
+              <input
+                type="email"
+                id="cf-email"
+                name="email"
+                placeholder="hello@yourcompany.com"
+                autocomplete="email"
+                required
+              />
+            </div>
+
+            <div class="cp-field">
+              <label for="cf-phone" class="cp-label">Phone</label>
+              <input
+                type="tel"
+                id="cf-phone"
+                name="phone"
+                placeholder="+44 ··· ··· ····"
+                autocomplete="tel"
+              />
+            </div>
+          </div>
+
+          <div class="cp-row">
+            <div class="cp-field">
+              <label for="cf-service" class="cp-label">What do you need?</label>
+              <input
+                type="text"
+                id="cf-service"
+                name="service"
+                placeholder="Branding, Web Dev, 3D, Motion — or all of it"
+              />
+            </div>
+          </div>
+
+          <div class="cp-row">
+            <div class="cp-field">
+              <label for="cf-message" class="cp-label">
+                Tell me more <span class="cp-req" aria-hidden="true">*</span>
+              </label>
+              <textarea
+                id="cf-message"
+                name="message"
+                placeholder="Describe your project, goals, timeline…"
+                rows="5"
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- GDPR -->
+          <div class="cp-row">
+            <label class="cp-consent" for="cf-gdpr">
+              <input type="checkbox" id="cf-gdpr" name="gdpr" required />
+              <span class="cp-consent__box" aria-hidden="true"></span>
+              <span class="cp-consent__text">
+                I've read the privacy policy and consent to my data being stored
+                to receive information about Prime Triskelion services.
+              </span>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <div class="cp-row cp-row--submit">
+            <div class="h-hero-cta-wrap">
+              <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+              <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+              <button type="submit" class="h-hero-cta h-hero-cta--fixed" id="cf-submit-btn">
+                <span class="hud-spin-border"></span>
+                <span class="h-hero-cta__text">Send message</span>
+              </button>
+            </div>
+            <p class="cp-submit__note" id="cf-status" aria-live="polite"></p>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+</Layout>
+
+<style>
+  /* ── Page wrapper ──────────────────────────────────────────────────── */
+  #contact-page {
+    background: rgb(var(--c-bg));
+    min-height: 100svh;
+    padding-top: clamp(7rem, 14vw, 12rem);
+    padding-bottom: clamp(6rem, 12vw, 12rem);
+    padding-inline: var(--site-gutter, 2rem);
+  }
+  @media (min-width: 1025px) {
+    #contact-page { padding-right: clamp(5rem, 8vw, 9rem); }
+    /* .cp-header carries its own top padding on desktop (below), so don't
+       double it up with the page wrapper's — that stacking is what blew up
+       the hero on short/wide laptop screens (e.g. 1920×1080). */
+    #contact-page { padding-top: 0; }
+  }
+
+  /* ── Header ────────────────────────────────────────────────────────── */
+  .cp-header {
+    position: relative;
+    overflow: hidden;
+    /* vh-based, like every other page hero on the site — vw made this scale
+       with viewport width instead of height, so on wide-but-short laptop
+       screens it produced a huge empty top gap. */
+    padding: clamp(6rem, 12vh, 10rem) 0 clamp(4rem, 8vh, 6rem);
+  }
+  #contact-flame-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    opacity: 0.5;
+    pointer-events: none;
+    /* Same intersected masks as the CTA flame: a soft fade-in from the top
+       so the header's own boundary doesn't read as a hard cut, and a
+       fade-in from the left so the flame never shows behind the headline,
+       which sits in roughly the left 58%. */
+    mask-image:
+      linear-gradient(to bottom, transparent 0%, black 30%),
+      linear-gradient(to right, transparent 0%, transparent 58%, black 74%, black 100%);
+    mask-composite: intersect;
+    -webkit-mask-image:
+      linear-gradient(to bottom, transparent 0%, black 30%),
+      linear-gradient(to right, transparent 0%, transparent 58%, black 74%, black 100%);
+    -webkit-mask-composite: source-in;
+  }
+
+  /* ── Header shrink + pin (desktop only) ─────────────────────────────────
+     See the long comment in the markup above .cp-header-pin for why the
+     reserved space and the visual shrink are deliberately decoupled. */
+  @media (min-width: 1025px) {
+    .cp-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgb(var(--c-bg));
+      /* Bottom padding shrinks along with the title (top stays fixed —
+         it's clearing the fixed logo) so the collapsed header is
+         genuinely compact, not just smaller text floating in the same
+         tall box. */
+      padding-bottom: calc(clamp(4rem, 8vh, 6rem) * var(--cp-title-scale, 1));
+    }
+    .cp-header-content .cp-title {
+      font-size: calc(clamp(3.5rem, 10vw, 13rem) * var(--cp-title-scale, 1));
+    }
+  }
+
+  @media (max-width: 1024px) {
+    /* Title runs full-width on mobile/tablet, so there's no clear column
+       for the flame to sit beside without crossing the text. Instead of
+       hiding it, dial it down to a faint full-width ambient glow (top/bottom
+       fade only, no left/right mask) — too dim to compete with the text. */
+    #contact-flame-canvas {
+      opacity: 0.16;
+      mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
+      mask-composite: intersect;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
+      -webkit-mask-composite: source-in;
+    }
+  }
+  .cp-title {
+    position: relative;
+    z-index: 1;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3.5rem, 10vw, 13rem);
+    line-height: 0.88;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+    margin: 0;
+    opacity: 0;
+    filter: blur(20px);
+    transition: opacity 0.9s ease 0.1s, filter 1.1s cubic-bezier(0.16,1,0.3,1) 0.1s;
+  }
+  .cp-title.is-visible { opacity: 1; filter: blur(0); }
+
+  /* ── Two-column grid ───────────────────────────────────────────────── */
+  .cp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: clamp(3rem, 6vw, 8rem);
+    align-items: start;
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(8px);
+    transition: opacity 0.8s ease 0.35s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.35s, filter 0.9s ease 0.35s;
+  }
+  .cp-grid.is-visible { opacity: 1; transform: none; filter: blur(0); }
+
+  /* ── Left: info column ─────────────────────────────────────────────── */
+  .cp-info {
+    position: sticky;
+    top: 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+  .cp-info__body {
+    display: flex;
+    flex-direction: column;
+  }
+  .cp-info__label {
+    font-family: var(--f-body);
+    font-size: 10px;
+    letter-spacing: 0.42em;
+    text-transform: uppercase;
+    color: rgb(var(--c-red) / 0.75);
+    margin: 2rem 0 0.7rem;
+  }
+  .cp-info__label:first-child { margin-top: 0; }
+  .cp-info__email {
+    font-family: var(--f-body);
+    font-size: clamp(1rem, 1.3vw, 1.25rem);
+    font-weight: 300;
+    letter-spacing: 0.01em;
+    color: rgb(var(--c-cream) / 0.88);
+    text-decoration: none;
+    transition: color 0.25s ease;
+  }
+  .cp-info__email:hover { color: rgb(var(--c-cream)); }
+  .cp-info__val {
+    font-family: var(--f-body);
+    font-size: clamp(1rem, 1.3vw, 1.2rem);
+    font-weight: 300;
+    color: rgb(var(--c-cream) / 0.75);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .cp-info__val--sub {
+    font-size: clamp(0.82rem, 1vw, 0.95rem);
+    color: rgb(var(--c-cream) / 0.38);
+    margin-top: 0.3rem;
+  }
+  .cp-info__dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgb(74, 222, 128);
+    flex-shrink: 0;
+    animation: dot-pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+  }
+
+  /* ── Form ──────────────────────────────────────────────────────────── */
+  .cp-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .cp-row { display: flex; flex-direction: column; gap: 1rem; }
+  .cp-row--2 { flex-direction: row; gap: 1rem; }
+  .cp-row--2 .cp-field { flex: 1 1 0; min-width: 0; }
+  .cp-row--submit {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+  }
+  #cf-submit-btn { font-size: 1rem; padding: 0.95rem 1.4rem; }
+
+  .cp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .cp-label {
+    font-family: var(--f-body);
+    font-size: 9px;
+    font-weight: 400;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.45);
+  }
+  .cp-req { color: rgb(var(--c-red)); }
+
+  /* Inputs & textarea */
+  .cp-form input[type="text"],
+  .cp-form input[type="email"],
+  .cp-form input[type="tel"],
+  .cp-form input[type="url"],
+  .cp-form textarea {
+    width: 100%;
+    background: rgb(var(--c-cream) / 0.04);
+    border: 1px solid rgb(var(--c-cream) / 0.1);
+    border-radius: 0;
+    padding: 0.65rem 0.9rem;
+    font-family: var(--f-body);
+    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    font-weight: 300;
+    color: rgb(var(--c-cream));
+    outline: none;
+    transition: background 0.25s ease, border-color 0.25s ease;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .cp-form input::placeholder,
+  .cp-form textarea::placeholder {
+    color: rgb(var(--c-cream) / 0.22);
+  }
+  .cp-form input:focus,
+  .cp-form textarea:focus {
+    background: rgb(var(--c-cream) / 0.07);
+    border-color: rgb(var(--c-cream) / 0.28);
+  }
+  .cp-form input.is-invalid,
+  .cp-form textarea.is-invalid {
+    border-color: rgb(var(--c-red) / 0.6);
+  }
+  .cp-form textarea {
+    resize: vertical;
+    min-height: 85px;
+  }
+
+  /* Consent checkbox */
+  .cp-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+  }
+  .cp-consent input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .cp-consent__box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    border: 1px solid rgb(var(--c-cream) / 0.2);
+    background: transparent;
+    transition: border-color 0.25s ease, background 0.25s ease;
+  }
+  .cp-consent__box::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: rgb(var(--c-red));
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .cp-consent input:checked ~ .cp-consent__box {
+    border-color: rgb(var(--c-red) / 0.6);
+  }
+  .cp-consent input:checked ~ .cp-consent__box::after {
+    opacity: 1;
+  }
+  .cp-consent__text {
+    font-family: var(--f-body);
+    font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--c-cream) / 0.35);
+  }
+
+  .cp-submit__note {
+    font-family: var(--f-body);
+    font-size: 0.78rem;
+    font-weight: 300;
+    color: rgb(var(--c-cream) / 0.4);
+    margin: 0;
+  }
+  .cp-submit__note--ok  { color: rgba(74, 222, 128, 0.85); }
+  .cp-submit__note--err { color: rgb(var(--c-red) / 0.85); }
+
+  /* ── Responsive ────────────────────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    .cp-header {
+      /* Keep real padding here (matching CtaSection's mobile scale) instead
+         of zeroing it out — the flame canvas is still visible at 0.16
+         opacity on mobile, and collapsing this to padding:0 starved it of
+         vertical room, squashing its shape into a flat sliver that didn't
+         match the flame's appearance on every other page's CTA section. */
+      padding: clamp(4rem, 14vw, 8rem) 0 clamp(3rem, 10vw, 6rem);
+      margin-bottom: clamp(4rem, 8vw, 8rem);
+    }
+    .cp-grid {
+      grid-template-columns: 1fr;
+      gap: clamp(3rem, 8vw, 5rem);
+    }
+    .cp-info {
+      position: static;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    .cp-info__body { flex: 1 1 240px; }
+
+    /* Form density above is tightened for desktop, where the header-shrink
+       mechanic wants the whole form to fit on screen right after it
+       collapses. Mobile scrolls normally regardless, so keep it at its
+       original, more comfortable spacing. */
+    .cp-form { gap: 1.5rem; }
+    .cp-row { gap: 1.5rem; }
+    .cp-row--2 { gap: 1.25rem; }
+    .cp-row--submit { margin-top: 0.5rem; }
+    .cp-field { gap: 0.55rem; }
+    .cp-form input[type="text"],
+    .cp-form input[type="email"],
+    .cp-form input[type="tel"],
+    .cp-form input[type="url"],
+    .cp-form textarea {
+      padding: 0.9rem 1rem;
+    }
+    .cp-form textarea { min-height: 130px; }
+    #cf-submit-btn { padding: 1.15rem 1.5rem; }
+  }
+
+  @media (max-width: 640px) {
+    .cp-row--2 { flex-direction: column; }
+    .cp-row--submit { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+
+<script>
+  import { onReady } from '../utils/onReady';
+  import { sendContactEmail } from '../utils/sendContactEmail';
+  import { initFlameCanvas } from '../utils/flameCanvas';
+
+  function initContactFlame() {
+    const canvas = document.getElementById('contact-flame-canvas') as HTMLCanvasElement | null;
+    const header = document.querySelector<HTMLElement>('.cp-header');
+    if (!canvas || !header) return;
+    initFlameCanvas(canvas, header);
+  }
+
+  let _shrinkCleanup: (() => void) | null = null;
+
+  // Shrinks the header (via --cp-title-scale, consumed by .cp-header-content
+  // in <style> above) tied to raw scroll position — .cp-header is sticky
+  // and pinned at top:0 (see its desktop rule in <style>), so it stays on
+  // screen the whole time, shrinking quickly and then staying small.
+  // Desktop only; mobile never pins or shrinks the header.
+  function initContactShrink() {
+    _shrinkCleanup?.();
+    _shrinkCleanup = null;
+
+    if (window.matchMedia('(max-width: 1024px)').matches) return;
+
+    const pinWrap = document.querySelector<HTMLElement>('.cp-header-pin');
+    const header = document.querySelector<HTMLElement>('.cp-header');
+    const page = document.getElementById('contact-page');
+    if (!pinWrap || !header || !page) return;
+
+    // A contact page is high-intent — the shrink should read as quick and
+    // get out of the way, not as a scroll story to sit through.
+    const MIN_SCALE = 0.4;
+    // How much scroll it takes to fully shrink, as a fraction of one
+    // viewport height — a short runway means one quick flick of the wheel
+    // gets straight past the collapsing hero.
+    const RUNWAY_FRAC = 0.15;
+
+    // .cp-header-pin reserves the header's full (unshrunk) height as a
+    // constant, regardless of how far it's currently shrunk — see the long
+    // comment in the markup above .cp-header-pin for why. Re-measured on
+    // resize and once webfonts are actually in (font-display: swap can
+    // make the very first measurement land on the fallback font, which is
+    // narrower/shorter).
+    function measurePinHeight() {
+      page!.style.setProperty('--cp-title-scale', '1');
+      pinWrap!.style.height = `${header!.offsetHeight}px`;
+    }
+    measurePinHeight();
+    window.addEventListener('resize', measurePinHeight);
+    document.fonts?.ready?.then(measurePinHeight).catch(() => {});
+
+    function update() {
+      // .cp-header is sticky and pinned essentially from the first pixel
+      // of scroll, so its own getBoundingClientRect().top stays put at ~0
+      // once stuck — it can't tell us how far the page has actually
+      // scrolled. Raw scrollY can, since the header sticks right at the
+      // very top of the page.
+      const runway = Math.max(1, window.innerHeight * RUNWAY_FRAC);
+      const scrolled = Math.max(0, Math.min(runway, window.scrollY));
+      const progress = scrolled / runway;
+      const scale = 1 - progress * (1 - MIN_SCALE);
+      page!.style.setProperty('--cp-title-scale', String(scale));
+    }
+
+    // 'scroll' can fire multiple times per animation frame during a fast
+    // flick — batching the write down to once per frame avoids forcing a
+    // layout recalculation more often than the browser can actually paint.
+    let rafId = 0;
+    function onScroll() {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => { rafId = 0; update(); });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+
+    _shrinkCleanup = () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', update);
+      window.removeEventListener('resize', measurePinHeight);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }
+
+  function initContact() {
+    const page = document.getElementById('contact-page');
+    if (!page) return;
+
+    // ── Entrance animations ────────────────────────────────────────────
+    const title  = page.querySelector('.cp-title')  as HTMLElement | null;
+    const grid   = page.querySelector('.cp-grid')   as HTMLElement | null;
+
+    requestAnimationFrame(() => {
+      if (title)  setTimeout(() => title.classList.add('is-visible'),  80);
+      if (grid)   setTimeout(() => grid.classList.add('is-visible'),   220);
+    });
+
+    // ── Form validation & submission ───────────────────────────────────
+    const form   = document.getElementById('contact-form')  as HTMLFormElement | null;
+    const status = document.getElementById('cf-status')     as HTMLElement | null;
+
+    if (!form) return;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      // Clear previous errors
+      form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      if (status) { status.textContent = ''; status.className = 'cp-submit__note'; }
+
+      // Basic validation
+      let ok = true;
+      const required = form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]');
+      required.forEach(el => {
+        if (!el.value.trim() && el.type !== 'checkbox') { el.classList.add('is-invalid'); ok = false; }
+        if (el.type === 'checkbox' && !(el as HTMLInputElement).checked) { ok = false; }
+      });
+
+      if (!ok) {
+        if (status) { status.textContent = 'Please fill in all required fields.'; status.classList.add('cp-submit__note--err'); }
+        return;
+      }
+
+      const btn = document.getElementById('cf-submit-btn') as HTMLButtonElement | null;
+      if (btn) btn.disabled = true;
+
+      const data = new FormData(form);
+      const sent = await sendContactEmail({
+        name: String(data.get('name') || ''),
+        email: String(data.get('email') || ''),
+        message: String(data.get('message') || ''),
+        company: String(data.get('company') || '') || undefined,
+        phone: String(data.get('phone') || '') || undefined,
+        service: String(data.get('service') || '') || undefined,
+      });
+
+      if (sent) {
+        if (status) { status.textContent = 'Message sent — I\'ll be in touch soon.'; status.classList.add('cp-submit__note--ok'); }
+        form.reset();
+      } else {
+        if (status) { status.textContent = 'Something went wrong. Please email me directly.'; status.classList.add('cp-submit__note--err'); }
+      }
+      if (btn) btn.disabled = false;
+    });
+  }
+
+  onReady(initContact);
+  onReady(initContactShrink);
+  document.addEventListener('astro:page-load', initContactFlame);
+  document.addEventListener('astro:before-swap', () => {
+    _shrinkCleanup?.();
+    _shrinkCleanup = null;
+  });
+</script>

@@ -1,0 +1,78 @@
+<!-- ═══════ MARQUEE ═══════ -->
+<div class="marquee-section" aria-hidden="true">
+	<div class="marquee-row">
+		<div class="marquee-track marquee-track--fwd">
+			<span class="marquee-item">DESIGN</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">BUILD</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">DELIVER</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">PRIME TRISKELION</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">DESIGN</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">BUILD</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">DELIVER</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">PRIME TRISKELION</span><span class="marquee-sep">·</span>
+		</div>
+	</div>
+	<div class="marquee-row">
+		<div class="marquee-track marquee-track--rev">
+			<span class="marquee-item">BRANDING</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">MOTION</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">STRATEGY</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">PERFORMANCE</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">BRANDING</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">MOTION</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">STRATEGY</span><span class="marquee-sep">·</span>
+			<span class="marquee-item">PERFORMANCE</span><span class="marquee-sep">·</span>
+		</div>
+	</div>
+</div>
+
+<style>
+	.marquee-section {
+		overflow: hidden;
+		padding: clamp(2.5rem, 5vh, 4rem) 0;
+		background: rgb(var(--c-bg));
+		position: relative;
+		z-index: 44;
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+	}
+	.marquee-row { overflow: hidden; }
+	.marquee-track {
+		display: flex;
+		width: max-content;
+		align-items: center;
+	}
+	.marquee-track--fwd { animation: marquee-fwd 32s linear infinite; }
+	.marquee-track--rev { animation: marquee-rev 28s linear infinite; }
+	.marquee-item {
+		font-family: var(--f-display);
+		font-weight: 700;
+		font-size: clamp(4.5rem, 10.5vw, 10rem);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: rgb(var(--c-cream) / 0.05);
+		white-space: nowrap;
+		line-height: 1;
+		user-select: none;
+	}
+	.marquee-sep {
+		font-family: var(--f-display);
+		font-size: clamp(1rem, 2vw, 2rem);
+		color: rgb(var(--c-red) / 0.18);
+		padding: 0 clamp(1rem, 2vw, 2rem);
+		user-select: none;
+		line-height: 1;
+	}
+	@keyframes marquee-fwd {
+		from { transform: translateX(0); }
+		to   { transform: translateX(-50%); }
+	}
+	@keyframes marquee-rev {
+		from { transform: translateX(-50%); }
+		to   { transform: translateX(0); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.marquee-track { animation: none; }
+	}
+</style>

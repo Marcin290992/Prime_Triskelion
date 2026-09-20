@@ -1,0 +1,83 @@
+---
+/**
+ * TopBarCta — fixed top-right "Start a project" button, revealed once the
+ * page is scrolled. Skips itself on the home page, where HeroSection renders
+ * its own equivalent nav CTA (#hero-nav-cta-wrap).
+ */
+---
+
+<div class="site-cta-wrap h-hero-cta-wrap" id="site-cta-wrap">
+	<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+	<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+	<a href="/contact" class="h-hero-cta site-cta nav-cta h-hero-cta--fixed">
+		<span class="hud-spin-border"></span>
+		<span class="h-hero-cta__text">Start a project</span>
+	</a>
+</div>
+
+<style>
+	.site-cta-wrap {
+		position: fixed;
+		top: clamp(0.85rem, 1.6vw, 1.35rem);
+		right: clamp(1rem, 1.9vw, 1.8rem);
+		z-index: 1002;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateY(-8px);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+	}
+	.site-cta-wrap.site-cta--visible {
+		pointer-events: all;
+		opacity: 1;
+		transform: translateY(0);
+	}
+	/* Button appearance/sizing is the shared .nav-cta + .h-hero-cta--fixed
+	   (global.css) — identical to the home hero's nav CTA. */
+
+	@media (max-width: 1024px) {
+		.site-cta-wrap { display: none; }
+	}
+</style>
+
+<script>
+	function initSiteCta() {
+		const wrap = document.getElementById('site-cta-wrap');
+		if (!wrap) return;
+
+		// Home page: HeroSection owns its own nav CTA — keep this one hidden.
+		if (document.getElementById('hero')) {
+			wrap.classList.remove('site-cta--visible');
+			return;
+		}
+
+		function update() {
+			const scrollY = window.scrollY || window.pageYOffset;
+			wrap!.classList.toggle('site-cta--visible', scrollY > window.innerHeight * 0.8);
+		}
+
+		let ticking = false;
+		function onScroll() {
+			if (!ticking) {
+				requestAnimationFrame(() => {
+					update();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		}
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+		update();
+
+		document.addEventListener('astro:before-swap', () => {
+			window.removeEventListener('scroll', onScroll);
+		}, { once: true });
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initSiteCta);
+	} else {
+		initSiteCta();
+	}
+	document.addEventListener('astro:page-load', initSiteCta);
+</script>

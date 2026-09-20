@@ -1,0 +1,900 @@
+<!-- ═══════ HERO 100vh ═══════ -->
+<section id="hero" class="relative overflow-hidden" style="height:100vh;height:100lvh;height:calc(var(--app-stable-vh) * 100);min-height:100vh;min-height:100lvh;min-height:calc(var(--app-stable-vh) * 100);opacity:0">
+	<canvas id="rays-canvas"></canvas>
+	<div class="hero-vignette" aria-hidden="true"></div>
+	<div class="relative h-full hero-grid" style="z-index:100">
+
+		<!-- TOP / NAV -->
+		<div class="hero-nav" id="hero-nav"></div>
+
+		<!-- CENTER -->
+		<div class="hero-stage">
+			<div class="hero-center">
+				<p class="hero-kicker">ONE-PERSON DESIGN STUDIO</p>
+				<p class="h-hero-claim text-[2.2rem] sm:text-[2.8rem] md:text-[4.25rem] lg:text-[92px] mt-16 sm:mt-10 md:mt-6 lg:mt-6"><span class="h-hero-claim__line">I BUILD FOR</span><span class="h-hero-claim__line h-hero-claim__line--word"><span class="h-hero-word-wrap"><span class="h-hero-word" id="hero-dynamic-word">MOMENTUM</span></span></span></p>
+				<p class="h-hero-sub">I design and build digital experiences that help ambitious brands move faster.</p>
+				<div class="hero-cta-row">
+					<div class="h-hero-cta-wrap mt-6 lg:mt-8" id="hero-main-cta-wrap">
+						<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+						<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+						<a href="/contact" class="h-hero-cta h-hero-cta--fixed" id="hero-main-cta">
+							<span class="hud-spin-border"></span>
+							<span class="h-hero-cta__text">Start a project</span>
+						</a>
+					</div>
+				</div>
+				<div class="hero-bottom__stats hero-inline-stats" aria-label="Key performance metrics">
+					<span class="hero-bottom__stat"><strong>5.0</strong><em>G2 REVIEWS</em></span>
+					<span class="hero-bottom__sep" aria-hidden="true">•</span>
+					<span class="hero-bottom__stat"><strong>7.5M+</strong><em>USERS REACHED</em></span>
+					<span class="hero-bottom__sep" aria-hidden="true">•</span>
+					<span class="hero-bottom__stat"><strong>100</strong><em>PAGESPEED SCORE</em></span>
+				</div>
+			</div>
+		</div>
+
+		<div class="hero-bottom" id="hero-bottom"></div>
+	</div>
+</section>
+
+<!-- CTA — top right, desktop only, reveals once the hero scrolls out of view.
+     Fixed at the page level (not inside #hero) so it stays put while scrolling. -->
+<div class="hero-nav-cta-wrap h-hero-cta-wrap" id="hero-nav-cta-wrap">
+	<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+	<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+	<a href="/contact" class="h-hero-cta hero-nav-cta nav-cta h-hero-cta--fixed">
+		<span class="hud-spin-border"></span>
+		<span class="h-hero-cta__text">Start a project</span>
+	</a>
+</div>
+
+<style>
+	/* ── Grid layout ── */
+	.hero-grid {
+		display: grid;
+		grid-template-rows: auto 1fr auto;
+		padding: clamp(1.2rem, 3vw, 2.25rem) var(--site-gutter) clamp(1.2rem, 2.8vw, 2.4rem);
+		width: min(100%, var(--site-max-width));
+		margin-inline: auto;
+		box-sizing: border-box;
+		position: relative;
+	}
+	.hero-grid::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: none;
+		z-index: -1;
+	}
+
+	/* ── Nav ── */
+	.hero-nav {
+		grid-row: 1;
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		overflow: hidden;
+		min-height: 46px;
+	}
+
+	/* CTA — fixed top-right, hidden until scrolled past the hero, desktop only */
+	.hero-nav-cta-wrap {
+		position: fixed;
+		top: clamp(0.85rem, 1.6vw, 1.35rem);
+		right: clamp(1rem, 1.9vw, 1.8rem);
+		z-index: 1002;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateY(-8px);
+		transition: opacity 0.4s ease, transform 0.4s ease;
+	}
+	.hero-nav-cta-wrap.hero-nav-cta--visible {
+		pointer-events: all;
+		opacity: 1;
+		transform: translateY(0);
+	}
+	/* Button appearance/sizing is the shared .nav-cta + .h-hero-cta--fixed
+	   (global.css); TopBarCta on every other page uses the same pair. */
+	@media (max-width: 1024px) {
+		.hero-nav-cta-wrap { display: none; }
+	}
+	/* ── Hero stage centered ── */
+	.hero-stage {
+		grid-row: 2;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		min-height: 0;
+		width: 100%;
+		margin-inline: auto;
+	}
+
+	/* ── Center ── */
+	.hero-center {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		text-align: center;
+		position: relative;
+		padding-top: clamp(2rem, 5vh, 4rem);
+		padding-bottom: clamp(1rem, 3vh, 2.25rem);
+		max-width: 720px;
+		width: 100%;
+		z-index: 2;
+	}
+
+	/* ── Hero kicker / claim / sub ── */
+	.hero-kicker {
+		display: block;
+		margin: 1.7rem 0 0;
+		font-family: var(--f-body);
+		font-size: 0.68rem;
+		font-weight: 500;
+		letter-spacing: 0.14em;
+		color: rgb(var(--c-cream) / 0.58);
+		text-transform: uppercase;
+		line-height: 1;
+		text-align: center;
+	}
+
+	.h-hero-claim {
+		position: relative;
+		z-index: 31;
+		margin: 0;
+		font-family: var(--f-display);
+		font-weight: 700;
+		line-height: 0.9;
+		letter-spacing: -0.01em;
+		text-transform: uppercase;
+		color: #e4e4e4;
+		text-align: left;
+	}
+	.h-hero-claim__line { display: block; }
+	.h-hero-claim__line:first-child { white-space: nowrap; }
+	.h-hero-claim__line--word { color: #FF3E1E; }
+
+	.h-hero-sub {
+		margin: 1.25rem 0 0;
+		max-width: 38ch;
+		font-family: var(--f-body);
+		font-size: clamp(0.98rem, 1.4vw, 1.4rem);
+		font-weight: 400;
+		line-height: 1.45;
+		color: rgb(var(--c-cream) / 0.88);
+		text-align: center;
+	}
+
+	/* ── CTA row ── */
+	.hero-cta-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		flex-wrap: wrap;
+	}
+
+	/* ── Animated word ── */
+	.h-hero-word-wrap {
+		display: inline-flex;
+		justify-content: flex-start;
+		min-width: 6ch;
+	}
+	.h-hero-word {
+		display: inline-block;
+		white-space: nowrap;
+	}
+	.h-hero-word span {
+		display: inline-block;
+		will-change: opacity, filter;
+	}
+
+	/* ── Bottom bar ── */
+	.hero-bottom {
+		grid-row: 3;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 1rem;
+		overflow: hidden;
+		padding-bottom: clamp(0.6rem, 1.8vh, 1.35rem);
+		transform: translateY(100%);
+		opacity: 0;
+		transition: transform 0.6s cubic-bezier(0.16,1,0.3,1), opacity 0.6s ease;
+	}
+	.hero-bottom.visible { transform: translateY(0); opacity: 1; }
+
+	.hero-bottom__stats {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.62rem 1rem;
+		border-radius: 0;
+		border: 1px solid rgb(var(--c-cream) / 0.18);
+		background: rgba(4, 6, 10, 0.7);
+		box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+	}
+	.hero-inline-stats {
+		margin-top: clamp(2.5rem, 5vh, 4rem);
+		align-self: center;
+	}
+	.hero-bottom__stat {
+		font-family: var(--f-body);
+		font-size: 10px;
+		font-weight: 500;
+		letter-spacing: 0.06em;
+		color: rgb(var(--c-cream) / 0.66);
+		text-transform: uppercase;
+	}
+	.hero-bottom__stat strong {
+		font-size: 1rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		color: rgb(var(--c-cream) / 0.96);
+		margin-right: 0.28rem;
+	}
+	.hero-bottom__stat em { font-style: normal; }
+	.hero-bottom__sep { opacity: 0.38; font-size: 11px; }
+
+	/* ── Rays canvas ── */
+	#rays-canvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+		z-index: 1;
+		opacity: 0;
+		
+	}
+
+	/* ── Vignette ── */
+	.hero-vignette {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		pointer-events: none;
+		background: radial-gradient(ellipse 85% 65% at 50% 42%, transparent 0%, rgb(var(--c-bg) / 0.52) 62%, rgb(var(--c-bg) / 0.96) 100%);
+	}
+
+	/* ── Bottom fade ── */
+	#hero::before {
+		content: '';
+		position: absolute;
+		bottom: -2px;
+		left: 0;
+		right: 0;
+		height: clamp(200px, 35vh, 420px);
+		z-index: 3;
+		pointer-events: none;
+		background: linear-gradient(to bottom, transparent 0%, rgb(var(--c-bg) / 0.4) 35%, rgb(var(--c-bg) / 0.8) 65%, rgb(var(--c-bg)) 100%);
+	}
+
+	@media (min-width: 1025px) {
+		.h-hero-claim { font-size: clamp(5.75rem, 9.2vw, 9.5rem) !important; }
+		.hero-grid { padding-bottom: clamp(7rem, 11vh, 9rem); }
+	}
+
+	/* Short-viewport laptops (1080p/900p with browser chrome): the vertically
+	   centered hero content sits low enough to crowd the fixed bottom menu
+	   button (#ox-hud-mobile, ~54px tall at bottom: 1.5rem). Tighten the gaps
+	   below the CTA and reserve more bottom clearance so the stats ribbon keeps
+	   a clear gap above the menu button. */
+	@media (min-width: 1025px) and (max-height: 1000px) {
+		.hero-grid { padding-bottom: clamp(8.5rem, 13vh, 10.5rem); }
+		.hero-center { padding-bottom: clamp(0.5rem, 1.5vh, 1rem); }
+		.hero-inline-stats { margin-top: clamp(1.25rem, 2.5vh, 2rem); }
+	}
+
+	@media (max-width: 1024px) {
+		#hero {
+			overflow-x: clip;
+			height: calc(var(--app-stable-vh) * 100) !important;
+			min-height: calc(var(--app-stable-vh) * 94) !important;
+		}
+		.hero-grid {
+			height: 100%;
+			min-height: 0;
+			padding-top: clamp(5rem, 13vh, 7rem);
+			padding-bottom: clamp(2.5rem, 6vh, 4rem);
+		}
+		.hero-stage { height: 100%; min-height: 0; align-items: stretch; }
+		.hero-nav { display: none; }
+		.hero-center {
+			max-width: none;
+			width: 100%;
+			min-height: 0;
+			height: 100%;
+			align-items: center;
+			text-align: center;
+			justify-content: space-evenly;
+			padding-top: clamp(1.5rem, 4vh, 3rem);
+			padding-bottom: clamp(1.5rem, 4vh, 3rem);
+			z-index: 30;
+		}
+		.hero-kicker { margin-top: 0; font-size: 0.63rem; white-space: normal; }
+		.h-hero-claim { font-size: clamp(2.5rem, 9.5vw, 5rem) !important; line-height: 0.88; margin-top: 0 !important; }
+		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.03rem; color: rgb(var(--c-cream) / 0.78); overflow-wrap: anywhere; }
+		.hero-cta-row {
+			width: 100%;
+			max-width: 320px;
+			flex-direction: column;
+			gap: 0.55rem;
+			margin-top: 0;
+			position: relative;
+			z-index: 36;
+		}
+		.hero-bottom { margin-top: 1rem; padding-top: 1.1rem; align-items: stretch; }
+		.hero-inline-stats {
+			width: 100%;
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0.45rem;
+			border: none;
+			background: transparent;
+			padding: 0;
+			box-shadow: none;
+			overflow: visible;
+			white-space: normal;
+			margin-top: 0;
+			position: relative;
+			z-index: 36;
+		}
+		.hero-bottom__sep { display: none; }
+		.hero-bottom__stat {
+			display: grid;
+			grid-template-rows: auto auto;
+			justify-items: center;
+			align-items: center;
+			gap: 0.42rem;
+			padding: 0.45rem 0.2rem;
+			background: rgba(4, 8, 14, 0.52);
+			border: 1px solid rgb(var(--c-cream) / 0.18);
+		}
+		.hero-bottom__stat strong { margin-right: 0; font-size: 1.98rem; line-height: 1; letter-spacing: -0.02em; }
+		.hero-bottom__stat em { font-size: 0.56rem; letter-spacing: 0.11em; color: rgb(var(--c-cream) / 0.72); text-align: center; }
+	}
+
+	@media (max-width: 640px) {
+		.hero-grid { padding-inline: 0.9rem; padding-top: clamp(4.5rem, 12vh, 6.5rem); padding-bottom: clamp(2rem, 5vh, 3.5rem); }
+		.h-hero-sub { font-size: 1rem; }
+		.hero-cta-row { max-width: 340px; }
+		.hero-center { padding-bottom: max(0.3rem, env(safe-area-inset-bottom)); }
+		.hero-inline-stats { margin-top: 0.8rem; }
+		.hero-bottom__stat strong { font-size: 1.65rem; }
+		.hero-bottom__stat em { font-size: 0.51rem; }
+	}
+
+	@media (max-width: 420px) {
+		.hero-kicker { font-size: 0.56rem; letter-spacing: 0.1em; margin-top: 0; }
+		.h-hero-claim { font-size: clamp(3.2rem, 10vw, 4rem) !important; margin-top: 0 !important; }
+		.hero-center { padding-bottom: max(0.25rem, env(safe-area-inset-bottom)); }
+		.hero-cta-row { max-width: 300px; }
+		.hero-inline-stats { margin-top: 0.65rem; }
+		.hero-bottom__stat strong { font-size: 1.42rem; }
+		.hero-bottom__stat em { font-size: 0.47rem; }
+	}
+
+	@media (max-width: 900px) and (max-height: 760px) {
+		.hero-center { padding-bottom: max(0.2rem, env(safe-area-inset-bottom)); }
+		.hero-inline-stats { margin-top: 0.55rem; }
+	}
+
+	/* Size only — the "fixed" treatment itself (border beam, no red hover,
+	   no arrow, glare, hidden grad streaks) lives in .h-hero-cta--fixed
+	   (global.css) so it doesn't have to be re-declared per button. */
+	@media (min-width: 1025px) {
+		:global(#hero-main-cta) {
+			min-width: clamp(240px, 18vw, 320px);
+			padding-inline: 2rem;
+			font-size: 1rem;
+		}
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
+	gsap.registerPlugin(ScrollTrigger);
+
+	let _heroWordTimer: number | null = null;
+	let _heroParallaxST: any = null;
+	let _heroMobileRevealST: any[] = [];
+
+	function initHeroDynamicWord() {
+		const wordNode = document.getElementById('hero-dynamic-word') as HTMLElement;
+		if (!wordNode) return;
+
+		const words = ['OBSESSION', 'CLARITY', 'IMPACT'];
+		let currentIndex = 0;
+		let isAnimating = false;
+
+		if (_heroWordTimer !== null) {
+			window.clearInterval(_heroWordTimer);
+			_heroWordTimer = null;
+		}
+
+		const wrapEl = wordNode.closest<HTMLElement>('.h-hero-word-wrap');
+		if (wrapEl) {
+			const prevText = wordNode.textContent;
+			wordNode.textContent = 'OBSESSION';
+			const measuredW = wordNode.getBoundingClientRect().width;
+			wordNode.textContent = prevText;
+			if (measuredW > 0) wrapEl.style.width = measuredW + 'px';
+		}
+
+		function splitToSpans(word: string): HTMLSpanElement[] {
+			wordNode.innerHTML = '';
+			return word.split('').map(letter => {
+				const span = document.createElement('span');
+				span.textContent = letter;
+				wordNode.appendChild(span);
+				return span;
+			});
+		}
+
+		function playIn(spans: HTMLSpanElement[], onDone?: () => void): void {
+			gsap.fromTo(spans,
+				{ opacity: 0, filter: 'blur(18px)', y: () => gsap.utils.random(-14, 14) },
+				{ opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.4, ease: 'power4.out', stagger: { each: 0.1, from: 'random' }, onComplete: onDone }
+			);
+		}
+
+		function playOut(spans: HTMLSpanElement[], onComplete: () => void): void {
+			gsap.to(spans, {
+				opacity: 0, filter: 'blur(18px)', y: () => gsap.utils.random(-10, 10),
+				duration: 0.65, ease: 'power3.in', stagger: { each: 0.06, from: 'random' }, onComplete,
+			});
+		}
+
+		const initialSpans = splitToSpans(words[currentIndex]);
+		gsap.set(initialSpans, { opacity: 0, filter: 'blur(10px)' });
+		playIn(initialSpans);
+
+		_heroWordTimer = window.setInterval(() => {
+			if (isAnimating) return;
+			isAnimating = true;
+			const currentSpans = Array.from(wordNode.querySelectorAll<HTMLSpanElement>('span'));
+			playOut(currentSpans, () => {
+				currentIndex = (currentIndex + 1) % words.length;
+				const newSpans = splitToSpans(words[currentIndex]);
+				gsap.set(newSpans, { opacity: 0, filter: 'blur(10px)' });
+				playIn(newSpans, () => { isAnimating = false; });
+			});
+		}, 4200);
+
+		document.addEventListener('astro:before-swap', () => {
+			if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
+		}, { once: true });
+	}
+
+	function initHeroReveal() {
+		_heroParallaxST?.kill();
+		_heroParallaxST = null;
+		_heroMobileRevealST.forEach((st) => st?.kill?.());
+		_heroMobileRevealST = [];
+
+		const heroMotion = {
+			mobileBlur: 8, mobileY: 10, mobileDuration: 0.9, mobileDelayStep: 0.11,
+			baseBlur: 9, baseY: 8,
+			titleDur: 1.0, navDur: 1.0, claimDur: 1.1, ctaDur: 0.92, statsDur: 0.9, bottomDur: 0.9,
+			navAt: 0.2, claimAt: 0.42, hookAt: 0.42, ctaAt: 0.66, statsAt: 0.78, bottomAt: 0.86,
+		};
+
+		const hero = document.getElementById('hero') as HTMLElement | null;
+		if (!hero) return;
+
+		function runReveal() {
+			const title      = document.getElementById('h-title');
+			const claim      = document.querySelector('.h-hero-claim') as HTMLElement | null;
+			const cta        = document.getElementById('hero-main-cta');
+			const ctaWrap    = document.getElementById('hero-main-cta-wrap');
+			const inlineStats = document.querySelector('.hero-inline-stats') as HTMLElement | null;
+			const bottom     = document.getElementById('hero-bottom');
+			const isMobileReveal = window.matchMedia('(max-width: 1024px)').matches
+				|| navigator.maxTouchPoints > 0
+				|| window.matchMedia('(pointer: coarse)').matches;
+
+			// Baseline geometry for the logo's 3 arms — set unconditionally so the
+			// mark renders correctly (each arm at its 120°-apart resting rotation)
+			// on every path, including the mobile reveal below which never runs
+			// the desktop-only converge animation that would otherwise set this.
+			const logoArms = Array.from(document.querySelectorAll<SVGUseElement>('.h-logo-arm'));
+			gsap.set(logoArms, { svgOrigin: '500 577.259' });
+			gsap.set(logoArms[0], { rotation: 0 });
+			gsap.set(logoArms[1], { rotation: 120 });
+			gsap.set(logoArms[2], { rotation: 240 });
+
+			// Owned here (not by OxygenMenu's own showHeader) whenever a hero is present,
+			// so the menu button lands as the final beat of ONE sequence on both
+			// breakpoints instead of racing OxygenMenu's independent fade-in.
+			const hudMenu = document.getElementById('hud-menu-btn');
+
+			if (isMobileReveal) {
+				const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
+				const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
+				const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
+				const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
+				const mobileRevealEls = [kicker, claim, sub, ctaRow, inlineStats].filter((el): el is HTMLElement => !!el);
+
+				gsap.set(mobileRevealEls, { opacity: 0, filter: `blur(${heroMotion.mobileBlur}px)`, y: heroMotion.mobileY });
+				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
+				gsap.set(hudMenu, { opacity: 0, y: -8 });
+				gsap.set(logoArms, {
+					svgOrigin: '500 577.259',
+					scale: 0.35,
+					opacity: 0,
+					filter: 'blur(14px)',
+				});
+				gsap.set(logoArms[0], { rotation: -55 });
+				gsap.set(logoArms[1], { rotation: 65 });
+				gsap.set(logoArms[2], { rotation: 185 });
+				gsap.set(logoText, {
+					opacity: 0,
+					scale: 1.4,
+					filter: 'blur(16px)',
+					transformOrigin: '0% 50%',
+				});
+				gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
+				hero!.style.opacity = '1';
+
+				const mobileTl = gsap.timeline({
+					onComplete: () => {
+						(window as any).__ptHeroTextReady = true;
+						window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+					},
+				});
+
+				mobileTl.to(mobileRevealEls, {
+					opacity: 1,
+					filter: 'blur(0px)',
+					y: 0,
+					duration: heroMotion.mobileDuration,
+					stagger: heroMotion.mobileDelayStep,
+					ease: 'power3.out',
+				}, 0.15)
+				  .add(() => { initHeroDynamicWord(); }, 0.15)
+				  .to(logoText, {
+						opacity: 1,
+						scale: 1,
+						filter: 'blur(0px)',
+						duration: 0.85,
+						ease: 'power4.out',
+					}, 1.05)
+				  .to(logoArms, {
+						opacity: 1,
+						scale: 1,
+						filter: 'blur(0px)',
+						rotation: (i: number) => [0, 120, 240][i],
+						duration: 0.95,
+						ease: 'back.out(1.6)',
+						stagger: 0.08,
+					}, 1.95)
+				  .to('#rays-canvas', {
+						opacity: 1,
+						duration: 1.6,
+						ease: 'power2.inOut',
+					}, 1.2)
+				// Menu button — after the message (headline/sub/cta/stats) has landed, but
+				// not held hostage by the decorative logo spin — impatient users get a
+				// visible, clickable nav control well before the full ~3s reveal finishes.
+				// clearProps: 'opacity' once this lands — #hud-menu-btn carries
+				// transition:persist (OxygenMenu.astro), so without this the inline
+				// opacity:1 this tween leaves behind sticks around FOREVER on that
+				// same DOM node across every future navigation, permanently
+				// outranking oxygenMenu.ts's CSS-class-driven show/hide on scroll
+				// (inline style always beats a class rule) — the button would look
+				// stuck visible no matter what state.barHidden says.
+				  .to(hudMenu, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+
+				return;
+			}
+
+			const kicker   = document.querySelector('.hero-kicker') as HTMLElement | null;
+			const sub      = document.querySelector('.h-hero-sub')  as HTMLElement | null;
+			const hudLoc   = document.getElementById('hud-location');
+			const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
+
+			// Read geometry before the style-write batch below — querying
+			// offsetHeight after those writes would force a synchronous
+			// layout flush instead of letting the browser batch it normally.
+			const pastHero = (window.scrollY || window.pageYOffset) > hero!.offsetHeight * 0.3;
+
+			// UI shell — hidden until after content
+			gsap.set(title,    { opacity: 1 }); // container itself always visible — children below carry the reveal
+			gsap.set(hudMenu,  { opacity: 0, y: -8 });
+			gsap.set(hudLoc,   { opacity: 0, x: -20 });
+
+			// Logo mark — three arms scattered/blurred, about to spin into place;
+			// wordmark racked out of focus, about to snap sharp with the mark.
+			gsap.set(logoArms, {
+				svgOrigin: '500 577.259',
+				scale: 0.35,
+				opacity: 0,
+				filter: 'blur(14px)',
+			});
+			gsap.set(logoArms[0], { rotation: -55 });
+			gsap.set(logoArms[1], { rotation: 65 });
+			gsap.set(logoArms[2], { rotation: 185 });
+			gsap.set(logoText, {
+				opacity: 0,
+				scale: 1.4,
+				filter: 'blur(16px)',
+				transformOrigin: '0% 50%',
+			});
+
+			// Content
+			gsap.set(claim,          { opacity: 0, filter: 'blur(80px)', y: 50 });
+			gsap.set(kicker,         { opacity: 0, filter: 'blur(8px)' });
+			gsap.set(sub,            { opacity: 0, filter: 'blur(10px)', y: 20 });
+			gsap.set(ctaWrap ?? cta, { opacity: 0, filter: 'blur(8px)',  y: 14 });
+			gsap.set(inlineStats,    { opacity: 0, filter: 'blur(6px)' });
+			gsap.set(bottom,         { opacity: 0, filter: 'blur(4px)' });
+			hero!.style.opacity = '1';
+
+			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
+
+			const tl = gsap.timeline({
+				onComplete: () => {
+					(window as any).__ptHeroTextReady = true;
+					window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+				},
+			});
+
+			// 1. Treść
+			tl.to(claim,          { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.4,  ease: 'power4.out' }, 0.18)
+			  .add(() => { initHeroDynamicWord(); }, 0.18)
+			  .to(kicker,         { opacity: 1, filter: 'blur(0px)',       duration: 0.9,  ease: 'power2.out' }, 0.36)
+			  .to(sub,            { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.9,  ease: 'power3.out' }, 0.46)
+			  .to(ctaWrap ?? cta, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.85, ease: 'power3.out' }, 0.58)
+			  .to(inlineStats,    { opacity: 1, filter: 'blur(0px)',       duration: 0.8,  ease: 'power2.out' }, 0.70)
+			  .to(bottom,         { opacity: 1, filter: 'blur(0px)',       duration: 0.75, ease: 'power2.out' }, 0.78)
+			// 2. UI shell
+			  .to(hudLoc,              { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 1.05)
+			// Wordmark racks into focus first, then the mark spins/snaps into place after.
+			  .to(logoText, {
+					opacity: 1,
+					scale: 1,
+					filter: 'blur(0px)',
+					duration: 0.85,
+					ease: 'power4.out',
+				}, 1.05)
+			  .to(logoArms, {
+					opacity: 1,
+					scale: 1,
+					filter: 'blur(0px)',
+					rotation: (i: number) => [0, 120, 240][i],
+					duration: 0.95,
+					ease: 'back.out(1.6)',
+					stagger: 0.08,
+				}, 1.95)
+			// 3. Menu button — after the message has landed, ahead of the decorative
+			// logo spin, so impatient users get a visible, clickable nav control sooner.
+			// clearProps: 'opacity' — see the matching mobile-reveal tween above for why:
+			// #hud-menu-btn persists across navigations, so a leftover inline
+			// opacity:1 here would permanently beat oxygenMenu.ts's CSS-class-driven
+			// scroll show/hide on every future page.
+			  .to(hudMenu,             { opacity: 1, y: 0, duration: 0.6,  ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+
+			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 1.8, ease: 'power2.inOut' }, 1.2);
+		}
+
+		runReveal();
+	}
+
+	function initHeroNavCta() {
+		const wrap = document.getElementById('hero-nav-cta-wrap');
+		const hero = document.getElementById('hero');
+		if (!wrap || !hero) return;
+
+		function update() {
+			const scrollY = window.scrollY || window.pageYOffset;
+			wrap!.classList.toggle('hero-nav-cta--visible', scrollY > hero!.offsetHeight * 0.6);
+		}
+
+		let ticking = false;
+		function onScroll() {
+			if (!ticking) {
+				requestAnimationFrame(() => {
+					update();
+					ticking = false;
+				});
+				ticking = true;
+			}
+		}
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+		update();
+
+		document.addEventListener('astro:before-swap', () => {
+			window.removeEventListener('scroll', onScroll);
+		}, { once: true });
+	}
+
+	document.addEventListener('astro:page-load', () => { initHeroReveal(); initHeroNavCta(); });
+</script>
+
+<script>
+(function () {
+	function initRays() {
+		const canvas = document.getElementById('rays-canvas') as HTMLCanvasElement | null;
+		if (!canvas) return;
+		const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+		if (!gl) return;
+
+		const VERT = `attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
+		const highpOk = (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT)?.precision ?? 0) > 0;
+		const FRAG = `
+			precision ${highpOk ? 'highp' : 'mediump'} float;
+			uniform float iTime; uniform vec2 iResolution; uniform vec2 rayPos; uniform vec2 rayDir;
+			uniform vec3 raysColor; uniform float raysSpeed; uniform float lightSpread; uniform float rayLength;
+			uniform float pulsating; uniform float fadeDistance; uniform float saturation;
+			uniform vec2 mousePos; uniform float mouseInfluence; uniform float noiseAmount; uniform float distortion;
+
+			float noise(vec2 st) { return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123); }
+
+			float rayStrength(vec2 src, vec2 refDir, vec2 coord, float sA, float sB, float spd) {
+				vec2  s2c = coord - src;
+				float ca  = dot(normalize(s2c), refDir);
+				float da  = ca + distortion * sin(iTime * 2.0 + length(s2c) * 0.01) * 0.2;
+				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread, 0.001));
+				float d   = length(s2c);
+				float md  = iResolution.x * rayLength;
+				float lf  = clamp((md - d) / md, 0.0, 1.0);
+				float ff  = clamp((iResolution.x * fadeDistance - d) / (iResolution.x * fadeDistance), 0.5, 1.0);
+				float pulse = pulsating > 0.5 ? (0.8 + 0.2 * sin(iTime * spd * 3.0)) : 1.0;
+				float bs  = clamp(
+					(0.45 + 0.15 * sin(da * sA + iTime * spd)) +
+					(0.3  + 0.2  * cos(-da * sB + iTime * spd)),
+					0.0, 1.0);
+				return bs * lf * ff * sf * pulse;
+			}
+
+			void main() {
+				vec2 coord = vec2(gl_FragCoord.x, iResolution.y - gl_FragCoord.y);
+				vec2 fd = rayDir;
+				if (mouseInfluence > 0.0) {
+					vec2 md = normalize(mousePos * iResolution.xy - rayPos);
+					fd = normalize(mix(rayDir, md, mouseInfluence));
+				}
+				vec4 r1 = vec4(1.0) * rayStrength(rayPos, fd, coord, 36.2214, 21.11349, 1.5 * raysSpeed);
+				vec4 r2 = vec4(1.0) * rayStrength(rayPos, fd, coord, 22.3991, 18.0234,  1.1 * raysSpeed);
+				vec4 fc = r1 * 0.5 + r2 * 0.4;
+
+				if (noiseAmount > 0.0) {
+					float n = noise(coord * 0.01 + iTime * 0.1);
+					fc.rgb *= (1.0 - noiseAmount + noiseAmount * n);
+				}
+
+				float br = 1.0 - (coord.y / iResolution.y);
+				fc.x *= 0.1 + br * 0.8; fc.y *= 0.3 + br * 0.6; fc.z *= 0.5 + br * 0.5;
+
+				if (saturation != 1.0) {
+					float g = dot(fc.rgb, vec3(0.299, 0.587, 0.114));
+					fc.rgb  = mix(vec3(g), fc.rgb, saturation);
+				}
+				fc.rgb *= raysColor;
+				gl_FragColor = fc;
+			}
+		`;
+
+		function compile(type: number, src: string) {
+			const s = gl!.createShader(type)!;
+			gl!.shaderSource(s, src);
+			gl!.compileShader(s);
+			return s;
+		}
+
+		const prog = gl.createProgram()!;
+		gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
+		gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
+		gl.linkProgram(prog);
+		gl.useProgram(prog);
+
+		const buf = gl.createBuffer();
+		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
+		const aPos = gl.getAttribLocation(prog, 'a_pos');
+		gl.enableVertexAttribArray(aPos);
+		gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
+		const U: Record<string, WebGLUniformLocation | null> = {};
+		uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
+
+		const isMobileDevice = window.matchMedia('(pointer: coarse)').matches;
+		const CFG = { color: new Float32Array([1.0, 1.0, 1.0]), speed: 1.0, spread: 0.5, length: 2.0, pulsating: 0.0, fadeDistance: 1.0, saturation: 1.0, mouseInfluence: isMobileDevice ? 0.0 : 0.12, noise: 0.0, distortion: 0.0 };
+		const TARGET_FRAME_MS = isMobileDevice ? 1000 / 24 : 0;
+
+		const mouse = { x: 0.5, y: 0.5 };
+		const smooth = { x: 0.5, y: 0.5 };
+		let rafId = 0;
+		let W = 0, H = 0;
+
+		function onMouseMove(e: MouseEvent) { const r = canvas!.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width; mouse.y = (e.clientY - r.top) / r.height; }
+		function onTouchMove(e: TouchEvent) { const t = e.touches[0]; const r = canvas!.getBoundingClientRect(); mouse.x = (t.clientX - r.left) / r.width; mouse.y = (t.clientY - r.top) / r.height; }
+
+		window.addEventListener('mousemove', onMouseMove as EventListener);
+		window.addEventListener('touchmove', onTouchMove as EventListener, { passive: true });
+
+		function resize() {
+			const dpr = Math.min(devicePixelRatio, 2);
+			W = canvas!.offsetWidth * dpr; H = canvas!.offsetHeight * dpr;
+			canvas!.width = W; canvas!.height = H;
+			gl!.viewport(0, 0, W, H);
+		}
+		function onResize() {
+			// Na mobile URL bar chowając się zmienia tylko wysokość — ignorujemy height-only resize
+			// żeby uniknąć resetu WebGL context przy pierwszym scrollu
+			if (canvas!.offsetWidth * devicePixelRatio === W) return;
+			resize();
+		}
+		window.addEventListener('resize', onResize, { passive: true });
+		resize();
+
+		let lastFrameTime = 0;
+		function loop(ts: number) {
+			if (TARGET_FRAME_MS > 0 && ts - lastFrameTime < TARGET_FRAME_MS) {
+				rafId = requestAnimationFrame(loop);
+				return;
+			}
+			lastFrameTime = ts;
+			const t = ts * 0.001;
+			smooth.x = smooth.x * 0.92 + mouse.x * 0.08;
+			smooth.y = smooth.y * 0.92 + mouse.y * 0.08;
+			gl!.uniform1f(U.iTime, t);
+			gl!.uniform2f(U.iResolution, W, H);
+			gl!.uniform2f(U.rayPos, W * 0.5, -H * 0.18);
+			gl!.uniform2f(U.rayDir, 0.0, 1.0);
+			gl!.uniform3fv(U.raysColor, CFG.color);
+			gl!.uniform1f(U.raysSpeed, CFG.speed);
+			gl!.uniform1f(U.lightSpread, CFG.spread);
+			gl!.uniform1f(U.rayLength, CFG.length);
+			gl!.uniform1f(U.pulsating, CFG.pulsating);
+			gl!.uniform1f(U.fadeDistance, CFG.fadeDistance);
+			gl!.uniform1f(U.saturation, CFG.saturation);
+			gl!.uniform2f(U.mousePos, smooth.x, smooth.y);
+			gl!.uniform1f(U.mouseInfluence, CFG.mouseInfluence);
+			gl!.uniform1f(U.noiseAmount, CFG.noise);
+			gl!.uniform1f(U.distortion, CFG.distortion);
+			gl!.drawArrays(gl!.TRIANGLES, 0, 6);
+			rafId = requestAnimationFrame(loop);
+		}
+
+		let isHeroVisible = true;
+		const heroSectionEl = document.getElementById('hero');
+		let heroIO: IntersectionObserver | null = null;
+
+		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
+		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
+
+		function onVisibilityChange() { document.hidden ? stopRaysAnimation() : startRaysAnimation(); }
+		document.addEventListener('visibilitychange', onVisibilityChange);
+
+		if (heroSectionEl) {
+			heroIO = new IntersectionObserver(([entry]) => {
+				isHeroVisible = entry.isIntersecting;
+				isHeroVisible ? startRaysAnimation() : stopRaysAnimation();
+			}, { threshold: 0 });
+			heroIO.observe(heroSectionEl);
+		}
+
+		rafId = requestAnimationFrame(loop);
+
+		document.addEventListener('astro:before-swap', () => {
+			cancelAnimationFrame(rafId);
+			heroIO?.disconnect();
+			window.removeEventListener('mousemove', onMouseMove as EventListener);
+			window.removeEventListener('touchmove', onTouchMove as EventListener);
+			window.removeEventListener('resize', onResize);
+			document.removeEventListener('visibilitychange', onVisibilityChange);
+		}, { once: true });
+	}
+
+	document.addEventListener('astro:page-load', initRays);
+})();
+</script>
+

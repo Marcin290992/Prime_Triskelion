@@ -1,0 +1,151 @@
+<!-- ═══════ PRE-FOOTER CTA ═══════ -->
+<section id="contact-cta">
+	<canvas id="cta-flame-canvas" aria-hidden="true"></canvas>
+	<div class="cta-inner">
+		<h2 class="cta-title" id="cta-title">Let's build<br>something<br><span class="cta-red">sharp.</span></h2>
+		<div class="h-hero-cta-wrap cta-btn-wrap">
+			<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+			<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+			<a href="/contact" class="h-hero-cta cta-btn h-hero-cta--fixed">
+				<span class="hud-spin-border"></span>
+				<span class="h-hero-cta__text">Start a project</span>
+			</a>
+		</div>
+	</div>
+</section>
+
+<style>
+	#contact-cta {
+		position: relative;
+		overflow: hidden;
+		padding: clamp(7rem, 16vw, 16rem) 0 clamp(6rem, 12vw, 12rem);
+	}
+	#cta-flame-canvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 0;
+		opacity: 0.5;
+		pointer-events: none;
+		/* Two masks, intersected: a soft fade-in at the very top (otherwise the
+		   section boundary reads as a hard cut where the flame is suddenly at
+		   full brightness — spread wide so the 8-bit alpha steps land thin
+		   enough to disappear), and a fade-in from the left so the flame never
+		   shows behind the headline, which sits in roughly the left 58%. */
+		mask-image:
+			linear-gradient(to bottom, transparent 0%, black 30%),
+			linear-gradient(to right, transparent 0%, transparent 58%, black 74%, black 100%);
+		mask-composite: intersect;
+		-webkit-mask-image:
+			linear-gradient(to bottom, transparent 0%, black 30%),
+			linear-gradient(to right, transparent 0%, transparent 58%, black 74%, black 100%);
+		-webkit-mask-composite: source-in;
+	}
+	@media (max-width: 1024px) {
+		/* Title runs full-width on mobile/tablet, so there's no clear column
+		   for the flame to sit beside without crossing the text. Instead of
+		   hiding it, dial it down to a faint full-width ambient glow (top/bottom
+		   fade only, no left/right mask) — too dim to compete with the text. */
+		#cta-flame-canvas {
+			opacity: 0.16;
+			mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
+			mask-composite: intersect;
+			-webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
+			-webkit-mask-composite: source-in;
+		}
+	}
+	.cta-inner {
+		position: relative;
+		z-index: 1;
+		width: 100%;
+		padding-inline: var(--site-gutter);
+		box-sizing: border-box;
+	}
+	.cta-title {
+		font-family: var(--f-display);
+		font-size: clamp(3rem, 12vw, 16rem);
+		line-height: 0.88;
+		letter-spacing: -0.03em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream));
+		margin: 0 0 clamp(2.5rem, 5vw, 4.5rem);
+		opacity: 0;
+		filter: blur(20px);
+		transition: opacity 0.9s ease 0.1s, filter 1.1s cubic-bezier(0.16,1,0.3,1) 0.1s;
+	}
+	.cta-title.visible { opacity: 1; filter: blur(0px); }
+	.cta-btn-wrap {
+		opacity: 0;
+		filter: blur(10px);
+		transform: translateY(12px);
+		transition: opacity 0.7s ease 0.35s, transform 0.7s cubic-bezier(0.16,1,0.3,1) 0.35s, filter 0.9s cubic-bezier(0.16,1,0.3,1) 0.35s;
+		max-width: 280px;
+	}
+	.cta-btn { font-size: 1rem; padding: 1.15rem 1.5rem; }
+	.cta-btn-wrap.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
+
+	@media (max-width: 1024px) {
+		.cta-title, .cta-btn-wrap {
+			opacity: 1;
+			filter: blur(0);
+			transform: none;
+		}
+	}
+
+	/* Short-viewport laptops (1080p/900p with browser chrome, e.g. 15" laptops):
+	   the huge width-driven type (up to 16rem) plus generous section padding
+	   overflows the viewport, pushing the CTA button and footer below the fold. */
+	@media (min-width: 1025px) and (max-height: 960px) {
+		#contact-cta { padding: clamp(4rem, 8vw, 8rem) 0 clamp(3.5rem, 6vw, 6rem); }
+		.cta-title {
+			font-size: clamp(3rem, 8vw, 9rem);
+			margin: 0 0 clamp(1.75rem, 3vw, 3rem);
+		}
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
+	import { onReady } from '../../utils/onReady';
+	import { initBlurReveal } from '../../utils/blurReveal';
+
+	function initCTA() {
+		const section = document.getElementById('contact-cta');
+		if (!section) return;
+
+		if (!window.matchMedia('(max-width: 1024px)').matches) {
+			gsap.registerPlugin(ScrollTrigger);
+			ScrollTrigger.create({
+				trigger: section,
+				start: 'top 78%',
+				onEnter: () => {
+					const title = section.querySelector('.cta-title');
+					const btnWrap = section.querySelector('.cta-btn-wrap');
+					if (title) setTimeout(() => title.classList.add('visible'), 0);
+					if (btnWrap) setTimeout(() => btnWrap.classList.add('visible'), 130);
+				},
+			});
+
+			const redEl = section.querySelector<HTMLElement>('.cta-red');
+			if (redEl) initBlurReveal(redEl, redEl, 'top 70%');
+		}
+
+	}
+
+	onReady(initCTA);
+</script>
+
+<script>
+	import { initFlameCanvas } from '../../utils/flameCanvas';
+
+	function initCtaFlame() {
+		const canvas = document.getElementById('cta-flame-canvas') as HTMLCanvasElement | null;
+		const section = document.getElementById('contact-cta');
+		if (!canvas || !section) return;
+		initFlameCanvas(canvas, section);
+	}
+
+	document.addEventListener('astro:page-load', initCtaFlame);
+</script>

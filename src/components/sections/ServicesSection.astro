@@ -1,0 +1,307 @@
+<!-- ═══════ SERVICES ═══════ -->
+<section id="services">
+
+	<div class="svc__header">
+		<h2 class="svc__title-main">My<br><em>Services.</em></h2>
+	</div>
+
+	<div class="svc__list">
+		<div class="svc__item" data-img="/work-thumbs/01.svg">
+			<span class="svc__name">Websites</span>
+			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/01.svg" alt="" loading="lazy" /></div>
+		</div>
+		<div class="svc__item" data-img="/work-thumbs/02.svg">
+			<span class="svc__name">Branding</span>
+			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/02.svg" alt="" loading="lazy" /></div>
+		</div>
+		<div class="svc__item" data-img="/work-thumbs/03.svg">
+			<span class="svc__name">Motion</span>
+			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/03.svg" alt="" loading="lazy" /></div>
+		</div>
+		<div class="svc__item" data-img="/work-thumbs/04.svg">
+			<span class="svc__name">Strategy</span>
+			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/04.svg" alt="" loading="lazy" /></div>
+		</div>
+
+		<!-- Mobile only: one shared floating image swapped on tap instead of
+		     each item's own hover-following box (see .svc-mobile-img below
+		     and initServicesMobile in the script). -->
+		<div class="svc-mobile-img" aria-hidden="true"><img id="svcMobileImg" src="/work-thumbs/01.svg" alt="" /></div>
+	</div>
+
+	<div class="svc__footer">
+		<a href="/services" class="svc__btn" aria-label="View all services">
+			<span class="svc__btn__line"></span>
+			See more
+		</a>
+	</div>
+
+</section>
+
+<style>
+	#services {
+		position: relative;
+		z-index: 46;
+		color: rgb(var(--c-cream));
+	}
+	.svc__header {
+		width: 100%;
+		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
+		box-sizing: border-box;
+		opacity: 0;
+		filter: blur(8px);
+		transform: translateY(14px);
+		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
+	}
+	.svc__header.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
+	.svc__title-main {
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(3.5rem, 8vw, 11rem);
+		letter-spacing: -0.02em;
+		text-transform: uppercase;
+		line-height: 0.9;
+		color: rgb(var(--c-cream));
+	}
+	.svc__title-main em {
+		font-style: normal;
+		color: rgb(var(--c-red) / 1);
+	}
+	.svc__list {
+		width: 100%;
+		padding: 0 0 var(--section-space-bottom);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.svc__item {
+		position: relative;
+		padding: clamp(1.2rem, 3.5vh, 4rem) clamp(3rem, 6vw, 8rem);
+		text-align: center;
+		width: 100%;
+		pointer-events: none;
+		z-index: 1;
+		filter: blur(6px);
+		opacity: 0.3;
+		transition: filter 0.4s ease, opacity 0.4s ease;
+	}
+	.svc__item:has(.svc__name:hover) { filter: blur(0); opacity: 1; z-index: 10; }
+	.svc__name {
+		font-family: var(--f-display);
+		font-weight: 700;
+		font-size: clamp(4.5rem, 14vw, 16rem);
+		text-transform: uppercase;
+		line-height: 0.88;
+		letter-spacing: -0.03em;
+		color: rgb(var(--c-cream));
+		text-decoration: none;
+		position: relative;
+		z-index: 2;
+		mix-blend-mode: difference;
+		user-select: none;
+		pointer-events: auto;
+		cursor: default;
+		display: block;
+		width: fit-content;
+		margin: 0 auto;
+	}
+	.svc__img {
+		position: absolute;
+		top: 0; left: 0;
+		width: 420px; height: 280px;
+		background: #141414;
+		border: 1px solid rgba(255,255,255,0.07);
+		z-index: 1;
+		pointer-events: none;
+		transform: translate(calc(var(--x, 50%) - 50%), calc(var(--y, 50%) - 50%)) scale(0.5);
+		opacity: 0;
+		transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	.svc__item:has(.svc__name:hover) .svc__img {
+		opacity: 1;
+		transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(1);
+		transition: opacity 0.3s ease 0.18s, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	.svc__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	/* Mobile-only floating image — hidden on desktop, shown in the
+	   max-width:1024px block below. */
+	.svc-mobile-img { display: none; }
+	.svc__footer {
+		width: 100%;
+		padding: 0 var(--site-gutter) var(--section-space-bottom);
+		box-sizing: border-box;
+		display: flex;
+		justify-content: center;
+	}
+	.svc__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		font-family: var(--f-body);
+		font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+		font-weight: 300;
+		letter-spacing: 0.38em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.5);
+		text-decoration: none;
+		cursor: pointer;
+		transition: color 0.3s ease;
+	}
+	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
+	.svc__btn__line {
+		display: block;
+		width: 36px;
+		height: 1px;
+		background: rgb(var(--c-red) / 0.9);
+		transform-origin: left;
+		transition: width 0.35s ease;
+		flex-shrink: 0;
+	}
+	.svc__btn:hover .svc__btn__line { width: 56px; }
+	/* Mobile layout — animation handled by global mobile CSS block */
+	@media (max-width: 1024px) {
+		.svc__list { position: relative; }
+		/* Left-aligned, with room carved out on the right so the text never
+		   runs under the floating image (128px wide, see .svc-mobile-img)
+		   instead of the desktop's centered layout. */
+		.svc__item {
+			padding: 0.55rem calc(128px + var(--site-gutter) + 0.75rem) 0.55rem var(--site-gutter);
+			text-align: left;
+		}
+		.svc__img { display: none; }
+		.svc__name {
+			font-size: clamp(1.8rem, 7.6vw, 2.6rem);
+			margin: 0;
+			width: auto;
+			mix-blend-mode: normal;
+			cursor: pointer;
+			/* Muted by default, lit up by .is-active — color rather than
+			   opacity/filter, since the global mobile instant-visibility
+			   override (global.css) forces this section's opacity/filter to
+			   their "revealed" values with !important. */
+			color: rgb(var(--c-cream) / 0.32);
+			transition: color 0.3s ease;
+		}
+		.svc__item.is-active .svc__name { color: rgb(var(--c-cream)); }
+
+		/* One shared floating image (see markup comment) instead of each
+		   item's own hover-following box — tapping a name swaps its src. */
+		.svc-mobile-img {
+			display: block;
+			position: absolute;
+			right: var(--site-gutter);
+			/* top is set in px by JS (initServicesMobile) to the vertical
+			   center of the active item, so the image tracks whichever
+			   service is selected instead of sitting fixed in the middle of
+			   the list; 50% here is just the pre-JS fallback. */
+			top: 50%;
+			transform: translateY(-50%);
+			transition: top 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+			/* work-thumbs/*.svg are wide browser-mockup graphics (viewBox
+			   320x200) — a narrow portrait box here would object-fit:cover-crop
+			   almost all of the (already very dark) artwork away, leaving what
+			   looks like an empty dark square. Match their ~1.6 aspect ratio
+			   instead, same as the desktop hover box (420x280) below. */
+			width: 128px;
+			height: 96px;
+			border-radius: 0;
+			overflow: hidden;
+			background: #141414;
+			border: 1px solid rgba(255, 255, 255, 0.07);
+			box-shadow: -10px 0 20px rgba(0, 0, 0, 0.5);
+			z-index: 5;
+			pointer-events: none;
+		}
+		.svc-mobile-img img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+			opacity: 1;
+			transition: opacity 0.25s ease;
+		}
+	}
+</style>
+
+<script>
+	import { onReady } from '../../utils/onReady';
+
+	let _isBackNav = false;
+
+	document.addEventListener('astro:before-swap', (e: any) => {
+		_isBackNav = (e.navigationType ?? '') === 'traverse';
+	});
+
+	function initServicesMobile(section: HTMLElement) {
+		// -- Services list: tapping a name moves the shared floating image to
+		// that item's height and swaps its src --
+		const items = Array.from(section.querySelectorAll<HTMLElement>('.svc__item'));
+		const mobileImg = section.querySelector<HTMLImageElement>('#svcMobileImg');
+		const mobileImgBox = mobileImg?.closest<HTMLElement>('.svc-mobile-img');
+		if (items.length && mobileImg && mobileImgBox) {
+			const activate = (item: HTMLElement) => {
+				items.forEach(i => i.classList.remove('is-active'));
+				item.classList.add('is-active');
+				mobileImgBox.style.top = `${item.offsetTop + item.offsetHeight / 2}px`;
+				const src = item.dataset.img;
+				if (src && mobileImg.getAttribute('src') !== src) {
+					mobileImg.style.opacity = '0';
+					window.setTimeout(() => {
+						mobileImg.src = src;
+						mobileImg.style.opacity = '1';
+					}, 200);
+				}
+			};
+			activate(items[0]);
+			items.forEach(item => item.addEventListener('click', () => activate(item)));
+		}
+	}
+
+	function initServices() {
+		const section = document.getElementById('services');
+		if (!section) return;
+
+		if (window.matchMedia('(max-width: 1024px)').matches) { _isBackNav = false; initServicesMobile(section); return; }
+
+		const isBack = _isBackNav;
+		_isBackNav = false;
+
+		const header = section.querySelector<HTMLElement>('.svc__header');
+		if (header) {
+			if (isBack) {
+				header.style.transition = 'none';
+				header.classList.add('visible');
+				requestAnimationFrame(() => { header.style.transition = ''; });
+			} else {
+				const hio = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							header.classList.add('visible');
+							hio.unobserve(entry.target);
+						}
+					});
+				}, { threshold: 0.15 });
+				hio.observe(header);
+			}
+		}
+
+		section.querySelectorAll<HTMLElement>('.svc__item').forEach(item => {
+			const name = item.querySelector<HTMLElement>('.svc__name');
+			if (!name) return;
+
+			name.addEventListener('mouseenter', (e: MouseEvent) => {
+				const rect = item.getBoundingClientRect();
+				item.style.setProperty('--x', `${e.clientX - rect.left}px`);
+				item.style.setProperty('--y', `${e.clientY - rect.top}px`);
+			});
+
+			name.addEventListener('mousemove', (e: MouseEvent) => {
+				const rect = item.getBoundingClientRect();
+				item.style.setProperty('--x', `${e.clientX - rect.left}px`);
+				item.style.setProperty('--y', `${e.clientY - rect.top}px`);
+			});
+		});
+	}
+
+	onReady(initServices);
+</script>

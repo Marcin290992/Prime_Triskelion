@@ -1,0 +1,108 @@
+---
+/**
+ * Logo — animated triskelion mark + wordmark, fixed top-left on every page.
+ * On the home page, HeroSection's own reveal timeline takes over the animation
+ * (scattered arms spinning into place). On every other page this component just
+ * assembles the mark and fades it in.
+ */
+---
+
+<a class="h-title" id="h-title" href="/" aria-label="Prime Triskelion — Home">
+	<svg class="h-title__logo" id="h-logo-svg" aria-hidden="true" width="744" height="644" viewBox="128 152 744 644" fill="#FFF">
+		<defs><polygon id="h-logo-arm-shape" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
+		<use href="#h-logo-arm-shape" class="h-logo-arm" id="h-logo-arm-1"/>
+		<use href="#h-logo-arm-shape" class="h-logo-arm" id="h-logo-arm-2"/>
+		<use href="#h-logo-arm-shape" class="h-logo-arm" id="h-logo-arm-3"/>
+	</svg>
+	<div class="h-title__text">
+		<div class="h-title__row" id="row1">PRIME</div>
+		<div class="h-title__row h-title__row--right" id="row2">TRISKELION</div>
+	</div>
+</a>
+
+<style>
+	.h-title {
+		font-family: var(--f-display);
+		font-weight: 700;
+		font-size: clamp(13px, 0.95vw, 17px);
+		line-height: 1;
+		letter-spacing: 0.06em;
+		color: rgb(var(--c-cream));
+		user-select: none;
+		margin: 0;
+		text-transform: uppercase;
+		text-decoration: none;
+	}
+	.h-title__row {
+		display: flex;
+		overflow: visible;
+	}
+	.h-title__row--right {
+		justify-content: flex-start;
+	}
+	#h-title {
+		position: fixed;
+		top: clamp(1rem, 1.3vw, 1.8rem);
+		left: clamp(1rem, 1.7vw, 1.9rem);
+		z-index: 1002;
+		display: flex;
+		align-items: center;
+		gap: 0.55em;
+		opacity: 0;
+		filter: none;
+		transition: none;
+	}
+	.h-title__logo {
+		height: clamp(34px, 3vw, 52px);
+		width: auto;
+		display: block;
+		flex-shrink: 0;
+		overflow: visible;
+	}
+	.h-title__text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15em;
+	}
+	#h-title.visible {
+		opacity: 1;
+		filter: blur(0px);
+	}
+
+	@media (max-width: 1024px) {
+		.h-title { font-size: clamp(10px, 2.6vw, 12px); }
+		.h-title__logo { height: 26px; }
+	}
+
+	@media (max-width: 640px) {
+		.h-title { font-size: clamp(11px, 3.2vw, 14px); }
+	}
+</style>
+
+<script>
+	import gsap from 'gsap';
+
+	function initLogo() {
+		const logo = document.getElementById('h-title');
+		if (!logo) return;
+
+		const arms = Array.from(document.querySelectorAll<SVGUseElement>('.h-logo-arm'));
+		gsap.set(arms, { svgOrigin: '500 577.259' });
+		gsap.set(arms[0], { rotation: 0 });
+		gsap.set(arms[1], { rotation: 120 });
+		gsap.set(arms[2], { rotation: 240 });
+
+		// Home page: HeroSection owns the scattered-arms reveal timeline.
+		if (document.getElementById('hero')) return;
+
+		gsap.set(logo, { opacity: 0, y: -8 });
+		gsap.to(logo, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.2 });
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', initLogo);
+	} else {
+		initLogo();
+	}
+	document.addEventListener('astro:page-load', initLogo);
+</script>

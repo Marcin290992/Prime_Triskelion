@@ -1,0 +1,556 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CtaSection from '../../components/sections/CtaSection.astro';
+
+const projects = [
+  {
+    slug: '/winds-of-sinai',
+    num: '01',
+    title: 'Winds of Sinai',
+    categories: ['Brand Identity', 'Web Design'],
+    year: '2024',
+    img: 'https://picsum.photos/seed/sinai/800/1200?grayscale',
+    bg: '#0c0d0b',
+    speed: 1,
+  },
+  {
+    slug: '#',
+    num: '02',
+    title: 'Project Two',
+    categories: ['Web Design', 'Development'],
+    year: '2024',
+    img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400&fit=crop',
+    bg: '#0d0b0b',
+    speed: -1,
+  },
+  {
+    slug: '#',
+    num: '03',
+    title: 'Project Three',
+    categories: ['Brand Identity', 'Strategy'],
+    year: '2023',
+    img: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1400&fit=crop',
+    bg: '#0b0b0d',
+    speed: 1,
+  },
+  {
+    slug: '#',
+    num: '04',
+    title: 'Project Four',
+    categories: ['Motion', 'Development'],
+    year: '2023',
+    img: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=1400&fit=crop',
+    bg: '#0d0c0a',
+    speed: -1,
+  },
+];
+---
+
+<Layout
+  title="Projects — Prime Triskelion"
+  description="Selected work by Prime Triskelion — brand identity, web design, motion and digital strategy."
+>
+  <main id="projects-page">
+
+    <!-- Brief header -->
+    <header class="proj-header">
+      <h1 class="proj-title">
+        <span class="proj-title__line"><span class="proj-title__word">My</span></span>
+        <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
+      </h1>
+      <div class="proj-header__scroll">
+        <span class="proj-header__line"></span>
+        <span class="proj-header__scroll-text">scroll</span>
+      </div>
+    </header>
+
+    <!-- Mask reveal sections -->
+    {projects.map((p) => (
+      <section
+        class="proj-section"
+        style={`--bg: ${p.bg}`}
+        aria-label={p.title}
+      >
+        <a class="proj-inner" href={p.slug}>
+
+          <!-- Giant bg text -->
+          <span class="proj-bg-text" data-speed={p.speed} aria-hidden="true">
+            {p.title}
+          </span>
+
+          <!-- Project image -->
+          <div class="proj-img-wrap">
+            {p.img
+              ? <img src={p.img} alt={p.title} crossorigin="anonymous" />
+              : (
+                <div class="proj-img-ph">
+                  <span class="proj-img-ph__num">{p.num}</span>
+                </div>
+              )
+            }
+          </div>
+
+          <!-- Bottom info bar -->
+          <div class="proj-foot">
+            <div class="proj-foot__left">
+              <span class="proj-foot__num">{p.num}</span>
+              <span class="proj-foot__name">{p.title}</span>
+            </div>
+            <div class="proj-foot__center">
+              {p.categories.map((c) => <span class="proj-foot__tag">{c}</span>)}
+            </div>
+            <div class="proj-foot__right">
+              <span class="proj-foot__year">{p.year}</span>
+              <span class="proj-foot__arrow">→</span>
+            </div>
+          </div>
+
+        </a>
+      </section>
+    ))}
+
+  </main>
+  <CtaSection />
+</Layout>
+
+<style>
+  #projects-page {
+    background: rgb(var(--c-bg));
+    color: rgb(var(--c-cream));
+  }
+
+  /* â•â• HEADER â•â• */
+  .proj-header {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: clamp(8rem, 16vh, 14rem) var(--site-gutter) clamp(8rem, 18vh, 13rem);
+    box-sizing: border-box;
+  }
+
+  .proj-title {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(3.5rem, 8vw, 8.5rem);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    line-height: 0.9;
+    color: rgb(var(--c-cream));
+  }
+  .proj-title__line { display: block; padding-bottom: 0.08em; }
+  .proj-title__word { display: block; opacity: 0; filter: blur(18px); }
+  .proj-title em { font-style: normal; color: rgb(var(--c-red)); }
+
+  .proj-header__scroll {
+    position: absolute;
+    bottom: clamp(5.5rem, 11vh, 8rem);
+    right: var(--site-gutter);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.8s ease 1.1s;
+  }
+  .proj-header__scroll.visible { opacity: 1; }
+  .proj-header__line {
+    width: 36px;
+    height: 1px;
+    background: rgb(var(--c-red) / 0.6);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+  .proj-header__scroll-text {
+    font-family: var(--f-body);
+    font-size: 8px;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.2);
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.5; transform: scaleX(1); }
+    50%       { opacity: 1;   transform: scaleX(1.3); }
+  }
+
+  /* â•â• MASK SECTION â•â• */
+  .proj-section {
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    background: var(--bg, rgb(var(--c-bg)));
+    transition: background-color 0.6s ease;
+    transform: translateZ(0);
+  }
+
+  /* Grain overlay */
+  .proj-section::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 180px;
+    opacity: 0.032;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* â•â• INNER (counteracts scroll = fake fixed) â•â• */
+  .proj-inner {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  /* â•â• BG TEXT â•â• */
+  .proj-bg-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(6rem, 17vw, 21rem);
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: rgb(var(--c-cream) / 0.055);
+    white-space: nowrap;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 1;
+    user-select: none;
+  }
+
+  /* â•â• IMAGE â•â• */
+  .proj-img-wrap {
+    position: relative;
+    width: clamp(260px, 42vw, 680px);
+    height: clamp(180px, 52vh, 480px);
+    z-index: 2;
+    overflow: hidden;
+    box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+  .proj-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Image placeholder */
+  .proj-img-ph {
+    width: 100%;
+    height: 100%;
+    background:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
+      linear-gradient(160deg, #141418 0%, #0e0e12 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .proj-img-ph__num {
+    font-family: var(--f-display);
+    font-size: clamp(4rem, 10vw, 9rem);
+    font-weight: 600;
+    color: rgba(255,255,255,0.04);
+    letter-spacing: -0.02em;
+  }
+
+  /* Gradient pod stopkÄ… — kontrast na desktopie */
+  .proj-inner::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 55%;
+    background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.25) 45%, transparent 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  /* â•â• FOOTER INFO â•â• */
+  .proj-foot {
+    position: absolute;
+    bottom: clamp(7rem, 13vh, 10rem);
+    left: var(--site-gutter);
+    right: var(--site-gutter);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: flex-end;
+    gap: 1rem;
+    z-index: 3;
+  }
+
+  .proj-foot__left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  .proj-foot__num {
+    font-family: var(--f-body);
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: 0.4em;
+    color: rgb(var(--c-red) / 0.8);
+  }
+  .proj-foot__name {
+    font-family: var(--f-display);
+    font-weight: 600;
+    font-size: clamp(2.4rem, 4.5vw, 6rem);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    color: rgb(var(--c-cream));
+  }
+
+  .proj-foot__center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .proj-foot__tag {
+    font-family: var(--f-body);
+    font-size: clamp(0.75rem, 1vw, 1rem);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.7);
+  }
+
+  .proj-foot__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.6rem;
+  }
+  .proj-foot__year {
+    font-family: var(--f-body);
+    font-size: clamp(0.75rem, 1vw, 1rem);
+    font-weight: 300;
+    letter-spacing: 0.2em;
+    color: rgb(var(--c-cream) / 0.65);
+  }
+  .proj-foot__arrow {
+    font-size: 2.2rem;
+    color: rgb(var(--c-red) / 0.7);
+    transition: color 0.3s ease, transform 0.3s ease;
+  }
+  .proj-inner:hover .proj-foot__arrow {
+    color: rgb(var(--c-red));
+    transform: translate(5px, -5px);
+  }
+
+  /* â•â• MOBILE / TABLET â•â• */
+  /* Laptop 1025–1600px */
+  @media (min-width: 1025px) and (max-width: 1600px) {
+    .proj-foot {
+      bottom: clamp(5.5rem, 11vh, 8rem);
+      grid-template-columns: 1fr auto 1fr;
+      gap: 1rem 2vw;
+      align-items: center;
+    }
+    .proj-foot__name {
+      font-size: clamp(1.8rem, 3.2vw, 4rem);
+    }
+    .proj-foot__center {
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.3rem 1rem;
+    }
+    .proj-foot__right {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 1.2rem;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
+    .proj-header {
+      height: auto;
+      min-height: unset;
+      justify-content: flex-start;
+      padding-top: clamp(6rem, 14vh, 10rem);
+      padding-bottom: clamp(5rem, 16vh, 9rem);
+    }
+    .proj-header__scroll { display: none; }
+
+    /* KaÅ¼dy projekt = peÅ‚ny ekran, zero przerw */
+    .proj-section {
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: none;
+    }
+
+    /* Mockup jako full-bleed tÅ‚o */
+    .proj-img-wrap {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      box-shadow: none;
+    }
+    .proj-img-wrap img { object-position: center 30%; }
+
+    .proj-bg-text { display: none; }
+
+    /* Gradient pod infobarem */
+    .proj-inner::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 55%, transparent 100%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Info — glass card, bez border-radius */
+    .proj-foot {
+      bottom: clamp(2rem, 4vh, 3rem);
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      align-items: start;
+      gap: 0.45rem 1rem;
+      z-index: 3;
+      background: rgb(var(--c-bg) / 0.38);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0;
+      padding: clamp(0.9rem, 1.8vh, 1.2rem) 1.2rem;
+    }
+    .proj-foot__left {
+      grid-column: 1;
+      grid-row: 1;
+    }
+    .proj-foot__center {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.15rem 0.55rem;
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .proj-foot__right {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: center;
+    }
+    .proj-foot__name { color: rgb(var(--c-cream) / 0.95); }
+    .proj-foot__year { color: rgb(var(--c-cream) / 0.5); }
+    .proj-foot__tag  { color: rgb(var(--c-cream) / 0.35); }
+  }
+</style>
+
+<script>
+  import gsap from 'gsap';
+
+  function initProjectsPage() {
+    if (!document.getElementById('projects-page')) return;
+
+    // â”€â”€ Header entrance â”€â”€
+    const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
+    const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
+
+    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+    if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+    setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+
+    // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€
+    if (window.matchMedia('(max-width: 1024px)').matches) return;
+
+    // â”€â”€ Mask reveal engine â”€â”€
+    // Cache references once — never query DOM inside the render loop
+    const panels = Array.from(
+      document.querySelectorAll<HTMLElement>('.proj-section')
+    ).map(sec => ({
+      sec,
+      inner:   sec.querySelector<HTMLElement>('.proj-inner')!,
+      bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
+      speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
+    }));
+
+    let raf = 0;
+
+    function render() {
+      const vh = window.innerHeight;
+      for (const { sec, inner, bgText, speed } of panels) {
+        const rect = sec.getBoundingClientRect();
+
+        if (rect.top > vh || rect.bottom < 0) {
+          inner.style.transform = 'translateY(0px)';
+          continue;
+        }
+
+        inner.style.transform = `translateY(${-rect.top}px)`;
+
+        if (bgText) {
+          bgText.style.transform =
+            `translate(calc(-50% + ${rect.top * speed * 0.12}px), -50%)`;
+        }
+      }
+      raf = requestAnimationFrame(render);
+    }
+
+    raf = requestAnimationFrame(render);
+
+    // â”€â”€ Dominant colour extraction â”€â”€
+    const canvas = document.createElement('canvas');
+    canvas.width = 40;
+    canvas.height = 40;
+    const ctx = canvas.getContext('2d');
+
+    if (ctx) {
+      document.querySelectorAll<HTMLElement>('.proj-section').forEach(sec => {
+        const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
+        if (!img) return;
+
+        const extract = () => {
+          try {
+            ctx.clearRect(0, 0, 40, 40);
+            ctx.drawImage(img, 0, 0, 40, 40);
+            const px = ctx.getImageData(0, 0, 40, 40).data;
+            let r = 0, g = 0, b = 0;
+            const n = px.length / 4;
+            for (let i = 0; i < px.length; i += 4) {
+              r += px[i]; g += px[i + 1]; b += px[i + 2];
+            }
+            // Darken to ~10% — rich but very dark tinted bg
+            const d = 0.1;
+            sec.style.backgroundColor =
+              `rgb(${Math.round(r/n*d)},${Math.round(g/n*d)},${Math.round(b/n*d)})`;
+          } catch {
+            // CORS blocked — keep existing --bg
+          }
+        };
+
+        img.complete ? extract() : img.addEventListener('load', extract, { once: true });
+      });
+    }
+
+    document.addEventListener('astro:before-swap', () => {
+      cancelAnimationFrame(raf);
+    }, { once: true });
+  }
+
+  document.addEventListener('astro:page-load', initProjectsPage);
+</script>
+

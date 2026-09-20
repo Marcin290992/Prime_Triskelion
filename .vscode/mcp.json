@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "shaders": {
+      "type": "http",
+      "url": "https://shaders.com/mcp"
+    }
+  }
+}
