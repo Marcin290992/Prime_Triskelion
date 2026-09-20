@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { dismissPreloader } from './helpers';
 
 // Regression guard for the "both hamburger and contact button visible /
 // unclickable at once" bug — took several iterations to actually fix (see
@@ -14,10 +15,10 @@ test('desktop: menu opens on click and closes on Escape', async ({ page, isMobil
   // menu.spec.ts's mobile test comment below), which would race this test.
   // /contact has no such competing animation.
   await page.goto('/contact');
-  // Preloader sits above everything (z-index 100000) and stays pointer-events:
-  // auto until its own real-readiness check resolves — without waiting for
-  // it, the click below can land on the preloader instead of the button.
-  await page.locator('#preloader').waitFor({ state: 'hidden' });
+  // Preloader sits above everything (z-index 100000) until ENTER is
+  // clicked — without dismissing it, the click below lands on the gate
+  // instead of the button.
+  await dismissPreloader(page);
   const overlay = page.locator('#ox-menu-overlay');
   await expect(overlay).not.toHaveClass(/active/);
 
@@ -39,7 +40,7 @@ test('mobile: scrolling down hides the menu button and shows contact (never both
   // goes through oxygenMenu.ts's plain showHeader(), which never touches
   // hud-menu-btn's own opacity.
   await page.goto('/contact');
-  await page.locator('#preloader').waitFor({ state: 'hidden' });
+  await dismissPreloader(page);
   await page.waitForTimeout(500); // let resetHudMenuBtn() / showHeader() settle
 
   const menuBtn = page.locator('#hud-menu-btn');

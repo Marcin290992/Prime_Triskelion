@@ -1,37 +1,41 @@
 ---
 /**
- * Preloader — bridges the gap between raw asset loading (fonts, hero
- * canvas/scripts) and HeroSection's own reveal timeline, so first-time
- * visitors never see a flash of unstyled text or an empty canvas before
- * that choreography can start.
+ * Preloader — "system boot" style gate: real-time percentage counter,
+ * status readout, and a manual ENTER click to actually dismiss it (not an
+ * auto-hide) — a deliberate ritual/beat before HeroSection's own reveal
+ * timeline, not just a loading spinner.
  *
  * Shown once per browser tab session (sessionStorage-gated) — internal
- * navigation never re-triggers it. Hides only once fonts + window load +
- * a small minimum display time have all actually happened (see the script
- * below), never on a fixed fake timer — a safety timeout is the one
- * exception, purely so a stalled font/asset load can't trap a visitor
- * behind a black screen forever.
+ * navigation never re-triggers it. The percentage/status reflect real
+ * readiness (fonts + window load + a minimum display time), never a fixed
+ * fake timer — the one exception is MAX_MS, a safety ceiling that force-
+ * enables ENTER if a font/asset load stalls, so a broken load can't trap
+ * a visitor behind a screen with no way through.
  *
  * The #preloader div carries transition:persist — without it, Astro's
  * client-side router builds a BRAND NEW element from scratch on every
  * internal navigation (clicking the logo, a nav link, etc.), fully visible
  * by default, with no script left to ever hide it again (this one only
- * ever runs once, on the original element, at first load). That read as
- * the preloader "freezing" back on for every subsequent navigation.
- * Persisting means the same element (already hidden after its one real
- * run) just carries that state forward through every later page.
+ * ever runs once, on the original element, at first load). Persisting
+ * means the same element (already hidden after the visitor clicked ENTER)
+ * just carries that state forward through every later page.
  */
 ---
 
 <div id="preloader" transition:persist aria-hidden="true">
-  <svg class="preloader-mark" viewBox="128 152 744 644" fill="rgb(var(--c-cream))">
-    <defs><polygon id="preloader-arm-shape" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
-    <use href="#preloader-arm-shape" transform="rotate(0 500 577.259)"/>
-    <use href="#preloader-arm-shape" transform="rotate(120 500 577.259)"/>
-    <use href="#preloader-arm-shape" transform="rotate(240 500 577.259)"/>
-  </svg>
-  <div class="preloader-bar-track">
-    <div class="preloader-bar-fill" id="preloader-bar-fill"></div>
+  <div class="pl-glow" aria-hidden="true"></div>
+
+  <div class="pl-percent" id="pl-percent">0%</div>
+
+  <div class="pl-status" id="pl-status">
+    <span class="pl-status-line" id="pl-status-line">INITIALIZING_</span>
+  </div>
+
+  <div class="pl-controls">
+    <button type="button" class="pl-btn pl-btn--enter" id="pl-enter" disabled aria-label="Enter site">Enter</button>
+    <button type="button" class="pl-btn pl-btn--silent" id="pl-silent" aria-pressed="false" aria-label="Toggle silent mode (decorative, no audio on this site yet)">
+      Silent Mode<span class="pl-silent-dot" aria-hidden="true"></span>
+    </button>
   </div>
 </div>
 
@@ -41,11 +45,7 @@
     inset: 0;
     z-index: 100000;
     background: rgb(var(--c-bg));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(2rem, 3.5vw, 3.25rem);
+    overflow: hidden;
     opacity: 1;
     transition: opacity 0.5s ease, filter 0.5s ease;
   }
@@ -54,29 +54,108 @@
     filter: blur(20px);
     pointer-events: none;
   }
-  /* @media (max-width: 1024px): lighter/shorter, same reasoning as the
-     root view-transition blur in Layout.astro — full-viewport blur is
-     expensive on weaker GPUs. Keyed off pointer type, not width, for the
-     same tablet-vs-phone reason documented there. */
   @media (pointer: coarse) {
     #preloader.is-hidden { filter: blur(8px); transition-duration: 0.35s; }
   }
 
-  .preloader-mark {
-    width: clamp(140px, 16vw, 220px);
-    height: auto;
+  /* Subtle brand-red glow instead of the colourful blurred blobs some
+     "system boot" references use — keeps this on-palette (black/cream/red)
+     rather than introducing colours nowhere else on the site uses. */
+  .pl-glow {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 55%, rgb(var(--c-red) / 0.12), transparent 70%);
+    pointer-events: none;
   }
 
-  .preloader-bar-track {
-    width: clamp(220px, 20vw, 320px);
-    height: 2px;
-    background: rgba(255, 255, 255, 0.12);
-    overflow: hidden;
+  .pl-percent {
+    position: absolute;
+    top: clamp(1.5rem, 4vw, 3rem);
+    right: clamp(1.5rem, 4vw, 3rem);
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: rgb(var(--c-cream));
+    font-variant-numeric: tabular-nums;
   }
-  .preloader-bar-fill {
-    height: 100%;
-    width: 0%;
+
+  .pl-status {
+    position: absolute;
+    bottom: clamp(1.5rem, 4vw, 3rem);
+    right: clamp(1.5rem, 4vw, 3rem);
+    text-align: right;
+  }
+  .pl-status-line {
+    font-family: var(--f-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.4);
+    white-space: nowrap;
+  }
+  .pl-status-line.is-ready { color: rgb(var(--c-red) / 0.85); }
+
+  .pl-controls {
+    position: absolute;
+    left: 50%;
+    bottom: clamp(3rem, 10vh, 6rem);
+    transform: translateX(-50%);
+    display: flex;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+  }
+  .pl-btn {
+    font-family: var(--f-body);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.5);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    padding: 0.7rem 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+  }
+  .pl-btn--enter {
+    color: rgb(var(--c-cream) / 0.3);
+    cursor: not-allowed;
+  }
+  .pl-btn--enter:not(:disabled) {
+    color: rgb(var(--c-bg));
+    background: rgb(var(--c-cream));
+    cursor: pointer;
+  }
+  @media (hover: hover) {
+    .pl-btn--enter:not(:disabled):hover { background: rgb(var(--c-red)); color: rgb(var(--c-cream)); }
+    .pl-btn--silent:hover { color: rgb(var(--c-cream) / 0.85); }
+  }
+  .pl-silent-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgb(var(--c-cream) / 0.3);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+  }
+  .pl-btn--silent[aria-pressed="true"] .pl-silent-dot {
     background: rgb(var(--c-red));
+    box-shadow: 0 0 6px rgb(var(--c-red) / 0.7);
+  }
+
+  @media (max-width: 640px) {
+    .pl-percent { font-size: clamp(2.4rem, 12vw, 3.5rem); }
+    .pl-controls { bottom: clamp(2.5rem, 12vh, 4rem); }
+    .pl-btn { padding: 0.6rem 1rem; font-size: 10px; }
   }
 </style>
 
@@ -86,36 +165,54 @@
     var el = document.getElementById('preloader');
     if (!el) return;
 
-    // Repeat view in this tab session — skip instantly, no flash, no
-    // waiting on anything. This is the ONLY fast path; every other exit
-    // still waits for real readiness below.
     if (sessionStorage.getItem(KEY)) {
       el.hidden = true;
       return;
     }
 
-    var fill = document.getElementById('preloader-bar-fill');
-    // 1300ms floor, not 450 — this is still a FLOOR, not a fake fixed
-    // duration (real loads that take longer still take exactly as long as
-    // they take, see the Promise.all below). But on a fast connection
-    // there's nothing to wait for, and 450ms read as an accidental flicker
-    // rather than a deliberate beat before the site's own hero entrance —
-    // the whole point of a premium preloader is that brief pause/breath,
-    // not disappearing before anyone registers it.
+    var percentEl = document.getElementById('pl-percent');
+    var statusEl = document.getElementById('pl-status-line');
+    var enterBtn = document.getElementById('pl-enter');
+    var silentBtn = document.getElementById('pl-silent');
+
+    // Decorative only (no audio wired up on this site yet) — just a
+    // pressed-state toggle, see the aria-label on the button itself.
+    silentBtn.addEventListener('click', function () {
+      var pressed = silentBtn.getAttribute('aria-pressed') === 'true';
+      silentBtn.setAttribute('aria-pressed', String(!pressed));
+    });
+
+    // 1300ms floor — still a FLOOR, not a fake fixed duration (a real load
+    // that takes longer still takes exactly as long as it takes, see the
+    // Promise.all below). On a fast connection there's nothing to wait
+    // for, but disappearing in under half a second read as an accidental
+    // flicker rather than the deliberate beat this is meant to be.
     var MIN_MS = 1300;
-    var MAX_MS = 8000;  // ceiling so a stalled font/asset load can't trap the visitor
-    var start = performance.now();
+    var MAX_MS = 8000; // ceiling — force ENTER available even if a font/asset load stalls
+    var start = 0;
     var raf = 0;
+    var ready = false;
+
+    function setPercent(p) {
+      var n = Math.round(p);
+      if (percentEl) percentEl.textContent = n + '%';
+    }
 
     // This is a PERCEIVED progress cue, not a byte-accurate measurement —
     // computing true combined progress across fonts/images/scripts isn't
-    // practical. What's real is the actual hide condition below (fonts +
-    // window load + MIN_MS), which is what this bar eventually snaps to.
-    function tick() {
-      var elapsed = performance.now() - start;
-      var pct = Math.min(90, (elapsed / MIN_MS) * 90);
-      if (fill) fill.style.width = pct + '%';
-      if (elapsed < MAX_MS) raf = requestAnimationFrame(tick);
+    // practical. What's real is the actual ready condition below (fonts +
+    // window load + MIN_MS), which is what this snaps to at 100%.
+    function tick(now) {
+      if (!start) start = now; // first rAF timestamp, not script-parse time —
+      // using performance.now() at parse time instead measured from BEFORE
+      // the browser's first paint, so the visible counter could already
+      // read ~50% on its very first frame. Anchoring to the first rAF
+      // callback's own timestamp keeps 0% actually visible at 0%.
+      var elapsed = now - start;
+      if (!ready) {
+        setPercent(Math.min(96, (elapsed / MIN_MS) * 96));
+      }
+      if (elapsed < MAX_MS && !ready) raf = requestAnimationFrame(tick);
     }
     raf = requestAnimationFrame(tick);
 
@@ -130,13 +227,22 @@
       Promise.all([fontsReady, windowLoaded, minTime]),
       safety,
     ]).then(function () {
+      ready = true;
       cancelAnimationFrame(raf);
-      if (fill) fill.style.width = '100%';
-      setTimeout(function () {
-        el.classList.add('is-hidden');
-        sessionStorage.setItem(KEY, '1');
-        el.addEventListener('transitionend', function () { el.hidden = true; }, { once: true });
-      }, 300); // hold at 100% — reads as deliberate, not an instant cut
+      setPercent(100);
+      if (statusEl) {
+        statusEl.textContent = 'SYSTEM_READY';
+        statusEl.classList.add('is-ready');
+      }
+      enterBtn.disabled = false;
+      enterBtn.focus();
+    });
+
+    enterBtn.addEventListener('click', function () {
+      if (enterBtn.disabled) return;
+      el.classList.add('is-hidden');
+      sessionStorage.setItem(KEY, '1');
+      el.addEventListener('transitionend', function () { el.hidden = true; }, { once: true });
     });
   })();
 </script>

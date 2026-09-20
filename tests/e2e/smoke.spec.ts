@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { dismissPreloader } from './helpers';
 
 // Just enough to catch "the build succeeded but the page is actually
 // broken" — a blank screen, a thrown client-side error, a 404 where a page
@@ -21,13 +22,28 @@ for (const path of pages) {
   });
 }
 
+test('preloader: ENTER is disabled until ready, then dismisses the gate on click', async ({ page }) => {
+  await page.goto('/');
+
+  // Not asserting an exact percentage here — it's a fast-moving counter,
+  // so pinning "0%" right after goto is a race against real elapsed time,
+  // not a meaningful check. Disabled-until-ready is the real contract.
+  const enterBtn = page.locator('#pl-enter');
+  await expect(enterBtn).toBeDisabled();
+
+  await dismissPreloader(page);
+
+  await expect(page.locator('#pl-percent')).toHaveText('100%');
+  await expect(page.locator('#preloader')).toBeHidden();
+});
+
 test('preloader does not reappear stuck-visible after an internal navigation', async ({ page }) => {
   // Regression guard: #preloader needs transition:persist (Preloader.astro).
   // Without it, Astro's router builds a brand-new, fully-visible preloader
   // element on every internal nav with no script left to ever hide it —
   // reported as "click the logo, preloader turns on and freezes".
   await page.goto('/');
-  await page.locator('#preloader').waitFor({ state: 'hidden' });
+  await dismissPreloader(page);
 
   await page.locator('#h-title').click();
   await page.waitForTimeout(800);
