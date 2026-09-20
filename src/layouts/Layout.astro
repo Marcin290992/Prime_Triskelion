@@ -158,10 +158,14 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				animation: vt-blur-in 0.32s ease-out 0.2s both;
 			}
 
-			/* Mobile: lighter/shorter blur — full-viewport blur on a page snapshot
-			   is expensive on mobile GPUs and was causing scroll stutter right after
-			   navigation, only on the first section(s) of the new page. */
-			@media (max-width: 1024px) {
+			/* Touch devices: lighter/shorter blur — full-viewport blur on a page
+			   snapshot is expensive on weaker GPUs and was causing scroll stutter
+			   right after navigation, only on the first section(s) of the new page.
+			   Keyed off pointer type, not viewport width — a landscape tablet is
+			   easily >1024px wide but still has a phone-class GPU, so a width-only
+			   query here was quietly giving tablets the heavy desktop blur and
+			   flickering right through it. */
+			@media (pointer: coarse) {
 				::view-transition-new(root) {
 					animation: vt-blur-in-mobile 0.2s ease-out 0.15s both;
 				}

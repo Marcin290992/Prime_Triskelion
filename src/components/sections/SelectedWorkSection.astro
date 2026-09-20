@@ -659,7 +659,14 @@
 		.wr-tags span { color: rgb(var(--c-cream) / 0.5) !important; }
 	}
 
-	@media (max-width: 768px) {
+	/* Was max-width: 768px (phone only) — the tablet range (769-1024px)
+	   fell through to the row-grid layout above instead, which relies on
+	   :hover to reveal .wr-img-inner (opacity:0 by default). Tablets have
+	   no hover, so the thumbnail never appeared — just the empty dark box
+	   with its number watermark. Reusing the already-solid stacked mobile
+	   layout for the whole ≤1024px range (instead of designing a third,
+	   separate tablet treatment) sidesteps that entirely. */
+	@media (max-width: 1024px) {
 		.work-list { padding-bottom: clamp(3rem, 8vw, 5rem); }
 		.work-row {
 			grid-template-columns: 2.5rem 1fr;

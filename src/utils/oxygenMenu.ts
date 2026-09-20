@@ -388,10 +388,17 @@ function initOxygenMenu() {
       }
 
       if (blurOut && content) {
-        // Lighter blur radius on mobile — same reasoning as the root page
-        // transition in Layout.astro: full-viewport blur is expensive on
-        // mobile GPUs.
-        const blurPx = isMobile ? 8 : 20;
+        // Lighter blur radius on touch devices — same reasoning as the root
+        // page transition in Layout.astro: full-viewport blur is expensive
+        // on weaker GPUs. Deliberately keyed off pointer type (matches the
+        // isTouch check index.astro/winds-of-sinai.astro use for their own
+        // Lenis setup), NOT the width-based `isMobile` used elsewhere in
+        // this file — a tablet in landscape is easily >1024px wide (so
+        // isMobile is false there) but still has a phone-class GPU, and was
+        // getting the heavy 20px blur meant only for real desktops. That
+        // mismatch was the visible flicker/stutter right before navigating,
+        // reported as "tablet only".
+        const blurPx = window.matchMedia('(pointer: coarse)').matches ? 8 : 20;
         gsap.timeline({
           onComplete: () => {
             if (!keepOverlay) {
