@@ -232,8 +232,23 @@ function initOxygenMenu() {
       // back down to 0 for its own, later (1.6s) reveal. Pinning it here too
       // closes that gap; HeroSection's gsap.set(.... {opacity:0}) right
       // after is then just a harmless no-op restate of the same value.
-      if (document.getElementById('hero')) {
+      if (document.getElementById('hero') && hudMenuBtn) {
+        // .hud-icon-btn.hud-menu-btn has `transition: opacity 0.25s ease`
+        // (for the scroll show/hide swap) — with no CSS default opacity of
+        // its own (only the #ox-hud-mobile wrapper has one), the button's
+        // very first computed opacity is 1 until *something* sets it, and
+        // that same transition rule then animates this first 1→0 set over
+        // 0.25s instead of applying it instantly — a visible flash-then-
+        // fade at the very start of every load. Suspend the transition for
+        // just this one, one-time hide (nothing else is changing on the
+        // button in this same tick, so nothing else needs it gone) and
+        // force a reflow so the 0 is committed before restoring it, leaving
+        // the scroll show/hide swap's own transition intact afterward.
+        const prevTransition = hudMenuBtn.style.transition;
+        hudMenuBtn.style.transition = 'none';
         gsap.set(hudMenuBtn, { opacity: 0 });
+        void hudMenuBtn.offsetHeight;
+        hudMenuBtn.style.transition = prevTransition;
       }
       gsap.to(hudEl, {
         opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.3,
