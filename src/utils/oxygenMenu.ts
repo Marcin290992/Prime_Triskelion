@@ -219,6 +219,22 @@ function initOxygenMenu() {
       // in the markup) — keep its backdrop-filter off for the duration,
       // see the --settling rule in OxygenMenu.astro for why.
       hudMenuBtn?.classList.add('hud-menu-btn--settling');
+      // On the homepage, HeroSection's own reveal timeline owns hud-menu-btn
+      // specifically — it stages the button in alongside the hero title/
+      // claim/CTA instead of letting it fade in with the rest of this bar
+      // (see the "Owned here" comment in HeroSection.astro's runReveal()).
+      // That ownership lives in a separate <script>, which is still loading
+      // when this runs — this component's own script always executes first,
+      // since it appears earlier in the document (module scripts execute in
+      // document order) — so without this, the button has no inline opacity
+      // yet and rides up fully visible with hudEl's fade the instant it
+      // starts, well before HeroSection's script gets a chance to pin it
+      // back down to 0 for its own, later (1.6s) reveal. Pinning it here too
+      // closes that gap; HeroSection's gsap.set(.... {opacity:0}) right
+      // after is then just a harmless no-op restate of the same value.
+      if (document.getElementById('hero')) {
+        gsap.set(hudMenuBtn, { opacity: 0 });
+      }
       gsap.to(hudEl, {
         opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', delay: 0.3,
         onComplete: () => hudMenuBtn?.classList.remove('hud-menu-btn--settling'),
