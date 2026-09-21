@@ -33,6 +33,7 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
     <!-- Hamburger button — centered -->
     <button id="hud-menu-btn" transition:persist class="hud-icon-btn hud-menu-btn" type="button" aria-label="Toggle menu" aria-expanded="false">
       <span class="specular-button__fx" aria-hidden="true"></span>
+      <span class="hud-spin-border hud-menu-spin-border" aria-hidden="true"></span>
       <span class="hud-ico" aria-hidden="true">
         <span class="hud-ico__line"></span>
         <span class="hud-ico__line"></span>
@@ -493,6 +494,10 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 
   .hud-menu-btn .hud-ico { flex-shrink: 0; }
 
+  /* Spin-border beam (same one as the phone/social icon buttons) — mobile
+     only; desktop keeps its existing SpecularButton canvas beam untouched. */
+  .hud-menu-spin-border { display: none; }
+
   .hud-menu-btn::after {
     content: "Menu";
     font-family: var(--f-body);
@@ -753,9 +758,8 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
       gap: 10px;
     }
     .hud-menu-btn::after { font-size: 10px; letter-spacing: 0.28em; }
-    /* Menu button keeps no beam at all on mobile — desktop keeps its
-       SpecularButton canvas beam untouched (see specularButtonFx.ts). */
     .hud-menu-btn .specular-button__fx { display: none; }
+    .hud-menu-spin-border { display: block; }
     .hud-icon-btn {
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;

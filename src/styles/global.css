@@ -215,6 +215,17 @@ main {
 .h-hero-cta.h-hero-cta--fixed .hud-spin-border::before {
   display: block;
 }
+/* Mobile: the beam is meant to read as a nav-chrome signal (menu/contact
+   buttons, which don't use .h-hero-cta--fixed and so aren't touched by
+   this), not something every CTA on every page carries — on a small
+   screen it just competes with this variant's own glare sweep below.
+   Keep the glare (the site's one CTA motion cue on mobile), drop the
+   beam back to the sitewide-suppressed default here. */
+@media (max-width: 1024px) {
+  .h-hero-cta.h-hero-cta--fixed .hud-spin-border::before {
+    display: none;
+  }
+}
 .h-hero-cta--fixed:hover {
   color: rgb(var(--c-cream) / 0.65);
   border-color: rgb(var(--c-cream) / 0.18);
