@@ -55,4 +55,8 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     Cross-Origin-Opener-Policy = "same-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://data.shaders.com; worker-src blob:; frame-ancestors 'none'"
+    # images.unsplash.com is allowed for the placeholder project photos in
+    # ShowcaseSection/SelectedWorkSection/projects — CSP was silently
+    # blocking them outright. Drop it once those are swapped for real,
+    # self-hosted project images.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self' https://data.shaders.com; worker-src blob:; frame-ancestors 'none'"
