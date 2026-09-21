@@ -190,13 +190,15 @@
 			display: block;
 			position: absolute;
 			right: var(--site-gutter);
-			/* top is set in px by JS (initServicesMobile) to the vertical
-			   center of the active item, so the image tracks whichever
-			   service is selected instead of sitting fixed in the middle of
-			   the list; 50% here is just the pre-JS fallback. */
-			top: 50%;
-			transform: translateY(-50%);
-			transition: top 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+			/* translateY is set in px by JS (initServicesMobile) to the
+			   vertical center of the active item, so the image tracks
+			   whichever service is selected instead of sitting fixed in the
+			   middle of the list. transform instead of animating `top`
+			   directly — `top` triggers layout on every frame (flagged as a
+			   non-composited/janky animation), transform doesn't. */
+			top: 0;
+			transform: translateY(0);
+			transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 			/* work-thumbs/*.svg are wide browser-mockup graphics (viewBox
 			   320x200) — a narrow portrait box here would object-fit:cover-crop
 			   almost all of the (already very dark) artwork away, leaving what
@@ -242,7 +244,8 @@
 			const activate = (item: HTMLElement) => {
 				items.forEach(i => i.classList.remove('is-active'));
 				item.classList.add('is-active');
-				mobileImgBox.style.top = `${item.offsetTop + item.offsetHeight / 2}px`;
+				const y = item.offsetTop + item.offsetHeight / 2 - mobileImgBox.offsetHeight / 2;
+				mobileImgBox.style.transform = `translateY(${y}px)`;
 				const src = item.dataset.img;
 				if (src && mobileImg.getAttribute('src') !== src) {
 					mobileImg.style.opacity = '0';
