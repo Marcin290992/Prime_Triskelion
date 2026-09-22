@@ -102,6 +102,17 @@ if (!(window as any).__oxAfterSwapReset) {
 function initOxygenMenu() {
   const state = {
     isMenuOpen: false,
+    // True for the whole open/close GSAP timeline, not just isMenuOpen's
+    // instant flip — closeMenu() only removes the overlay's "active" class
+    // in its onComplete, so a toggle click fired mid-close still reads
+    // "active" and re-triggers ANOTHER closeMenu() on top of the one
+    // already running instead of opening back up, and the same happens in
+    // reverse for a close fired mid-open. toggleMenu() below just ignores
+    // clicks while this is true instead of trying to interrupt/reconcile
+    // two overlapping timelines — same reasoning as the .hud-scroll-hidden
+    // single-class approach elsewhere in this file: fewer pieces of
+    // simultaneously-animating state that can end up half-applied.
+    menuAnimating: false,
     lastScrollTop: 0,
     barHidden: false,
     scrollAccum: 0,
@@ -368,6 +379,7 @@ function initOxygenMenu() {
     const btn = document.getElementById('hud-menu-btn');
     const overlay = document.getElementById('ox-menu-overlay');
     state.isMenuOpen = true;
+    state.menuAnimating = true;
     state.scrollAccum = 0;
     btn?.classList.add('active');
     btn?.setAttribute('aria-expanded', 'true');
@@ -388,7 +400,7 @@ function initOxygenMenu() {
     const hudTimeHide = document.getElementById('hud-time');
     if (hudTimeHide) gsap.to(hudTimeHide, { opacity: 0, duration: 0.2 });
     gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
-    gsap.timeline()
+    gsap.timeline({ onComplete: () => { state.menuAnimating = false; } })
       .to('.ox-menu-topbar', { y: 0, opacity: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
       .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out' }, '-=0.2')
       .to('.ox-menu-bottom', { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.3');
@@ -405,6 +417,7 @@ function initOxygenMenu() {
       const overlay = document.getElementById('ox-menu-overlay');
       const content = overlay?.querySelector<HTMLElement>('.ox-menu-content') ?? null;
       state.isMenuOpen = false;
+      state.menuAnimating = true;
       btn?.classList.remove('active');
       btn?.setAttribute('aria-expanded', 'false');
 
@@ -445,6 +458,7 @@ function initOxygenMenu() {
             // .ox-menu-link/.ox-menu-topbar/.ox-menu-bottom) back to
             // fully visible for one frame before teardown — a visible
             // flash right as the page was navigating away.
+            state.menuAnimating = false;
             unlockBodyScroll();
             resolve();
           },
@@ -463,6 +477,7 @@ function initOxygenMenu() {
           gsap.set('.ox-menu-topbar, .ox-menu-bottom', {
             y: 20, opacity: 0,
           });
+          state.menuAnimating = false;
           unlockBodyScroll();
           resolve();
         },
@@ -479,6 +494,10 @@ function initOxygenMenu() {
   }
 
   function toggleMenu() {
+    // Ignore taps while the previous open/close is still animating — see
+    // state.menuAnimating above for why interrupting/reconciling mid-flight
+    // is worse than a beat of an unresponsive-looking button.
+    if (state.menuAnimating) return;
     // Read the live overlay's class rather than state.isMenuOpen so this
     // stays correct even when called via the permanently-delegated click
     // listener from a stale generation (see top of file).
