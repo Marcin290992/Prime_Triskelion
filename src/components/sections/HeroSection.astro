@@ -834,6 +834,19 @@
 		}
 		window.addEventListener('resize', onResize, { passive: true });
 		resize();
+		// #hero's height comes from --app-stable-vh (Layout.astro), which on
+		// a back/forward (traverse) navigation gets a first, possibly-stale
+		// value synchronously and then a corrected one ~160ms later once the
+		// browser chrome (URL bar) has actually settled — see the
+		// isTraverseNav re-measure in Layout.astro's setLockedHeight
+		// listener. The resize() above already ran by then, against
+		// whichever value landed first, so the canvas's draw buffer can end
+		// up sized for the wrong height and stay that way — the width-only
+		// guard in onResize() never catches it since only the height was
+		// ever wrong. One more unconditional resize after that correction
+		// has had time to land fixes it up, regardless of whether this
+		// particular load actually needed it.
+		setTimeout(resize, 220);
 
 		let lastFrameTime = 0;
 		function loop(ts: number) {

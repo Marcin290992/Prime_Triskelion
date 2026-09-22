@@ -523,15 +523,27 @@ function initOxygenMenu() {
   // else).
   function bindMenuNavLink(link: HTMLAnchorElement, activeClass: string) {
     // Mobile: touchstart gives immediate visual feedback before click fires
+    let releaseTimer: ReturnType<typeof setTimeout> | null = null;
     link.addEventListener('touchstart', () => {
       link.classList.add(activeClass);
     }, { passive: true });
     link.addEventListener('touchend', () => {
-      setTimeout(() => link.classList.remove(activeClass), 400);
+      // Just a tap-feedback release for taps that DON'T navigate (e.g. the
+      // touch landed but click never fires, or e.preventDefault() below
+      // didn't get a chance to run) — the click handler cancels this timer
+      // the moment it actually starts closing/navigating, so it can never
+      // fire mid-close and strip the red state back to white before the
+      // page has visibly changed. Was unconditional before: this timer and
+      // the click handler's own ~120ms wait + ~300ms blur-out (~420ms
+      // total before navigate() even fires) were racing on the same clock,
+      // and 400ms usually won — the link flashed back to white while the
+      // menu was still visibly closing.
+      releaseTimer = setTimeout(() => link.classList.remove(activeClass), 400);
     }, { passive: true });
 
     link.addEventListener('click', async (e) => {
       e.preventDefault();
+      if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
       const href = link.getAttribute('href');
       // Freeze this link's hover state so it doesn't snap back while the
       // content blurs out underneath it.
