@@ -171,6 +171,40 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}
 			}
 
+			/* Fallback for browsers with no native Cross-Document View
+			   Transitions support (e.g. Safari on iOS 17) — Astro's router
+			   still runs its own "animate" fallback in that case (the
+			   default; see ClientRouter's fallback prop), but that mode
+			   works completely differently from the native path above: it
+			   never creates any ::view-transition-*(root) pseudo-elements at
+			   all. Instead it sets data-astro-transition-fallback="old" on
+			   <html> right before the swap and ="new" right after, then
+			   waits for whatever CSS animation that triggers to finish
+			   before continuing — see animate()/animateFallbackOld() in
+			   astro/dist/transitions/router.js. We never gave it one, so
+			   that wait resolved instantly and every navigation on those
+			   browsers was a hard, unanimated cut — the missing blur-in and
+			   the flaky page-transition behavior reported there. Targeting
+			   body (not html itself, like the native rule targets root)
+			   because <html> already carries its own permanent black
+			   background (see the inline style on the <html> tag above) —
+			   fading html's own opacity would fade that background away
+			   too and flash the browser's default white canvas through, the
+			   same problem ::view-transition-group(root) above exists to
+			   avoid on the native path. Fading body instead leaves html's
+			   black behind it untouched. */
+			html[data-astro-transition-fallback="old"] body {
+				animation: vt-fade-out 0.2s ease-in both;
+			}
+			html[data-astro-transition-fallback="new"] body {
+				animation: vt-blur-in 0.32s ease-out 0.2s both;
+			}
+			@media (pointer: coarse) {
+				html[data-astro-transition-fallback="new"] body {
+					animation: vt-blur-in-mobile 0.2s ease-out 0.15s both;
+				}
+			}
+
 		</style>
 	</head>
 	<body class="text-white">

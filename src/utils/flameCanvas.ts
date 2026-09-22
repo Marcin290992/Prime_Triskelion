@@ -172,6 +172,13 @@ export function initFlameCanvas(
 	}
 	window.addEventListener('resize', onResize, { passive: true });
 	resize();
+	// Same fixup as HeroSection.astro's rays-canvas: onResize()'s width-only
+	// guard can leave the draw buffer sized for a stale height if this
+	// section's own height depends on a viewport unit that gets corrected
+	// asynchronously after a back/forward navigation (--app-stable-vh,
+	// Layout.astro). One more unconditional resize once that's had time to
+	// land is a harmless no-op when it wasn't needed.
+	setTimeout(resize, 220);
 
 	let lastFrameTime = 0;
 	function render(t: number) {
