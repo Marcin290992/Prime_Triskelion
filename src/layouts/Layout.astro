@@ -98,7 +98,16 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 		<link rel="preload" href="/fonts/clash-display-600.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/fonts/clash-display-700.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/logo-white.svg" as="image" type="image/svg+xml" />
-		<ClientRouter />
+		{/* iOS 17 Safari (no native Cross-Document View Transitions support)
+		   falls back to Astro's own JS-emulated "animate" fallback — on that
+		   path the hero's blur-in reveal wasn't playing and back/forward
+		   navigation stopped working. "swap" fallback keeps SPA-style
+		   navigation (still no full reload, still the same astro:page-load/
+		   transition:persist mechanics everything else here depends on) but
+		   does a plain instant swap instead of trying to fake the transition
+		   — browsers with real support (Chromium) are unaffected, since they
+		   never take the fallback path at all. */}
+		<ClientRouter fallback="swap" />
 		<slot name="head" />
 		<script is:inline>
 			if ('scrollRestoration' in history) {
