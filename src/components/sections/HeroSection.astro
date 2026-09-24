@@ -901,30 +901,6 @@
 			heroIO.observe(heroSectionEl);
 		}
 
-		// Touch only: capping DPR to 1 (see maxDpr above) wasn't enough on
-		// its own — reported jank persisted right at the exact moment of
-		// scrolling from Hero into the next section, i.e. right around
-		// where the IntersectionObserver above is deciding to stop this
-		// loop. threshold:0 is already the most immediate setting
-		// available, but IntersectionObserver callbacks are inherently
-		// async/batched by the browser rather than synchronous with
-		// scroll, so there's still an unavoidable gap of at least one
-		// frame (often more on a fast flick) where this WebGL canvas is
-		// still actively rendering while Safari's compositor is also
-		// handling the scroll itself — that overlap, not raw pixel count,
-		// is what was actually costing here. Pausing outright for the
-		// duration of any active scroll (resuming a beat after it settles,
-		// only if Hero's still visible) removes the overlap entirely
-		// rather than trying to shrink the timing gap that causes it.
-		let scrollPauseTimer: ReturnType<typeof setTimeout> | null = null;
-		if (window.matchMedia('(pointer: coarse)').matches) {
-			window.addEventListener('scroll', () => {
-				stopRaysAnimation();
-				if (scrollPauseTimer) clearTimeout(scrollPauseTimer);
-				scrollPauseTimer = setTimeout(startRaysAnimation, 150);
-			}, { passive: true });
-		}
-
 		rafId = requestAnimationFrame(loop);
 
 		document.addEventListener('astro:before-swap', () => {
