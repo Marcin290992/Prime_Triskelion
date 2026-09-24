@@ -21,17 +21,22 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 <html lang="en" style="background:#000">
 	<head>
 		<meta charset="UTF-8" />
-		<!-- viewport-fit=cover: without it, the page's layout box shrinks to
-		     exclude the safe-area insets (the notch/Dynamic Island strip and
-		     the home-indicator/gesture-bar strip at the bottom) instead of
-		     extending under them. Whatever's excluded isn't page content
-		     Safari can render over — it falls back to its own default fill
-		     there instead of this page's black, which is what actually
-		     produced the lighter strip right around the toolbar/gesture-bar
-		     area (reported and confirmed still present even with the
-		     theme-color fix below, which only covers the toolbar's own tint
-		     — that's a separate, narrower thing this doesn't replace). -->
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		<!-- No viewport-fit=cover (removed — see git history for why it was
+		     added). It opts into extending the page's own layout under the
+		     notch/Dynamic Island and home-indicator/gesture-bar strips
+		     instead of Safari reserving and filling them itself — which
+		     puts the burden on this page's own CSS to size every fixed
+		     element (the fullscreen nav overlay especially) exactly right
+		     against the true visual viewport, every time, including mid-
+		     toolbar-animation. That turned out to be a much bigger, harder-
+		     to-fully-pin-down problem (page content visible through gaps at
+		     the top/bottom of the open menu) than the narrower one
+		     viewport-fit=cover was added to fix in the first place (a
+		     lighter strip right around the toolbar/gesture-bar area).
+		     Confirmed via a real reference site with the same kind of
+		     fullscreen nav overlay and no gap issue: it doesn't set
+		     viewport-fit=cover either. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="description" content={description} />
 		<meta name="color-scheme" content="dark" />
 		<!-- Matches --c-bg (0 0 0) — the toolbar/status-bar chrome's own tint,
