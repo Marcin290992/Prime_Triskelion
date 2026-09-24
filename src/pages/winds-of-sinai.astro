@@ -1,17 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import CtaSection from '../components/sections/CtaSection.astro';
-import { getImage } from 'astro:assets';
-import deeer2Raw from '../img/deeer3.webp';
-
-// deeer2Raw is a 7360px-wide test-only source — every spot below uses a
-// plain <img src={deeer2.src}>, not the <Image> component, so referencing
-// the raw import's own .src would ship that full-size original into all 14
-// placeholder spots on the page untouched (heavy enough to visibly jank
-// scroll, worst on iOS Safari's compositor). getImage() pre-generates one
-// properly-downscaled asset at build time; every usage below keeps
-// pointing at `deeer2.src` unchanged, just now resolving to the smaller one.
-const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
 ---
 
 <Layout title="Winds Of Sinai — Prime Triskelion" description="Case study: Winds Of Sinai — branding, web design and development by Prime Triskelion.">
@@ -57,7 +46,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
               <div class="browser-frame__url">windsofsinai.com</div>
             </div>
             <div class="browser-frame__screen browser-frame__screen--tall">
-              <img src={deeer2.src} alt="Project Preview" />
+              <div class="browser-frame__ph">Project Preview</div>
             </div>
           </div>
         </div>
@@ -68,7 +57,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
     <section class="wos-cin" id="wos-cin">
       <h1 class="wos-cin__sr">Winds Of Sinai — Case Study</h1>
       <div class="wos-cin__image" aria-hidden="true">
-        <img src={deeer2.src} alt="" draggable="false">
+        <img src="https://picsum.photos/seed/sinai/800/1200?grayscale" alt="" draggable="false">
       </div>
       <div class="wos-cin__texts" aria-hidden="true">
         <span class="wos-cin__l">WINDS OF</span>
@@ -190,7 +179,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <div class="browser-frame__url">windsofsinai.com</div>
               </div>
               <div class="browser-frame__screen">
-                <img src={deeer2.src} alt="Homepage" />
+                <div class="browser-frame__ph">Homepage</div>
               </div>
             </div>
           </figure>
@@ -202,7 +191,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <div class="browser-frame__url">windsofsinai.com/experiences</div>
               </div>
               <div class="browser-frame__screen">
-                <img src={deeer2.src} alt="Experiences" />
+                <div class="browser-frame__ph">Experiences</div>
               </div>
             </div>
           </figure>
@@ -214,7 +203,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <div class="browser-frame__url">windsofsinai.com/about</div>
               </div>
               <div class="browser-frame__screen">
-                <img src={deeer2.src} alt="About" />
+                <div class="browser-frame__ph">About</div>
               </div>
             </div>
           </figure>
@@ -226,7 +215,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <div class="browser-frame__url">windsofsinai.com/contact</div>
               </div>
               <div class="browser-frame__screen">
-                <img src={deeer2.src} alt="Contact" />
+                <div class="browser-frame__ph">Contact</div>
               </div>
             </div>
           </figure>
@@ -257,7 +246,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                   <div class="browser-frame__url">windsofsinai.com</div>
                 </div>
                 <div class="browser-frame__screen browser-frame__screen--tall">
-                  <img src={deeer2.src} alt="Desktop — Homepage" />
+                  <div class="browser-frame__ph">Desktop — Homepage</div>
                 </div>
               </div>
             </div>
@@ -267,7 +256,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <span class="showcase-num">02</span>
                 <span class="showcase-desc">Mobile — homepage</span>
               </div>
-              <div class="device-ph scr-device-single"><img src={deeer2.src} alt="" /></div>
+              <div class="device-ph scr-device-single"></div>
             </div>
 
             <div class="scr-slide">
@@ -275,7 +264,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                 <span class="showcase-num">03</span>
                 <span class="showcase-desc">Mobile — experiences</span>
               </div>
-              <div class="device-ph scr-device-single"><img src={deeer2.src} alt="" /></div>
+              <div class="device-ph scr-device-single"></div>
             </div>
 
             <div class="scr-slide">
@@ -289,7 +278,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
                   <div class="browser-frame__url">windsofsinai.com/experiences</div>
                 </div>
                 <div class="browser-frame__screen browser-frame__screen--tall">
-                  <img src={deeer2.src} alt="Desktop — Experiences" />
+                  <div class="browser-frame__ph">Desktop — Experiences</div>
                 </div>
               </div>
             </div>
@@ -315,7 +304,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
               <div class="browser-frame__url">windsofsinai.com</div>
             </div>
             <div class="browser-frame__screen browser-frame__screen--tall">
-              <img src={deeer2.src} alt="Desktop — Homepage" />
+              <div class="browser-frame__ph">Desktop — Homepage</div>
             </div>
           </div>
         </div>
@@ -326,7 +315,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
             <span class="showcase-desc">Mobile — homepage</span>
           </div>
           <div class="showcase-devices wos-inner">
-            <div class="device-ph"><img src={deeer2.src} alt="" /></div>
+            <div class="device-ph"></div>
           </div>
         </div>
 
@@ -336,7 +325,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
             <span class="showcase-desc">Mobile — experiences</span>
           </div>
           <div class="showcase-devices wos-inner">
-            <div class="device-ph"><img src={deeer2.src} alt="" /></div>
+            <div class="device-ph"></div>
           </div>
         </div>
 
@@ -351,7 +340,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
               <div class="browser-frame__url">windsofsinai.com/experiences</div>
             </div>
             <div class="browser-frame__screen browser-frame__screen--tall">
-              <img src={deeer2.src} alt="Desktop — Experiences" />
+              <div class="browser-frame__ph">Desktop — Experiences</div>
             </div>
           </div>
         </div>
@@ -855,9 +844,8 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
     position: relative;
     z-index: 1;
   }
-  /* Test image dropped into every mockup placeholder — see deeer2 import
-     above. Temporary, just to check how a real photo reads in these
-     frames instead of the flat gradient fill. */
+  /* Ready for whenever a real screenshot fills these mockup placeholders
+     instead of the flat gradient — not currently used by any markup here. */
   .browser-frame__screen img {
     width: 100%;
     height: 100%;
