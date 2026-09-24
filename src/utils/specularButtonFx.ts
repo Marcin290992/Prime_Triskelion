@@ -131,11 +131,17 @@ export class SpecularButton {
   private _pointerAngle: number | null = null;
   private _proximityT = 0;
   private _last = performance.now();
+  // Parsed once — cssColorToRgb01() does a 2D-canvas getImageData(), i.e. a
+  // synchronous GPU readback, which is far too expensive to run every frame.
+  private _lineRgb: [number, number, number] = [1, 1, 1];
+  private _baseRgb: [number, number, number] = [0, 0, 0];
   private _raf = 0;
 
   constructor(btn: HTMLElement, options: SpecularButtonOptions = {}) {
     this.btn = btn;
     this.opts = Object.assign({}, DEFAULTS, options);
+    this._lineRgb = cssColorToRgb01(this.opts.lineColor);
+    this._baseRgb = cssColorToRgb01(this.opts.baseColor);
 
     this._applyCssVars();
     this._initGL();
@@ -354,9 +360,6 @@ export class SpecularButton {
     const brightTarget = p.autoAnimate ? 1 : this._proximityT;
     this._bright += (brightTarget - this._bright) * (1 - Math.exp(-dt * 8));
 
-    const lineRgb = cssColorToRgb01(p.lineColor);
-    const baseRgb = cssColorToRgb01(p.baseColor);
-
     const gl = this.gl!;
     const u = this.uniforms;
     gl.useProgram(this.prog);
@@ -365,8 +368,8 @@ export class SpecularButton {
     gl.uniform1f(u.uRadius, Math.min(p.radius, Math.min(this.size.w, this.size.h) / 2) * this.dpr);
     gl.uniform1f(u.uAngle, this._angle);
     gl.uniform1f(u.uPx, this.dpr);
-    gl.uniform3fv(u.uLineColor, lineRgb);
-    gl.uniform3fv(u.uBaseColor, baseRgb);
+    gl.uniform3fv(u.uLineColor, this._lineRgb);
+    gl.uniform3fv(u.uBaseColor, this._baseRgb);
     gl.uniform1f(u.uIntensity, p.intensity * this._bright);
     gl.uniform1f(u.uShineSize, (p.shineSize * Math.PI) / 180);
     gl.uniform1f(u.uShineFade, (p.shineFade * Math.PI) / 180);

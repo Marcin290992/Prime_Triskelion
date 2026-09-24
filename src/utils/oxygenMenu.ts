@@ -188,9 +188,33 @@ function initOxygenMenu() {
     };
   }
 
+  // iOS Safari (esp. 26+, where the page runs edge-to-edge behind the
+  // floating toolbar and status bar) doesn't let a position:fixed layer
+  // reach those strips, no matter how it's sized — so whatever page content
+  // is scrolled under them shows through as a sliver above and below the
+  // open overlay. Instead of fighting the overlay's size, hide the page
+  // itself once the overlay has fully faded in: the strips then show
+  // <html>'s own black background. visibility (not display) keeps layout
+  // and scroll position untouched.
+  let coverTimer: ReturnType<typeof setTimeout> | null = null;
+  function setPageCovered(covered: boolean) {
+    if (coverTimer) { clearTimeout(coverTimer); coverTimer = null; }
+    if (!covered) {
+      document.documentElement.classList.remove('ox-menu-covered');
+      return;
+    }
+    // Matches .ox-menu-overlay's 0.6s opacity transition — hiding earlier
+    // would snap the page to black instead of letting the overlay fade over it.
+    coverTimer = setTimeout(() => {
+      coverTimer = null;
+      if (state.isMenuOpen) document.documentElement.classList.add('ox-menu-covered');
+    }, 600);
+  }
+
   function lockBodyScroll() {
     state.scrollPosition = getCurrentScrollY();
     document.body.classList.add('oxygen-menu-open');
+    setPageCovered(true);
 
     if (!state.releaseScrollLock) {
       state.releaseScrollLock = createScrollLockRelease();
@@ -205,6 +229,7 @@ function initOxygenMenu() {
 
   function unlockBodyScroll() {
     document.body.classList.remove('oxygen-menu-open');
+    setPageCovered(false);
 
     if (state.releaseScrollLock) {
       state.releaseScrollLock();
@@ -473,6 +498,9 @@ function initOxygenMenu() {
       const content = overlay?.querySelector<HTMLElement>('.ox-menu-content') ?? null;
       state.isMenuOpen = false;
       state.menuAnimating = true;
+      // Unhide the page now, while the overlay is still opaque, so it's
+      // already there once the overlay starts fading out.
+      setPageCovered(false);
       btn?.classList.remove('active');
       btn?.setAttribute('aria-expanded', 'false');
 
@@ -726,7 +754,10 @@ function initOxygenMenu() {
   // inside it also stays put: build the beam effect once per page
   // session and leave it running, instead of destroying and recreating
   // its WebGL context on every init like the rest of this component does.
-  if (hudMenuBtn && !(window as any).__oxMenuSpecular) {
+  // Skipped at ≤1024px: OxygenMenu.astro hides .specular-button__fx there
+  // (display:none), but the WebGL2 context and its per-frame rAF draw would
+  // otherwise keep running invisibly for the whole session on every phone.
+  if (hudMenuBtn && !(window as any).__oxMenuSpecular && !isMobile) {
     (window as any).__oxMenuSpecular = new SpecularButton(hudMenuBtn, {
       radius: 0,
       lineColor: '#ffffff',
