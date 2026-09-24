@@ -286,14 +286,19 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			   Safari paint both areas solid black (like phantom.land), so the
 			   page reads as a framed screen between two black bars at all
 			   times — not only while the menu is open. iOS-only
-			   (-webkit-touch-callout exists nowhere else); they sit under the
-			   browser's own chrome there, so nothing visible is covered. */
+			   (-webkit-touch-callout exists nowhere else).
+			   Height matters: WebKit samples 4-6px in from the viewport edge
+			   and ignores any box 10px tall or less
+			   (LocalFrameView::fixedContainerEdges — sampleRectMargin = 4,
+			   thinBorderWidth = 10), so the strips must be taller than that.
+			   Once Safari picks them up, the black bars it paints run straight
+			   into them, so they read as part of the bars. */
 			@supports (-webkit-touch-callout: none) {
 				.edge-tint {
 					position: fixed;
 					left: 0;
 					right: 0;
-					height: 2px;
+					height: 12px;
 					background: rgb(var(--c-bg));
 					z-index: 10000;
 				}
