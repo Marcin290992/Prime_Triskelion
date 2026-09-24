@@ -83,6 +83,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}, { passive: true });
 
 				var heightSettleTimer = null;
+				var hasScrollAnchoring = !!(window.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto'));
 				window.addEventListener('resize', function () {
 					var w = window.innerWidth || 0;
 					if (Math.abs(w - lockWidth) > 80) {
@@ -120,8 +121,12 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					// Up there the only thing that moves is the first screen's
 					// own bottom edge, i.e. exactly the gap this exists to fill.
 					if (heightSettleTimer) clearTimeout(heightSettleTimer);
+					// Browsers WITH scroll anchoring (Chrome, Firefox) absorb that
+					// jump themselves, so they keep updating everywhere — otherwise
+					// sections further down (e.g. .proj-section) come up short by
+					// the bar's height once it hides.
 					heightSettleTimer = setTimeout(function () {
-						if ((window.scrollY || 0) < lockedHeight) setLockedHeight();
+						if (hasScrollAnchoring || (window.scrollY || 0) < lockedHeight) setLockedHeight();
 					}, 200);
 				}, { passive: true });
 
@@ -274,9 +279,33 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}
 			}
 
+			/* iOS Safari 26+ tints the status-bar strip and the area behind
+			   its floating URL bar from whatever fixed element touches that
+			   screen edge; with none, it shows page content scrolling through
+			   them instead. These two always-present black edge strips make
+			   Safari paint both areas solid black (like phantom.land), so the
+			   page reads as a framed screen between two black bars at all
+			   times — not only while the menu is open. iOS-only
+			   (-webkit-touch-callout exists nowhere else); they sit under the
+			   browser's own chrome there, so nothing visible is covered. */
+			@supports (-webkit-touch-callout: none) {
+				.edge-tint {
+					position: fixed;
+					left: 0;
+					right: 0;
+					height: 2px;
+					background: rgb(var(--c-bg));
+					z-index: 10000;
+				}
+				.edge-tint--top { top: 0; }
+				.edge-tint--bottom { bottom: 0; }
+			}
+
 		</style>
 	</head>
 	<body class="text-white">
+		<div class="edge-tint edge-tint--top" aria-hidden="true"></div>
+		<div class="edge-tint edge-tint--bottom" aria-hidden="true"></div>
 		<GridLines />
 		<Logo />
 		<TopBarCta />

@@ -925,7 +925,7 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
      (z-index 1002, meant to stay visible above the menu) is hidden, so the
      strips iOS Safari won't let the fixed overlay cover show <html>'s black
      background instead of page content. */
-  html.ox-menu-covered body > :not(#oxygen-menu-root):not(#h-title) {
+  html.ox-menu-covered body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint) {
     visibility: hidden;
   }
 
