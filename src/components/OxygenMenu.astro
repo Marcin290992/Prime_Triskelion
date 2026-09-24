@@ -379,10 +379,14 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   /* Touch active state */
   .ox-link--active .ox-link-text--base { transform: translateY(-100%); }
   .ox-link--active .ox-link-text--red  { transform: translateY(-100%); }
-  /* Chosen link singled out — the others recede. Same on every device. */
-  .ox-menu-link { transition: opacity 0.35s ease; }
-  .ox-menu-item:has(.ox-link--active) ~ .ox-menu-item .ox-menu-link,
-  .ox-menu-item:has(~ .ox-menu-item .ox-link--active) .ox-menu-link { opacity: 0.25; }
+  /* Chosen link singled out — the others recede. Same on every device.
+     On .ox-link-text-wrap, NOT .ox-menu-link: GSAP animates .ox-menu-link's
+     own opacity in the open/close timelines, and a CSS opacity transition
+     on the same element lags every GSAP frame by 0.35s — the links were
+     still fading out after the overlay itself had already gone. */
+  .ox-link-text-wrap { transition: opacity 0.35s ease; }
+  .ox-menu-item:has(.ox-link--active) ~ .ox-menu-item .ox-link-text-wrap,
+  .ox-menu-item:has(~ .ox-menu-item .ox-link--active) .ox-link-text-wrap { opacity: 0.25; }
   /* text-wrap inherits height from base text for proper clipping */
   .ox-link-text-wrap { vertical-align: bottom; }
 
