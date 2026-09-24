@@ -68,9 +68,11 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					return vv || ih;
 				}
 
+				var lockedHeight = 0;
 				function setLockedHeight() {
 					var h = measureHeight();
 					if (!h) return;
+					lockedHeight = h;
 					root.style.setProperty('--app-stable-vh', (h * 0.01) + 'px');
 				}
 
@@ -107,8 +109,20 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					// gets both: no mid-animation flicker, but the locked value
 					// still catches up once the toolbar's transition has actually
 					// finished, instead of staying stale indefinitely.
+					//
+					// Only while the viewport top is still inside the first
+					// screen, though. Further down, every vh-sized section ABOVE
+					// the reader (#hero, #manifesto at 180x, each .proj-section)
+					// changes height at once and the whole page visibly jumps —
+					// Safari has no scroll anchoring to compensate, which made
+					// this the main source of Safari-only scroll stutter (every
+					// toolbar show/hide mid-page = a layout jump 200ms later).
+					// Up there the only thing that moves is the first screen's
+					// own bottom edge, i.e. exactly the gap this exists to fill.
 					if (heightSettleTimer) clearTimeout(heightSettleTimer);
-					heightSettleTimer = setTimeout(setLockedHeight, 200);
+					heightSettleTimer = setTimeout(function () {
+						if ((window.scrollY || 0) < lockedHeight) setLockedHeight();
+					}, 200);
 				}, { passive: true });
 
 				// Astro's swap() unconditionally wipes every attribute on <html>
