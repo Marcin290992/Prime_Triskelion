@@ -219,6 +219,8 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
      fixed element's own box is computed. */
   #ox-menu-overlay {
     will-change: opacity;
+    top: calc(-1 * env(safe-area-inset-top, 0px));
+    bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
     /* Belt-and-suspenders on top of the transform fix above: the black
        fill was only ever on a child (.absolute.inset-0.bg-black), which
        is itself position:absolute relative to THIS element — so if
@@ -918,6 +920,7 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 <style is:global>
   .oxygen-menu-open {
     overscroll-behavior: none;
+    background: #000 !important;
   }
 
   /* specularButtonFx.ts mount point — genuinely global (unlike the block
