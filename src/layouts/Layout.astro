@@ -265,7 +265,19 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     // Poczekaj jeden frame — strony które mają własny Lenis (index, winds-of-sinai)
     // zdążą ustawić window.__lenis przed tym sprawdzeniem
     requestAnimationFrame(() => {
-      if ((window as any).__lenis) return;
+      // Those pages deliberately set __lenis to null on touch — "native
+      // scroll on mobile, zero jank next to the WebGL hero" — but null is
+      // falsy, so a plain `if (__lenis) return` here couldn't tell "no page
+      // Lenis exists yet" apart from "a page explicitly chose no Lenis" and
+      // created one anyway, undoing that choice: mobile Home/Winds Of Sinai
+      // ended up running this fallback Lenis's own rAF loop competing with
+      // native scroll after all, which is a well-matched cause for Safari-
+      // only jank (WebKit tends to handle a competing scroll-linked rAF
+      // loop worse than Chromium does) that no amount of tuning the scrolled
+      // content itself was ever going to fix. __lenisHandled is the
+      // explicit "a page already decided" signal those pages also set;
+      // check it first.
+      if ((window as any).__lenisHandled || (window as any).__lenis) return;
 
       const isTouch = window.matchMedia('(pointer: coarse)').matches;
       _layoutLenis = new Lenis(isTouch ? {
@@ -288,6 +300,13 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   }
 
   function destroyLayoutLenis() {
+    // Runs on every navigation regardless of which page's own script set
+    // __lenisHandled (this listener is the one thing guaranteed to exist on
+    // every page) — clearing it here means the NEXT page, if it doesn't set
+    // its own Lenis choice, still correctly falls through to this file's
+    // fallback instead of inheriting a stale "already decided" flag from
+    // whatever page you navigated away from.
+    (window as any).__lenisHandled = false;
     if (!_layoutLenis) return;
     if ((window as any).__lenis === _layoutLenis) (window as any).__lenis = null;
     if (_layoutRaf) { gsap.ticker.remove(_layoutRaf); _layoutRaf = null; }

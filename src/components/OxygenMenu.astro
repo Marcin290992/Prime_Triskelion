@@ -195,8 +195,19 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
      OXYGEN MENU — Only custom CSS that can't be Tailwind
      ═══════════════════════════════════════ */
 
-  /* Pre-promote fixed elements as GPU compositor layers */
-  #ox-menu-overlay { will-change: transform; transform: translateZ(0); }
+  /* NOT transform: translateZ(0) — a well-documented iOS Safari bug: giving
+     a `transform` (any value, including a GPU-layer-promotion no-op like
+     this) to a position:fixed element makes Safari size/position it
+     against the LAYOUT viewport instead of the VISUAL viewport. Those only
+     differ while the dynamic address bar is partway through
+     collapsing/expanding — which is exactly when this stopped covering the
+     real top/bottom edges, leaving a gap that revealed whatever page
+     content was underneath (confirmed via a real screenshot: the open
+     overlay with slivers of the Home hero visible above and below it).
+     will-change: opacity alone still gets this element promoted for the
+     opacity/visibility transition right below, without touching how a
+     fixed element's own box is computed. */
+  #ox-menu-overlay { will-change: opacity; }
 
   /* ── Overlay active state ── */
   .ox-menu-overlay { transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), visibility 0.6s cubic-bezier(0.4,0,0.2,1); }

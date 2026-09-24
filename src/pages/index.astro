@@ -49,6 +49,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (isTouch) {
 				// Na mobile natywny scroll — compositor thread, zero janku przy WebGL hero
 				(window as any).__lenis = null;
+				// null is falsy, so without this Layout.astro's own fallback
+				// Lenis init (`if (__lenis) return`) couldn't tell this apart
+				// from "no page Lenis exists yet" — it would create its own
+				// Lenis anyway, undoing this native-scroll choice and running
+				// an extra rAF loop alongside native scroll on mobile.
+				(window as any).__lenisHandled = true;
 							} else {
 				lenisInstance = new Lenis({
 					duration: 2.4,
