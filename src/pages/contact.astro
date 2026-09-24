@@ -517,6 +517,17 @@ import Layout from '../layouts/Layout.astro';
     .cp-form input[type="url"],
     .cp-form textarea {
       padding: 0.9rem 1rem;
+      /* The base rule's clamp(0.85rem, 1.1vw, 1rem) floors out at 0.85rem
+         (13.6px) on narrow/mobile widths, where 1.1vw is a fraction of a
+         pixel. iOS Safari auto-zooms the whole page on focus for any
+         input/textarea/select whose computed font-size is under 16px —
+         after that zoom the page is free to pan in every direction,
+         including sideways, until the user manually pinch-zooms back out.
+         Android/Chrome has no such behavior, which is why this only ever
+         showed up on iPhones. Locking this at exactly 16px on mobile (not
+         just raising the clamp's floor) sidesteps relying on 1.1vw ever
+         landing above it on some in-between width. */
+      font-size: 1rem;
     }
     .cp-form textarea { min-height: 130px; }
     #cf-submit-btn { padding: 1.15rem 1.5rem; }
