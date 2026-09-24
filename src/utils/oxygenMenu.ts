@@ -8,7 +8,6 @@
 import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
-import { isSafari } from './isSafari';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
 // compacting on scroll, see handleScroll() below). Must match
@@ -324,10 +323,6 @@ function initOxygenMenu() {
   }
 
   const isMobile = window.matchMedia('(max-width: 1024px)').matches;
-  // Touch Safari only — Chrome's tap feedback was already fine and is left
-  // as is. See the .ox-calm-tap rules in OxygenMenu.astro.
-  const calmTap = isSafari() && navigator.maxTouchPoints > 0;
-  document.getElementById('oxygen-menu-root')?.classList.toggle('ox-calm-tap', calmTap);
 
   // ── Mobile contact flyout (WhatsApp / email / call tucked behind the
   // contact button) ──
@@ -520,19 +515,9 @@ function initOxygenMenu() {
       }
 
       if (blurOut && content) {
-        // Lighter blur radius on touch devices — same reasoning as the root
-        // page transition in Layout.astro: full-viewport blur is expensive
-        // on weaker GPUs. Deliberately keyed off pointer type (matches the
-        // isTouch check index.astro/winds-of-sinai.astro use for their own
-        // Lenis setup), NOT the width-based `isMobile` used elsewhere in
-        // this file — a tablet in landscape is easily >1024px wide (so
-        // isMobile is false there) but still has a phone-class GPU, and was
-        // getting the heavy 20px blur meant only for real desktops. That
-        // mismatch was the visible flicker/stutter right before navigating,
-        // reported as "tablet only".
-        const blurPx = window.matchMedia('(pointer: coarse)').matches ? 8 : 20;
-        // Touch Safari re-rasterizes an animated filter on this full-screen
-        // block every frame and steps through it — plain fade there instead.
+        // Plain fade, not a blur, on every device: an animated filter on
+        // this full-screen block steps visibly on touch Safari, and the menu
+        // should feel identical everywhere.
         gsap.timeline({
           onComplete: () => {
             if (!keepOverlay) {
@@ -552,9 +537,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, calmTap
-          ? { opacity: 0, duration: 0.35, ease: 'power2.inOut' }
-          : { opacity: 0, filter: `blur(${blurPx}px)`, duration: 0.3, ease: 'power2.in' });
+        }).to(content, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
         return;
       }
 
@@ -630,18 +613,17 @@ function initOxygenMenu() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
       // On touch: hold the active state briefly so the user sees the highlight
-      const isTouchNav = navigator.maxTouchPoints > 0;
-      // Safari: long enough for its slower text roll to mostly finish
-      // before the fade-out starts, instead of cutting it off mid-motion.
-      if (isTouchNav) await new Promise(r => setTimeout(r, calmTap ? 380 : 120));
+      // Every device: long enough for the text roll + sibling dim
+      // (OxygenMenu.astro) to mostly play out before the fade-out starts,
+      // instead of cutting them off mid-motion.
+      await new Promise(r => setTimeout(r, 280));
       await closeMenu(true, true);  // keep black overlay visible, blur out
       if (href) navigate(href); // View Transition starts from black screen
     }
 
     link.addEventListener('touchstart', (e) => {
-      // Safari highlights only on a confirmed tap (activate()) — on
-      // touchstart it flashed on every touch, including starting a scroll.
-      if (!calmTap) link.classList.add(activeClass);
+      // No highlight here — it flashed on every touch, including the start
+      // of a scroll. activate() highlights on a confirmed tap instead.
       const t = e.touches[0];
       if (t) { touchStartX = t.clientX; touchStartY = t.clientY; }
     }, { passive: true });
