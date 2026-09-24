@@ -117,7 +117,8 @@ html:active-view-transition .h-hero-cta,
 html:active-view-transition .nav-cta,
 html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
-html:active-view-transition .zoom-col {
+html:active-view-transition .zoom-col,
+html:active-view-transition .top-blur {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
