@@ -395,15 +395,22 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
      ═══════════════════════════════════════ */
   #ox-hud-mobile {
     position: fixed;
-    /* Layout.astro's viewport meta now has viewport-fit=cover, so page
-       content genuinely extends under the home-indicator/gesture-bar strip
-       on notched iPhones instead of Safari carving that area out of the
-       layout for its own fill. Without accounting for that here, this bar
-       would sit exactly 1.5rem from the TRUE device edge post-cover — close
-       enough to land under/overlap the gesture bar on some devices. Adding
-       the inset on top keeps the original clearance from the safe area's
-       own edge, same as it had implicitly before. */
-    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    /* bottom: 0 (not a calc()'d offset) is deliberate: mobile browsers with
+       a dynamic/auto-hiding toolbar resize the visual viewport in real time
+       while scrolling, and a fixed element anchored at a NON-ZERO bottom
+       value can visibly lag that resize by a frame or more — a transient
+       gap opens up between this bar and the true screen edge for the
+       duration of the toolbar's collapse/expand animation, then closes once
+       it settles (reported as a band that "appears and disappears while
+       scrolling", on both Android Chrome and iOS Safari — a fixed-position/
+       viewport-resize timing issue, not anything about page content, which
+       is why every content-side fix tried before this one made no
+       difference). bottom: 0 is the one offset browsers keep glued to the
+       real edge even mid-animation, since it needs no recalculation — so
+       the clearance this bar wants moves into its own padding instead of
+       the position itself. */
+    bottom: 0;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
     z-index: 9100;
@@ -419,7 +426,10 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    padding: 0 2rem;
+    /* left/right only — a shorthand `padding: 0 2rem` here would reset the
+       padding-bottom set above back to 0. */
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
 
   /* Side labels — location left, time right */
@@ -772,7 +782,15 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
       --ox-menu-line-3-width: 8px;
     }
 
-    #ox-hud-mobile { bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px)); padding: 0 1rem; }
+    /* bottom stays 0 (see the base rule's comment) — only the padding that
+       provides clearance from the true edge shrinks for mobile, and left/
+       right shrink separately from bottom for the same shorthand-reset
+       reason as the base rule. */
+    #ox-hud-mobile {
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
     .hud-side { display: none; }
     .hud-right-col { display: none; }
     .hud-time-text { display: none; }
