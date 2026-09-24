@@ -919,6 +919,15 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   .oxygen-menu-open {
     overscroll-behavior: none;
   }
+  /* Mobile only — deep black menu. Both grain layers (the overlay's own
+     .ox-overlay-grain and global.css's body::after at z-index 9999, which
+     sits above the overlay) lift its #000 to a visible grey, noticeable
+     right next to the solid-black bars iOS Safari paints above/below it. */
+  @media (max-width: 1024px) {
+    .ox-overlay-grain { display: none; }
+    body::after { transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1); }
+    body.oxygen-menu-open::after { opacity: 0; }
+  }
 
   /* Set by oxygenMenu.ts once the menu overlay has fully faded in — see
      setPageCovered() there. Everything except the menu itself and the logo
