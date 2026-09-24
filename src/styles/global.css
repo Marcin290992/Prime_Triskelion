@@ -372,5 +372,25 @@ main {
   height: 22px;
 }
 
+/* Mobile contact TOGGLE (.hud-contact-main, OxygenMenu.astro) only — scaled
+   down by the same ratio as --ox-contact-btn-size / MENU_SHRINK_SCALE
+   (oxygenMenu.ts) so the icon glyph shrinks along with its button instead
+   of staying fixed-size inside a smaller box. Deliberately does NOT match
+   .hud-contact-item (the 3 WhatsApp/email/phone icons the flyout reveals
+   on tap): those stay standard-size — once they're the actual interactive
+   targets, comfortable tap size matters more than matching the compact
+   toggle's footprint. Has to live here (unscoped), not in
+   OxygenMenu.astro's own scoped <style> block: these icons are injected
+   via set:html (ICON_WHATSAPP/PHONE/EMAIL), and Astro only ever adds its
+   data-astro-cid scoping attribute to elements present in the component's
+   own static template — never to markup injected that way — so a scoped
+   selector targeting `svg` here can never match these elements at all. */
+@media (max-width: 1024px) {
+  .hud-contact-main svg {
+    width: calc(22px * 0.68);
+    height: calc(22px * 0.68);
+  }
+}
+
 .cta-red { color: rgb(var(--c-red)); }
 
