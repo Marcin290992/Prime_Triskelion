@@ -429,7 +429,13 @@ function initOxygenMenu() {
     state.menuAnimating = true;
     state.scrollAccum = 0;
     state.menuShrink = 0;
-    if (btn) gsap.set(btn, { scale: 1 });
+    // Eased tween back to full size (matches the shrink tween in
+    // handleScroll — same duration/ease), not gsap.set: this fires right
+    // when the user taps the shrunk chip to open the menu, so snapping it
+    // to scale 1 instantly reads as an abrupt jolt at the exact moment
+    // they're looking right at it, undercutting the smooth compacting the
+    // scroll-down direction already has.
+    if (btn) gsap.to(btn, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
     btn?.classList.add('active');
     btn?.setAttribute('aria-expanded', 'true');
     overlay?.classList.add('active');
