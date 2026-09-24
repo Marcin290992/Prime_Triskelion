@@ -395,22 +395,33 @@ const projects = [
     }
     .proj-header__scroll { display: none; }
 
-    /* KaÅ¼dy projekt = peÅ‚ny ekran, zero przerw */
+    /* Each project = a card sized by its own content, NOT the viewport.
+       Was a full-screen section (height from --app-stable-vh) with the
+       image full-bleed behind it: a landscape shot cover-cropped into a
+       tall phone screen showed only ~1/3 of its width (reads as "way too
+       zoomed in"), and every toolbar-driven re-measure resized every
+       section — and rescaled the photo in view — at once, which was the
+       jump on scroll. A fixed 4:5 image box has nothing to re-measure. */
     .proj-section {
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      overflow: hidden;
-      transform: translateZ(0);
+      height: auto;
+      padding: clamp(1.25rem, 4vw, 2rem) var(--site-gutter, 1.5rem);
+      background: transparent;
+      transform: none;
       transition: none;
     }
+    .proj-inner {
+      position: relative;
+      height: auto;
+      display: block;
+    }
 
-    /* Mockup jako full-bleed tÅ‚o */
     .proj-img-wrap {
-      position: absolute;
-      inset: 0;
+      position: relative;
       width: 100%;
-      height: 100%;
+      height: auto;
+      aspect-ratio: 4 / 5;
       z-index: 1;
-      box-shadow: none;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
     }
     .proj-img-wrap img { object-position: center 30%; }
 
@@ -439,9 +450,12 @@ const projects = [
       z-index: 2;
     }
 
-    /* Info — glass card, bez border-radius */
+    /* Info — glass card, bez border-radius; pinned to the image card's
+       own bottom edge now, not the (former full-screen) section's. */
     .proj-foot {
-      bottom: clamp(2rem, 4vh, 3rem);
+      bottom: 0.75rem;
+      left: 0.75rem;
+      right: 0.75rem;
       grid-template-columns: 1fr auto;
       grid-template-rows: auto auto;
       align-items: start;
