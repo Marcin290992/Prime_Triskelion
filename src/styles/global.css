@@ -69,7 +69,16 @@ body {
 body::after {
   content: '';
   position: fixed;
-  inset: 0;
+  /* Sized to the LARGE viewport (URL bar hidden), not inset:0 — inset:0
+     tracks the current viewport, and mobile browsers don't always resize
+     fixed layers in step with the bar hiding, which left the bottom strip
+     without this grain: a visibly darker band under the menu, exactly the
+     bar's height. Overshooting while the bar is shown is harmless. */
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  height: 100lvh;
   z-index: 9999;
   pointer-events: none;
   opacity: 0.048;
