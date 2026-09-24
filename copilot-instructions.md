@@ -330,6 +330,35 @@ const { items, speed = 80 } = Astro.props;
 
 ---
 
+## 📱 Mobile Viewport & iOS Safari — hard-won rules
+
+These fixed a long run of mobile bugs (gaps above/below the menu overlay, Safari-only scroll jank, jumps when the URL bar hides). Break one and the bug comes back.
+
+### Black status-bar / URL-bar areas (iOS Safari 26+)
+- Safari paints the areas behind its status bar and floating URL bar using the colour of a **fixed element touching that screen edge**. With none, page content shows through them.
+- `.edge-tint--top` / `.edge-tint--bottom` in `Layout.astro` do this: `position: fixed`, full width, opaque `rgb(var(--c-bg))`, **12px tall**, `z-index: 10000`, iOS-only via `@supports (-webkit-touch-callout: none)`.
+- WebKit (`LocalFrameView::fixedContainerEdges`) samples **4–6px in from the edge** and **ignores boxes ≤10px tall** or narrower than ~90% of the viewport.
+- ❌ Never shrink the strips to ≤10px, and never put anything above `z-index: 10000` near the top/bottom edge (cookie banners, toasts, popups). Safari would take its colour instead.
+- ❌ Never add `viewport-fit=cover` to the viewport meta. It was the root cause of the original menu-gap bugs.
+
+### Viewport height (`--app-stable-vh`)
+- It's set in JS in `Layout.astro`. On toolbar show/hide (height-only resize) it is re-measured **only while `scrollY` is inside the first screen**, in every browser.
+- Re-measuring deeper resizes every vh-sized section above the reader, and the page visibly jumps. Safari has no scroll anchoring; in Chrome the section in view still visibly resizes.
+- ❌ Don't size sections **below the first screen** off the viewport height on mobile (`--app-stable-vh`, `vh`, `dvh`, `lvh`). Use content or aspect-ratio sizing instead: `/projects` on mobile uses 4:5 cards for this reason.
+
+### Menu overlay
+- `#ox-menu-overlay` (fixed, `inset: 0`) can't reach the strips under Safari's bars. Once it has faded in, `oxygenMenu.ts` adds `html.ox-menu-covered`, which hides the page underneath (`visibility: hidden`), so only black shows.
+- ❌ No `transform` on `#ox-menu-overlay` or its fixed ancestors. It makes iOS Safari size fixed elements against the wrong viewport.
+- On mobile the overlay has no grain (both grain layers are hidden while it's open), so it matches Safari's black bars.
+
+### Performance on mobile Safari
+- `backdrop-filter` over scrolling content is expensive. Keep it to small areas (the 104px `.top-blur` strip is fine) and add every new blur surface to the `:active-view-transition` guard in `global.css`.
+- ❌ Don't leave `filter: blur(0)` / `transform` on elements after a reveal on mobile. Safari treats `blur(0)` as an active filter and re-renders it on scroll. Use `filter: none` / `transform: none`.
+- ❌ No per-frame `getImageData()` or other GPU readbacks in rAF loops. Don't run WebGL loops for effects that are hidden on mobile.
+- Large source images go through `astro:assets` (`<Image>` / `getImage()`) so a downscaled file ships, never the raw original.
+
+---
+
 ## 🚫 Rules — What NOT to do
 
 - ❌ Do NOT use Tailwind (unless explicitly asked)
