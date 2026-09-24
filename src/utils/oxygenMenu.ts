@@ -497,7 +497,14 @@ function initOxygenMenu() {
         // getting the heavy 20px blur meant only for real desktops. That
         // mismatch was the visible flicker/stutter right before navigating,
         // reported as "tablet only".
-        const blurPx = window.matchMedia('(pointer: coarse)').matches ? 8 : 20;
+        const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+        const blurPx = isCoarsePointer ? 8 : 20;
+        // Touch: much shorter than desktop's 0.3s — this runs right before
+        // navigate() on every nav-link tap, so its duration is pure added
+        // latency between tap and the next page actually starting to load.
+        // Desktop clicks don't carry the same "feels laggy on mobile"
+        // complaint, so left at the original pace there.
+        const blurOutDuration = isCoarsePointer ? 0.12 : 0.3;
         gsap.timeline({
           onComplete: () => {
             if (!keepOverlay) {
@@ -517,7 +524,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, filter: `blur(${blurPx}px)`, duration: 0.3, ease: 'power2.in' });
+        }).to(content, { opacity: 0, filter: `blur(${blurPx}px)`, duration: blurOutDuration, ease: 'power2.in' });
         return;
       }
 
@@ -592,9 +599,15 @@ function initOxygenMenu() {
     async function activate() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
-      // On touch: hold the active state briefly so the user sees the highlight
-      const isTouchNav = navigator.maxTouchPoints > 0;
-      if (isTouchNav) await new Promise(r => setTimeout(r, 120));
+      // Used to hold here for 120ms before even starting the close
+      // animation, purely so the red active state had a moment to register
+      // before anything else happened — on top of the close animation's own
+      // ~300ms, tapping a link took the better part of half a second before
+      // navigate() even fired. The active class above is already applied
+      // synchronously, so the highlight is visible from frame one regardless
+      // — this extra dwell was pure added latency, not something the
+      // highlight itself needed. Mobile navigation should feel instant, so
+      // it's gone.
       await closeMenu(true, true);  // keep black overlay visible, blur out
       if (href) navigate(href); // View Transition starts from black screen
     }
