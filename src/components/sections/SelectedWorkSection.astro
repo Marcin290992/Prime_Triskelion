@@ -552,7 +552,23 @@ import deeer2 from '../../img/deeer2.webp';
 			transition: opacity 0.42s ease 0.3s, transform 0.52s cubic-bezier(0.25,1,0.5,1) 0.28s;
 		}
 	}
-	.wr-img-inner img { width: 100%; height: 100%; object-fit: cover; display: block; filter: grayscale(100%) contrast(1.05) brightness(0.8); }
+	.wr-img-inner img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		filter: grayscale(100%) contrast(1.05) brightness(0.8);
+		/* iOS Safari doesn't reliably promote a filtered element to its own
+		   compositor layer on its own — scrolling six of these past the
+		   viewport in a row can fall back to repainting each one on every
+		   scroll frame instead of just translating a cached layer, which is
+		   what reads as this section specifically janking/stuttering there
+		   (Chrome's compositor doesn't have the same gap, hence fine there).
+		   translateZ(0) is the standard, well-worn nudge that forces the
+		   promotion explicitly. */
+		transform: translateZ(0);
+		-webkit-transform: translateZ(0);
+	}
 	.wr-img-num {
 		font-family: var(--f-display);
 		font-weight: 700;
