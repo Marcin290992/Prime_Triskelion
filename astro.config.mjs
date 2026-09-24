@@ -3,6 +3,20 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  // Nothing was prefetching links at all before this — every tap had to
+  // wait for the new page's fetch to even START before the View Transition
+  // could begin, which on a mobile connection reads as an inconsistent
+  // stall right after tapping (fast on good signal, a visible hang on
+  // anything worse) rather than a fixed, predictable delay. 'viewport'
+  // fetches a link's page as soon as it scrolls into view — well before
+  // anyone can actually tap it — so by the time a real tap happens the
+  // page is normally already cached and navigation has nothing left to
+  // wait on. prefetchAll extends that to every link site-wide (menu, logo,
+  // project cards, footer), not just ones opted in with data-astro-prefetch.
+  prefetch: {
+    defaultStrategy: 'viewport',
+    prefetchAll: true,
+  },
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
