@@ -634,17 +634,21 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   .hud-contact-link {
     position: absolute;
     right: 2rem;
-    /* Vertically centers this block against the menu chip: #ox-hud-mobile
-       has no explicit height, so it sizes to its one in-flow flex item
-       (hud-menu-btn, height: var(--ox-menu-btn-size)) — this box is
-       position:absolute so it doesn't count toward that. bottom:0 only
-       lined the two up back when both sizes were equal; now that
+    /* Vertically centers this block against the menu chip. Two offsets
+       stacked here: #ox-hud-mobile's own padding-bottom (1.5rem +
+       safe-area — see its rule above; the chip sits inset from
+       #ox-hud-mobile's true bottom:0 edge by exactly that padding, since
+       that's what now provides its clearance instead of a bottom offset),
+       plus centering this block against the chip the same way as before —
+       #ox-hud-mobile has no explicit height, so it sizes to its one in-flow
+       flex item (hud-menu-btn, height: var(--ox-menu-btn-size)); this box
+       is position:absolute so it doesn't count toward that, and since
        --ox-contact-btn-size is a fraction of --ox-menu-btn-size (the
-       shrunk-chip ratio — see MENU_SHRINK_SCALE in oxygenMenu.ts), pinning
-       to the floor leaves this block's center sitting below the chip's.
-       Splitting the size difference evenly re-centers it regardless of
-       whatever that ratio is tuned to later. */
-    bottom: calc((var(--ox-menu-btn-size) - var(--ox-contact-btn-size)) / 2);
+       shrunk-chip ratio — see MENU_SHRINK_SCALE in oxygenMenu.ts), splitting
+       the size difference evenly re-centers it regardless of whatever that
+       ratio is tuned to later. Both pieces have to be hand-kept in sync
+       with #ox-hud-mobile's own padding-bottom if that's ever retuned. */
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px) + (var(--ox-menu-btn-size) - var(--ox-contact-btn-size)) / 2);
     opacity: 0;
     pointer-events: none;
     display: flex;
@@ -846,7 +850,13 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
          so there's nothing left for it to usefully sell here anyway. */
       box-shadow: none !important;
     }
-    .hud-contact-link { right: 1rem; }
+    .hud-contact-link {
+      right: 1rem;
+      /* Mobile's #ox-hud-mobile padding-bottom is 1.25rem, not the base
+         rule's 1.5rem — this has to match it (see the base .hud-contact-link
+         rule's comment for why). */
+      bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px) + (var(--ox-menu-btn-size) - var(--ox-contact-btn-size)) / 2);
+    }
     /* Contact icon glyphs (phone/email/whatsapp) are scaled down to match
        --ox-contact-btn-size's shrink here — see the mobile override next to
        .hud-icon-btn svg in global.css for why that lives there instead of
