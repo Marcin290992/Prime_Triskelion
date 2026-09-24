@@ -46,7 +46,21 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				function measureHeight() {
 					var ih = window.innerHeight || 0;
 					var vv = window.visualViewport ? window.visualViewport.height : 0;
-					return Math.max(ih, vv);
+					// Was Math.max(ih, vv) — deliberately taking whichever
+					// number was BIGGER. visualViewport.height exists
+					// specifically to report the true currently-visible
+					// area (that's its whole purpose vs. innerHeight, which
+					// can reflect a different, sometimes larger, layout
+					// reference on Safari); picking the larger of the two
+					// on purpose meant --app-stable-vh (and every section
+					// sized off calc(var(--app-stable-vh) * 100), i.e. #hero
+					// and .proj-section on mobile) could end up taller than
+					// what's actually visible on screen — content runs out
+					// before the bottom the page thinks it has, leaving a
+					// gap once you scroll far enough to reach it. Trusting
+					// visualViewport.height when it's available, instead of
+					// whichever is bigger, is the fix.
+					return vv || ih;
 				}
 
 				function setLockedHeight() {
