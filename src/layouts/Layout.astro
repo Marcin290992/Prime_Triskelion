@@ -293,6 +293,27 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			   thinBorderWidth = 10), so the strips must be taller than that.
 			   Once Safari picks them up, the black bars it paints run straight
 			   into them, so they read as part of the bars. */
+			/* Scroll-under blur behind the logo/top CTA (same recipe as
+			   phantom.land's header): content scrolling up under it blurs
+			   and fades out toward the top edge. z-index 998 — above page
+			   content, below the menu overlay (999) and the logo/CTA (1002).
+			   Deliberately a single short strip: backdrop-filter over
+			   scrolling content is expensive on iOS Safari, and cost scales
+			   with the filtered area. */
+			.top-blur {
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				height: 104px;
+				z-index: 998;
+				pointer-events: none;
+				-webkit-backdrop-filter: blur(26px);
+				backdrop-filter: blur(26px);
+				-webkit-mask: linear-gradient(#000, rgba(0, 0, 0, 0.6) 75%, transparent);
+				mask: linear-gradient(#000, rgba(0, 0, 0, 0.6) 75%, transparent);
+			}
+
 			@supports (-webkit-touch-callout: none) {
 				.edge-tint {
 					position: fixed;
@@ -311,6 +332,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 	<body class="text-white">
 		<div class="edge-tint edge-tint--top" aria-hidden="true"></div>
 		<div class="edge-tint edge-tint--bottom" aria-hidden="true"></div>
+		<div class="top-blur" aria-hidden="true"></div>
 		<GridLines />
 		<Logo />
 		<TopBarCta />
