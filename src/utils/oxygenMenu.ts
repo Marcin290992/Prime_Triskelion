@@ -9,6 +9,16 @@ import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
 
+// Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
+// compacting on scroll, see handleScroll() below). Must match
+// --ox-contact-btn-size's multiplier in OxygenMenu.astro AND the
+// .hud-contact-link .hud-icon-btn svg multiplier in global.css, so the
+// contact icon (button + glyph) that swaps in is sized identically to the
+// chip's own shrunk state — there's no shared source of truth across the
+// .ts/.astro/.css boundary, so this value is duplicated by hand in all
+// three places; keep them in sync if it's ever tuned.
+const MENU_SHRINK_SCALE = 0.68;
+
 // Chromium can render backdrop-filter as solid white during the native
 // View Transition (used by Astro's <ClientRouter/>) instead of blurring
 // correctly — most visible on these glassy HUD buttons during
@@ -116,6 +126,10 @@ function initOxygenMenu() {
     lastScrollTop: 0,
     barHidden: false,
     scrollAccum: 0,
+    // Continuous 0→1 shrink progress for the mobile menu chip (iOS Safari
+    // toolbar-style compacting as you scroll down), independent of the
+    // barHidden swap above — see handleScroll().
+    menuShrink: 0,
     timeInterval: null as ReturnType<typeof setInterval> | null,
     scrollPosition: 0,
     releaseScrollLock: null as (() => void) | null,
@@ -362,6 +376,39 @@ function initOxygenMenu() {
 
     const THRESHOLD = isMobile ? 20 : 30;
 
+    // Shrink continuously with scroll (same range as the swap THRESHOLD, so
+    // the chip finishes compacting to MENU_SHRINK_SCALE right as it hands
+    // off to the contact icon — see --ox-contact-btn-size in
+    // OxygenMenu.astro, which derives from the same ratio). Kept separate
+    // from scrollAccum (which resets on direction change) so this tracks
+    // smoothly instead of snapping. Same scrollTop > 50 near-top guard as
+    // the swap below, so it can't shrink (with nothing to hand off to) from
+    // a small bounce right at the top.
+    state.menuShrink = scrollTop > 50
+      ? Math.min(1, Math.max(0, state.menuShrink + delta / THRESHOLD))
+      : 0;
+    // GSAP tween (not a CSS transform, not gsap.set) for two separate
+    // reasons: (1) hudMenuBtn already carries a permanent inline transform
+    // from HeroSection's entrance reveal (that tween only clearProps's
+    // opacity, not transform/y — see its comment), and an inline style
+    // always wins over any stylesheet rule, so routing the scale through
+    // GSAP's own transform cache is what makes it compose with that
+    // existing inline value instead of losing to it; (2) a plain gsap.set
+    // snaps straight to the target every scroll tick, tracking raw scroll
+    // delta 1:1 — every little stutter in the input (touch/wheel deltas
+    // are rarely perfectly even) reads directly as visible jitter. A short
+    // eased retarget instead smooths that out into the gradual, decelerated
+    // compacting iOS Safari's own toolbar has; overwrite: true keeps
+    // rapid-fire calls from stacking up competing tweens on the same prop.
+    if (hudMenuBtn) {
+      gsap.to(hudMenuBtn, {
+        scale: 1 - state.menuShrink * (1 - MENU_SHRINK_SCALE),
+        duration: 0.35,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+    }
+
     if (state.scrollAccum > THRESHOLD && !state.barHidden && scrollTop > 50) {
       state.barHidden = true;
       setBarHidden(true); // Scroll down: menu btn hides, contact materializes
@@ -381,6 +428,8 @@ function initOxygenMenu() {
     state.isMenuOpen = true;
     state.menuAnimating = true;
     state.scrollAccum = 0;
+    state.menuShrink = 0;
+    if (btn) gsap.set(btn, { scale: 1 });
     btn?.classList.add('active');
     btn?.setAttribute('aria-expanded', 'true');
     overlay?.classList.add('active');
@@ -601,11 +650,13 @@ function initOxygenMenu() {
     hudMenuBtn?.style.removeProperty('opacity');
     hudMenuBtn?.style.removeProperty('pointer-events');
     hudMenuBtn?.style.removeProperty('filter');
+    if (hudMenuBtn) gsap.set(hudMenuBtn, { scale: 1 });
     hudContactBtn?.style.removeProperty('opacity');
     hudContactBtn?.style.removeProperty('pointer-events');
     setBarHidden(false);
     state.barHidden = false;
     state.scrollAccum = 0;
+    state.menuShrink = 0;
   }
   resetHudMenuBtn();
   showHeader();

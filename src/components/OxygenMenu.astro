@@ -15,8 +15,13 @@ const navLinks = [
 
 // Each of these renders twice (mobile flyout + desktop dock) — defined
 // once here instead of duplicated inline so the two copies can't drift.
-// Rendered size is fixed by the `.hud-icon-btn svg` CSS rule (24x24)
-// regardless of any width/height on the <svg> itself, so none is set here.
+// Rendered size is fixed by the `.hud-icon-btn svg` rule in global.css
+// (22x22, plus a mobile-only override there) regardless of any
+// width/height on the <svg> itself, so none is set here. That rule has to
+// be unscoped/global rather than living in this component's own <style>
+// block: these strings are injected via set:html below, and Astro never
+// applies its scoped data-astro-cid attribute to markup injected that way,
+// so a scoped selector targeting `svg` here could never match them.
 const ICON_WHATSAPP = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`;
 const ICON_PHONE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`;
 const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="stroke-linecap:round;stroke-linejoin:round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`;
@@ -611,7 +616,17 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   .hud-contact-link {
     position: absolute;
     right: 2rem;
-    bottom: 0;
+    /* Vertically centers this block against the menu chip: #ox-hud-mobile
+       has no explicit height, so it sizes to its one in-flow flex item
+       (hud-menu-btn, height: var(--ox-menu-btn-size)) — this box is
+       position:absolute so it doesn't count toward that. bottom:0 only
+       lined the two up back when both sizes were equal; now that
+       --ox-contact-btn-size is a fraction of --ox-menu-btn-size (the
+       shrunk-chip ratio — see MENU_SHRINK_SCALE in oxygenMenu.ts), pinning
+       to the floor leaves this block's center sitting below the chip's.
+       Splitting the size difference evenly re-centers it regardless of
+       whatever that ratio is tuned to later. */
+    bottom: calc((var(--ox-menu-btn-size) - var(--ox-contact-btn-size)) / 2);
     opacity: 0;
     pointer-events: none;
     display: flex;
@@ -625,22 +640,22 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
     isolation: isolate;
     transition: opacity 0.3s ease;
   }
-  /* Mobile scroll-swap (hamburger <-> contact), driven by ONE class on the
-     shared ancestor instead of two independently GSAP-animated elements.
-     Previous approach: swapBtns() ran a GSAP timeline touching both
-     elements' opacity/pointer-events by hand, which could desync under
-     interruption (fast repeated scroll, navigation mid-animation) — one
-     element left visible-but-unclickable, or both visible at once, because
-     there were two separate pieces of state that could each partially
-     apply. A single class can't be "half toggled": it's either on the
-     ancestor or it isn't, the browser's own CSS transition engine handles
-     interruption/reversal natively (no manual .kill() bookkeeping needed),
-     and resetting it back to baseline is one classList.remove() — atomic,
-     nothing left to get stuck. See setBarHidden() in oxygenMenu.ts. */
-  #ox-hud-mobile.hud-scroll-hidden #hud-menu-btn {
-    opacity: 0;
-    pointer-events: none;
-  }
+  /* Mobile scroll behavior, driven by ONE class on the shared ancestor.
+     The hamburger chip no longer hides on scroll — it only shrinks (see
+     gsap.set(hudMenuBtn, { scale }) in handleScroll(), oxygenMenu.ts) and
+     stays visible/clickable at its full-shrink size. Only the contact dock
+     swaps in/out here, via this single toggled class rather than two
+     independently GSAP-animated elements: an earlier version ran a GSAP
+     timeline touching both elements' opacity/pointer-events by hand, which
+     could desync under interruption (fast repeated scroll, navigation
+     mid-animation) — one element left visible-but-unclickable, or both
+     visible at once, because there were two separate pieces of state that
+     could each partially apply. A single class can't be "half toggled":
+     it's either on the ancestor or it isn't, the browser's own CSS
+     transition engine handles interruption/reversal natively (no manual
+     .kill() bookkeeping needed), and resetting it back to baseline is one
+     classList.remove() — atomic, nothing left to get stuck. See
+     setBarHidden() in oxygenMenu.ts. */
   #ox-hud-mobile.hud-scroll-hidden .hud-contact-link {
     opacity: 1;
     pointer-events: auto;
@@ -648,7 +663,16 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   .hud-contact-item {
     flex-shrink: 0;
     opacity: 0;
-    transform: translateY(var(--ox-contact-btn-size)) scale(0.5);
+    /* Standard size (--ox-menu-btn-size), not the shrunk --ox-contact-btn-size
+       the toggle button below uses — these 3 are the actual tap targets
+       once revealed (WhatsApp/email/phone), so comfortable touch size
+       wins over matching the compact toggle's footprint. The translateY
+       distance is this same var (was --ox-contact-btn-size back when every
+       .hud-icon-btn in this dock shared one uniform size) so it still
+       tucks each item fully behind the toggle at rest. */
+    width: var(--ox-menu-btn-size);
+    height: var(--ox-menu-btn-size);
+    transform: translateY(var(--ox-menu-btn-size)) scale(0.5);
     pointer-events: none;
     transition: opacity 0.28s ease, transform 0.38s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -726,7 +750,12 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   @media (max-width: 1024px) {
     #oxygen-menu-root {
       --ox-menu-btn-size: 52px;
-      --ox-contact-btn-size: 52px;
+      /* Matches the menu chip's own fully-shrunk scale (MENU_SHRINK_SCALE
+         in oxygenMenu.ts — no shared source of truth across the .astro/.ts
+         boundary, keep both in sync by hand) so the contact icon that
+         swaps in reads as a continuation of the same shrink, not an
+         unrelated differently-sized element. */
+      --ox-contact-btn-size: calc(var(--ox-menu-btn-size) * 0.68);
       --ox-menu-icon-width: 17px;
       --ox-menu-icon-height: 13px;
       --ox-menu-line-2-top: 6px;
@@ -747,15 +776,28 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
        either side of icon+label to balance, not fill on left only.
        Capped at 58vw/210px (not e.g. 70vw) so it can't physically reach
        .hud-contact-link's footprint (52px wide, right: 1rem) even on the
-       narrowest supported screens — the two are never both visible at
-       once, but an interrupted mid-swap (fast scroll back and forth) can
-       briefly leave both at partial opacity, and if their boxes overlap
-       that reads as "the hide broke" instead of a clean crossfade. */
+       narrowest supported screens. This now matters even at rest, not just
+       mid-transition: past the scroll threshold the chip stays visible
+       (shrunk to 70% via gsap.set(hudMenuBtn, { scale }) in
+       handleScroll()) at the same time the contact dock fades in, so the
+       two are deliberately both on screen together rather than swapping
+       one for the other. */
     .hud-icon-btn.hud-menu-btn {
       width: min(58vw, 210px);
       justify-content: center;
       padding: 0 16px;
       gap: 10px;
+      /* iOS Safari-style toolbar compacting: the actual scale (0.7 at max
+         shrink) is applied via gsap.set(hudMenuBtn, { scale }) in
+         handleScroll() (oxygenMenu.ts), NOT a plain CSS transform here.
+         This button carries transition:persist and HeroSection's entrance
+         reveal leaves a permanent inline transform on it (translateY(0),
+         intentionally uncleared — see the clearProps comment there), and an
+         inline style always beats a stylesheet rule regardless of
+         specificity, so a CSS `transform` declared here would simply never
+         take effect. Going through GSAP instead composes with that
+         existing inline transform rather than losing to it. */
+      transition: opacity 0.25s ease;
     }
     .hud-menu-btn::after { font-size: 10px; letter-spacing: 0.28em; }
     .hud-menu-btn .specular-button__fx { display: none; }
@@ -766,6 +808,11 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
       background: rgba(0, 0, 0, 0.92) !important;
     }
     .hud-contact-link { right: 1rem; }
+    /* Contact icon glyphs (phone/email/whatsapp) are scaled down to match
+       --ox-contact-btn-size's shrink here — see the mobile override next to
+       .hud-icon-btn svg in global.css for why that lives there instead of
+       here: these icons are injected via set:html below, which Astro's
+       scoped <style> (this block) can never reach. */
   }
 
 
