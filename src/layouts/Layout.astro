@@ -83,7 +83,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}, { passive: true });
 
 				var heightSettleTimer = null;
-				var hasScrollAnchoring = !!(window.CSS && CSS.supports && CSS.supports('overflow-anchor', 'auto'));
 				window.addEventListener('resize', function () {
 					var w = window.innerWidth || 0;
 					if (Math.abs(w - lockWidth) > 80) {
@@ -121,12 +120,11 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					// Up there the only thing that moves is the first screen's
 					// own bottom edge, i.e. exactly the gap this exists to fill.
 					if (heightSettleTimer) clearTimeout(heightSettleTimer);
-					// Browsers WITH scroll anchoring (Chrome, Firefox) absorb that
-					// jump themselves, so they keep updating everywhere — otherwise
-					// sections further down (e.g. .proj-section) come up short by
-					// the bar's height once it hides.
+					// Same rule in every browser: scroll anchoring (Chrome) only
+					// corrects the scroll offset — the section you're looking at
+					// still visibly resizes 200ms after you stop scrolling.
 					heightSettleTimer = setTimeout(function () {
-						if (hasScrollAnchoring || (window.scrollY || 0) < lockedHeight) setLockedHeight();
+						if ((window.scrollY || 0) < lockedHeight) setLockedHeight();
 					}, 200);
 				}, { passive: true });
 
