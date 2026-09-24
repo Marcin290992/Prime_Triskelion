@@ -61,12 +61,35 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					setTimeout(setLockedHeight, 160);
 				}, { passive: true });
 
+				var heightSettleTimer = null;
 				window.addEventListener('resize', function () {
 					var w = window.innerWidth || 0;
 					if (Math.abs(w - lockWidth) > 80) {
 						lockWidth = w;
 						setLockedHeight();
+						return;
 					}
+					// Width-only unchanged means this resize is almost always the
+					// mobile toolbar collapsing/expanding as the page scrolls (its
+					// own hide/show live-resizes the visual viewport) — updating
+					// --app-stable-vh on every one of these events would reintroduce
+					// exactly the live, chrome-reactive jank this whole mechanism
+					// exists to avoid. But leaving it locked forever to whatever
+					// height existed at load/last navigation has its own failure
+					// mode: once the toolbar actually settles into its new
+					// hidden/shrunk state, the locked value is now SHORTER than the
+					// real, now-taller viewport, and every section sized off it
+					// (#hero, .proj-section on mobile) stops short of the bottom
+					// instead of growing to fill the newly revealed space — a gap
+					// that opens the moment the toolbar finishes hiding and closes
+					// again once it reappears (reported: "appears when the Chrome
+					// URL bar disappears / the Safari URL bar shrinks"). Debouncing
+					// the update to fire only once resize events stop for a beat
+					// gets both: no mid-animation flicker, but the locked value
+					// still catches up once the toolbar's transition has actually
+					// finished, instead of staying stale indefinitely.
+					if (heightSettleTimer) clearTimeout(heightSettleTimer);
+					heightSettleTimer = setTimeout(setLockedHeight, 200);
 				}, { passive: true });
 
 				// Astro's swap() unconditionally wipes every attribute on <html>
