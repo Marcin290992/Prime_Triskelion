@@ -672,7 +672,24 @@ import deeer2 from '../../img/deeer3.webp';
 	}
 
 	@media (max-width: 1024px) {
-		.wr-expand    { grid-template-rows: 1fr !important; }
+		/* .wr-expand/.wr-expand-inner exist purely to animate the desktop
+		   hover-reveal (grid-template-rows 0fr -> 1fr, gated on
+		   @media(hover:hover) — never triggers here anyway since touch has
+		   no hover). Forcing grid-template-rows:1fr !important used to just
+		   freeze that machinery "open" while still paying for it: two extra
+		   boxes per row (image + description, so 12 across this list) each
+		   still running their own grid/overflow layout and paint
+		   participation for no visual benefit on mobile, where everything
+		   is always shown anyway. display:contents removes their own boxes
+		   entirely — children (.wr-img-inner, .wr-desc) become direct
+		   layout children of .wr-img-col/.wr-content instead, visually
+		   identical (each still has exactly one real child there) but with
+		   12 fewer boxes for Safari to lay out and paint on every scroll
+		   frame, which is what this section's jank tracked back to more
+		   than the images themselves — the list still janked with real
+		   photos in it and Lenis fixed, and had none of this cost before
+		   real content ever needed to render through it. */
+		.wr-expand, .wr-expand-inner { display: contents; }
 		/* :has(img) — not a blanket .wr-img-inner rule — because projects
 		   04/05/06 have no <img> at all, just a bare number watermark
 		   (.wr-img-num) sitting on this box's own #0d0d0f fill. Forcing
