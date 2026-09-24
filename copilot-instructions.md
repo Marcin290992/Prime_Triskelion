@@ -364,6 +364,7 @@ Plan for these from the start on any tappable, animated element (nav links, card
 - Use symmetric easing (`cubic-bezier(0.65, 0, 0.35, 1)`, ~0.5s) for text rolls. Snappy expo-out curves feel abrupt on a tap, which has no hover lead-in.
 - Single out the chosen item: fade its siblings (to `opacity: 0.25` over ~0.35s) rather than only changing its colour.
 - ❌ Don't animate `filter: blur()` on large or full-screen blocks. It steps visibly on touch Safari. Use an opacity fade (the menu fades out over 0.3s with `power2.inOut`).
+- ❌ Never put a CSS `transition` on a property that GSAP also animates on the **same element**. The CSS transition lags every GSAP frame and the sequence falls out of sync: the menu links were still fading after the overlay had gone. Put the CSS effect on a child or wrapper instead (the sibling dim lives on `.ox-link-text-wrap`, not `.ox-menu-link`).
 
 ### Consistency across subpages on mobile
 - Page titles on mobile share one top offset: `padding-top: clamp(6rem, 14vh, 10rem)` (`.proj-header`, `.svc-hero`, `.am-hero`). A new page gets the same value, so titles sit at the same height everywhere (96px on an iPhone 13).
