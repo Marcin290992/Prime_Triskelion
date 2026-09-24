@@ -124,7 +124,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">01</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">01</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -143,7 +143,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">02</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">02</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -162,7 +162,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">03</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">03</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -181,7 +181,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">04</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">04</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -200,7 +200,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">05</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">05</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -219,7 +219,7 @@ import deeer2 from '../../img/deeer2.webp';
 			<span class="wr-num">06</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /><span class="wr-img-num" aria-hidden="true">06</span></div>
+					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="lazy" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -569,16 +569,6 @@ import deeer2 from '../../img/deeer2.webp';
 		transform: translateZ(0);
 		-webkit-transform: translateZ(0);
 	}
-	.wr-img-num {
-		font-family: var(--f-display);
-		font-weight: 700;
-		font-size: clamp(3rem, 5vw, 5.5rem);
-		color: rgba(255,255,255,0.04);
-		user-select: none;
-		pointer-events: none;
-		line-height: 1;
-	}
-
 	.wr-content { display: flex; flex-direction: column; }
 	.wr-title {
 		font-family: var(--f-display);
@@ -730,7 +720,6 @@ import deeer2 from '../../img/deeer2.webp';
 		   whole reason it existed) and mobile should stay as light as
 		   possible. */
 		.wr-img-inner img { filter: none; }
-		.wr-img-num   { font-size: clamp(2.5rem, 10vw, 4rem); }
 		.wr-desc      { font-size: 0.82rem; line-height: 1.65; }
 		.wr-tags      { gap: 0.2rem 0.5rem; }
 		.wr-tags span { font-size: 0.7rem; }
