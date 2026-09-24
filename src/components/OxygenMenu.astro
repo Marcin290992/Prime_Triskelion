@@ -377,6 +377,16 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   /* Touch active state */
   .ox-link--active .ox-link-text--base { transform: translateY(-100%); }
   .ox-link--active .ox-link-text--red  { transform: translateY(-100%); }
+  /* Touch Safari only (.ox-calm-tap, set in oxygenMenu.ts) — calmer tap
+     feedback. The expo-out roll shoots most of the way in its first
+     ~100ms, which on a tap (no hover lead-in) read as abrupt. Here: a
+     slower symmetric ease, and the other links recede so the chosen one is
+     singled out. Timed with the 380ms hold in oxygenMenu.ts. */
+  .ox-calm-tap .ox-link-text--base,
+  .ox-calm-tap .ox-link-text--red { transition: transform 0.7s cubic-bezier(0.65, 0, 0.35, 1); }
+  .ox-calm-tap .ox-menu-link { transition: opacity 0.5s ease; }
+  .ox-calm-tap .ox-menu-item:has(.ox-link--active) ~ .ox-menu-item .ox-menu-link,
+  .ox-calm-tap .ox-menu-item:has(~ .ox-menu-item .ox-link--active) .ox-menu-link { opacity: 0.25; }
   /* text-wrap inherits height from base text for proper clipping */
   .ox-link-text-wrap { vertical-align: bottom; }
 
