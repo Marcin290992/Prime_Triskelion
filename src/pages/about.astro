@@ -310,8 +310,10 @@ import portraitBottom from '../img/portrait-bottom.webp';
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
 
     /* Hero z grain i fade */
+    /* Top padding matches .proj-header / .svc-hero on mobile so the title
+       sits at the same height on every subpage. */
     .am-hero {
-      padding: clamp(5rem, 14vw, 8rem) var(--site-gutter, 1.5rem) 0;
+      padding: clamp(6rem, 14vh, 10rem) var(--site-gutter, 1.5rem) 0;
       position: relative;
     }
     .am-hero::before {

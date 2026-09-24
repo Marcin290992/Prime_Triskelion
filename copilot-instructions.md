@@ -357,6 +357,19 @@ These fixed a long run of mobile bugs (gaps above/below the menu overlay, Safari
 - ❌ No per-frame `getImageData()` or other GPU readbacks in rAF loops. Don't run WebGL loops for effects that are hidden on mobile.
 - Large source images go through `astro:assets` (`<Image>` / `getImage()`) so a downscaled file ships, never the raw original.
 
+### Tap feedback on touch Safari (premium feel)
+Plan for these from the start on any tappable, animated element (nav links, cards, CTAs):
+- ❌ Don't highlight on `touchstart`. It fires on every touch, including the start of a scroll, so elements flash and snap back. Highlight only on a confirmed tap: `touchend` with under 10px of movement, or `click`.
+- Let the tap animation play out before navigating or closing. Cutting it off right after its start reads as a jerk. For example, the menu waits ~380ms on touch Safari before it fades out.
+- On touch, use slower, symmetric easing (`cubic-bezier(0.65, 0, 0.35, 1)`, ~0.7s). Snappy expo-out curves feel great with a hover lead-in, but feel abrupt on a tap, which has none.
+- Single out the chosen item: fade its siblings (e.g. to `opacity: 0.25`) rather than only changing its colour.
+- ❌ Don't animate `filter: blur()` on large or full-screen blocks on touch Safari. It re-rasterizes every frame and steps through the animation. Use an opacity fade there, and keep blur for desktop or Chrome.
+- Scope Safari-only tweaks with `isSafari() && navigator.maxTouchPoints > 0` (`src/utils/isSafari.ts`) plus a class for CSS (e.g. `.ox-calm-tap`). Leave Chrome's behaviour alone when it already works.
+
+### Consistency across subpages on mobile
+- Page titles on mobile share one top offset: `padding-top: clamp(6rem, 14vh, 10rem)` (`.proj-header`, `.svc-hero`, `.am-hero`). A new page gets the same value, so titles sit at the same height everywhere (96px on an iPhone 13).
+- Test every mobile change on **real iOS Safari and real Chrome Android**. Desktop devtools emulation doesn't reproduce toolbar resizes, Safari's bar tinting, or compositor jank.
+
 ---
 
 ## 🚫 Rules — What NOT to do
