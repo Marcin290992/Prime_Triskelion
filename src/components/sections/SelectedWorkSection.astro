@@ -725,6 +725,11 @@ import deeer2 from '../../img/deeer2.webp';
 		.wr-tags    { grid-area: tags; padding-top: 0; }
 		.wr-toggle  { display: none; }
 		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; }
+		/* Dropped entirely on mobile rather than just GPU-layer-promoted —
+		   it wasn't earning its cost there (desktop's hover-reveal is the
+		   whole reason it existed) and mobile should stay as light as
+		   possible. */
+		.wr-img-inner img { filter: none; }
 		.wr-img-num   { font-size: clamp(2.5rem, 10vw, 4rem); }
 		.wr-desc      { font-size: 0.82rem; line-height: 1.65; }
 		.wr-tags      { gap: 0.2rem 0.5rem; }
