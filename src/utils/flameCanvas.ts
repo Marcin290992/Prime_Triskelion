@@ -248,26 +248,41 @@ export function initFlameCanvas(
 	}
 
 	let isSectionVisible = true;
+	function stopFlameAnimation() {
+		if (rafId) { cancelAnimationFrame(rafId); rafId = 0; prevFrameTs = null; }
+	}
+	function startFlameAnimation() {
+		if (!rafId && !document.hidden && isSectionVisible) rafId = requestAnimationFrame(loop);
+	}
+
 	const sectionIO = new IntersectionObserver(([entry]) => {
 		isSectionVisible = entry.isIntersecting;
-		if (isSectionVisible && !document.hidden) {
-			if (!rafId) rafId = requestAnimationFrame(loop);
-		} else if (rafId) {
-			cancelAnimationFrame(rafId);
-			rafId = 0;
-			prevFrameTs = null;
-		}
+		isSectionVisible ? startFlameAnimation() : stopFlameAnimation();
 	}, { threshold: 0 });
 	sectionIO.observe(section);
 
-	function onVisibilityChange() {
-		if (document.hidden) {
-			if (rafId) { cancelAnimationFrame(rafId); rafId = 0; prevFrameTs = null; }
-		} else if (isSectionVisible && !rafId) {
-			rafId = requestAnimationFrame(loop);
-		}
-	}
+	function onVisibilityChange() { document.hidden ? stopFlameAnimation() : startFlameAnimation(); }
 	document.addEventListener('visibilitychange', onVisibilityChange);
+
+	// Touch only — same reasoning as HeroSection.astro's rays-canvas
+	// (identical shader/loop pattern, same fix): capping DPR to 1 (maxDpr
+	// above) wasn't enough on its own, because IntersectionObserver's
+	// async/batched callback timing (even at threshold:0, its most
+	// immediate setting) leaves an unavoidable gap of at least one frame
+	// where this canvas is still actively rendering right as Safari's
+	// compositor is also handling the scroll that's carrying it out of
+	// view — that overlap, not raw pixel count, is what was costing here.
+	// Pausing outright for the duration of any active scroll removes the
+	// overlap entirely instead of trying to shrink the timing gap that
+	// causes it.
+	let scrollPauseTimer: ReturnType<typeof setTimeout> | null = null;
+	if (window.matchMedia('(pointer: coarse)').matches) {
+		window.addEventListener('scroll', () => {
+			stopFlameAnimation();
+			if (scrollPauseTimer) clearTimeout(scrollPauseTimer);
+			scrollPauseTimer = setTimeout(startFlameAnimation, 150);
+		}, { passive: true });
+	}
 
 	rafId = requestAnimationFrame(loop);
 
