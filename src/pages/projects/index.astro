@@ -409,6 +409,18 @@ const projects = [
 
     .proj-bg-text { display: none; }
 
+    /* Desktop's own contrast gradient (.proj-inner::before, height: 55%,
+       further up) is never disabled here — ::before and ::after are
+       separate pseudo-elements, so adding this ::after below doesn't
+       replace it, it stacks on top of it. Both are anchored to the same
+       bottom edge and fade the same way, so mobile ends up with two black
+       gradients compounding right where the fixed HUD nav sits — visible
+       as a noticeably darker band right under the menu/contact buttons,
+       independent of browser or OS (reported identically on Android
+       Chrome and iOS Safari — a plain CSS stacking issue, not a rendering
+       quirk). This ::after is mobile's own dedicated replacement for it. */
+    .proj-inner::before { content: none; }
+
     /* Gradient pod infobarem */
     .proj-inner::after {
       content: '';
