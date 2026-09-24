@@ -814,6 +814,19 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
       backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
       background: rgba(0, 0, 0, 0.92) !important;
+      /* The base rule's box-shadow (further up) includes a soft drop
+         shadow — 0 8px 24px rgba(0,0,0,0.25) — meant to lift the glassy
+         desktop buttons off the page. Mobile project sections use a
+         near-black but not literally #000 --bg per project (projects/
+         index.astro), and that shadow darkens the page directly beneath
+         these fixed buttons against that not-quite-black tone, showing up
+         as a visible darker band under the menu chip/contact button while
+         scrolling — reported on both Android Chrome and iOS Safari, so
+         it's this shadow rendering against the page tone, not anything
+         browser-specific. The glass depth this shadow was for is already
+         gone on mobile (backdrop-filter's off, background's solid above),
+         so there's nothing left for it to usefully sell here anyway. */
+      box-shadow: none !important;
     }
     .hud-contact-link { right: 1rem; }
     /* Contact icon glyphs (phone/email/whatsapp) are scaled down to match
