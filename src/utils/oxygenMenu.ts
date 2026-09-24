@@ -579,35 +579,67 @@ function initOxygenMenu() {
   function bindMenuNavLink(link: HTMLAnchorElement, activeClass: string) {
     // Mobile: touchstart gives immediate visual feedback before click fires
     let releaseTimer: ReturnType<typeof setTimeout> | null = null;
-    link.addEventListener('touchstart', () => {
-      link.classList.add(activeClass);
-    }, { passive: true });
-    link.addEventListener('touchend', () => {
-      // Just a tap-feedback release for taps that DON'T navigate (e.g. the
-      // touch landed but click never fires, or e.preventDefault() below
-      // didn't get a chance to run) — the click handler cancels this timer
-      // the moment it actually starts closing/navigating, so it can never
-      // fire mid-close and strip the red state back to white before the
-      // page has visibly changed. Was unconditional before: this timer and
-      // the click handler's own ~120ms wait + ~300ms blur-out (~420ms
-      // total before navigate() even fires) were racing on the same clock,
-      // and 400ms usually won — the link flashed back to white while the
-      // menu was still visibly closing.
-      releaseTimer = setTimeout(() => link.classList.remove(activeClass), 400);
-    }, { passive: true });
+    let touchStartX = 0;
+    let touchStartY = 0;
+    // Set when touchend itself decides this was a tap and drives the
+    // navigation directly — tells the click listener below to skip
+    // (both the synthetic click iOS still dispatches after a
+    // preventDefault()'d touchend, AND, as a defensive fallback on
+    // whatever browser doesn't send one, a stray real click on the same
+    // gesture) instead of running the whole sequence a second time.
+    let handledByTouch = false;
 
-    link.addEventListener('click', async (e) => {
-      e.preventDefault();
-      if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
-      const href = link.getAttribute('href');
-      // Freeze this link's hover state so it doesn't snap back while the
-      // content blurs out underneath it.
+    async function activate() {
       link.classList.add(activeClass);
+      const href = link.getAttribute('href');
       // On touch: hold the active state briefly so the user sees the highlight
       const isTouchNav = navigator.maxTouchPoints > 0;
       if (isTouchNav) await new Promise(r => setTimeout(r, 120));
       await closeMenu(true, true);  // keep black overlay visible, blur out
       if (href) navigate(href); // View Transition starts from black screen
+    }
+
+    link.addEventListener('touchstart', (e) => {
+      link.classList.add(activeClass);
+      const t = e.touches[0];
+      if (t) { touchStartX = t.clientX; touchStartY = t.clientY; }
+    }, { passive: true });
+
+    link.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0];
+      const dx = t ? Math.abs(t.clientX - touchStartX) : Infinity;
+      const dy = t ? Math.abs(t.clientY - touchStartY) : Infinity;
+      // iOS Safari can silently drop the click event that's supposed to
+      // follow touchstart/touchend if the finger moved at all during the
+      // gesture — even a couple pixels, well short of an intentional
+      // scroll — misreading it as a swipe instead of a tap. Waiting for
+      // that click (the old approach) meant navigation just silently
+      // never happened maybe 1 time in 5 on iOS: the link flashed red
+      // then faded back to white via the releaseTimer below, with nothing
+      // else occurring. Android/Chrome doesn't have this quirk, which is
+      // why it only ever showed up on iPhones. Driving the tap ourselves
+      // off touchend (small-movement = tap) sidesteps waiting on a click
+      // event that may not come at all.
+      if (dx < 10 && dy < 10) {
+        e.preventDefault();
+        handledByTouch = true;
+        void activate();
+        return;
+      }
+      // Real scroll/swipe, not a tap — just a tap-feedback release, same
+      // as before. Was unconditional pre-fix: this timer and the click
+      // handler's own ~120ms wait + ~300ms blur-out (~420ms total before
+      // navigate() even fires) were racing on the same clock, and 400ms
+      // usually won — the link flashed back to white while the menu was
+      // still visibly closing.
+      releaseTimer = setTimeout(() => link.classList.remove(activeClass), 400);
+    }, { passive: false }); // not passive: this path calls preventDefault()
+
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (handledByTouch) { handledByTouch = false; return; }
+      if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
+      void activate();
     });
   }
 
