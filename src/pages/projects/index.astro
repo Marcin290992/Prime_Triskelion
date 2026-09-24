@@ -1,6 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
+import { getImage } from 'astro:assets';
+import deeer2Raw from '../../img/deeer2.webp';
+
+// deeer2Raw is a 7360px-wide source — this page's <img> tags take a plain
+// string src (`img` also holds external URLs for the other entries), so
+// getImage() pre-generates a downscaled asset to use instead of the original.
+const deeer2 = await getImage({ src: deeer2Raw, width: 900, height: 1200 });
 
 const projects = [
   {
@@ -9,7 +16,7 @@ const projects = [
     title: 'Winds of Sinai',
     categories: ['Brand Identity', 'Web Design'],
     year: '2024',
-    img: '',
+    img: deeer2.src,
     bg: '#0c0d0b',
     speed: 1,
   },
