@@ -1,3 +1,7 @@
+---
+import { Image } from 'astro:assets';
+import deeer2 from '../../img/deeer2.webp';
+---
 <section id="selected-work">
 
 	<div class="sw-header">
@@ -130,7 +134,7 @@
 			<span class="wr-num">02</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><span class="wr-img-num" aria-hidden="true">02</span></div>
+					<div class="wr-img-inner"><img src={deeer2.src} alt="" /><span class="wr-img-num" aria-hidden="true">02</span></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -149,7 +153,7 @@
 			<span class="wr-num">03</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><span class="wr-img-num" aria-hidden="true">03</span></div>
+					<div class="wr-img-inner"><img src={deeer2.src} alt="" /><span class="wr-img-num" aria-hidden="true">03</span></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -168,7 +172,7 @@
 			<span class="wr-num">04</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><span class="wr-img-num" aria-hidden="true">04</span></div>
+					<div class="wr-img-inner"><img src={deeer2.src} alt="" /><span class="wr-img-num" aria-hidden="true">04</span></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -187,7 +191,7 @@
 			<span class="wr-num">05</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><span class="wr-img-num" aria-hidden="true">05</span></div>
+					<div class="wr-img-inner"><img src={deeer2.src} alt="" /><span class="wr-img-num" aria-hidden="true">05</span></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -206,7 +210,7 @@
 			<span class="wr-num">06</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><span class="wr-img-num" aria-hidden="true">06</span></div>
+					<div class="wr-img-inner"><img src={deeer2.src} alt="" /><span class="wr-img-num" aria-hidden="true">06</span></div>
 				</div></div>
 			</div>
 			<div class="wr-content">
@@ -654,7 +658,21 @@
 
 	@media (max-width: 1024px) {
 		.wr-expand    { grid-template-rows: 1fr !important; }
-		.wr-img-inner { opacity: 1 !important; transform: scale(1) !important; }
+		/* :has(img) — not a blanket .wr-img-inner rule — because projects
+		   04/05/06 have no <img> at all, just a bare number watermark
+		   (.wr-img-num) sitting on this box's own #0d0d0f fill. Forcing
+		   opacity:1 unconditionally reveals that fill for those rows too: a
+		   visibly lighter-than-black rectangle with nothing in it but a
+		   number, on every mobile page that renders this section (this is
+		   Home's SelectedWorkSection, not a per-page thing) — reported and
+		   confirmed by measuring actual rendered pixels (#0d0d0f ≈ the
+		   measured RGB, well above the surrounding page's near-#000). Rows
+		   with a real <img> still need this: without it they're invisible
+		   on mobile (no :hover to reveal them there), which is what this
+		   rule originally existed to fix. Placeholder-only rows are better
+		   left at their default opacity:0 — the empty grid cell blends with
+		   the page's own black instead of showing a boxed-in placeholder. */
+		.wr-img-inner:has(img) { opacity: 1 !important; transform: scale(1) !important; }
 		.wr-title     { font-size: clamp(1.3rem, 5vw, 2rem) !important; color: rgb(var(--c-cream)) !important; margin-bottom: 0.4rem !important; }
 		.wr-tags span { color: rgb(var(--c-cream) / 0.5) !important; }
 	}
