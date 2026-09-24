@@ -613,10 +613,12 @@ function initOxygenMenu() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
       // On touch: hold the active state briefly so the user sees the highlight
-      // Every device: long enough for the text roll + sibling dim
-      // (OxygenMenu.astro) to mostly play out before the fade-out starts,
-      // instead of cutting them off mid-motion.
-      await new Promise(r => setTimeout(r, 280));
+      // Long enough for the text roll + sibling dim (OxygenMenu.astro) to
+      // play out before the fade-out starts. Touch has no hover lead-in —
+      // the 0.5s roll only starts at the tap — so it needs the full roll
+      // plus a beat to register; with a mouse it's already rolled on hover.
+      const noHover = window.matchMedia('(hover: none)').matches;
+      await new Promise(r => setTimeout(r, noHover ? 650 : 280));
       await closeMenu(true, true);  // keep black overlay visible, blur out
       if (href) navigate(href); // View Transition starts from black screen
     }
