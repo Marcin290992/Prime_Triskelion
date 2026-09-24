@@ -699,7 +699,7 @@ import deeer2 from '../../img/deeer2.webp';
 		   rule originally existed to fix. Placeholder-only rows are better
 		   left at their default opacity:0 — the empty grid cell blends with
 		   the page's own black instead of showing a boxed-in placeholder. */
-		.wr-img-inner:has(img) { opacity: 1 !important; transform: scale(1) !important; }
+		.wr-img-inner:has(img) { opacity: 1 !important; transform: none !important; }
 		.wr-title     { font-size: clamp(1.3rem, 5vw, 2rem) !important; color: rgb(var(--c-cream)) !important; margin-bottom: 0.4rem !important; }
 		.wr-tags span { color: rgb(var(--c-cream) / 0.5) !important; }
 	}
@@ -720,6 +720,13 @@ import deeer2 from '../../img/deeer2.webp';
 			gap: 0.5rem 0.8rem;
 			padding: clamp(1.4rem, 4vw, 2rem) 0;
 			transition: none !important;
+			/* .work-row.visible still carries filter: blur(0) + a transform
+			   from the desktop reveal — not "none", so iOS Safari keeps every
+			   row (photo included) as a filtered offscreen surface and
+			   re-renders them while scrolling. Rows are shown instantly on
+			   mobile anyway (see initSelectedWork), so drop both outright. */
+			filter: none !important;
+			transform: none !important;
 		}
 		.wr-num     { grid-area: num; padding-top: 0.25rem; }
 		.wr-content { grid-area: content; }
@@ -731,7 +738,9 @@ import deeer2 from '../../img/deeer2.webp';
 		   it wasn't earning its cost there (desktop's hover-reveal is the
 		   whole reason it existed) and mobile should stay as light as
 		   possible. */
-		.wr-img-inner img { filter: none; }
+		/* translateZ(0) only existed to layer-promote the grayscale filter —
+		   with the filter gone it just forces six extra GPU layers. */
+		.wr-img-inner img { filter: none; transform: none; -webkit-transform: none; }
 		.wr-desc      { font-size: 0.82rem; line-height: 1.65; }
 		.wr-tags      { gap: 0.2rem 0.5rem; }
 		.wr-tags span { font-size: 0.7rem; }

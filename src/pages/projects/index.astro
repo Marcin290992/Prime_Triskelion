@@ -396,8 +396,15 @@ const projects = [
     .proj-header__scroll { display: none; }
 
     /* KaÅ¼dy projekt = peÅ‚ny ekran, zero przerw */
+    /* lvh, not --app-stable-vh: these sections all sit below the first
+       screen, where Layout.astro deliberately stops re-measuring on
+       toolbar resize (it made the page jump). A value locked with the URL
+       bar showing then left each section short by the bar's height once it
+       hid — a dark strip under the menu. lvh is the bar-hidden height and
+       never changes, so it fills the screen with no reflow at all. */
     .proj-section {
-      height: calc(var(--app-stable-vh, 1svh) * 100);
+      height: 100vh;
+      height: 100lvh;
       overflow: hidden;
       transform: translateZ(0);
       transition: none;
