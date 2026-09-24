@@ -820,8 +820,14 @@
 		window.addEventListener('mousemove', onMouseMove as EventListener);
 		window.addEventListener('touchmove', onTouchMove as EventListener, { passive: true });
 
+		// Capped harder on touch devices — same reasoning as flameCanvas.ts's
+		// identical cap: a per-pixel fragment shader running continuously is
+		// a real, measurable contributor to Safari-only scroll jank at DPR 2
+		// on phones that report 2-3, and this canvas is the very first thing
+		// painted on the home page. Desktop keeps DPR 2.
+		const maxDpr = window.matchMedia('(pointer: coarse)').matches ? 1 : 2;
 		function resize() {
-			const dpr = Math.min(devicePixelRatio, 2);
+			const dpr = Math.min(devicePixelRatio, maxDpr);
 			W = canvas!.offsetWidth * dpr; H = canvas!.offsetHeight * dpr;
 			canvas!.width = W; canvas!.height = H;
 			gl!.viewport(0, 0, W, H);
@@ -829,7 +835,7 @@
 		function onResize() {
 			// Na mobile URL bar chowając się zmienia tylko wysokość — ignorujemy height-only resize
 			// żeby uniknąć resetu WebGL context przy pierwszym scrollu
-			if (canvas!.offsetWidth * devicePixelRatio === W) return;
+			if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
 			resize();
 		}
 		window.addEventListener('resize', onResize, { passive: true });

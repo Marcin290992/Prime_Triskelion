@@ -83,8 +83,18 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 
   <!-- Fullscreen overlay — Crysis HUD style -->
   <div class="fixed inset-0 z-999 opacity-0 invisible overflow-hidden ox-menu-overlay" id="ox-menu-overlay">
-    <!-- Background -->
-    <div class="absolute inset-0 bg-black"></div>
+    <!-- Background — its own independent position:fixed, deliberately
+         NOT `absolute inset-0` (which would just match the parent's own
+         box 1:1, inheriting whatever that box gets wrong). iOS Safari can
+         still leave #ox-menu-overlay itself short of the true visual
+         viewport while its dynamic toolbar is transitioning, regardless of
+         inset:0/no-transform — this purely decorative fill (z-index below
+         the real content, aria-hidden, no interaction) is sized well past
+         every edge on purpose so it always overshoots that gap no matter
+         its exact size, without the actual nav content inheriting the same
+         oversized box (which would shift the grid-centered content layout
+         if this were the thing sized h-full/grid-rows-[...] below). -->
+    <div class="ox-menu-bg-fill" aria-hidden="true"></div>
     <div class="ox-overlay-grain absolute inset-0 pointer-events-none opacity-[0.04]"></div>
 
     <!-- Content -->
@@ -219,6 +229,21 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
        means there's nothing left for a gap to reveal, regardless of what
        the child is doing. */
     background: rgb(var(--c-bg));
+  }
+
+  /* Deliberately oversized — see the markup comment above this element.
+     Independent position:fixed (not sized off the parent overlay's own
+     box via absolute inset:0), so a generous overshoot here can't disturb
+     #ox-menu-overlay's own h-full/grid-rows-[...] content layout, which
+     still sizes off the normal, unextended parent box. */
+  .ox-menu-bg-fill {
+    position: fixed;
+    top: -150px;
+    right: -150px;
+    bottom: -150px;
+    left: -150px;
+    background: rgb(var(--c-bg));
+    z-index: 0;
   }
 
   /* ── Overlay active state ── */
