@@ -1,7 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
-import deeer2 from '../../img/deeer2.webp';
+import { getImage } from 'astro:assets';
+import deeer2Raw from '../../img/deeer2.webp';
+
+// deeer2Raw is a 7360px-wide test-only source — this page's <img> tags
+// take a plain string src (not the <Image> component, since `img` also
+// needs to hold external URLs for the other entries), so passing
+// deeer2Raw.src directly would ship that full-size original untouched.
+// getImage() pre-generates a properly-downscaled asset at build time and
+// hands back its own .src to use in its place.
+const deeer2 = await getImage({ src: deeer2Raw, width: 900, height: 1200 });
 
 const projects = [
   {

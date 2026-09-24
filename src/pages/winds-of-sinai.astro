@@ -1,7 +1,17 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import CtaSection from '../components/sections/CtaSection.astro';
-import deeer2 from '../img/deeer2.webp';
+import { getImage } from 'astro:assets';
+import deeer2Raw from '../img/deeer2.webp';
+
+// deeer2Raw is a 7360px-wide test-only source — every spot below uses a
+// plain <img src={deeer2.src}>, not the <Image> component, so referencing
+// the raw import's own .src would ship that full-size original into all 14
+// placeholder spots on the page untouched (heavy enough to visibly jank
+// scroll, worst on iOS Safari's compositor). getImage() pre-generates one
+// properly-downscaled asset at build time; every usage below keeps
+// pointing at `deeer2.src` unchanged, just now resolving to the smaller one.
+const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
 ---
 
 <Layout title="Winds Of Sinai — Prime Triskelion" description="Case study: Winds Of Sinai — branding, web design and development by Prime Triskelion.">
