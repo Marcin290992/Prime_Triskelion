@@ -1278,6 +1278,7 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
+  import { isSafari } from '../utils/isSafari';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1373,24 +1374,38 @@ const deeer2 = await getImage({ src: deeer2Raw, width: 1200, height: 900 });
 
     // 1. Lenis musi być przed ScrollTrigger, żeby sync działał poprawnie
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    _lenis = new Lenis(isTouch ? {
-      duration: 0.7,
-      easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
-      smoothWheel: false,
-      touchMultiplier: 1.8,
-    } : {
-      duration: 2.4,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 0.65,
-    });
-    (window as any).__lenis = _lenis;
+    // Mobile Safari specifically: skip Lenis entirely. This page's
+    // ScrollTrigger-pinned sections (sticky stack, horizontal galleries)
+    // still work without it — ScrollTrigger tracks native window scroll on
+    // its own by default, the lenis.on('scroll', ScrollTrigger.update) sync
+    // below only exists to keep it aware of Lenis's own virtual scroll
+    // position while Lenis is intercepting scroll, which isn't happening
+    // here anyway. Safari's compositor handles a competing scroll-linked
+    // rAF loop worse than Chromium's, which was reading as jank on this
+    // page specifically.
+    if (!(isTouch && isSafari())) {
+      _lenis = new Lenis(isTouch ? {
+        duration: 0.7,
+        easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
+        smoothWheel: false,
+        touchMultiplier: 1.8,
+      } : {
+        duration: 2.4,
+        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 0.65,
+      });
+      (window as any).__lenis = _lenis;
 
-    // Poprawny sync Lenis ↔ ScrollTrigger (oficjalny pattern z docs Lenis)
-    _lenis.on('scroll', ScrollTrigger.update);
-    _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
-    gsap.ticker.add(_lenisRaf);
-    gsap.ticker.lagSmoothing(0);
+      // Poprawny sync Lenis ↔ ScrollTrigger (oficjalny pattern z docs Lenis)
+      _lenis.on('scroll', ScrollTrigger.update);
+      _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
+      gsap.ticker.add(_lenisRaf);
+      gsap.ticker.lagSmoothing(0);
+    } else {
+      (window as any).__lenis = null;
+      (window as any).__lenisHandled = true;
+    }
 
     // 2. Animacje — mobile/desktop rozdzielone jak w CSS
     const isMob = window.matchMedia('(max-width: 1024px)').matches;

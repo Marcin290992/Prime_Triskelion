@@ -257,6 +257,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 <script>
   import Lenis from 'lenis';
   import gsap from 'gsap';
+  import { isSafari } from '../utils/isSafari';
 
   let _layoutLenis: Lenis | null = null;
   let _layoutRaf: ((t: number) => void) | null = null;
@@ -280,6 +281,18 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       if ((window as any).__lenisHandled || (window as any).__lenis) return;
 
       const isTouch = window.matchMedia('(pointer: coarse)').matches;
+      // Mobile Safari specifically: skip Lenis entirely rather than the
+      // reduced-motion config below. Safari's own compositor handles a
+      // competing scroll-linked rAF loop worse than Chromium's does, and
+      // this fallback path exists for pages that never opted into any
+      // particular scroll behavior — native scroll is the safe default
+      // there, same as index.astro/winds-of-sinai.astro already choose for
+      // themselves on all touch devices, not just Safari.
+      if (isTouch && isSafari()) {
+        (window as any).__lenis = null;
+        return;
+      }
+
       _layoutLenis = new Lenis(isTouch ? {
         duration: 0.7,
         easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
