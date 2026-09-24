@@ -160,14 +160,26 @@ export function initFlameCanvas(
 		section.addEventListener('pointerleave', onPointerLeave);
 	}
 
+	// Capped harder on touch devices: this is a per-pixel fragment shader
+	// (sin/cos/pow/sqrt per fragment, every frame, continuously while the
+	// section is in view — see the IntersectionObserver below) running on
+	// top of whatever else is competing for the GPU/compositor during
+	// scroll. DPR 2 on a phone that reports 2–3 is 4–9x the fragment count
+	// of DPR 1, and Safari/WebKit's compositor handles that contention
+	// alongside native scroll considerably worse than Chromium's does —
+	// this canvas (shared by CtaSection, present on every page, and the
+	// Contact header) was a real, measurable contributor to the Safari-only
+	// scroll jank reported repeatedly elsewhere in this codebase. Desktop
+	// keeps the original DPR 2 cap; this only tightens the mobile case.
+	const maxDpr = window.matchMedia('(pointer: coarse)').matches ? 1 : 2;
 	function resize() {
-		const dpr = Math.min(devicePixelRatio, 2);
+		const dpr = Math.min(devicePixelRatio, maxDpr);
 		W = canvas.offsetWidth * dpr; H = canvas.offsetHeight * dpr;
 		canvas.width = W; canvas.height = H;
 		gl!.viewport(0, 0, W, H);
 	}
 	function onResize() {
-		if (canvas.offsetWidth * devicePixelRatio === W) return;
+		if (canvas.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
 		resize();
 	}
 	window.addEventListener('resize', onResize, { passive: true });
