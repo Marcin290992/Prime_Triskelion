@@ -241,9 +241,40 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}
 			}
 
+			#safe-area-guard-top,
+			#safe-area-guard-bottom {
+				position: fixed;
+				left: 0;
+				right: 0;
+				background: rgb(var(--c-bg));
+				z-index: 99999;
+				pointer-events: none;
+			}
+			#safe-area-guard-top {
+				top: 0;
+				height: env(safe-area-inset-top, 0px);
+			}
+			#safe-area-guard-bottom {
+				bottom: 0;
+				height: env(safe-area-inset-bottom, 0px);
+			}
+
 		</style>
 	</head>
 	<body class="text-white">
+		<!-- Belt-and-suspenders against the iOS Safari safe-area gap bug
+		     hunted down elsewhere in this codebase (see #ox-menu-overlay's
+		     own comment in OxygenMenu.astro): a permanently-black bar pinned
+		     to exactly the OS-reserved notch/home-indicator strip, sitting
+		     above everything. Sized to env(safe-area-inset-*) itself with no
+		     extra buffer — anything bigger would risk covering real content
+		     (the HUD nav already reserves its own clearance via padding for
+		     this same area) instead of just the zone that's never supposed
+		     to hold anything anyway. Harmless everywhere else: on devices
+		     with no safe area (env() resolves to 0) or in Chrome, height
+		     collapses to 0 and this paints nothing. -->
+		<div id="safe-area-guard-top" aria-hidden="true"></div>
+		<div id="safe-area-guard-bottom" aria-hidden="true"></div>
 		<GridLines />
 		<Logo />
 		<TopBarCta />
