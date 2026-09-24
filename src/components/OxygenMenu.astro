@@ -207,7 +207,19 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
      will-change: opacity alone still gets this element promoted for the
      opacity/visibility transition right below, without touching how a
      fixed element's own box is computed. */
-  #ox-menu-overlay { will-change: opacity; }
+  #ox-menu-overlay {
+    will-change: opacity;
+    /* Belt-and-suspenders on top of the transform fix above: the black
+       fill was only ever on a child (.absolute.inset-0.bg-black), which
+       is itself position:absolute relative to THIS element — so if
+       anything ever leaves this element's own box even a pixel short of
+       the real screen edge again (a future regression, a different
+       browser quirk, whatever), that child inherits the same shortfall
+       and the gap reappears. Painting black on the overlay itself too
+       means there's nothing left for a gap to reveal, regardless of what
+       the child is doing. */
+    background: rgb(var(--c-bg));
+  }
 
   /* ── Overlay active state ── */
   .ox-menu-overlay { transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), visibility 0.6s cubic-bezier(0.4,0,0.2,1); }
