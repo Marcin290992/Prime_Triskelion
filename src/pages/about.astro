@@ -46,10 +46,33 @@ import portraitBottom from '../img/portrait-bottom.webp';
        scroll, no Lenis/GSAP pin) and no fluid-sim canvas — just the static
        portrait. -->
   <div id="about-mobile">
-    <div class="am-hero">
-      <p class="am-who"><span class="am-who-l">Who's</span><span class="am-who-r">Behind?</span></p>
+    <!-- Scroll-linked intro, same idea as desktop's overlay reveal but
+         with the plain photo (no fluid sim): "Who's Behind?" centred on
+         black; scrolling splits the words apart and fades the black away
+         to reveal the portrait. Native scroll + CSS sticky, no pinning. -->
+    <div class="am-reveal">
+      <div class="am-reveal__pin">
+        <div class="am-portrait-stack">
+          <Image
+            class="am-portrait am-portrait-img"
+            src={portraitTop}
+            alt="Martin — Prime Triskelion"
+            widths={[480, 768, 1080]}
+            sizes="100vw"
+            loading="eager"
+            fetchpriority="high"
+          />
+        </div>
+        <div class="am-veil" aria-hidden="true"></div>
+        <div class="am-hero">
+          <p class="am-who">
+            <span class="am-who-l"><span class="am-who-w">Who's</span></span>
+            <span class="am-who-r"><span class="am-who-w">Behind?</span></span>
+          </p>
+        </div>
+      </div>
     </div>
-    <div data-after-hero>
+    <div class="am-after" data-after-hero>
     <div class="am-intro">
       <p class="am-greeting">Hi, my name is</p>
       <p class="am-name">Martin.</p>
@@ -59,17 +82,6 @@ import portraitBottom from '../img/portrait-bottom.webp';
       <span class="am-item">Blender · 3D · Motion</span>
       <span class="am-item">Brand Identity · Web Dev</span>
       <span class="am-item">London, UK · Est. 2024</span>
-    </div>
-    <div class="am-portrait-stack">
-      <Image
-        class="am-portrait am-portrait-img"
-        src={portraitTop}
-        alt="Martin — Prime Triskelion"
-        widths={[480, 768, 1080]}
-        sizes="100vw"
-        loading="eager"
-        fetchpriority="high"
-      />
     </div>
     </div>
   </div>
@@ -311,12 +323,50 @@ import portraitBottom from '../img/portrait-bottom.webp';
 
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
 
-    /* Hero z grain i fade */
-    /* Top padding matches .proj-header / .svc-hero on mobile so the title
-       sits at the same height on every subpage. */
-    .am-hero {
-      padding: clamp(6rem, 14vh, 10rem) var(--site-gutter, 1.5rem) 0;
+    /* -- Scroll-linked intro (see initAboutMobileReveal) --
+       200 stable-vh of scroll room with a sticky full-screen pin inside,
+       same pattern as #manifesto on Home: --app-stable-vh is measured
+       once (Layout.astro), so the toolbar can't resize it mid-scroll. */
+    .am-reveal {
       position: relative;
+      height: 200svh;
+      height: calc(var(--app-stable-vh, 1svh) * 200);
+      /* The photo ends at 75% of the pin (see .am-portrait-stack) — pull
+         the name/bio up by the remaining 25% so they follow right under
+         the photo instead of after a band of empty black. */
+      margin-bottom: -25svh;
+      margin-bottom: calc(var(--app-stable-vh, 1svh) * -25);
+    }
+    /* Positioned so it paints above the sticky pin's black veil it now
+       overlaps by that 25%. */
+    .am-after {
+      position: relative;
+      z-index: 6;
+    }
+    .am-reveal__pin {
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      overflow: hidden;
+    }
+    /* Black layer between photo and title; faded out by scroll. */
+    .am-veil {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      background: rgb(var(--c-bg));
+      pointer-events: none;
+    }
+    .am-hero {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 var(--site-gutter, 1.5rem);
+      pointer-events: none;
     }
     .am-hero::before {
       content: '';
@@ -328,36 +378,45 @@ import portraitBottom from '../img/portrait-bottom.webp';
       pointer-events: none;
       z-index: 1;
     }
-    /* "Who's Behind?" obok siebie */
+    /* "Who's Behind?" obok siebie, na środku */
     .am-who {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
+      justify-content: center;
       align-items: baseline;
       gap: 0.22em;
-      margin: 0 0 0.9rem;
+      margin: 0;
       position: relative;
       z-index: 2;
     }
     .am-who-l, .am-who-r {
+      display: inline-block;
       font-family: var(--f-display);
       font-weight: 700;
-      font-size: clamp(2.6rem, 10.5vw, 5rem);
+      font-size: clamp(2.2rem, 9vw, 5rem);
       letter-spacing: -0.02em;
       text-transform: uppercase;
       line-height: 1;
       white-space: nowrap;
     }
-    /* Same blur-in entrance as .proj-title__word / .svc-title__word —
-       driven by initAboutMobileTitle. */
-    .am-who-l, .am-who-r { opacity: 0; filter: blur(18px); }
+    /* Inner span = load entrance (blur-in, initAboutMobileTitle); outer
+       span = scroll split (x/opacity, initAboutMobileReveal) — separate
+       elements so the two GSAP tweens never fight over opacity. */
+    .am-who-w { display: inline-block; opacity: 0; filter: blur(18px); }
     .am-who-l { color: rgb(var(--c-cream)); }
     .am-who-r { color: rgb(var(--c-red)); }
 
+    /* Half the screen, vertically centred — the original mobile layout
+       used an 80svh box, and full-screen cropped the (landscape) photo far
+       too tight. Its own background is black, so the edges blend into the
+       pin's black. */
     .am-portrait-stack {
-      position: relative;
-      width: 100%;
-      height: 80svh;
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 25%;
+      height: 50%;
       overflow: hidden;
     }
     .am-portrait-stack::after {
@@ -391,21 +450,10 @@ import portraitBottom from '../img/portrait-bottom.webp';
       object-fit: cover;
       object-position: center 72%;
       transform-origin: 50% 72%;
-      /* Mobile-only reveal (see initAboutMobilePortrait) — #about-mobile
-         is display:none on desktop, so this never shows/matters there;
-         desktop gets its own fluid-sim canvas reveal instead. */
-      opacity: 0;
-      filter: blur(14px);
-      transform: scale(1.08);
-      transition:
-        opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
-        filter 1.1s cubic-bezier(0.16, 1, 0.3, 1),
-        transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .am-portrait-img.is-visible {
-      opacity: 1;
-      filter: blur(0);
-      transform: scale(1);
+      /* Settles to scale(1) as the veil lifts (scroll-scrubbed). No blur
+         here — a scrubbed full-screen filter is what mobile Safari
+         handles worst. */
+      transform: scale(1.12);
     }
     /* Intro */
     .am-intro {
@@ -1855,38 +1903,42 @@ import portraitBottom from '../img/portrait-bottom.webp';
     }, { once: true });
   }
 
-  // Mobile: the hero portrait just sat there fully visible with no
-  // reveal at all (desktop's fluid-sim canvas reveal doesn't run below
-  // 1024px — see initAboutDesktop's early return above). One-shot
-  // IntersectionObserver fade/blur-in instead, same mechanism
-  // ShowcaseSection already uses for its own title reveal, so it scrolls
-  // into view at a natural point instead of popping in already fully
-  // rendered before the user has scrolled anywhere near it.
-  function initAboutMobilePortrait() {
+  // Mobile: desktop's intro choreography without the fluid sim — the
+  // words split apart and the black veil lifts off the plain portrait,
+  // scrubbed by native scroll over the first screen of .am-reveal (its
+  // sticky pin holds for exactly that distance, then scrolls away
+  // normally into the name/bio below).
+  let _amRevealST: ScrollTrigger | null = null;
+  function initAboutMobileReveal() {
     if (!window.matchMedia('(max-width: 1024px)').matches) return;
-    const stack = document.querySelector('.am-portrait-stack');
-    const img = document.querySelector('.am-portrait-img');
-    if (!stack || !img) return;
+    const reveal = document.querySelector<HTMLElement>('.am-reveal');
+    const pin    = document.querySelector<HTMLElement>('.am-reveal__pin');
+    const veil   = document.querySelector<HTMLElement>('.am-veil');
+    const img    = document.querySelector<HTMLElement>('.am-portrait-img');
+    const wordL  = document.querySelector<HTMLElement>('.am-who-l');
+    const wordR  = document.querySelector<HTMLElement>('.am-who-r');
+    if (!reveal || !pin || !veil || !img || !wordL || !wordR) return;
 
-    // The portrait sits right under the intro text and is often already
-    // roughly half on-screen at load (tall 80svh block, short text above
-    // it) — checking "any pixel visible" (or even a % of the target's own
-    // area, since so much of it is already showing) fired instantly
-    // instead of on scroll. Shrinking the observed root down to just its
-    // OWN top half means the portrait's top edge has to actually travel
-    // up into that region before it counts as intersecting — a real,
-    // felt scroll distance, not a hair-trigger on the first pixel of motion.
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          img.classList.add('is-visible');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { rootMargin: '0px 0px -55% 0px', threshold: 0 });
-    io.observe(stack);
+    const tl = gsap.timeline({ defaults: { ease: 'none' } })
+      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.6 }, 0)
+      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.6 }, 0)
+      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.8 }, 0)
+      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 1 }, 0);
 
-    document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
+    _amRevealST = ScrollTrigger.create({
+      animation: tl,
+      trigger: reveal,
+      start: 'top top',
+      // Pin height, not innerHeight — the pin is sized from the stable
+      // --app-stable-vh, which the toolbar doesn't change.
+      end: () => `+=${pin.offsetHeight}`,
+      scrub: true,
+    });
+
+    document.addEventListener('astro:before-swap', () => {
+      _amRevealST?.kill();
+      _amRevealST = null;
+    }, { once: true });
   }
 
   // Mobile "Who's Behind?" title — same entrance as the Projects/Services
@@ -1894,7 +1946,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   // the page transition.
   function initAboutMobileTitle() {
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
-    const words = document.querySelectorAll<HTMLElement>('.am-who-l, .am-who-r');
+    const words = document.querySelectorAll<HTMLElement>('.am-who-w');
     afterPageTransition(() => {
       revealAfterHero();
       if (!isMob || !words.length) return;
@@ -1906,7 +1958,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   function initAbout() {
     initAboutDesktop();
     initAboutMobileTitle();
-    initAboutMobilePortrait();
+    initAboutMobileReveal();
   }
 
   document.addEventListener('astro:page-load', initAbout);
