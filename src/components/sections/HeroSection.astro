@@ -543,6 +543,9 @@
 
 				const mobileTl = gsap.timeline({
 					onComplete: () => {
+						// Tweens end on filter: blur(0px), which iOS Safari still
+						// treats as an active filter (re-rendered while scrolling).
+						gsap.set([...mobileRevealEls, ...logoArms, logoText].filter(Boolean), { filter: 'none' });
 						(window as any).__ptHeroTextReady = true;
 						window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
 					},

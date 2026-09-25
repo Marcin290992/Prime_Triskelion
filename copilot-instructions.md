@@ -342,9 +342,16 @@ These fixed a long run of mobile bugs (gaps above/below the menu overlay, Safari
 - ❌ Never add `viewport-fit=cover` to the viewport meta. It was the root cause of the original menu-gap bugs.
 
 ### Viewport height (`--app-stable-vh`)
-- It's set in JS in `Layout.astro`. On toolbar show/hide (height-only resize) it is re-measured **only while `scrollY` is inside the first screen**, in every browser.
-- Re-measuring deeper resizes every vh-sized section above the reader, and the page visibly jumps. Safari has no scroll anchoring; in Chrome the section in view still visibly resizes.
+- It's set in JS in `Layout.astro` **only** on load, on navigation, on orientation change and on width change. Height-only resizes (the toolbar collapsing or expanding while scrolling) are ignored on purpose.
+- Every re-measure strategy we tried caused motion mid-scroll:
+  - live updates caused jank,
+  - a debounced update made the page jump,
+  - first-screen-only re-measuring still gave a one-off hitch on iOS Safari 26 just after leaving the hero, because its toolbar collapses right there.
+- The accepted trade-off: with the toolbar hidden, the first screen is a toolbar-height short and the black next section peeks in.
 - ❌ Don't size sections **below the first screen** off the viewport height on mobile (`--app-stable-vh`, `vh`, `dvh`, `lvh`). Use content or aspect-ratio sizing instead: `/projects` on mobile uses 4:5 cards for this reason.
+
+### Page transitions on mobile
+- Touch devices get a plain opacity fade-in (`vt-fade-in-mobile`), **no blur**. Blurring the whole new-page snapshot smears white text across the black, so the screen briefly reads as grey. It's also full-screen filter animation, which touch Safari handles worst. Desktop keeps the blur-in.
 
 ### Menu overlay
 - `#ox-menu-overlay` (fixed, `inset: 0`) can't reach the strips under Safari's bars. Once it has faded in, `oxygenMenu.ts` adds `html.ox-menu-covered`, which hides the page underneath (`visibility: hidden`), so only black shows.
@@ -353,7 +360,7 @@ These fixed a long run of mobile bugs (gaps above/below the menu overlay, Safari
 
 ### Performance on mobile Safari
 - `backdrop-filter` over scrolling content is expensive. Keep it to small areas (the 104px `.top-blur` strip is fine) and add every new blur surface to the `:active-view-transition` guard in `global.css`.
-- ❌ Don't leave `filter: blur(0)` / `transform` on elements after a reveal on mobile. Safari treats `blur(0)` as an active filter and re-renders it on scroll. Use `filter: none` / `transform: none`.
+- ❌ Don't leave `filter: blur(0)` / `transform` on elements after a reveal on mobile. Safari treats `blur(0)` as an active filter and re-renders it on scroll. Use `filter: none` / `transform: none`, or `gsap.set(els, { filter: 'none' })` in the reveal timeline's `onComplete` (as the hero does).
 - ❌ No per-frame `getImageData()` or other GPU readbacks in rAF loops. Don't run WebGL loops for effects that are hidden on mobile.
 - Large source images go through `astro:assets` (`<Image>` / `getImage()`) so a downscaled file ships, never the raw original.
 
