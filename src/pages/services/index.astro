@@ -360,17 +360,18 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
 <script>
   import gsap from 'gsap';
+  import { afterPageTransition } from '../../utils/afterPageTransition';
 
   let _rowObserver: IntersectionObserver | null = null;
 
   function initServicesPage() {
     const titleWords = document.querySelectorAll<HTMLElement>('.svc-title__word');
-    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-
-    if (titleWords.length) tl.to(titleWords,
-      { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
-      0.08
-    );
+    if (titleWords.length) afterPageTransition(() => {
+      gsap.timeline({ defaults: { ease: 'power4.out' } }).to(titleWords,
+        { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
+        0.08
+      );
+    });
 
     if (window.matchMedia('(max-width: 1024px)').matches) return;
 

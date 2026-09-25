@@ -320,6 +320,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import { isSafari } from '../utils/isSafari';
+  import '../utils/afterPageTransition';
 
   let _layoutLenis: Lenis | null = null;
   let _layoutRaf: ((t: number) => void) | null = null;

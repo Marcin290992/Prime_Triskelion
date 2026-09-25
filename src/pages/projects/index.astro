@@ -506,6 +506,7 @@ const projects = [
 
 <script>
   import gsap from 'gsap';
+  import { afterPageTransition } from '../../utils/afterPageTransition';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -514,9 +515,11 @@ const projects = [
     const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
 
-    const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-    if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
-    setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+    afterPageTransition(() => {
+      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+      setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+    });
 
     // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€
     if (window.matchMedia('(max-width: 1024px)').matches) return;

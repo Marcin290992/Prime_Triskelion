@@ -541,6 +541,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   import { onReady } from '../utils/onReady';
+  import { afterPageTransition } from '../utils/afterPageTransition';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
 
@@ -633,10 +634,10 @@ import Layout from '../layouts/Layout.astro';
     const title  = page.querySelector('.cp-title')  as HTMLElement | null;
     const grid   = page.querySelector('.cp-grid')   as HTMLElement | null;
 
-    requestAnimationFrame(() => {
+    afterPageTransition(() => requestAnimationFrame(() => {
       if (title)  setTimeout(() => title.classList.add('is-visible'),  80);
       if (grid)   setTimeout(() => grid.classList.add('is-visible'),   220);
-    });
+    }));
 
     // ── Form validation & submission ───────────────────────────────────
     const form   = document.getElementById('contact-form')  as HTMLFormElement | null;
