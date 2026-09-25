@@ -513,15 +513,17 @@
 			// breakpoints instead of racing OxygenMenu's independent fade-in.
 			const hudMenu = document.getElementById('hud-menu-btn');
 
-			if (isMobileReveal) {
-				const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
-				const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
-				const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
-				const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
-				const mobileRevealEls = [kicker, claim, sub, ctaRow, inlineStats].filter((el): el is HTMLElement => !!el);
+			// Site chrome (logo, menu button, location label) only gets its
+			// staged entrance on the first page of the visit. Navigating back
+			// to Home it's already on screen and held still through the page
+			// transition (global.css / Layout.astro) — the chrome targets
+			// below become empty so the timeline leaves them alone.
+			const chromeShown = !!(window as any).__ptShellShown;
+			const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
 
-				gsap.set(mobileRevealEls, { opacity: 0, filter: `blur(${heroMotion.mobileBlur}px)`, y: heroMotion.mobileY });
-				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
+			// Logo mark — three arms scattered/blurred, about to spin into place;
+			// wordmark racked out of focus, about to snap sharp with the mark.
+			function hideChrome() {
 				gsap.set(hudMenu, { opacity: 0, y: -8 });
 				gsap.set(logoArms, {
 					svgOrigin: '500 577.259',
@@ -538,6 +540,49 @@
 					filter: 'blur(16px)',
 					transformOrigin: '0% 50%',
 				});
+			}
+
+			// Wordmark racks into focus first, then the mark spins/snaps into
+			// place after. Menu button — after the message (headline/sub/cta/
+			// stats) has landed, but not held hostage by the decorative logo
+			// spin, so impatient users get a visible, clickable nav control
+			// well before the full ~3s reveal finishes.
+			// clearProps: 'opacity' once it lands — #hud-menu-btn carries
+			// transition:persist (OxygenMenu.astro), so without this the inline
+			// opacity:1 this tween leaves behind sticks around FOREVER on that
+			// same DOM node across every future navigation, permanently
+			// outranking oxygenMenu.ts's CSS-class-driven show/hide on scroll
+			// (inline style always beats a class rule) — the button would look
+			// stuck visible no matter what state.barHidden says.
+			function revealChrome(tl: gsap.core.Timeline, menuDuration: number) {
+				tl.to(logoText, {
+					opacity: 1,
+					scale: 1,
+					filter: 'blur(0px)',
+					duration: 0.85,
+					ease: 'power4.out',
+				}, 1.05)
+				  .to(logoArms, {
+					opacity: 1,
+					scale: 1,
+					filter: 'blur(0px)',
+					rotation: (i: number) => [0, 120, 240][i],
+					duration: 0.95,
+					ease: 'back.out(1.6)',
+					stagger: 0.08,
+				}, 1.95)
+				  .to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+			}
+
+			if (isMobileReveal) {
+				const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
+				const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
+				const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
+				const mobileRevealEls = [kicker, claim, sub, ctaRow, inlineStats].filter((el): el is HTMLElement => !!el);
+
+				gsap.set(mobileRevealEls, { opacity: 0, filter: `blur(${heroMotion.mobileBlur}px)`, y: heroMotion.mobileY });
+				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
+				if (!chromeShown) hideChrome();
 				gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
 				hero!.style.opacity = '1';
 
@@ -545,7 +590,7 @@
 					onComplete: () => {
 						// Tweens end on filter: blur(0px), which iOS Safari still
 						// treats as an active filter (re-rendered while scrolling).
-						gsap.set([...mobileRevealEls, ...logoArms, logoText].filter(Boolean), { filter: 'none' });
+						gsap.set([...mobileRevealEls, ...(chromeShown ? [] : [...logoArms, logoText])].filter(Boolean), { filter: 'none' });
 						(window as any).__ptHeroTextReady = true;
 						window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
 					},
@@ -560,38 +605,12 @@
 					ease: 'power3.out',
 				}, 0.15)
 				  .add(() => { initHeroDynamicWord(); }, 0.15)
-				  .to(logoText, {
-						opacity: 1,
-						scale: 1,
-						filter: 'blur(0px)',
-						duration: 0.85,
-						ease: 'power4.out',
-					}, 1.05)
-				  .to(logoArms, {
-						opacity: 1,
-						scale: 1,
-						filter: 'blur(0px)',
-						rotation: (i: number) => [0, 120, 240][i],
-						duration: 0.95,
-						ease: 'back.out(1.6)',
-						stagger: 0.08,
-					}, 1.95)
 				  .to('#rays-canvas', {
 						opacity: 1,
 						duration: 1.6,
 						ease: 'power2.inOut',
-					}, 1.2)
-				// Menu button — after the message (headline/sub/cta/stats) has landed, but
-				// not held hostage by the decorative logo spin — impatient users get a
-				// visible, clickable nav control well before the full ~3s reveal finishes.
-				// clearProps: 'opacity' once this lands — #hud-menu-btn carries
-				// transition:persist (OxygenMenu.astro), so without this the inline
-				// opacity:1 this tween leaves behind sticks around FOREVER on that
-				// same DOM node across every future navigation, permanently
-				// outranking oxygenMenu.ts's CSS-class-driven show/hide on scroll
-				// (inline style always beats a class rule) — the button would look
-				// stuck visible no matter what state.barHidden says.
-				  .to(hudMenu, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+					}, 1.2);
+				if (!chromeShown) revealChrome(mobileTl, 0.5);
 
 				return;
 			}
@@ -599,7 +618,6 @@
 			const kicker   = document.querySelector('.hero-kicker') as HTMLElement | null;
 			const sub      = document.querySelector('.h-hero-sub')  as HTMLElement | null;
 			const hudLoc   = document.getElementById('hud-location');
-			const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
 
 			// Read geometry before the style-write batch below — querying
 			// offsetHeight after those writes would force a synchronous
@@ -608,26 +626,10 @@
 
 			// UI shell — hidden until after content
 			gsap.set(title,    { opacity: 1 }); // container itself always visible — children below carry the reveal
-			gsap.set(hudMenu,  { opacity: 0, y: -8 });
-			gsap.set(hudLoc,   { opacity: 0, x: -20 });
-
-			// Logo mark — three arms scattered/blurred, about to spin into place;
-			// wordmark racked out of focus, about to snap sharp with the mark.
-			gsap.set(logoArms, {
-				svgOrigin: '500 577.259',
-				scale: 0.35,
-				opacity: 0,
-				filter: 'blur(14px)',
-			});
-			gsap.set(logoArms[0], { rotation: -55 });
-			gsap.set(logoArms[1], { rotation: 65 });
-			gsap.set(logoArms[2], { rotation: 185 });
-			gsap.set(logoText, {
-				opacity: 0,
-				scale: 1.4,
-				filter: 'blur(16px)',
-				transformOrigin: '0% 50%',
-			});
+			if (!chromeShown) {
+				hideChrome();
+				gsap.set(hudLoc, { opacity: 0, x: -20 });
+			}
 
 			// Content
 			gsap.set(claim,          { opacity: 0, filter: 'blur(80px)', y: 50 });
@@ -654,33 +656,12 @@
 			  .to(sub,            { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.9,  ease: 'power3.out' }, 0.46)
 			  .to(ctaWrap ?? cta, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.85, ease: 'power3.out' }, 0.58)
 			  .to(inlineStats,    { opacity: 1, filter: 'blur(0px)',       duration: 0.8,  ease: 'power2.out' }, 0.70)
-			  .to(bottom,         { opacity: 1, filter: 'blur(0px)',       duration: 0.75, ease: 'power2.out' }, 0.78)
+			  .to(bottom,         { opacity: 1, filter: 'blur(0px)',       duration: 0.75, ease: 'power2.out' }, 0.78);
 			// 2. UI shell
-			  .to(hudLoc,              { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 1.05)
-			// Wordmark racks into focus first, then the mark spins/snaps into place after.
-			  .to(logoText, {
-					opacity: 1,
-					scale: 1,
-					filter: 'blur(0px)',
-					duration: 0.85,
-					ease: 'power4.out',
-				}, 1.05)
-			  .to(logoArms, {
-					opacity: 1,
-					scale: 1,
-					filter: 'blur(0px)',
-					rotation: (i: number) => [0, 120, 240][i],
-					duration: 0.95,
-					ease: 'back.out(1.6)',
-					stagger: 0.08,
-				}, 1.95)
-			// 3. Menu button — after the message has landed, ahead of the decorative
-			// logo spin, so impatient users get a visible, clickable nav control sooner.
-			// clearProps: 'opacity' — see the matching mobile-reveal tween above for why:
-			// #hud-menu-btn persists across navigations, so a leftover inline
-			// opacity:1 here would permanently beat oxygenMenu.ts's CSS-class-driven
-			// scroll show/hide on every future page.
-			  .to(hudMenu,             { opacity: 1, y: 0, duration: 0.6,  ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+			if (!chromeShown) {
+				tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 1.05);
+				revealChrome(tl, 0.6);
+			}
 
 			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 1.8, ease: 'power2.inOut' }, 1.2);
 		}

@@ -392,4 +392,30 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 
   document.addEventListener('astro:page-load', initLayoutLenis);
   document.addEventListener('astro:before-swap', destroyLayoutLenis);
+
+  // Persistent site chrome (logo, top-bar CTA, menu button, desktop
+  // contact icons — see the view-transition-name rules in global.css):
+  // their entrance animations play once, on the first page of the visit.
+  // Flipped after that first page-load's handlers have all run, so they
+  // still see `false` and animate.
+  document.addEventListener('astro:page-load', () => {
+    setTimeout(() => { (window as any).__ptShellShown = true; }, 0);
+  }, { once: true });
+
+  // On navigations, make the (freshly swapped-in) HUD visible right away,
+  // before the browser captures the new page for the transition — the
+  // menu button / contact icons then stay put instead of fading in again.
+  // after-swap runs inside the transition's update callback, i.e. before
+  // that capture; astro:page-load would be too late.
+  document.addEventListener('astro:after-swap', () => {
+    if (!(window as any).__ptShellShown) return;
+    const hud = document.getElementById('ox-hud-mobile');
+    if (hud) gsap.set(hud, { opacity: 1, y: 0 });
+    const rightCol = document.getElementById('hud-right-col');
+    if (rightCol) gsap.set(rightCol, { opacity: 1, x: 0 });
+    const time = document.getElementById('hud-time');
+    if (time) gsap.set(time, { opacity: 1 });
+    const loc = document.getElementById('hud-location');
+    if (loc) loc.style.opacity = '1';
+  });
 </script>

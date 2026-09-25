@@ -7,7 +7,7 @@
  */
 ---
 
-<a class="h-title" id="h-title" href="/" aria-label="Prime Triskelion — Home">
+<a class="h-title" id="h-title" href="/" aria-label="Prime Triskelion — Home" transition:persist>
 	<svg class="h-title__logo" id="h-logo-svg" aria-hidden="true" width="744" height="644" viewBox="128 152 744 644" fill="#FFF">
 		<defs><polygon id="h-logo-arm-shape" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
 		<use href="#h-logo-arm-shape" class="h-logo-arm" id="h-logo-arm-1"/>
@@ -85,6 +85,11 @@
 	function initLogo() {
 		const logo = document.getElementById('h-title');
 		if (!logo) return;
+
+		// Entrance only on the first page of the visit — #h-title persists
+		// across navigations (transition:persist) already assembled and
+		// visible, and stays put during the page transition.
+		if ((window as any).__ptShellShown) return;
 
 		const arms = Array.from(document.querySelectorAll<SVGUseElement>('.h-logo-arm'));
 		gsap.set(arms, { svgOrigin: '500 577.259' });
