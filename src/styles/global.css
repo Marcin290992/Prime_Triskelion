@@ -85,6 +85,13 @@ body::after {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
+/* Off on mobile: barely visible at phone pixel density, yet it lifts the
+   page's black to a dark grey next to the pure-black bars iOS Safari paints
+   above/below the page (.edge-tint in Layout.astro), and it's a full-screen
+   layer composited over every scroll frame. Desktop keeps it. */
+@media (max-width: 1024px) {
+  body::after { display: none; }
+}
 
 /* Hide scrollbar */
 html {
