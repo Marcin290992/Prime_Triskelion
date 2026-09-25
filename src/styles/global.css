@@ -139,6 +139,19 @@ html:active-view-transition .top-blur {
   -webkit-backdrop-filter: none !important;
 }
 
+/* Persistent site chrome: logo, top-bar CTA, menu button and the desktop
+   contact icons are pulled out of the root page fade/blur during a page
+   transition, so they stay put while only the page content changes.
+   Named only WHILE a transition runs — a permanent view-transition-name
+   makes the element a backdrop root, which would blank the glass
+   (backdrop-filter) of the buttons inside it the rest of the time.
+   Their first-load entrance animations are skipped on navigations — see
+   window.__ptShellShown (Layout.astro). */
+html:active-view-transition #h-title       { view-transition-name: pt-logo; }
+html:active-view-transition #site-cta-wrap { view-transition-name: pt-top-cta; }
+html:active-view-transition #hud-menu-btn  { view-transition-name: pt-menu-btn; }
+html:active-view-transition #hud-right-col { view-transition-name: pt-contact-col; }
+
 /* Prevent mobile browser scroll compensation (address bar show/hide) from causing layout jumps */
 @media (pointer: coarse) {
   body { overscroll-behavior: none; }

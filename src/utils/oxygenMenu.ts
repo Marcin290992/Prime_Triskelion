@@ -262,6 +262,10 @@ function initOxygenMenu() {
     const hudEl = document.getElementById('ox-hud-mobile');
     const hudRightCol = document.getElementById('hud-right-col');
     const hudTimeEl = document.getElementById('hud-time');
+    // Entrance only on the first page of the visit; on navigations the
+    // bar is already made visible on astro:after-swap (Layout.astro) so
+    // the menu button / contact icons stay put through the transition.
+    if ((window as any).__ptShellShown) return;
     if (hudEl) {
       gsap.set(hudEl, { y: 12 });
       // hud-menu-btn rides along with this fade (it's a child of hudEl,
