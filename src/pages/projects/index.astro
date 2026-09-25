@@ -189,7 +189,11 @@ const projects = [
     overflow: hidden;
     background: var(--bg, rgb(var(--c-bg)));
     transition: background-color 0.6s ease;
-    transform: translateZ(0);
+    /* Mask for the fixed .proj-inner below — clip-path (unlike overflow)
+       also clips position:fixed descendants, so each section is a window
+       onto its own viewport-pinned panel. No transform here: it would
+       turn the section into the containing block and un-fix the inner. */
+    clip-path: inset(0);
   }
 
   /* Grain overlay */
@@ -204,12 +208,19 @@ const projects = [
     z-index: 10;
   }
 
-  /* â•â• INNER (counteracts scroll = fake fixed) â•â• */
+  /* â•â• INNER (fixed, masked by section) â•â• */
+  /* Pinned to the viewport, masked by the section. Used to be
+     position:absolute + a rAF loop writing translateY(-rect.top) every
+     frame to fake this — unsynchronised with Lenis's scroll write, so on
+     desktop Safari the panel lagged the section by a frame and visibly
+     jumped while scrolling. Real position:fixed moves with the scroll in
+     the same composited frame. */
   .proj-inner {
-    position: absolute;
+    position: fixed;
     top: 0; left: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -406,7 +417,7 @@ const projects = [
       height: auto;
       padding: clamp(1.25rem, 4vw, 2rem) var(--site-gutter, 1.5rem);
       background: transparent;
-      transform: none;
+      clip-path: none;
       transition: none;
     }
     .proj-inner {
@@ -510,13 +521,12 @@ const projects = [
     // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€
     if (window.matchMedia('(max-width: 1024px)').matches) return;
 
-    // â”€â”€ Mask reveal engine â”€â”€
+    // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
     // Cache references once — never query DOM inside the render loop
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.proj-section')
     ).map(sec => ({
       sec,
-      inner:   sec.querySelector<HTMLElement>('.proj-inner')!,
       bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
       speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
     }));
@@ -525,15 +535,10 @@ const projects = [
 
     function render() {
       const vh = window.innerHeight;
-      for (const { sec, inner, bgText, speed } of panels) {
+      for (const { sec, bgText, speed } of panels) {
         const rect = sec.getBoundingClientRect();
 
-        if (rect.top > vh || rect.bottom < 0) {
-          inner.style.transform = 'translateY(0px)';
-          continue;
-        }
-
-        inner.style.transform = `translateY(${-rect.top}px)`;
+        if (rect.top > vh || rect.bottom < 0) continue;
 
         if (bgText) {
           bgText.style.transform =
