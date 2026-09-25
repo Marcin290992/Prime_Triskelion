@@ -449,6 +449,25 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   });
   document.addEventListener('astro:after-swap', () => nameChrome(true));
 
+  // Border beams (.hud-spin-border::before, `global-spin` 4s) on the
+  // chrome buttons: re-inserting an element restarts its CSS animations,
+  // and the swap re-inserts even the transition:persist menu button — the
+  // beam snapped back to its start on every navigation. Lock the phase to
+  // the document timeline (which keeps running across client-side
+  // navigations) on first load and after every swap, so it just carries on.
+  const SPIN_PERIOD = 4000;
+  function syncChromeBeams() {
+    const now = document.timeline.currentTime;
+    if (typeof now !== 'number') return;
+    for (const id of ['hud-menu-btn', 'hud-right-col']) {
+      document.getElementById(id)?.getAnimations({ subtree: true }).forEach((a) => {
+        if ((a as CSSAnimation).animationName === 'global-spin') a.currentTime = now % SPIN_PERIOD;
+      });
+    }
+  }
+  document.addEventListener('astro:page-load', syncChromeBeams, { once: true });
+  document.addEventListener('astro:after-swap', syncChromeBeams);
+
   // On navigations, make the (freshly swapped-in) HUD visible right away,
   // before the browser captures the new page for the transition — the
   // menu button / contact icons then stay put instead of fading in again.
