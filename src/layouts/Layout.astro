@@ -402,6 +402,38 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     setTimeout(() => { (window as any).__ptShellShown = true; }, 0);
   }, { once: true });
 
+  // Persistent site chrome: logo, top-bar CTA, menu button and the desktop
+  // contact icons are pulled out of the root page fade/blur during a page
+  // transition, so they stay put while only the page content changes.
+  // Named only WHILE a transition runs — a permanent view-transition-name
+  // makes the element a backdrop root, which would blank the glass
+  // (backdrop-filter) of the buttons inside it the rest of the time. Set
+  // from JS, not an html:active-view-transition CSS rule: WebKit captures
+  // the old page before that pseudo-class starts matching, so on Safari
+  // the chrome was still in the old snapshot and faded with the page.
+  // after-preparation fires right before startViewTransition(); after-swap
+  // names the new page's copies (inline styles on the transition:persist
+  // ones carry over by themselves).
+  const CHROME_NAMES: Record<string, string> = {
+    'h-title': 'pt-logo',
+    'site-cta-wrap': 'pt-top-cta',
+    'hud-menu-btn': 'pt-menu-btn',
+    'hud-right-col': 'pt-contact-col',
+  };
+  function nameChrome(on: boolean) {
+    for (const [id, name] of Object.entries(CHROME_NAMES)) {
+      const el = document.getElementById(id);
+      if (el) el.style.viewTransitionName = on ? name : '';
+    }
+  }
+  document.addEventListener('astro:after-preparation', () => nameChrome(true));
+  document.addEventListener('astro:before-swap', (e) => {
+    const done = e.viewTransition?.finished;
+    if (done) done.then(() => nameChrome(false), () => nameChrome(false));
+    else nameChrome(false);
+  });
+  document.addEventListener('astro:after-swap', () => nameChrome(true));
+
   // On navigations, make the (freshly swapped-in) HUD visible right away,
   // before the browser captures the new page for the transition — the
   // menu button / contact icons then stay put instead of fading in again.
