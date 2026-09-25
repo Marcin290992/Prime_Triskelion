@@ -72,6 +72,7 @@ const projects = [
     </header>
 
     <!-- Mask reveal sections -->
+    <div data-after-hero>
     {projects.map((p) => (
       <section
         class="proj-section"
@@ -115,6 +116,7 @@ const projects = [
         </a>
       </section>
     ))}
+    </div>
 
   </main>
   <CtaSection />
@@ -506,7 +508,7 @@ const projects = [
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -519,6 +521,7 @@ const projects = [
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
       setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+      revealAfterHero();
     });
 
     // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€

@@ -20,3 +20,13 @@ export function afterPageTransition(fn: () => void): void {
 	if (pending) pending.then(fn);
 	else fn();
 }
+
+// Mobile subpage entrance order: the hero title blurs in first, then the
+// page content below it ([data-after-hero], hidden by global.css on
+// mobile only) fades in. Call from inside the page's afterPageTransition
+// callback, right after starting the title's own animation.
+export function revealAfterHero(delayMs = 700): void {
+	setTimeout(() => {
+		document.querySelectorAll('[data-after-hero]').forEach((el) => el.classList.add('is-in'));
+	}, delayMs);
+}

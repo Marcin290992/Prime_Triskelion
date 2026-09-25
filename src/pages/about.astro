@@ -49,6 +49,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
     <div class="am-hero">
       <p class="am-who"><span class="am-who-l">Who's</span><span class="am-who-r">Behind?</span></p>
     </div>
+    <div data-after-hero>
     <div class="am-intro">
       <p class="am-greeting">Hi, my name is</p>
       <p class="am-name">Martin.</p>
@@ -70,10 +71,11 @@ import portraitBottom from '../img/portrait-bottom.webp';
         fetchpriority="high"
       />
     </div>
+    </div>
   </div>
 
   <!-- Content: canvas has scrolled away, normal page resumes -->
-  <section id="about-content">
+  <section id="about-content" data-after-hero>
     <div class="ac-grid">
       <h2 class="ac-label">About</h2>
       <div class="ac-body-col">
@@ -468,7 +470,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
-  import { afterPageTransition } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1891,10 +1893,11 @@ import portraitBottom from '../img/portrait-bottom.webp';
   // headers so every subpage title blurs in instead of just fading with
   // the page transition.
   function initAboutMobileTitle() {
-    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+    const isMob = window.matchMedia('(max-width: 1024px)').matches;
     const words = document.querySelectorAll<HTMLElement>('.am-who-l, .am-who-r');
-    if (!words.length) return;
     afterPageTransition(() => {
+      revealAfterHero();
+      if (!isMob || !words.length) return;
       gsap.timeline({ defaults: { ease: 'power4.out' } })
         .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
     });

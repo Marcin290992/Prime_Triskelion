@@ -14,9 +14,14 @@ import CtaSection from '../../components/sections/CtaSection.astro';
         <span class="svc-title__line"><span class="svc-title__word">My</span></span>
         <span class="svc-title__line"><span class="svc-title__word"><em>Services.</em></span></span>
       </h1>
+      <p class="svc-hero__lead">Websites, branding, motion and strategy — designed and built end to end.</p>
+      <div class="svc-hero__scroll" aria-hidden="true">
+        <span class="svc-hero__line"></span>
+        <span class="svc-hero__scroll-text">scroll</span>
+      </div>
     </header>
 
-    <div class="svc-rows">
+    <div class="svc-rows" data-after-hero>
 
       <div class="svc-row" id="websites">
         <div class="svc-sticky">
@@ -164,7 +169,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     text-transform: uppercase;
     line-height: 0.9;
     color: rgb(var(--c-cream));
-    margin-bottom: clamp(3rem, 6vw, 5rem);
+    margin-bottom: clamp(1.2rem, 2vw, 1.8rem);
   }
   .svc-title__line {
     display: block;
@@ -176,6 +181,66 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     filter: blur(18px);
   }
   .svc-title em { font-style: normal; color: rgb(var(--c-red)); }
+
+  .svc-hero__lead {
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    color: rgb(var(--c-cream) / 0.55);
+    max-width: 34ch;
+    margin: 0 0 clamp(3rem, 6vw, 5rem);
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  /* Same scroll hint as .proj-header__scroll on Projects */
+  .svc-hero__scroll {
+    position: absolute;
+    bottom: clamp(5.5rem, 11vh, 8rem);
+    right: var(--site-gutter);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .svc-hero__scroll.visible { opacity: 1; }
+  .svc-hero__line {
+    width: 36px;
+    height: 1px;
+    background: rgb(var(--c-red) / 0.6);
+    animation: svcScrollPulse 2s ease-in-out infinite;
+  }
+  .svc-hero__scroll-text {
+    font-family: var(--f-body);
+    font-size: 8px;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.2);
+  }
+  @keyframes svcScrollPulse {
+    0%, 100% { opacity: 0.5; transform: scaleX(1); }
+    50%       { opacity: 1;   transform: scaleX(1.3); }
+  }
+
+  /* Desktop: full-screen hero like .proj-header — the title gets the
+     first screen to itself, and the first service row (plus its own
+     reveal) only arrives on scroll instead of blurring in together with
+     the title and running under the bottom HUD. */
+  @media (min-width: 1025px) {
+    .svc-hero {
+      position: relative;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-bottom: clamp(8rem, 18vh, 13rem);
+    }
+    .svc-hero__lead { margin-bottom: 0; }
+  }
 
   /* â”€â”€ Sticky rows â”€â”€ */
   .svc-rows {
@@ -328,6 +393,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     .svc-hero {
       padding-top: clamp(6rem, 14vh, 10rem);
     }
+    .svc-hero__scroll { display: none; }
     .svc-row {
       grid-template-columns: 1fr;
       min-height: auto;
@@ -360,17 +426,23 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
 
   let _rowObserver: IntersectionObserver | null = null;
 
   function initServicesPage() {
     const titleWords = document.querySelectorAll<HTMLElement>('.svc-title__word');
-    if (titleWords.length) afterPageTransition(() => {
-      gsap.timeline({ defaults: { ease: 'power4.out' } }).to(titleWords,
+    const lead = document.querySelector<HTMLElement>('.svc-hero__lead');
+    const scrollHint = document.querySelector<HTMLElement>('.svc-hero__scroll');
+    afterPageTransition(() => {
+      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      if (titleWords.length) tl.to(titleWords,
         { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
         0.08
       );
+      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
+      setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+      revealAfterHero();
     });
 
     if (window.matchMedia('(max-width: 1024px)').matches) return;
