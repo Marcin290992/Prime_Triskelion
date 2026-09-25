@@ -346,6 +346,9 @@ import portraitBottom from '../img/portrait-bottom.webp';
       line-height: 1;
       white-space: nowrap;
     }
+    /* Same blur-in entrance as .proj-title__word / .svc-title__word —
+       driven by initAboutMobileTitle. */
+    .am-who-l, .am-who-r { opacity: 0; filter: blur(18px); }
     .am-who-l { color: rgb(var(--c-cream)); }
     .am-who-r { color: rgb(var(--c-red)); }
 
@@ -1883,8 +1886,20 @@ import portraitBottom from '../img/portrait-bottom.webp';
     document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
   }
 
+  // Mobile "Who's Behind?" title — same entrance as the Projects/Services
+  // headers so every subpage title blurs in instead of just fading with
+  // the page transition.
+  function initAboutMobileTitle() {
+    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+    const words = document.querySelectorAll<HTMLElement>('.am-who-l, .am-who-r');
+    if (!words.length) return;
+    gsap.timeline({ defaults: { ease: 'power4.out' } })
+      .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+  }
+
   function initAbout() {
     initAboutDesktop();
+    initAboutMobileTitle();
     initAboutMobilePortrait();
   }
 
