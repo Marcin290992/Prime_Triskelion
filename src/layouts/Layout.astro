@@ -68,11 +68,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					return vv || ih;
 				}
 
-				var lockedHeight = 0;
 				function setLockedHeight() {
 					var h = measureHeight();
 					if (!h) return;
-					lockedHeight = h;
 					root.style.setProperty('--app-stable-vh', (h * 0.01) + 'px');
 				}
 
@@ -82,50 +80,22 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					setTimeout(setLockedHeight, 160);
 				}, { passive: true });
 
-				var heightSettleTimer = null;
 				window.addEventListener('resize', function () {
 					var w = window.innerWidth || 0;
 					if (Math.abs(w - lockWidth) > 80) {
 						lockWidth = w;
 						setLockedHeight();
-						return;
 					}
-					// Width-only unchanged means this resize is almost always the
-					// mobile toolbar collapsing/expanding as the page scrolls (its
-					// own hide/show live-resizes the visual viewport) — updating
-					// --app-stable-vh on every one of these events would reintroduce
-					// exactly the live, chrome-reactive jank this whole mechanism
-					// exists to avoid. But leaving it locked forever to whatever
-					// height existed at load/last navigation has its own failure
-					// mode: once the toolbar actually settles into its new
-					// hidden/shrunk state, the locked value is now SHORTER than the
-					// real, now-taller viewport, and every section sized off it
-					// (#hero, .proj-section on mobile) stops short of the bottom
-					// instead of growing to fill the newly revealed space — a gap
-					// that opens the moment the toolbar finishes hiding and closes
-					// again once it reappears (reported: "appears when the Chrome
-					// URL bar disappears / the Safari URL bar shrinks"). Debouncing
-					// the update to fire only once resize events stop for a beat
-					// gets both: no mid-animation flicker, but the locked value
-					// still catches up once the toolbar's transition has actually
-					// finished, instead of staying stale indefinitely.
-					//
-					// Only while the viewport top is still inside the first
-					// screen, though. Further down, every vh-sized section ABOVE
-					// the reader (#hero, #manifesto at 180x, each .proj-section)
-					// changes height at once and the whole page visibly jumps —
-					// Safari has no scroll anchoring to compensate, which made
-					// this the main source of Safari-only scroll stutter (every
-					// toolbar show/hide mid-page = a layout jump 200ms later).
-					// Up there the only thing that moves is the first screen's
-					// own bottom edge, i.e. exactly the gap this exists to fill.
-					if (heightSettleTimer) clearTimeout(heightSettleTimer);
-					// Same rule in every browser: scroll anchoring (Chrome) only
-					// corrects the scroll offset — the section you're looking at
-					// still visibly resizes 200ms after you stop scrolling.
-					heightSettleTimer = setTimeout(function () {
-						if ((window.scrollY || 0) < lockedHeight) setLockedHeight();
-					}, 200);
+					// Height-only resizes (the mobile toolbar collapsing/expanding
+					// as the page scrolls) are deliberately ignored — the value
+					// stays locked from load/navigation/orientation/width change.
+					// Re-measuring after the toolbar settled (history: debounced
+					// 200ms, later first-screen-only) resized #hero and everything
+					// below it mid-scroll: a page jump on Chrome and, on iOS
+					// Safari 26 — whose toolbar collapses right around the end of
+					// the hero — a one-off hitch just after leaving it. The cost of
+					// not re-measuring: with the toolbar hidden, the first screen is
+					// a toolbar-height short and the (black) next section peeks in.
 				}, { passive: true });
 
 				// Astro's swap() unconditionally wipes every attribute on <html>
@@ -197,9 +167,14 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				from { opacity: 0; filter: blur(20px); }
 				to   { opacity: 1; filter: blur(0px); }
 			}
-			@keyframes vt-blur-in-mobile {
-				from { opacity: 0; filter: blur(8px); }
-				to   { opacity: 1; filter: blur(0px); }
+			/* Touch devices: plain fade, no blur. Blurring the whole new-page
+			   snapshot smears white text/logo across the black background, so
+			   for its duration the screen reads as a hazy grey instead of black
+			   ("black too light for a moment" on every phone) — and full-screen
+			   filter animation is exactly what touch Safari handles worst. */
+			@keyframes vt-fade-in-mobile {
+				from { opacity: 0; }
+				to   { opacity: 1; }
 			}
 
 			/* The old/new snapshots (below) only ever animate `opacity` and
@@ -230,16 +205,16 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				animation: vt-blur-in 0.32s ease-out 0.2s both;
 			}
 
-			/* Touch devices: lighter/shorter blur — full-viewport blur on a page
-			   snapshot is expensive on weaker GPUs and was causing scroll stutter
-			   right after navigation, only on the first section(s) of the new page.
+			/* Touch devices: no blur at all, just a fade (see vt-fade-in-mobile) —
+			   full-viewport blur on a page snapshot is expensive on weaker GPUs,
+			   caused scroll stutter right after navigation, and greys out the black.
 			   Keyed off pointer type, not viewport width — a landscape tablet is
 			   easily >1024px wide but still has a phone-class GPU, so a width-only
 			   query here was quietly giving tablets the heavy desktop blur and
 			   flickering right through it. */
 			@media (pointer: coarse) {
 				::view-transition-new(root) {
-					animation: vt-blur-in-mobile 0.2s ease-out 0.15s both;
+					animation: vt-fade-in-mobile 0.25s ease-out 0.15s both;
 				}
 			}
 
@@ -273,7 +248,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			}
 			@media (pointer: coarse) {
 				html[data-astro-transition-fallback="new"] body {
-					animation: vt-blur-in-mobile 0.2s ease-out 0.15s both;
+					animation: vt-fade-in-mobile 0.25s ease-out 0.15s both;
 				}
 			}
 
