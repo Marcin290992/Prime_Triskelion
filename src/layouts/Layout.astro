@@ -402,8 +402,8 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     setTimeout(() => { (window as any).__ptShellShown = true; }, 0);
   }, { once: true });
 
-  // Persistent site chrome: logo, top-bar CTA, menu button and the desktop
-  // contact icons are pulled out of the root page fade/blur during a page
+  // Persistent site chrome: logo, top-bar CTA, menu button, and on desktop
+  // the contact icons, location label and clock are pulled out of the root page fade/blur during a page
   // transition, so they stay put while only the page content changes.
   // Named only WHILE a transition runs — a permanent view-transition-name
   // makes the element a backdrop root, which would blank the glass
@@ -419,6 +419,8 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     'site-cta-wrap': 'pt-top-cta',
     'hud-menu-btn': 'pt-menu-btn',
     'hud-right-col': 'pt-contact-col',
+    'hud-location': 'pt-location',
+    'hud-time': 'pt-clock',
   };
   function nameChrome(on: boolean) {
     for (const [id, name] of Object.entries(CHROME_NAMES)) {
@@ -428,6 +430,19 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   }
   document.addEventListener('astro:after-preparation', () => nameChrome(true));
   document.addEventListener('astro:before-swap', (e) => {
+    // Desktop location label + clock: make the incoming copies visible and
+    // already showing the current time BEFORE they're inserted — they'd
+    // otherwise run their 0.6s CSS opacity transition from 0, and show
+    // "--:--" until oxygenMenu's page-load tick, on the live new snapshot.
+    if ((window as any).__ptShellShown) {
+      const loc = e.newDocument.getElementById('hud-location');
+      if (loc) loc.style.opacity = '1';
+      const time = e.newDocument.getElementById('hud-time');
+      if (time) {
+        time.style.opacity = '1';
+        time.textContent = document.getElementById('hud-time')?.textContent ?? time.textContent;
+      }
+    }
     const done = e.viewTransition?.finished;
     if (done) done.then(() => nameChrome(false), () => nameChrome(false));
     else nameChrome(false);

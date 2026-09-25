@@ -147,14 +147,18 @@ html:active-view-transition .top-blur {
 ::view-transition-old(pt-logo),
 ::view-transition-old(pt-top-cta),
 ::view-transition-old(pt-menu-btn),
-::view-transition-old(pt-contact-col) {
+::view-transition-old(pt-contact-col),
+::view-transition-old(pt-location),
+::view-transition-old(pt-clock) {
   animation: none;
   opacity: 0;
 }
 ::view-transition-new(pt-logo),
 ::view-transition-new(pt-top-cta),
 ::view-transition-new(pt-menu-btn),
-::view-transition-new(pt-contact-col) {
+::view-transition-new(pt-contact-col),
+::view-transition-new(pt-location),
+::view-transition-new(pt-clock) {
   animation: none;
 }
 
