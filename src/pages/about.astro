@@ -350,6 +350,23 @@ import portraitBottom from '../img/portrait-bottom.webp';
       height: calc(var(--app-stable-vh, 1svh) * 100);
       overflow: hidden;
     }
+    /* Everything but (iOS) Safari — see initAboutMobileReveal. Chrome on
+       Android has its URL bar at the TOP: as it slides away the viewport's
+       top edge moves up by the bar's height, and a top:0 sticky pin jumps
+       up with it. The bottom edge stays put, so pin to that instead: the
+       pin sits at the end of .am-reveal and sticky bottom:0 holds it on
+       screen for the same scroll distance. The strip the bar frees up at
+       the top is the page's own black. */
+    .am-reveal--bottom {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+    .am-reveal--bottom .am-reveal__pin {
+      top: auto;
+      bottom: 0;
+      flex-shrink: 0;
+    }
     /* Black layer between photo and title; faded out by scroll. */
     .am-veil {
       position: absolute;
@@ -519,6 +536,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
+  import { isSafari } from '../utils/isSafari';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1919,6 +1937,11 @@ import portraitBottom from '../img/portrait-bottom.webp';
     const wordR  = document.querySelector<HTMLElement>('.am-who-r');
     if (!reveal || !pin || !veil || !img || !wordL || !wordR) return;
 
+    // Safari (iOS 26's floating bottom toolbar) is fine pinned to the top
+    // and stays that way; everything else pins to the bottom edge (see
+    // .am-reveal--bottom). Same scroll range either way.
+    reveal.classList.toggle('am-reveal--bottom', !isSafari());
+
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
       .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.6 }, 0)
       .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.6 }, 0)
@@ -1929,9 +1952,10 @@ import portraitBottom from '../img/portrait-bottom.webp';
       animation: tl,
       trigger: reveal,
       start: 'top top',
-      // Pin height, not innerHeight — the pin is sized from the stable
-      // --app-stable-vh, which the toolbar doesn't change.
-      end: () => `+=${pin.offsetHeight}`,
+      // The distance the pin stays stuck (container minus pin, both sized
+      // from the stable --app-stable-vh, which the toolbar doesn't change)
+      // — not innerHeight.
+      end: () => `+=${reveal.offsetHeight - pin.offsetHeight}`,
       scrub: true,
     });
 
