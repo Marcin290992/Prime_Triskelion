@@ -93,6 +93,15 @@ body::after {
   body::after { display: none; }
 }
 
+/* Mobile subpages: content below the hero stays hidden until the hero
+   title has blurred in, then fades in (revealAfterHero in
+   utils/afterPageTransition.ts). `html body` outranks Astro's scoped
+   `.class[data-astro-cid]` rules so a page's own opacity can't win. */
+@media (max-width: 1024px) {
+  html body [data-after-hero] { transition: opacity 0.8s ease; }
+  html body [data-after-hero]:not(.is-in) { opacity: 0; }
+}
+
 /* Hide scrollbar */
 html {
   width: 100%;

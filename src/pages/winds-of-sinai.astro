@@ -54,6 +54,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     </section>
 
     <!-- ═══ CINEMATIC HERO (desktop only) ═══ -->
+    <div data-after-hero>
     <section class="wos-cin" id="wos-cin">
       <h1 class="wos-cin__sr">Winds Of Sinai — Case Study</h1>
       <div class="wos-cin__image" aria-hidden="true">
@@ -373,6 +374,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
     <!-- ═══ FOOTER CTA ═══ -->
     <CtaSection />
+    </div>
 
   </main>
 
@@ -1267,6 +1269,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
+  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1286,9 +1289,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
     if (!els.length) return;
 
     gsap.set(els, { opacity: 0, y: 10, filter: 'blur(8px)' });
-    gsap.to(els, {
-      opacity: 1, y: 0, filter: 'blur(0px)',
-      duration: 0.65, stagger: 0.13, ease: 'power3.out', delay: 0.18,
+    afterPageTransition(() => {
+      gsap.to(els, {
+        opacity: 1, y: 0, filter: 'blur(0px)',
+        duration: 0.65, stagger: 0.13, ease: 'power3.out', delay: 0.18,
+      });
     });
   }
 
@@ -1397,6 +1402,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
     // 2. Animacje — mobile/desktop rozdzielone jak w CSS
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
+    // Content below the hero fades in after it (mobile only, see
+    // revealAfterHero) — called unconditionally so it can never stay hidden.
+    afterPageTransition(() => revealAfterHero(900));
     if (isMob) {
       initHeroReveal();
     } else {

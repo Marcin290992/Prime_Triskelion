@@ -39,7 +39,7 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <!-- ── Two-column grid ──────────────────────────────────────────── -->
-    <div class="cp-grid">
+    <div class="cp-grid" data-after-hero>
 
       <!-- LEFT: brand info -->
       <aside class="cp-info">
@@ -493,6 +493,12 @@ import Layout from '../layouts/Layout.astro';
     .cp-grid {
       grid-template-columns: 1fr;
       gap: clamp(3rem, 8vw, 5rem);
+      /* Mobile: plain fade after the title (data-after-hero), not the
+         desktop blur/slide-up. */
+      opacity: 1;
+      transform: none;
+      filter: none;
+      transition: opacity 0.8s ease;
     }
     .cp-info {
       position: static;
@@ -541,7 +547,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   import { onReady } from '../utils/onReady';
-  import { afterPageTransition } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
 
@@ -636,7 +642,10 @@ import Layout from '../layouts/Layout.astro';
 
     afterPageTransition(() => requestAnimationFrame(() => {
       if (title)  setTimeout(() => title.classList.add('is-visible'),  80);
-      if (grid)   setTimeout(() => grid.classList.add('is-visible'),   220);
+      // Mobile: the grid fades in via revealAfterHero instead.
+      if (grid && !window.matchMedia('(max-width: 1024px)').matches)
+        setTimeout(() => grid.classList.add('is-visible'), 220);
+      revealAfterHero();
     }));
 
     // ── Form validation & submission ───────────────────────────────────
