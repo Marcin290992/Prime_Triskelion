@@ -468,6 +468,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
+  import { afterPageTransition } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1893,8 +1894,10 @@ import portraitBottom from '../img/portrait-bottom.webp';
     if (!window.matchMedia('(max-width: 1024px)').matches) return;
     const words = document.querySelectorAll<HTMLElement>('.am-who-l, .am-who-r');
     if (!words.length) return;
-    gsap.timeline({ defaults: { ease: 'power4.out' } })
-      .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+    afterPageTransition(() => {
+      gsap.timeline({ defaults: { ease: 'power4.out' } })
+        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+    });
   }
 
   function initAbout() {
