@@ -356,7 +356,7 @@ These fixed a long run of mobile bugs (gaps above/below the menu overlay, Safari
 ### Menu overlay
 - `#ox-menu-overlay` (fixed, `inset: 0`) can't reach the strips under Safari's bars. Once it has faded in, `oxygenMenu.ts` adds `html.ox-menu-covered`, which hides the page underneath (`visibility: hidden`), so only black shows.
 - ❌ No `transform` on `#ox-menu-overlay` or its fixed ancestors. It makes iOS Safari size fixed elements against the wrong viewport.
-- On mobile the overlay has no grain (both grain layers are hidden while it's open), so it matches Safari's black bars.
+- No grain on mobile: the global `body::after` grain and the overlay's own grain are both off at ≤1024px, so the page's black matches Safari's pure-black bars. Desktop keeps both.
 
 ### Performance on mobile Safari
 - `backdrop-filter` over scrolling content is expensive. Keep it to small areas (the 104px `.top-blur` strip is fine) and add every new blur surface to the `:active-view-transition` guard in `global.css`.
