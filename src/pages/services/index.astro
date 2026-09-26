@@ -453,7 +453,10 @@ import CtaSection from '../../components/sections/CtaSection.astro';
         0.08
       );
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+      // Mobile: the hint comes in while the title is still sharpening (the
+      // centred first screen is otherwise empty); desktop keeps its later cue.
+      setTimeout(() => scrollHint?.classList.add('visible'),
+        window.matchMedia('(max-width: 1024px)').matches ? 500 : 1100);
       revealAfterHero();
     });
 
