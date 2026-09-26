@@ -1,9 +1,13 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import CtaSection from '../components/sections/CtaSection.astro';
 import portraitTop from '../img/portrait-top.webp';
 import portraitBottom from '../img/portrait-bottom.webp';
+
+// Mobile dither texture — the full 3840px original is far more than the
+// ~50svh-tall cover crop needs on a phone.
+const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'webp' });
 ---
 
 <Layout title="About — Prime Triskelion">
@@ -62,6 +66,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
             loading="eager"
             fetchpriority="high"
           />
+          <canvas class="am-dither" data-src={ditherTexture.src} aria-hidden="true"></canvas>
         </div>
         <div class="am-veil" aria-hidden="true"></div>
         <div class="am-hero">
@@ -324,13 +329,14 @@ import portraitBottom from '../img/portrait-bottom.webp';
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
 
     /* -- Scroll-linked intro (see initAboutMobileReveal) --
-       200 stable-vh of scroll room with a sticky full-screen pin inside,
+       300 stable-vh of scroll room with a sticky full-screen pin inside,
        same pattern as #manifesto on Home: --app-stable-vh is measured
-       once (Layout.astro), so the toolbar can't resize it mid-scroll. */
+       once (Layout.astro), so the toolbar can't resize it mid-scroll.
+       The first ~third lifts the veil, the rest develops the dither. */
     .am-reveal {
       position: relative;
-      height: 200svh;
-      height: calc(var(--app-stable-vh, 1svh) * 200);
+      height: 300svh;
+      height: calc(var(--app-stable-vh, 1svh) * 300);
       /* The photo ends at 75% of the pin (see .am-portrait-stack) — pull
          the name/bio up by the remaining 25% so they follow right under
          the photo instead of after a band of empty black. */
@@ -472,6 +478,20 @@ import portraitBottom from '../img/portrait-bottom.webp';
          handles worst. */
       transform: scale(1.12);
     }
+    /* Dither → photo canvas (see initDitherPortrait) over the <img>, which
+       stays underneath as the fallback (no WebGL2, reduced motion, still
+       loading). Below the ::after bottom fade. */
+    .am-dither {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      display: block;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .am-dither.is-ready { opacity: 1; }
     /* Intro */
     .am-intro {
       padding: clamp(2.5rem, 7vw, 4rem) var(--site-gutter, 1.5rem);
@@ -537,6 +557,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
+  import { initDitherPortrait, type DitherPortraitHandle } from '../utils/ditherPortrait';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1927,6 +1948,7 @@ import portraitBottom from '../img/portrait-bottom.webp';
   // sticky pin holds for exactly that distance, then scrolls away
   // normally into the name/bio below).
   let _amRevealST: ScrollTrigger | null = null;
+  let _amDither: DitherPortraitHandle | null = null;
   function initAboutMobileReveal() {
     if (!window.matchMedia('(max-width: 1024px)').matches) return;
     const reveal = document.querySelector<HTMLElement>('.am-reveal');
@@ -1942,11 +1964,35 @@ import portraitBottom from '../img/portrait-bottom.webp';
     // .am-reveal--bottom). Same scroll range either way.
     reveal.classList.toggle('am-reveal--bottom', !isSafari());
 
+    // Dither → photo develop on top of the plain portrait. Reduced motion
+    // (or no WebGL2) just keeps the <img>.
+    const ditherCanvas = document.querySelector<HTMLCanvasElement>('.am-dither');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (ditherCanvas?.dataset.src && !reduceMotion) {
+      _amDither = initDitherPortrait(ditherCanvas, {
+        src: ditherCanvas.dataset.src,
+        ink: [0, 0, 0],
+        paper: [242 / 255, 237 / 255, 232 / 255],
+        focusX: 0.5,
+        focusY: 0.72,
+        onReady: () => ditherCanvas.classList.add('is-ready'),
+      });
+    }
+    const develop = { p: 0 };
+
+    // Timeline spans the whole 200 stable-vh the pin holds: the first 0.4
+    // is the original title split + veil lift (same pace as before the
+    // track grew), the rest scrubs the dither develop.
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
-      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.6 }, 0)
-      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.6 }, 0)
-      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.8 }, 0)
-      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 1 }, 0);
+      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.3 }, 0)
+      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.3 }, 0)
+      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.4 }, 0)
+      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.5 }, 0)
+      .fromTo(develop, { p: 0 }, {
+        p: 1,
+        duration: 0.65,
+        onUpdate: () => _amDither?.setProgress(develop.p),
+      }, 0.35);
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
@@ -1962,6 +2008,8 @@ import portraitBottom from '../img/portrait-bottom.webp';
     document.addEventListener('astro:before-swap', () => {
       _amRevealST?.kill();
       _amRevealST = null;
+      _amDither?.destroy();
+      _amDither = null;
     }, { once: true });
   }
 
