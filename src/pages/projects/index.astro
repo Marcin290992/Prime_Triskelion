@@ -426,11 +426,33 @@ const projects = [
       padding-top: 5rem;
       padding-bottom: 5rem;
     }
-    /* Fixed rem offset (not vh), well clear of the bottom menu button
-       (~72px tall incl. its offset) — 6.5rem left too little room on iOS
-       Safari, where the button partly covered the hint. No CSS delay on
-       top of the JS one here (see hintDelay). */
-    .proj-header__scroll { bottom: 9rem; transition-delay: 0s; }
+    /* Vertical, centred under the text: "scroll" label on top, a red
+       hairline pulsing downward below it. In flow (not pinned to the
+       screen bottom) so it travels with the centred title/lead block and
+       can never end up under the bottom menu button, which covered it on
+       iOS Safari when it was bottom-anchored. No CSS delay on top of the JS
+       one here (see hintDelay). */
+    .proj-header__scroll {
+      position: static;
+      align-self: center;
+      margin-top: 3rem;
+      flex-direction: column-reverse;
+      gap: 0.7rem;
+      transition-delay: 0s;
+    }
+    .proj-header__line {
+      width: 1px;
+      height: 40px;
+      transform-origin: top center;
+      animation-name: scrollPulseY;
+    }
+    /* letter-spacing trails after the last letter — pad the front to match
+       so the label sits truly centred over the line. */
+    .proj-header__scroll-text { padding-left: 0.45em; }
+    @keyframes scrollPulseY {
+      0%, 100% { opacity: 0.5; transform: scaleY(0.6); }
+      50%       { opacity: 1;   transform: scaleY(1); }
+    }
     .proj-header__lead { display: block; }
 
     /* Each project = a card sized by its own content, NOT the viewport.
@@ -534,6 +556,7 @@ const projects = [
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
+  import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -545,12 +568,15 @@ const projects = [
     // Mobile: the hint comes in while the title is still sharpening (the
     // centred first screen is otherwise empty); desktop keeps its later cue.
     const hintDelay = window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100;
+    // Don't bring the hint in on a page that's already being left (see
+    // trackLeaving) — it flashed in just ahead of the next page's hero.
+    const isLeaving = trackLeaving();
 
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      setTimeout(() => scrollHint?.classList.add('visible'), hintDelay);
+      setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
     });
 
