@@ -404,8 +404,10 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       padding-bottom: 5rem;
     }
     .svc-hero__lead { margin-bottom: 0; }
-    /* Fixed rem offset (not vh) — clears the bottom menu HUD. */
-    .svc-hero__scroll { bottom: 6.5rem; }
+    /* Fixed rem offset (not vh), well clear of the bottom menu button
+       (~72px tall incl. its offset) — 6.5rem left too little room on iOS
+       Safari, where the button partly covered the hint. */
+    .svc-hero__scroll { bottom: 9rem; }
     .svc-row {
       grid-template-columns: 1fr;
       min-height: auto;

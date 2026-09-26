@@ -426,9 +426,11 @@ const projects = [
       padding-top: 5rem;
       padding-bottom: 5rem;
     }
-    /* Fixed rem offset (not vh) — clears the bottom menu HUD. No CSS delay
-       on top of the JS one here (see hintDelay). */
-    .proj-header__scroll { bottom: 6.5rem; transition-delay: 0s; }
+    /* Fixed rem offset (not vh), well clear of the bottom menu button
+       (~72px tall incl. its offset) — 6.5rem left too little room on iOS
+       Safari, where the button partly covered the hint. No CSS delay on
+       top of the JS one here (see hintDelay). */
+    .proj-header__scroll { bottom: 9rem; transition-delay: 0s; }
     .proj-header__lead { display: block; }
 
     /* Each project = a card sized by its own content, NOT the viewport.
