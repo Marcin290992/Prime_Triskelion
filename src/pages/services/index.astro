@@ -390,10 +390,22 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
   /* â”€â”€ Mobile â”€â”€ */
   @media (max-width: 1024px) {
+    /* Cinematic first screen like Projects: title + lead alone,
+       vertically centred, the services only on scroll. Stable-vh sized so
+       the URL bar can't resize it mid-scroll. */
     .svc-hero {
-      padding-top: clamp(6rem, 14vh, 10rem);
+      position: relative;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 5rem;
+      padding-bottom: 5rem;
     }
-    .svc-hero__scroll { display: none; }
+    .svc-hero__lead { margin-bottom: 0; }
+    /* Fixed rem offset (not vh) — clears the bottom menu HUD. */
+    .svc-hero__scroll { bottom: 6.5rem; }
     .svc-row {
       grid-template-columns: 1fr;
       min-height: auto;

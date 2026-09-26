@@ -399,14 +399,19 @@ const projects = [
 
   @media (max-width: 1024px) {
     /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
+    /* Cinematic first screen: the title alone, vertically centred, the
+       cards only on scroll. Sized off the stable --app-stable-vh (set once
+       in Layout.astro) so the URL bar can't resize it mid-scroll. */
     .proj-header {
-      height: auto;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
       min-height: unset;
-      justify-content: flex-start;
-      padding-top: clamp(6rem, 14vh, 10rem);
-      padding-bottom: clamp(5rem, 16vh, 9rem);
+      justify-content: center;
+      padding-top: 5rem;
+      padding-bottom: 5rem;
     }
-    .proj-header__scroll { display: none; }
+    /* Fixed rem offset (not vh) — clears the bottom menu HUD. */
+    .proj-header__scroll { bottom: 6.5rem; }
 
     /* Each project = a card sized by its own content, NOT the viewport.
        Was a full-screen section (height from --app-stable-vh) with the

@@ -499,8 +499,20 @@ import Layout from '../layouts/Layout.astro';
          vertical room, squashing its shape into a flat sliver that didn't
          match the flame's appearance on every other page's CTA section. */
       padding: clamp(4rem, 14vw, 8rem) 0 clamp(3rem, 10vw, 6rem);
-      margin-bottom: clamp(4rem, 8vw, 8rem);
+      /* Cinematic first screen, softer than Projects/Services: ~82% of
+         the (stable) screen with the title centred in it — so a bit above
+         the middle — and the top of the contact details peeking in below,
+         since people here usually want the form. */
+      box-sizing: border-box;
+      min-height: 82svh;
+      min-height: calc(var(--app-stable-vh, 1svh) * 82);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-bottom: 1.5rem;
     }
+    /* The header now clears the logo itself. */
+    #contact-page { padding-top: 0; }
     .cp-grid {
       grid-template-columns: 1fr;
       gap: clamp(3rem, 8vw, 5rem);
