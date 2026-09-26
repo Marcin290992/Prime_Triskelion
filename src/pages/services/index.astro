@@ -390,10 +390,45 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
   /* â”€â”€ Mobile â”€â”€ */
   @media (max-width: 1024px) {
+    /* Cinematic first screen like Projects: title + lead alone,
+       vertically centred, the services only on scroll. Stable-vh sized so
+       the URL bar can't resize it mid-scroll. */
     .svc-hero {
-      padding-top: clamp(6rem, 14vh, 10rem);
+      position: relative;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-top: 5rem;
+      padding-bottom: 5rem;
     }
-    .svc-hero__scroll { display: none; }
+    .svc-hero__lead { margin-bottom: 0; }
+    /* Vertical, centred under the text — same as Projects' hint: "scroll"
+       label on top, a red hairline pulsing downward below it. In flow so
+       it travels with the centred title/lead block and can never end up
+       under the bottom menu button (it did on iOS Safari when it was
+       bottom-anchored). */
+    .svc-hero__scroll {
+      position: static;
+      align-self: center;
+      margin-top: 3rem;
+      flex-direction: column-reverse;
+      gap: 0.7rem;
+    }
+    .svc-hero__line {
+      width: 1px;
+      height: 40px;
+      transform-origin: top center;
+      animation-name: svcScrollPulseY;
+    }
+    /* letter-spacing trails after the last letter — pad the front to match
+       so the label sits truly centred over the line. */
+    .svc-hero__scroll-text { padding-left: 0.45em; }
+    @keyframes svcScrollPulseY {
+      0%, 100% { opacity: 0.5; transform: scaleY(0.6); }
+      50%       { opacity: 1;   transform: scaleY(1); }
+    }
     .svc-row {
       grid-template-columns: 1fr;
       min-height: auto;
@@ -427,6 +462,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
+  import { trackLeaving } from '../../utils/leavingPage';
 
   let _rowObserver: IntersectionObserver | null = null;
 
@@ -434,6 +470,9 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     const titleWords = document.querySelectorAll<HTMLElement>('.svc-title__word');
     const lead = document.querySelector<HTMLElement>('.svc-hero__lead');
     const scrollHint = document.querySelector<HTMLElement>('.svc-hero__scroll');
+    // Don't bring the hint in on a page that's already being left (see
+    // trackLeaving) — it flashed in just ahead of the next page's hero.
+    const isLeaving = trackLeaving();
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords,
@@ -441,7 +480,10 @@ import CtaSection from '../../components/sections/CtaSection.astro';
         0.08
       );
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+      // Mobile: the hint comes in while the title is still sharpening (the
+      // centred first screen is otherwise empty); desktop keeps its later cue.
+      setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); },
+        window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100);
       revealAfterHero();
     });
 

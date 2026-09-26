@@ -65,6 +65,7 @@ const projects = [
         <span class="proj-title__line"><span class="proj-title__word">My</span></span>
         <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
       </h1>
+      <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
       <div class="proj-header__scroll">
         <span class="proj-header__line"></span>
         <span class="proj-header__scroll-text">scroll</span>
@@ -152,6 +153,21 @@ const projects = [
   .proj-title__line { display: block; padding-bottom: 0.08em; }
   .proj-title__word { display: block; opacity: 0; filter: blur(18px); }
   .proj-title em { font-style: normal; color: rgb(var(--c-red)); }
+  /* Mobile only for now (placeholder copy) — same style as Services'
+     .svc-hero__lead. */
+  .proj-header__lead {
+    display: none;
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+    color: rgb(var(--c-cream) / 0.55);
+    max-width: 34ch;
+    margin: clamp(1.2rem, 2vw, 1.8rem) 0 0;
+    opacity: 0;
+    transform: translateY(10px);
+  }
 
   .proj-header__scroll {
     position: absolute;
@@ -399,14 +415,45 @@ const projects = [
 
   @media (max-width: 1024px) {
     /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
+    /* Cinematic first screen: the title alone, vertically centred, the
+       cards only on scroll. Sized off the stable --app-stable-vh (set once
+       in Layout.astro) so the URL bar can't resize it mid-scroll. */
     .proj-header {
-      height: auto;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
       min-height: unset;
-      justify-content: flex-start;
-      padding-top: clamp(6rem, 14vh, 10rem);
-      padding-bottom: clamp(5rem, 16vh, 9rem);
+      justify-content: center;
+      padding-top: 5rem;
+      padding-bottom: 5rem;
     }
-    .proj-header__scroll { display: none; }
+    /* Vertical, centred under the text: "scroll" label on top, a red
+       hairline pulsing downward below it. In flow (not pinned to the
+       screen bottom) so it travels with the centred title/lead block and
+       can never end up under the bottom menu button, which covered it on
+       iOS Safari when it was bottom-anchored. No CSS delay on top of the JS
+       one here (see hintDelay). */
+    .proj-header__scroll {
+      position: static;
+      align-self: center;
+      margin-top: 3rem;
+      flex-direction: column-reverse;
+      gap: 0.7rem;
+      transition-delay: 0s;
+    }
+    .proj-header__line {
+      width: 1px;
+      height: 40px;
+      transform-origin: top center;
+      animation-name: scrollPulseY;
+    }
+    /* letter-spacing trails after the last letter — pad the front to match
+       so the label sits truly centred over the line. */
+    .proj-header__scroll-text { padding-left: 0.45em; }
+    @keyframes scrollPulseY {
+      0%, 100% { opacity: 0.5; transform: scaleY(0.6); }
+      50%       { opacity: 1;   transform: scaleY(1); }
+    }
+    .proj-header__lead { display: block; }
 
     /* Each project = a card sized by its own content, NOT the viewport.
        Was a full-screen section (height from --app-stable-vh) with the
@@ -509,18 +556,27 @@ const projects = [
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
+  import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
 
     // â”€â”€ Header entrance â”€â”€
     const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
+    const lead = document.querySelector<HTMLElement>('.proj-header__lead');
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
+    // Mobile: the hint comes in while the title is still sharpening (the
+    // centred first screen is otherwise empty); desktop keeps its later cue.
+    const hintDelay = window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100;
+    // Don't bring the hint in on a page that's already being left (see
+    // trackLeaving) — it flashed in just ahead of the next page's hero.
+    const isLeaving = trackLeaving();
 
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
-      setTimeout(() => scrollHint?.classList.add('visible'), 1100);
+      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
+      setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
     });
 
