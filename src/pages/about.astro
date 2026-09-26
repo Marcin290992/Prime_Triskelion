@@ -329,14 +329,14 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
 
     /* -- Scroll-linked intro (see initAboutMobileReveal) --
-       300 stable-vh of scroll room with a sticky full-screen pin inside,
+       340 stable-vh of scroll room with a sticky full-screen pin inside,
        same pattern as #manifesto on Home: --app-stable-vh is measured
        once (Layout.astro), so the toolbar can't resize it mid-scroll.
-       The first ~third lifts the veil, the rest develops the dither. */
+       Veil lift, dither develop, then a short hold on the photo. */
     .am-reveal {
       position: relative;
-      height: 300svh;
-      height: calc(var(--app-stable-vh, 1svh) * 300);
+      height: 340svh;
+      height: calc(var(--app-stable-vh, 1svh) * 340);
       /* The photo ends at 75% of the pin (see .am-portrait-stack) — pull
          the name/bio up by the remaining 25% so they follow right under
          the photo instead of after a band of empty black. */
@@ -1980,19 +1980,21 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     }
     const develop = { p: 0 };
 
-    // Timeline spans the whole 200 stable-vh the pin holds: the first 0.4
-    // is the original title split + veil lift (same pace as before the
-    // track grew), the rest scrubs the dither develop.
+    // Timeline spans the whole 240 stable-vh the pin holds: title split +
+    // veil lift first (same pace as before the track grew), then the
+    // dither develop, then a hold on the finished portrait (last 0.2) so
+    // the name/bio don't slide up the instant the face resolves.
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
-      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.3 }, 0)
-      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.3 }, 0)
-      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.4 }, 0)
-      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.5 }, 0)
+      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.25 }, 0)
+      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.25 }, 0)
+      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.33 }, 0)
+      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.42 }, 0)
       .fromTo(develop, { p: 0 }, {
         p: 1,
-        duration: 0.65,
+        duration: 0.51,
         onUpdate: () => _amDither?.setProgress(develop.p),
-      }, 0.35);
+      }, 0.29)
+      .to({}, { duration: 0.2 }, 0.8);
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
