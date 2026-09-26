@@ -452,21 +452,31 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   // Border beams (.hud-spin-border::before, `global-spin` 4s) on the
   // chrome buttons: re-inserting an element restarts its CSS animations,
   // and the swap re-inserts even the transition:persist menu button — the
-  // beam snapped back to its start on every navigation. Lock the phase to
+  // beam snapped back to its start on every navigation. Pin every beam to
   // the document timeline (which keeps running across client-side
-  // navigations) on first load and after every swap, so it just carries on.
-  const SPIN_PERIOD = 4000;
+  // navigations) with startTime = 0, so its angle is always a function of
+  // the current time and it just carries on. startTime, not currentTime:
+  // a just-inserted animation is still pending, and a currentTime set then
+  // is held until it's ready — through the view transition's paused
+  // rendering — so the beam resumed behind where it should be (stepped
+  // back), then jumped forward on the next sync.
+  function lockBeam(a: Animation) {
+    if ((a as CSSAnimation).animationName === 'global-spin') a.startTime = 0;
+  }
   function syncChromeBeams() {
-    const now = document.timeline.currentTime;
-    if (typeof now !== 'number') return;
-    for (const id of ['hud-menu-btn', 'hud-right-col']) {
-      document.getElementById(id)?.getAnimations({ subtree: true }).forEach((a) => {
-        if ((a as CSSAnimation).animationName === 'global-spin') a.currentTime = now % SPIN_PERIOD;
-      });
+    for (const id of ['ox-hud-mobile', 'hud-right-col']) {
+      document.getElementById(id)?.getAnimations({ subtree: true }).forEach(lockBeam);
     }
   }
   document.addEventListener('astro:page-load', syncChromeBeams, { once: true });
   document.addEventListener('astro:after-swap', syncChromeBeams);
+  // Any other restart (e.g. a beam shown again after display:none, like the
+  // mobile contact button's after its flyout closes) re-locks itself.
+  document.addEventListener('animationstart', (e) => {
+    if (e.animationName !== 'global-spin') return;
+    const el = e.target as Element;
+    if (el.closest('#oxygen-menu-root')) el.getAnimations({ subtree: true }).forEach(lockBeam);
+  });
 
   // On navigations, make the (freshly swapped-in) HUD visible right away,
   // before the browser captures the new page for the transition — the
