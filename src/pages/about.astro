@@ -1949,6 +1949,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   // normally into the name/bio below).
   let _amRevealST: ScrollTrigger | null = null;
   let _amDither: DitherPortraitHandle | null = null;
+  let _amSinkST: ScrollTrigger | null = null;
   function initAboutMobileReveal() {
     if (!window.matchMedia('(max-width: 1024px)').matches) return;
     const reveal = document.querySelector<HTMLElement>('.am-reveal');
@@ -2007,9 +2008,26 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       scrub: true,
     });
 
+    // As the name/bio slide in, the portrait sinks back toward the dark:
+    // dims, the vignette closes on the face and the edges re-dither. Tied
+    // to the text itself (not the pin timeline) so it starts exactly when
+    // the name appears and carries on after the pin lets go.
+    const after = document.querySelector<HTMLElement>('.am-after');
+    if (_amDither && after) {
+      _amSinkST = ScrollTrigger.create({
+        trigger: after,
+        start: 'top bottom',
+        end: 'top 45%',
+        scrub: true,
+        onUpdate: (self) => _amDither?.setSink(self.progress),
+      });
+    }
+
     document.addEventListener('astro:before-swap', () => {
       _amRevealST?.kill();
       _amRevealST = null;
+      _amSinkST?.kill();
+      _amSinkST = null;
       _amDither?.destroy();
       _amDither = null;
     }, { once: true });

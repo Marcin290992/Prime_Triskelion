@@ -22,12 +22,19 @@ export interface DitherPortraitOpts {
   developStart?: number;   // progress where the photo starts showing
   contrast?: number;
   brightness?: number;
+  // "Sink" (setSink): as it rises the frame dims, a vignette closes in on
+  // this point (canvas 0..1, y down) and the edges fall back into dither —
+  // the face stays readable while the rest returns to the dark.
+  sinkFocusX?: number;
+  sinkFocusY?: number;
+  sinkRadius?: number; // vignette radius at full sink, in canvas heights
   // Fires once the texture is uploaded and the first frame is drawn.
   onReady?: () => void;
 }
 
 export interface DitherPortraitHandle {
   setProgress(p: number): void;
+  setSink(s: number): void;
   destroy(): void;
 }
 
@@ -65,6 +72,9 @@ uniform float uKey;
 uniform float uContrast;
 uniform float uBrightness;
 uniform float uDevelop;
+uniform float uSink;
+uniform vec2 uSinkFocus;
+uniform float uSinkRadius;
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -97,9 +107,20 @@ void main() {
     level = step(bayer(cell), v * (1.0 - knock));
   }
 
+  // Vignette around the face: 1 inside, 0 outside. Starts wider than the
+  // frame and closes in to uSinkRadius as uSink rises.
+  vec2 q = (vec2(cellUv.x, 1.0 - cellUv.y) - uSinkFocus) * vec2(uResolution.x / uResolution.y, 1.0);
+  float radius = mix(1.4, uSinkRadius, uSink);
+  float vign = 1.0 - smoothstep(radius, radius + 0.3, length(q));
+
   vec3 color = mix(uInk, uPaper, level);
   vec3 photo = texture(tImage, imageUv(vUv)).rgb;
-  color = mix(color, photo, step(bayer(cell.yx), uDevelop));
+  // Outside the vignette the photo dissolves back into dither, cell by
+  // cell in the same Bayer order it developed in.
+  float shown = uDevelop - (1.0 - vign) * uSink;
+  color = mix(color, photo, step(bayer(cell.yx), shown));
+  // Dim toward ~55% in the face, to black at the edges.
+  color *= mix(1.0, 0.55 * vign, uSink);
   fragColor = vec4(color, 1.0);
 }`;
 
@@ -161,6 +182,9 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const developStart = opts.developStart ?? 0.5;
   const contrast = opts.contrast ?? 1.15;
   const brightness = opts.brightness ?? 0;
+  const sinkFocusX = opts.sinkFocusX ?? 0.5;
+  const sinkFocusY = opts.sinkFocusY ?? 0.45;
+  const sinkRadius = opts.sinkRadius ?? 0.3;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   let program: WebGLProgram;
@@ -183,6 +207,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const names = [
     'tImage', 'tDiffused', 'uDiffused', 'uResolution', 'uCover', 'uOffset', 'uCell',
     'uInk', 'uPaper', 'uMatte', 'uKey', 'uContrast', 'uBrightness', 'uDevelop',
+    'uSink', 'uSinkFocus', 'uSinkRadius',
   ] as const;
   const u = {} as Record<(typeof names)[number], WebGLUniformLocation | null>;
   for (const n of names) u[n] = gl.getUniformLocation(program, n);
@@ -226,6 +251,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   let key = 0;
   let cover: [number, number] = [1, 1];
   let progress = 0;
+  let sink = 0;
   let raf = 0;
   let ready = false;
   let destroyed = false;
@@ -361,6 +387,9 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     gl!.uniform1f(u.uContrast, contrast);
     gl!.uniform1f(u.uBrightness, brightness);
     gl!.uniform1f(u.uDevelop, develop);
+    gl!.uniform1f(u.uSink, sink);
+    gl!.uniform2f(u.uSinkFocus, sinkFocusX, sinkFocusY);
+    gl!.uniform1f(u.uSinkRadius, sinkRadius);
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 
     if (!ready) {
@@ -413,6 +442,12 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
       const next = Math.min(1, Math.max(0, p));
       if (next === progress) return;
       progress = next;
+      schedule();
+    },
+    setSink(s: number) {
+      const next = Math.min(1, Math.max(0, s));
+      if (next === sink) return;
+      sink = next;
       schedule();
     },
     destroy() {
