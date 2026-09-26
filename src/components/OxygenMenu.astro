@@ -991,7 +991,10 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
       rgba(255,255,255,0.12) 90deg,
       transparent 130deg,
       transparent 360deg);
-    animation: global-spin 4s linear infinite;
+    /* --beam-delay (set by Layout.astro right after each page swap) starts
+       a restarted beam at the current phase from its very first frame —
+       see syncChromeBeams there. */
+    animation: global-spin 4s linear var(--beam-delay, 0s) infinite;
   }
   @keyframes global-spin { 100% { transform: rotate(360deg); } }
 

@@ -460,10 +460,23 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   // is held until it's ready — through the view transition's paused
   // rendering — so the beam resumed behind where it should be (stepped
   // back), then jumped forward on the next sync.
+  // WebKit only creates the restarted animations after this runs, so on
+  // Safari the beam showed its 0° start (top-right corner) for a moment
+  // before animationstart re-locked it. --beam-delay (the animation-delay
+  // in OxygenMenu.astro) is therefore set to minus the current phase first:
+  // a restart then begins at the right angle by itself, in any engine.
+  // lockBeam accounts for that delay — the angle comes from
+  // (now - startTime - delay), so startTime = -delay keeps it at `now`.
+  const SPIN_PERIOD = 4000;
   function lockBeam(a: Animation) {
-    if ((a as CSSAnimation).animationName === 'global-spin') a.startTime = 0;
+    if ((a as CSSAnimation).animationName !== 'global-spin') return;
+    a.startTime = -(Number(a.effect?.getTiming().delay) || 0);
   }
   function syncChromeBeams() {
+    const now = document.timeline.currentTime;
+    if (typeof now === 'number') {
+      document.documentElement.style.setProperty('--beam-delay', `${-(now % SPIN_PERIOD)}ms`);
+    }
     for (const id of ['ox-hud-mobile', 'hud-right-col']) {
       document.getElementById(id)?.getAnimations({ subtree: true }).forEach(lockBeam);
     }
