@@ -102,31 +102,6 @@ body::after {
   html body [data-after-hero]:not(.is-in) { opacity: 0; }
 }
 
-/* Mobile subpage titles (utils/maskRiseTitle.ts): each .title-mask line
-   clips its word, which starts pushed down below the clip and rises in;
-   a red hairline then draws in under the title. Words that also carry a
-   page's own scoped class keep its desktop opacity/blur start state
-   (higher specificity) — maskRiseTitle clears that inline. The rule is
-   mobile-only — desktop keeps the blur-in and has no rule. */
-.title-rule { display: none; }
-@media (max-width: 1024px) {
-  html body .title-mask { display: block; overflow: hidden; }
-  html body .title-mask__word {
-    display: block;
-    opacity: 1;
-    filter: none;
-    transform: translateY(110%);
-  }
-  html body .title-rule {
-    display: block;
-    width: 100%;
-    height: 1px;
-    background: rgb(var(--c-red) / 0.7);
-    transform: scaleX(0);
-    transform-origin: left center;
-  }
-}
-
 /* Hide scrollbar */
 html {
   width: 100%;

@@ -34,11 +34,10 @@ import Layout from '../layouts/Layout.astro';
       <canvas id="contact-flame-canvas" aria-hidden="true"></canvas>
       <div class="cp-header-content">
         <h1 class="cp-title">
-          <span class="cp-title__line title-mask"><span class="title-mask__word">Let's build</span></span>
-          <span class="cp-title__line title-mask"><span class="title-mask__word">something</span></span>
-          <span class="cp-title__line title-mask"><span class="title-mask__word cta-red">sharp.</span></span>
+          <span class="cp-title__line"><span class="cp-title__word">Let's build</span></span>
+          <span class="cp-title__line"><span class="cp-title__word">something</span></span>
+          <span class="cp-title__line"><span class="cp-title__word cta-red">sharp.</span></span>
         </h1>
-        <span class="title-rule cp-title-rule" aria-hidden="true"></span>
       </div>
     </div>
     </div>
@@ -281,11 +280,11 @@ import Layout from '../layouts/Layout.astro';
   }
   .cp-title.is-visible { opacity: 1; filter: blur(0); }
   .cp-title__line { display: block; }
-  /* Mobile: lines rise from behind their masks instead (maskRiseTitle),
-     so the h1 itself is shown as-is — no blur-in. */
+  /* Mobile: each line blurs in on its own (staggered, see initContact),
+     like the other page titles — the h1 itself is shown as-is. */
   @media (max-width: 1024px) {
     .cp-title { opacity: 1; filter: none; transition: none; }
-    .cp-title-rule { position: relative; z-index: 1; margin-top: clamp(1rem, 3vw, 1.5rem); }
+    .cp-title__word { display: block; opacity: 0; filter: blur(18px); }
   }
 
   /* ── Two-column grid ───────────────────────────────────────────────── */
@@ -560,7 +559,7 @@ import Layout from '../layouts/Layout.astro';
 <script>
   import { onReady } from '../utils/onReady';
   import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
-  import { maskRiseTitle, MOBILE_TITLE_MQ } from '../utils/maskRiseTitle';
+  import gsap from 'gsap';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
 
@@ -654,9 +653,12 @@ import Layout from '../layouts/Layout.astro';
     const grid   = page.querySelector('.cp-grid')   as HTMLElement | null;
 
     afterPageTransition(() => requestAnimationFrame(() => {
-      if (window.matchMedia(MOBILE_TITLE_MQ).matches) {
-        maskRiseTitle(page.querySelectorAll<HTMLElement>('.cp-title .title-mask__word'),
-          page.querySelector<HTMLElement>('.cp-title-rule'));
+      // Mobile: line-by-line blur-in, same as About's "Who's Behind?" and
+      // the Projects/Services titles.
+      if (window.matchMedia('(max-width: 1024px)').matches) {
+        gsap.timeline({ defaults: { ease: 'power4.out' } })
+          .to(page.querySelectorAll<HTMLElement>('.cp-title__word'),
+            { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
       } else if (title) {
         setTimeout(() => title.classList.add('is-visible'), 80);
       }

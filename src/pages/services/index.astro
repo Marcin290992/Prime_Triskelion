@@ -11,10 +11,9 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
     <header class="svc-hero">
       <h1 class="svc-title">
-        <span class="svc-title__line title-mask"><span class="svc-title__word title-mask__word">My</span></span>
-        <span class="svc-title__line title-mask"><span class="svc-title__word title-mask__word"><em>Services.</em></span></span>
+        <span class="svc-title__line"><span class="svc-title__word">My</span></span>
+        <span class="svc-title__line"><span class="svc-title__word"><em>Services.</em></span></span>
       </h1>
-      <span class="title-rule svc-title-rule" aria-hidden="true"></span>
       <p class="svc-hero__lead">Websites, branding, motion and strategy — designed and built end to end.</p>
       <div class="svc-hero__scroll" aria-hidden="true">
         <span class="svc-hero__line"></span>
@@ -182,8 +181,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     filter: blur(18px);
   }
   .svc-title em { font-style: normal; color: rgb(var(--c-red)); }
-  /* Mobile only (see .title-rule) — between the title and the lead. */
-  .svc-title-rule { margin-bottom: clamp(1.2rem, 2vw, 1.8rem); }
 
   .svc-hero__lead {
     font-family: var(--f-body);
@@ -430,7 +427,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
-  import { maskRiseTitle, MOBILE_TITLE_MQ } from '../../utils/maskRiseTitle';
 
   let _rowObserver: IntersectionObserver | null = null;
 
@@ -440,14 +436,10 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     const scrollHint = document.querySelector<HTMLElement>('.svc-hero__scroll');
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      if (window.matchMedia(MOBILE_TITLE_MQ).matches) {
-        maskRiseTitle(titleWords, document.querySelector<HTMLElement>('.svc-title-rule'));
-      } else if (titleWords.length) {
-        tl.to(titleWords,
-          { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
-          0.08
-        );
-      }
+      if (titleWords.length) tl.to(titleWords,
+        { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
+        0.08
+      );
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
       setTimeout(() => scrollHint?.classList.add('visible'), 1100);
       revealAfterHero();

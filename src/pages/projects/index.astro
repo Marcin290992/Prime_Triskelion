@@ -62,10 +62,9 @@ const projects = [
     <!-- Brief header -->
     <header class="proj-header">
       <h1 class="proj-title">
-        <span class="proj-title__line title-mask"><span class="proj-title__word title-mask__word">My</span></span>
-        <span class="proj-title__line title-mask"><span class="proj-title__word title-mask__word"><em>Projects.</em></span></span>
+        <span class="proj-title__line"><span class="proj-title__word">My</span></span>
+        <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
       </h1>
-      <span class="title-rule proj-title-rule" aria-hidden="true"></span>
       <div class="proj-header__scroll">
         <span class="proj-header__line"></span>
         <span class="proj-header__scroll-text">scroll</span>
@@ -153,7 +152,6 @@ const projects = [
   .proj-title__line { display: block; padding-bottom: 0.08em; }
   .proj-title__word { display: block; opacity: 0; filter: blur(18px); }
   .proj-title em { font-style: normal; color: rgb(var(--c-red)); }
-  .proj-title-rule { margin-top: clamp(1rem, 3vw, 1.5rem); }
 
   .proj-header__scroll {
     position: absolute;
@@ -511,7 +509,6 @@ const projects = [
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
-  import { maskRiseTitle, MOBILE_TITLE_MQ } from '../../utils/maskRiseTitle';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -521,12 +518,8 @@ const projects = [
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
 
     afterPageTransition(() => {
-      if (window.matchMedia(MOBILE_TITLE_MQ).matches) {
-        maskRiseTitle(titleWords, document.querySelector<HTMLElement>('.proj-title-rule'));
-      } else if (titleWords.length) {
-        gsap.timeline({ defaults: { ease: 'power4.out' } })
-          .to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
-      }
+      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+      if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
       setTimeout(() => scrollHint?.classList.add('visible'), 1100);
       revealAfterHero();
     });
