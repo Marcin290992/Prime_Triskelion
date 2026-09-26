@@ -119,8 +119,8 @@ void main() {
   // cell in the same Bayer order it developed in.
   float shown = uDevelop - (1.0 - vign) * uSink;
   color = mix(color, photo, step(bayer(cell.yx), shown));
-  // Dim toward ~55% in the face, to black at the edges.
-  color *= mix(1.0, 0.55 * vign, uSink);
+  // Dim toward ~30% in the face, to black at the edges.
+  color *= mix(1.0, 0.3 * vign, uSink);
   fragColor = vec4(color, 1.0);
 }`;
 
@@ -184,7 +184,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const brightness = opts.brightness ?? 0;
   const sinkFocusX = opts.sinkFocusX ?? 0.5;
   const sinkFocusY = opts.sinkFocusY ?? 0.45;
-  const sinkRadius = opts.sinkRadius ?? 0.3;
+  const sinkRadius = opts.sinkRadius ?? 0.25;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
   let program: WebGLProgram;
