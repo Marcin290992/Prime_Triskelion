@@ -274,7 +274,11 @@
 	}
 
 	@media (min-width: 1025px) {
-		.h-hero-claim { font-size: clamp(5.75rem, 9.2vw, 9.5rem) !important; }
+		/* 16vh cap: width alone made the claim nearly monitor-sized on
+		   wide-but-short laptops, pushing it up into the top bar and the
+		   stats down onto the MENU button. ≥900px-tall screens unchanged. */
+		.h-hero-claim { font-size: clamp(4.5rem, min(9.2vw, 16vh), 9.5rem) !important; }
+		.h-hero-sub { font-size: clamp(0.98rem, min(1.4vw, 2.6vh), 1.4rem); }
 		.hero-grid { padding-bottom: clamp(7rem, 11vh, 9rem); }
 	}
 
