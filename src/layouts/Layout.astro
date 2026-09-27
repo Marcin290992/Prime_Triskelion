@@ -401,7 +401,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   }, { once: true });
 
   // Persistent site chrome: logo, top-bar CTA, menu button, and on desktop
-  // the contact icons, location label and clock are pulled out of the root page fade/blur during a page
+  // the location label and clock are pulled out of the root page fade/blur during a page
   // transition, so they stay put while only the page content changes.
   // Named only WHILE a transition runs — a permanent view-transition-name
   // makes the element a backdrop root, which would blank the glass
@@ -416,7 +416,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     'h-title': 'pt-logo',
     'site-cta-wrap': 'pt-top-cta',
     'hud-menu-btn': 'pt-menu-btn',
-    'hud-right-col': 'pt-contact-col',
     'hud-location': 'pt-location',
     'hud-time': 'pt-clock',
   };
@@ -480,14 +479,12 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     if (typeof now === 'number') {
       document.documentElement.style.setProperty('--beam-delay', `${-(now % SPIN_PERIOD)}ms`);
     }
-    for (const id of ['ox-hud-mobile', 'hud-right-col']) {
-      document.getElementById(id)?.getAnimations({ subtree: true }).forEach(lockBeam);
-    }
+    document.getElementById('ox-hud-mobile')?.getAnimations({ subtree: true }).forEach(lockBeam);
   }
   document.addEventListener('astro:page-load', syncChromeBeams, { once: true });
   document.addEventListener('astro:after-swap', syncChromeBeams);
-  // Any other restart (e.g. a beam shown again after display:none, like the
-  // mobile contact button's after its flyout closes) re-locks itself.
+  // Any other restart (e.g. a beam shown again after display:none) re-locks
+  // itself.
   document.addEventListener('animationstart', (e) => {
     if (e.animationName !== 'global-spin') return;
     const el = e.target as Element;
@@ -496,15 +493,13 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 
   // On navigations, make the (freshly swapped-in) HUD visible right away,
   // before the browser captures the new page for the transition — the
-  // menu button / contact icons then stay put instead of fading in again.
+  // menu button then stays put instead of fading in again.
   // after-swap runs inside the transition's update callback, i.e. before
   // that capture; astro:page-load would be too late.
   document.addEventListener('astro:after-swap', () => {
     if (!(window as any).__ptShellShown) return;
     const hud = document.getElementById('ox-hud-mobile');
     if (hud) gsap.set(hud, { opacity: 1, y: 0 });
-    const rightCol = document.getElementById('hud-right-col');
-    if (rightCol) gsap.set(rightCol, { opacity: 1, x: 0 });
     const time = document.getElementById('hud-time');
     if (time) gsap.set(time, { opacity: 1 });
     const loc = document.getElementById('hud-location');

@@ -243,12 +243,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    /* Extra clearance beyond the gutter: OxygenMenu's #hud-right-col contact
-       dock is fixed at right:1.5rem, width 54px (~78px from the viewport
-       edge total) on every desktop width (it only hides below 1024px,
-       where this whole section is display:none anyway) — the plain gutter
-       alone left the right-aligned bio lines running underneath it. */
-    padding-right: calc(var(--site-gutter, 2rem) + 5.5rem);
+    padding-right: var(--site-gutter, 2rem);
     z-index: 1;
   }
   .ab-items {

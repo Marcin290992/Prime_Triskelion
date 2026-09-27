@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { CONTACT_EMAIL } from '../utils/contactLinks';
+import { BOOKING_URL, CONTACT_EMAIL } from '../utils/contactLinks';
 
 const SERVICES = ['Branding', 'Website', 'Development', '3D', 'Motion', 'Strategy'];
 const BUDGETS = ['< £5k', '£5–15k', '£15–30k', '£30k+', 'Not sure yet'];
@@ -31,6 +31,7 @@ const EMAIL = CONTACT_EMAIL;
             <p class="cp-meta">What brings you here today?</p>
             <div class="cp-chips cp-chips--intent" role="radiogroup" aria-label="What brings you here today?">
               <label class="cp-chip"><input type="radio" name="intent" value="project" /><span>Start a project</span></label>
+              <label class="cp-chip"><input type="radio" name="intent" value="call" /><span>Book a call</span></label>
               <label class="cp-chip"><input type="radio" name="intent" value="hello" /><span>Drop a quick word</span></label>
               <label class="cp-chip"><input type="radio" name="intent" value="copy" /><span>Copy my email</span></label>
             </div>
@@ -98,6 +99,20 @@ const EMAIL = CONTACT_EMAIL;
             <div class="cp-field">
               <input type="email" name="email" placeholder="you@company.com" autocomplete="email" aria-label="Your email" required />
               <p class="cp-error" data-error>Please enter a valid email.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Call path: the booking page opens in a new tab straight from the
+             click; this screen covers a blocked popup and the way back. -->
+        <div class="cp-step" data-id="call">
+          <p class="cp-meta">Book a call</p>
+          <h2 class="cp-q">Pick a time<br /><span class="cta-red">that works.</span></h2>
+          <div class="cp-ans">
+            <p class="cp-done-text">The calendar just opened in a new tab — choose a slot and you'll get an invite straight away.</p>
+            <div class="cp-links">
+              <a class="cp-link" href={BOOKING_URL} target="_blank" rel="noopener noreferrer">Open the calendar ↗</a>
+              <button class="cp-link" type="button" data-restart>Back to start</button>
             </div>
           </div>
         </div>
@@ -534,17 +549,18 @@ const EMAIL = CONTACT_EMAIL;
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
   import { copyContactEmail } from '../utils/copyEmail';
-  import { CONTACT_EMAIL } from '../utils/contactLinks';
+  import { BOOKING_URL, CONTACT_EMAIL } from '../utils/contactLinks';
 
   const EMAIL = CONTACT_EMAIL;
-  type Step = 'intent' | 'name' | 'services' | 'budget' | 'message' | 'email' | 'copy' | 'done';
-  type Intent = 'project' | 'hello' | 'copy';
+  type Step = 'intent' | 'name' | 'services' | 'budget' | 'message' | 'email' | 'copy' | 'call' | 'done';
+  type Intent = 'project' | 'hello' | 'copy' | 'call';
   const PATHS: Record<Intent, Step[]> = {
     project: ['intent', 'name', 'services', 'budget', 'message', 'email'],
     hello: ['intent', 'name', 'message', 'email'],
     copy: ['intent', 'copy'],
+    call: ['intent', 'call'],
   };
-  const TITLES: Record<Intent, string> = { project: 'Start a project', hello: 'Quick word', copy: 'Copy my email' };
+  const TITLES: Record<Intent, string> = { project: 'Start a project', hello: 'Quick word', copy: 'Copy my email', call: 'Book a call' };
 
   let _abort: AbortController | null = null;
 
@@ -587,11 +603,11 @@ const EMAIL = CONTACT_EMAIL;
       const id = currentId();
       const questions = p.length - 1;
       // Controls only exist inside a path; copy/done have their own links.
-      controls.style.display = id === 'intent' || id === 'copy' || id === 'done' ? 'none' : 'flex';
+      controls.style.display = id === 'intent' || id === 'copy' || id === 'call' || id === 'done' ? 'none' : 'flex';
       countEl.textContent = `${index} / ${questions}`;
       nextLabel.textContent = id === 'email' ? 'Send' : 'Next';
       updateWaiting();
-      const pct = id === 'done' || id === 'copy' ? 1 : intent ? index / questions : 0;
+      const pct = id === 'done' || id === 'copy' || id === 'call' ? 1 : intent ? index / questions : 0;
       gsap.to(progress, { scaleX: pct, duration: 0.7 * D, ease: 'power3.out' });
 
       const meta = steps[id].querySelector<HTMLElement>('[data-meta]');
@@ -707,6 +723,8 @@ const EMAIL = CONTACT_EMAIL;
       r.addEventListener('click', () => {
         intent = r.value as Intent;
         setError(steps.intent, false);
+        // Opened right here, inside the click, so it isn't blocked as a popup.
+        if (intent === 'call') window.open(BOOKING_URL, '_blank', 'noopener,noreferrer');
         setTimeout(() => { if (currentId() === 'intent') go(1); }, 260);
       }, { signal });
     });

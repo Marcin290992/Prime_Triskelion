@@ -1,10 +1,8 @@
-// Copy-the-email action shared by the HUD contact dock (desktop + mobile,
-// any [data-copy-email] element) and the Contact page. Feedback is two
-// signals, so it can't be missed: the trigger itself flips to a tick
-// (.is-copied, ~2s) and a toast rises above the MENU button with the
-// address that's now on the clipboard. If the browser blocks the
-// clipboard, the toast shows the address selected for a manual copy
-// instead of pretending it worked.
+// Copy-the-email action for the Contact page: copies the address and a
+// toast rises above the MENU button with the address that's now on the
+// clipboard (the page also updates its own status line). If the browser
+// blocks the clipboard, the toast shows the address selected for a manual
+// copy instead of pretending it worked.
 
 import { CONTACT_EMAIL } from './contactLinks';
 
@@ -73,22 +71,4 @@ export async function copyContactEmail(trigger?: HTMLElement | null): Promise<bo
     showToast(`<span class="pt-toast__email pt-toast__email--select">${CONTACT_EMAIL}</span> <span class="pt-toast__sep">—</span> select to copy`, { ok: false, duration: 6000 });
   }
   return ok;
-}
-
-// One delegated listener for every [data-copy-email] trigger, now and after
-// page swaps.
-if (!(window as any).__ptCopyEmailDelegated) {
-  (window as any).__ptCopyEmailDelegated = true;
-  document.addEventListener('click', (e) => {
-    const trigger = (e.target as Element | null)?.closest<HTMLElement>('[data-copy-email]');
-    if (!trigger) return;
-    e.preventDefault();
-    void copyContactEmail(trigger).then((ok) => {
-      // Mobile flyout: show the tick for a beat, then fold the flyout away
-      // so the toast has the bottom of the screen to itself.
-      if (ok && trigger.closest('#hud-contact-dock')) {
-        window.setTimeout(() => (window as any).__oxygenContactSetOpen?.(false), 900);
-      }
-    });
-  });
 }

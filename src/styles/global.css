@@ -147,7 +147,6 @@ html:active-view-transition .top-blur {
 ::view-transition-old(pt-logo),
 ::view-transition-old(pt-top-cta),
 ::view-transition-old(pt-menu-btn),
-::view-transition-old(pt-contact-col),
 ::view-transition-old(pt-location),
 ::view-transition-old(pt-clock) {
   animation: none;
@@ -156,7 +155,6 @@ html:active-view-transition .top-blur {
 ::view-transition-new(pt-logo),
 ::view-transition-new(pt-top-cta),
 ::view-transition-new(pt-menu-btn),
-::view-transition-new(pt-contact-col),
 ::view-transition-new(pt-location),
 ::view-transition-new(pt-clock) {
   animation: none;
@@ -441,23 +439,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   height: 22px;
 }
 
-/* "Copy email" in the HUD dock (utils/copyEmail.ts): the envelope turns
-   into a green tick for ~2s after a successful copy. Unscoped because the
-   icons are injected with set:html. */
-.hud-copy-email .hud-icon-check { display: none; }
-.hud-copy-email.is-copied svg:not(.hud-icon-check) { display: none; }
-.hud-copy-email.is-copied .hud-icon-check {
-  display: block;
-  color: rgb(74 222 128);
-  animation: pt-tick-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.hud-copy-email.is-copied { border-color: rgb(74 222 128 / 0.45); }
-@keyframes pt-tick-in {
-  from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* Copy-confirmation toast (utils/copyEmail.ts), rising above the MENU
+/* Copy-confirmation toast (utils/copyEmail.ts, Contact page), rising above the MENU
    button — bottom centre is where the eye already is. */
 .pt-toast {
   position: fixed;
@@ -502,29 +484,6 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 }
 @media (prefers-reduced-motion: reduce) {
   .pt-toast { filter: none; transition: opacity 0.2s ease; }
-}
-
-/* The Contact page is all contact already — no dock on desktop there. */
-body:has(#contact-page) #hud-right-col { display: none; }
-
-/* Mobile contact TOGGLE (.hud-contact-main, OxygenMenu.astro) only — scaled
-   down by the same ratio as --ox-contact-btn-size / MENU_SHRINK_SCALE
-   (oxygenMenu.ts) so the icon glyph shrinks along with its button instead
-   of staying fixed-size inside a smaller box. Deliberately does NOT match
-   .hud-contact-item (the Book a call / Copy email icons the flyout reveals
-   on tap): those stay standard-size — once they're the actual interactive
-   targets, comfortable tap size matters more than matching the compact
-   toggle's footprint. Has to live here (unscoped), not in
-   OxygenMenu.astro's own scoped <style> block: these icons are injected
-   via set:html (ICON_WHATSAPP/PHONE/EMAIL), and Astro only ever adds its
-   data-astro-cid scoping attribute to elements present in the component's
-   own static template — never to markup injected that way — so a scoped
-   selector targeting `svg` here can never match these elements at all. */
-@media (max-width: 1024px) {
-  .hud-contact-main svg {
-    width: calc(22px * 0.68);
-    height: calc(22px * 0.68);
-  }
 }
 
 .cta-red { color: rgb(var(--c-red)); }

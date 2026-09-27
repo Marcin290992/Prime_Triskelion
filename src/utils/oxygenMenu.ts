@@ -10,13 +10,7 @@ import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
-// compacting on scroll, see handleScroll() below). Must match
-// --ox-contact-btn-size's multiplier in OxygenMenu.astro AND the
-// .hud-contact-link .hud-icon-btn svg multiplier in global.css, so the
-// contact icon (button + glyph) that swaps in is sized identically to the
-// chip's own shrunk state — there's no shared source of truth across the
-// .ts/.astro/.css boundary, so this value is duplicated by hand in all
-// three places; keep them in sync if it's ever tuned.
+// compacting on scroll, see handleScroll() below).
 const MENU_SHRINK_SCALE = 0.68;
 
 // Chromium can render backdrop-filter as solid white during the native
@@ -57,64 +51,6 @@ if (!(window as any).__oxMenuBtnDelegated) {
   });
 }
 
-// Same reasoning as above, and also sidesteps a real bug it would
-// otherwise have: Astro fires astro:page-load on the very first load
-// too (not just SPA navigations), and this component's own
-// readyState-based immediate-call path ALSO runs on first load — so
-// initOxygenMenu() genuinely runs twice back to back before any
-// navigation has happened at all. A listener bound directly to
-// #hud-contact-toggle each init would end up attached twice on that
-// same, not-yet-replaced button, so every tap toggled it open then
-// immediately closed again (net: looked like the button did nothing).
-// hud-menu-btn never showed this because __oxygenMenuToggle is
-// reassigned, not appended to, on every init — same fix here.
-if (!(window as any).__oxContactDockDelegated) {
-  (window as any).__oxContactDockDelegated = true;
-  document.addEventListener('click', (e) => {
-    const target = e.target as Element | null;
-    const dock = document.getElementById('hud-contact-dock');
-    if (!dock) return;
-    if (target?.closest('#hud-contact-toggle')) {
-      e.stopPropagation();
-      (window as any).__oxygenContactSetOpen?.(!dock.classList.contains('is-open'));
-    } else if (dock.classList.contains('is-open') && !dock.contains(target)) {
-      (window as any).__oxygenContactSetOpen?.(false);
-    }
-  });
-}
-
-// Desktop contact dock (#hud-dock): hover and keyboard focus open it via
-// CSS; a click on the main button toggles .is-open for touch-screen laptops
-// and anyone who clicks rather than hovers. Clicking elsewhere or Escape
-// closes it. Delegated once, like the mobile dock above.
-if (!(window as any).__oxDeskDockDelegated) {
-  (window as any).__oxDeskDockDelegated = true;
-  const setDeskDock = (open: boolean) => {
-    const dock = document.getElementById('hud-dock');
-    if (!dock) return;
-    dock.classList.toggle('is-open', open);
-    document.getElementById('hud-dock-toggle')?.setAttribute('aria-expanded', String(open));
-  };
-  document.addEventListener('click', (e) => {
-    const dock = document.getElementById('hud-dock');
-    if (!dock) return;
-    const target = e.target as Element | null;
-    if (target?.closest('#hud-dock-toggle')) {
-      setDeskDock(!dock.classList.contains('is-open'));
-    } else if (dock.classList.contains('is-open') && !dock.contains(target)) {
-      setDeskDock(false);
-    }
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    setDeskDock(false);
-    // A key press turns focus inside the dock into :focus-visible, which
-    // also opens it (CSS) — let go of that focus too.
-    const active = document.activeElement as HTMLElement | null;
-    if (active && document.getElementById('hud-dock')?.contains(active)) active.blur();
-  });
-}
-
 // Generation-independent safety net against "both hamburger AND contact
 // button visible/unclickable at once" on mobile. The scroll-swap itself is
 // now a single class (.hud-scroll-hidden on #ox-hud-mobile — see
@@ -132,12 +68,9 @@ if (!(window as any).__oxAfterSwapReset) {
     // opacity/pointer-events from the old GSAP-driven swap would otherwise
     // permanently outrank the new CSS-class-driven approach.
     const menuBtn = document.getElementById('hud-menu-btn');
-    const contactBtn = document.querySelector<HTMLElement>('.hud-contact-link');
     menuBtn?.style.removeProperty('opacity');
     menuBtn?.style.removeProperty('pointer-events');
     menuBtn?.style.removeProperty('filter');
-    contactBtn?.style.removeProperty('opacity');
-    contactBtn?.style.removeProperty('pointer-events');
   });
 }
 
@@ -170,7 +103,6 @@ function initOxygenMenu() {
   const menuLocation = document.getElementById('hud-location');
   const menuTime    = document.getElementById('hud-time');
   const hudMenuBtn    = document.getElementById('hud-menu-btn') as HTMLButtonElement | null;
-  const hudContactBtn = document.querySelector<HTMLElement>('.hud-contact-link');
 
   if (!menuOverlay || !hudMenuBtn) return;
 
@@ -292,11 +224,10 @@ function initOxygenMenu() {
 
   function showHeader() {
     const hudEl = document.getElementById('ox-hud-mobile');
-    const hudRightCol = document.getElementById('hud-right-col');
     const hudTimeEl = document.getElementById('hud-time');
     // Entrance only on the first page of the visit; on navigations the
     // bar is already made visible on astro:after-swap (Layout.astro) so
-    // the menu button / contact icons stay put through the transition.
+    // the menu button stays put through the transition.
     if ((window as any).__ptShellShown) return;
     if (hudEl) {
       gsap.set(hudEl, { y: 12 });
@@ -341,10 +272,6 @@ function initOxygenMenu() {
         onComplete: () => hudMenuBtn?.classList.remove('hud-menu-btn--settling'),
       });
     }
-    if (hudRightCol) {
-      gsap.set(hudRightCol, { x: 30 });
-      gsap.to(hudRightCol, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out', delay: 0.45 });
-    }
     if (hudTimeEl) {
       gsap.to(hudTimeEl, { opacity: 1, duration: 0.6, ease: 'power2.out', delay: 0.55 });
     }
@@ -359,43 +286,6 @@ function initOxygenMenu() {
   }
 
   const isMobile = window.matchMedia('(max-width: 1024px)').matches;
-
-  // ── Mobile contact flyout (Book a call / Copy email tucked behind the
-  // contact button) ──
-  let contactDockCloseTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // Live-looked-up rather than closed over hudContactBtn — this is called
-  // from the permanent, module-level delegated listener near the top of
-  // this file (window.__oxygenContactSetOpen), which can outlive this
-  // exact generation of initOxygenMenu() the same way toggleMenu() has to
-  // for the hamburger button (see the comment up there for why).
-  function setContactDockOpen(open: boolean) {
-    const dock = document.getElementById('hud-contact-dock');
-    const toggle = document.getElementById('hud-contact-toggle');
-    if (!dock || !toggle) return;
-    if (contactDockCloseTimer) { clearTimeout(contactDockCloseTimer); contactDockCloseTimer = null; }
-    toggle.setAttribute('aria-expanded', String(open));
-    if (open) {
-      // Has to happen BEFORE the class toggle below (same tick is fine —
-      // both land in the same style recalc) so the items sliding out
-      // aren't clipped by the closed-state overflow:hidden.
-      dock.style.overflow = 'visible';
-      dock.style.height = 'auto';
-      dock.classList.add('is-open');
-    } else {
-      dock.classList.remove('is-open');
-      // Keep overflow:visible/height:auto until the retreat animation
-      // (0.38s + up to 0.09s stagger delay) has actually finished —
-      // reverting them immediately would hard-clip the items mid-slide
-      // instead of letting them visibly tuck back behind the main button.
-      contactDockCloseTimer = setTimeout(() => {
-        dock.style.overflow = '';
-        dock.style.height = '';
-        contactDockCloseTimer = null;
-      }, 480);
-    }
-  }
-  (window as any).__oxygenContactSetOpen = setContactDockOpen;
 
   // HUD swap: one class on the shared #ox-hud-mobile ancestor, driving both
   // buttons purely via CSS (see .hud-scroll-hidden in OxygenMenu.astro).
@@ -415,9 +305,6 @@ function initOxygenMenu() {
 
   function handleScroll() {
     if (!isMobile) return; // Desktop: nothing hides on scroll
-    // Any scroll intent closes the flyout first — it shouldn't stay
-    // open while the bar itself is about to swap/hide underneath it.
-    if (hudContactBtn?.classList.contains('is-open')) setContactDockOpen(false);
     const scrollTop = window.scrollY;
     if (state.isMenuOpen) {
       state.lastScrollTop = scrollTop;
@@ -472,10 +359,10 @@ function initOxygenMenu() {
 
     if (state.scrollAccum > THRESHOLD && !state.barHidden && scrollTop > 50) {
       state.barHidden = true;
-      setBarHidden(true); // Scroll down: menu btn hides, contact materializes
+      setBarHidden(true);
     } else if (state.scrollAccum < -THRESHOLD && state.barHidden) {
       state.barHidden = false;
-      setBarHidden(false); // Scroll up: contact hides, menu btn returns
+      setBarHidden(false);
     }
   }
 
@@ -508,11 +395,9 @@ function initOxygenMenu() {
     }
     lockBodyScroll();
 
-    // Hide HUD labels, right col and start btn so they don't overlap the overlay
+    // Hide HUD labels and the clock so they don't overlap the overlay
     const hudEl = document.getElementById('ox-hud-mobile');
     if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 0, duration: 0.2 });
-    const hudRightCol = document.getElementById('hud-right-col');
-    if (hudRightCol) gsap.to(hudRightCol, { opacity: 0, duration: 0.2 });
     const hudTimeHide = document.getElementById('hud-time');
     if (hudTimeHide) gsap.to(hudTimeHide, { opacity: 0, duration: 0.2 });
     gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
@@ -541,11 +426,9 @@ function initOxygenMenu() {
       btn?.setAttribute('aria-expanded', 'false');
 
       if (!keepOverlay) {
-        // Restore HUD side labels and right col
+        // Restore HUD side labels and the clock
         const hudEl = document.getElementById('ox-hud-mobile');
         if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 1, duration: 0.4, delay: 0.3 });
-        const hudRightCol = document.getElementById('hud-right-col');
-        if (hudRightCol) gsap.to(hudRightCol, { opacity: 1, duration: 0.4, delay: 0.3 });
         const hudTimeRestore = document.getElementById('hud-time');
         if (hudTimeRestore) gsap.to(hudTimeRestore, { opacity: 1, duration: 0.4, delay: 0.35 });
       }
@@ -714,7 +597,6 @@ function initOxygenMenu() {
   function onKeyDown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return;
     if (state.isMenuOpen) closeMenu();
-    if (hudContactBtn?.classList.contains('is-open')) setContactDockOpen(false);
   }
   document.addEventListener('keydown', onKeyDown);
 
@@ -750,8 +632,6 @@ function initOxygenMenu() {
     hudMenuBtn?.style.removeProperty('pointer-events');
     hudMenuBtn?.style.removeProperty('filter');
     if (hudMenuBtn) gsap.set(hudMenuBtn, { scale: 1 });
-    hudContactBtn?.style.removeProperty('opacity');
-    hudContactBtn?.style.removeProperty('pointer-events');
     setBarHidden(false);
     state.barHidden = false;
     state.scrollAccum = 0;
@@ -816,7 +696,6 @@ function initOxygenMenu() {
       state.releaseScrollLock = null;
     }
     if (state.timeInterval) clearInterval(state.timeInterval);
-    if (contactDockCloseTimer) { clearTimeout(contactDockCloseTimer); contactDockCloseTimer = null; }
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('pageshow', onPageShow);
     document.removeEventListener('keydown', onKeyDown);
