@@ -40,6 +40,8 @@
 </style>
 
 <script>
+	import { createMenuCtaGate } from '../utils/menuCtaGate';
+
 	function initSiteCta() {
 		const wrap = document.getElementById('site-cta-wrap');
 		if (!wrap) return;
@@ -52,8 +54,9 @@
 
 		function update() {
 			const scrollY = window.scrollY || window.pageYOffset;
-			wrap!.classList.toggle('site-cta--visible', scrollY > window.innerHeight * 0.8);
+			wrap!.classList.toggle('site-cta--visible', gate.allow(scrollY > window.innerHeight * 0.8));
 		}
+		const gate = createMenuCtaGate(update);
 
 		let ticking = false;
 		function onScroll() {
@@ -71,6 +74,7 @@
 
 		document.addEventListener('astro:before-swap', () => {
 			window.removeEventListener('scroll', onScroll);
+			gate.destroy();
 		}, { once: true });
 	}
 

@@ -289,8 +289,13 @@
 			   54px, ~78px from the viewport edge) — the right-aligned
 			   descriptions ran under it on laptop widths. Only adds room
 			   where the centred max-width stage doesn't already sit clear of
-			   it; on wide monitors this resolves to the plain gutter. */
-			padding-right: max(var(--site-gutter), calc(7rem - (100vw - var(--site-max-width)) / 2));
+			   it; on wide monitors this resolves to the plain gutter. Same
+			   inset on BOTH sides, so the photo in the middle stays centred
+			   under the MENU button (right-only padding shifted it left). */
+			/* The inner max(0px, …) is the stage's own offset from the screen
+			   edge — 0 below 1440px wide (without it the padding GREW on
+			   narrower laptops and squeezed the columns). */
+			padding-inline: max(var(--site-gutter), calc(7rem - max(0px, (100% - var(--site-max-width)) / 2)));
 			box-sizing: border-box;
 			overflow: hidden;
 		}
@@ -303,7 +308,9 @@
 			align-items: center;
 		}
 		.process-rail__col--num { justify-content: flex-start; }
-		.process-rail__col--desc { justify-content: flex-end; }
+		/* Size container, so the step heading can scale with the column's
+		   own width (see .process-desc h3). */
+		.process-rail__col--desc { justify-content: flex-end; container-type: inline-size; }
 
 		.process-num {
 			position: absolute;
@@ -348,7 +355,9 @@
 		.process-desc h3 {
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.4rem, min(2.6vw, 4.4vh), 2.6rem);
+			/* 12cqi: the longest single word ("DEVELOPMENT") always fits the
+			   description column, whatever the screen's width/height mix. */
+			font-size: clamp(1.1rem, min(2.6vw, 4.4vh, 12cqi), 2.6rem);
 			letter-spacing: -0.01em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
