@@ -50,16 +50,20 @@ import Layout from '../layouts/Layout.astro';
         <div class="cp-info__body">
           <p class="cp-info__label">Direct line</p>
           <a href="mailto:hello@primetriskelion.com" class="cp-info__email">
-            hello@primetriskelion.com
+            <span class="cp-info__email-text">hello@primetriskelion.com</span>
+            <span class="cp-info__email-arrow" aria-hidden="true">↗</span>
           </a>
-
-          <p class="cp-info__label">Location</p>
-          <p class="cp-info__val">London, UK</p>
-          <p class="cp-info__val cp-info__val--sub">Est. 2024</p>
 
           <p class="cp-info__label">Availability</p>
           <p class="cp-info__val">
             <span class="cp-info__dot"></span>Open for new projects
+          </p>
+          <p class="cp-info__val cp-info__val--sub">Replies within 24 hours</p>
+
+          <p class="cp-info__label">Studio</p>
+          <p class="cp-info__val">London, UK</p>
+          <p class="cp-info__val cp-info__val--sub">
+            Local time <span class="cp-info__time" id="cp-local-time">--:--</span> · Est. 2024
           </p>
         </div>
       </aside>
@@ -71,7 +75,7 @@ import Layout from '../layouts/Layout.astro';
           <div class="cp-row cp-row--2">
             <div class="cp-field">
               <label for="cf-name" class="cp-label">
-                Full Name <span class="cp-req" aria-hidden="true">*</span>
+                <span class="cp-label__num">01</span>Full Name <span class="cp-req" aria-hidden="true">*</span>
               </label>
               <input
                 type="text"
@@ -84,7 +88,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
 
             <div class="cp-field">
-              <label for="cf-company" class="cp-label">Company / Brand</label>
+              <label for="cf-company" class="cp-label"><span class="cp-label__num">02</span>Company / Brand</label>
               <input
                 type="text"
                 id="cf-company"
@@ -98,7 +102,7 @@ import Layout from '../layouts/Layout.astro';
           <div class="cp-row cp-row--2">
             <div class="cp-field">
               <label for="cf-email" class="cp-label">
-                Email <span class="cp-req" aria-hidden="true">*</span>
+                <span class="cp-label__num">03</span>Email <span class="cp-req" aria-hidden="true">*</span>
               </label>
               <input
                 type="email"
@@ -111,7 +115,7 @@ import Layout from '../layouts/Layout.astro';
             </div>
 
             <div class="cp-field">
-              <label for="cf-phone" class="cp-label">Phone</label>
+              <label for="cf-phone" class="cp-label"><span class="cp-label__num">04</span>Phone</label>
               <input
                 type="tel"
                 id="cf-phone"
@@ -122,28 +126,40 @@ import Layout from '../layouts/Layout.astro';
             </div>
           </div>
 
-          <div class="cp-row">
-            <div class="cp-field">
-              <label for="cf-service" class="cp-label">What do you need?</label>
-              <input
-                type="text"
-                id="cf-service"
-                name="service"
-                placeholder="Branding, Web Dev, 3D, Motion — or all of it"
-              />
+          <fieldset class="cp-row cp-chips-set">
+            <legend class="cp-label"><span class="cp-label__num">05</span>What do you need?</legend>
+            <div class="cp-chips">
+              {['Branding', 'Website', 'Development', '3D', 'Motion', 'Strategy'].map((s) => (
+                <label class="cp-chip">
+                  <input type="checkbox" name="service" value={s} />
+                  <span class="cp-chip__face">{s}</span>
+                </label>
+              ))}
             </div>
-          </div>
+          </fieldset>
+
+          <fieldset class="cp-row cp-chips-set">
+            <legend class="cp-label"><span class="cp-label__num">06</span>Budget</legend>
+            <div class="cp-chips">
+              {['< £5k', '£5–15k', '£15–30k', '£30k+', 'Not sure yet'].map((b) => (
+                <label class="cp-chip">
+                  <input type="radio" name="budget" value={b} />
+                  <span class="cp-chip__face">{b}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
 
           <div class="cp-row">
             <div class="cp-field">
               <label for="cf-message" class="cp-label">
-                Tell me more <span class="cp-req" aria-hidden="true">*</span>
+                <span class="cp-label__num">07</span>Tell me more <span class="cp-req" aria-hidden="true">*</span>
               </label>
               <textarea
                 id="cf-message"
                 name="message"
                 placeholder="Describe your project, goals, timeline…"
-                rows="5"
+                rows="4"
                 required
               ></textarea>
             </div>
@@ -169,12 +185,21 @@ import Layout from '../layouts/Layout.astro';
               <button type="submit" class="h-hero-cta h-hero-cta--fixed" id="cf-submit-btn">
                 <span class="hud-spin-border"></span>
                 <span class="h-hero-cta__text">Send message</span>
+                <span class="cp-submit__arrow" aria-hidden="true">→</span>
               </button>
             </div>
             <p class="cp-submit__note" id="cf-status" aria-live="polite"></p>
           </div>
 
         </form>
+
+        <!-- Shown in place of the form once it's sent -->
+        <div class="cp-success" id="cp-success" hidden>
+          <p class="cp-success__kicker"><span class="cp-info__dot"></span>Message received</p>
+          <p class="cp-success__title">Thank you.<br /><span class="cta-red">Talk soon.</span></p>
+          <p class="cp-success__text">I'll read it properly and get back to you within 24 hours.</p>
+          <button type="button" class="cp-success__again" id="cp-send-another">Send another message</button>
+        </div>
       </div>
 
     </div>
@@ -245,8 +270,11 @@ import Layout from '../layouts/Layout.astro';
          tall box. */
       padding-bottom: calc(clamp(4rem, 8vh, 6rem) * var(--cp-title-scale, 1));
     }
+    /* 16vh cap: on wide-but-short laptops (MacBook Air 13") the 10vw title
+       took ~60% of the first screen and pushed the form down under the
+       bottom HUD. */
     .cp-header-content .cp-title {
-      font-size: calc(clamp(3.5rem, 10vw, 13rem) * var(--cp-title-scale, 1));
+      font-size: calc(clamp(3.5rem, min(10vw, 16vh), 13rem) * var(--cp-title-scale, 1));
     }
   }
 
@@ -321,16 +349,36 @@ import Layout from '../layouts/Layout.astro';
     margin: 2rem 0 0.7rem;
   }
   .cp-info__label:first-child { margin-top: 0; }
+  /* The email is the page's second CTA: bigger, with a red underline that
+     draws in on hover and an arrow that lifts. */
   .cp-info__email {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    align-self: flex-start;
+    max-width: 100%;
     font-family: var(--f-body);
-    font-size: clamp(1rem, 1.3vw, 1.25rem);
-    font-weight: 300;
-    letter-spacing: 0.01em;
-    color: rgb(var(--c-cream) / 0.88);
+    font-size: clamp(1.05rem, 1.55vw, 1.55rem);
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    color: rgb(var(--c-cream));
     text-decoration: none;
-    transition: color 0.25s ease;
   }
-  .cp-info__email:hover { color: rgb(var(--c-cream)); }
+  .cp-info__email-text {
+    overflow-wrap: anywhere;
+    background: linear-gradient(rgb(var(--c-red)), rgb(var(--c-red))) no-repeat left bottom / 0% 1px;
+    padding-bottom: 0.2em;
+    transition: background-size 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cp-info__email-arrow {
+    color: rgb(var(--c-red));
+    font-size: 0.8em;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .cp-info__email:hover .cp-info__email-text,
+  .cp-info__email:focus-visible .cp-info__email-text { background-size: 100% 1px; }
+  .cp-info__email:hover .cp-info__email-arrow { transform: translate(3px, -3px); }
+  .cp-info__time { color: rgb(var(--c-cream) / 0.6); font-variant-numeric: tabular-nums; }
   .cp-info__val {
     font-family: var(--f-body);
     font-size: clamp(1rem, 1.3vw, 1.2rem);
@@ -342,6 +390,7 @@ import Layout from '../layouts/Layout.astro';
     gap: 0.5rem;
   }
   .cp-info__val--sub {
+    display: block;
     font-size: clamp(0.82rem, 1vw, 0.95rem);
     color: rgb(var(--c-cream) / 0.38);
     margin-top: 0.3rem;
@@ -361,13 +410,16 @@ import Layout from '../layouts/Layout.astro';
   }
 
   /* ── Form ──────────────────────────────────────────────────────────── */
+  /* Editorial form: numbered labels, underline-only fields with large type,
+     services/budget as selectable chips, a red rule that draws in under the
+     focused field. */
   .cp-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: clamp(1.4rem, 2.6vh, 2rem);
   }
   .cp-row { display: flex; flex-direction: column; gap: 1rem; }
-  .cp-row--2 { flex-direction: row; gap: 1rem; }
+  .cp-row--2 { flex-direction: row; gap: clamp(1.5rem, 3vw, 2.75rem); }
   .cp-row--2 .cp-field { flex: 1 1 0; min-width: 0; }
   .cp-row--submit {
     flex-direction: row;
@@ -375,62 +427,120 @@ import Layout from '../layouts/Layout.astro';
     justify-content: space-between;
     gap: 1.5rem;
     flex-wrap: wrap;
-    margin-top: 0.25rem;
+    margin-top: 0.5rem;
   }
-  #cf-submit-btn { font-size: 1rem; padding: 0.95rem 1.4rem; }
 
   .cp-field {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.2rem;
   }
   .cp-label {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9em;
+    padding: 0;
     font-family: var(--f-body);
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 400;
-    letter-spacing: 0.34em;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.45);
+    color: rgb(var(--c-cream) / 0.5);
   }
-  .cp-req { color: rgb(var(--c-red)); }
+  .cp-label__num {
+    letter-spacing: 0.12em;
+    color: rgb(var(--c-red) / 0.8);
+  }
+  .cp-req { color: rgb(var(--c-red)); margin-left: -0.6em; }
 
-  /* Inputs & textarea */
+  /* Inputs & textarea: underline only */
   .cp-form input[type="text"],
   .cp-form input[type="email"],
   .cp-form input[type="tel"],
   .cp-form input[type="url"],
   .cp-form textarea {
     width: 100%;
-    background: rgb(var(--c-cream) / 0.04);
-    border: 1px solid rgb(var(--c-cream) / 0.1);
+    background:
+      linear-gradient(rgb(var(--c-red)), rgb(var(--c-red))) no-repeat left bottom / 0% 1px,
+      linear-gradient(rgb(var(--c-cream) / 0.16), rgb(var(--c-cream) / 0.16)) no-repeat left bottom / 100% 1px;
+    border: 0;
     border-radius: 0;
-    padding: 0.65rem 0.9rem;
+    padding: 0.55rem 0 0.7rem;
     font-family: var(--f-body);
-    font-size: clamp(0.85rem, 1.1vw, 1rem);
+    font-size: clamp(1.05rem, 1.35vw, 1.3rem);
     font-weight: 300;
+    letter-spacing: -0.005em;
     color: rgb(var(--c-cream));
     outline: none;
-    transition: background 0.25s ease, border-color 0.25s ease;
+    transition: background-size 0.55s cubic-bezier(0.16, 1, 0.3, 1);
     -webkit-appearance: none;
     appearance: none;
   }
   .cp-form input::placeholder,
   .cp-form textarea::placeholder {
-    color: rgb(var(--c-cream) / 0.22);
+    color: rgb(var(--c-cream) / 0.2);
   }
   .cp-form input:focus,
-  .cp-form textarea:focus {
-    background: rgb(var(--c-cream) / 0.07);
-    border-color: rgb(var(--c-cream) / 0.28);
-  }
+  .cp-form textarea:focus,
   .cp-form input.is-invalid,
   .cp-form textarea.is-invalid {
-    border-color: rgb(var(--c-red) / 0.6);
+    background-size: 100% 1px, 100% 1px;
   }
   .cp-form textarea {
-    resize: vertical;
-    min-height: 85px;
+    resize: none;
+    min-height: clamp(90px, 14vh, 140px);
+    line-height: 1.5;
   }
+
+  /* Chips (services: multi-select, budget: single) */
+  .cp-chips-set { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .cp-chips-set legend { margin-bottom: 0.9rem; }
+  .cp-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .cp-chip { position: relative; cursor: pointer; }
+  .cp-chip input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+  }
+  .cp-chip__face {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.6rem 1.05rem;
+    border: 1px solid rgb(var(--c-cream) / 0.14);
+    font-family: var(--f-body);
+    font-size: clamp(0.82rem, 0.95vw, 0.92rem);
+    font-weight: 400;
+    color: rgb(var(--c-cream) / 0.62);
+    transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cp-chip__face::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    margin-left: -0.55rem;
+    background: rgb(var(--c-red));
+    transform: scale(0);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), margin 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (hover: hover) {
+    .cp-chip:hover .cp-chip__face { border-color: rgb(var(--c-cream) / 0.32); color: rgb(var(--c-cream) / 0.9); }
+  }
+  .cp-chip input:focus-visible + .cp-chip__face { border-color: rgb(var(--c-cream) / 0.55); }
+  .cp-chip input:checked + .cp-chip__face {
+    border-color: rgb(var(--c-red) / 0.7);
+    background: rgb(var(--c-red) / 0.1);
+    color: rgb(var(--c-cream));
+  }
+  .cp-chip input:checked + .cp-chip__face::before { transform: scale(1); margin-left: 0; }
 
   /* Consent checkbox */
   .cp-consent {
@@ -466,29 +576,94 @@ import Layout from '../layouts/Layout.astro';
     opacity: 0;
     transition: opacity 0.2s ease;
   }
-  .cp-consent input:checked ~ .cp-consent__box {
-    border-color: rgb(var(--c-red) / 0.6);
-  }
-  .cp-consent input:checked ~ .cp-consent__box::after {
-    opacity: 1;
-  }
+  .cp-consent input:checked ~ .cp-consent__box { border-color: rgb(var(--c-red) / 0.6); }
+  .cp-consent input:checked ~ .cp-consent__box::after { opacity: 1; }
+  .cp-consent input:focus-visible ~ .cp-consent__box { border-color: rgb(var(--c-cream) / 0.55); }
+  .cp-consent.is-invalid .cp-consent__box { border-color: rgb(var(--c-red) / 0.8); }
   .cp-consent__text {
     font-family: var(--f-body);
-    font-size: clamp(0.7rem, 0.85vw, 0.8rem);
+    font-size: clamp(0.72rem, 0.85vw, 0.8rem);
     font-weight: 300;
     line-height: 1.6;
-    color: rgb(var(--c-cream) / 0.35);
+    color: rgb(var(--c-cream) / 0.38);
   }
+
+  /* Submit: the form's one big action */
+  #cf-submit-btn {
+    gap: 0.85rem;
+    font-size: clamp(1rem, 1.15vw, 1.1rem);
+    padding: 1.15rem 2.1rem;
+  }
+  .cp-submit__arrow {
+    color: rgb(var(--c-red));
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  #cf-submit-btn:hover .cp-submit__arrow { transform: translateX(5px); }
+  #cf-submit-btn:disabled { opacity: 0.55; cursor: progress; }
 
   .cp-submit__note {
     font-family: var(--f-body);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
     font-weight: 300;
     color: rgb(var(--c-cream) / 0.4);
     margin: 0;
   }
   .cp-submit__note--ok  { color: rgba(74, 222, 128, 0.85); }
   .cp-submit__note--err { color: rgb(var(--c-red) / 0.85); }
+
+  /* Sent state (replaces the form) */
+  .cp-success {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.2rem;
+    padding: clamp(1rem, 3vh, 2.5rem) 0;
+  }
+  .cp-success[hidden],
+  .cp-form[hidden] { display: none; }
+  .cp-success__kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0;
+    font-family: var(--f-body);
+    font-size: 10px;
+    letter-spacing: 0.36em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.55);
+  }
+  .cp-success__title {
+    margin: 0;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, min(5.5vw, 9vh), 5.5rem);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
+  }
+  .cp-success__text {
+    margin: 0;
+    max-width: 38ch;
+    font-family: var(--f-body);
+    font-size: clamp(1rem, 1.2vw, 1.15rem);
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgb(var(--c-cream) / 0.6);
+  }
+  .cp-success__again {
+    margin-top: 0.6rem;
+    padding: 0 0 0.2rem;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid rgb(var(--c-cream) / 0.25);
+    font-family: var(--f-body);
+    font-size: 0.85rem;
+    color: rgb(var(--c-cream) / 0.6);
+    cursor: pointer;
+    transition: color 0.25s ease, border-color 0.25s ease;
+  }
+  .cp-success__again:hover { color: rgb(var(--c-cream)); border-color: rgb(var(--c-red)); }
 
   /* ── Responsive ────────────────────────────────────────────────────── */
   @media (max-width: 1024px) {
@@ -515,7 +690,7 @@ import Layout from '../layouts/Layout.astro';
     #contact-page { padding-top: 0; }
     .cp-grid {
       grid-template-columns: 1fr;
-      gap: clamp(3rem, 8vw, 5rem);
+      gap: clamp(3.5rem, 9vw, 5.5rem);
       /* Mobile: plain fade after the title (data-after-hero), not the
          desktop blur/slide-up. */
       opacity: 1;
@@ -530,41 +705,33 @@ import Layout from '../layouts/Layout.astro';
       gap: 2rem;
     }
     .cp-info__body { flex: 1 1 240px; }
+    .cp-info__email { font-size: clamp(1.15rem, 4.6vw, 1.5rem); }
 
-    /* Form density above is tightened for desktop, where the header-shrink
-       mechanic wants the whole form to fit on screen right after it
-       collapses. Mobile scrolls normally regardless, so keep it at its
-       original, more comfortable spacing. */
-    .cp-form { gap: 1.5rem; }
-    .cp-row { gap: 1.5rem; }
-    .cp-row--2 { gap: 1.25rem; }
+    .cp-form { gap: 2rem; }
+    .cp-row--2 { gap: 2rem; }
     .cp-row--submit { margin-top: 0.5rem; }
-    .cp-field { gap: 0.55rem; }
+    /* iOS Safari auto-zooms the page on focus for any field under 16px —
+       keep every field at 16px+ on touch widths. */
     .cp-form input[type="text"],
     .cp-form input[type="email"],
     .cp-form input[type="tel"],
     .cp-form input[type="url"],
     .cp-form textarea {
-      padding: 0.9rem 1rem;
-      /* The base rule's clamp(0.85rem, 1.1vw, 1rem) floors out at 0.85rem
-         (13.6px) on narrow/mobile widths, where 1.1vw is a fraction of a
-         pixel. iOS Safari auto-zooms the whole page on focus for any
-         input/textarea/select whose computed font-size is under 16px —
-         after that zoom the page is free to pan in every direction,
-         including sideways, until the user manually pinch-zooms back out.
-         Android/Chrome has no such behavior, which is why this only ever
-         showed up on iPhones. Locking this at exactly 16px on mobile (not
-         just raising the clamp's floor) sidesteps relying on 1.1vw ever
-         landing above it on some in-between width. */
-      font-size: 1rem;
+      font-size: 1.1rem;
+      padding: 0.7rem 0 0.8rem;
     }
-    .cp-form textarea { min-height: 130px; }
-    #cf-submit-btn { padding: 1.15rem 1.5rem; }
+    .cp-form textarea { min-height: 120px; }
+    /* Bigger tap targets for the chips. */
+    .cp-chip__face { padding: 0.75rem 1.1rem; font-size: 0.9rem; }
+    .cp-chip__face::before { display: none; }
+    #cf-submit-btn { padding: 1.2rem 1.5rem; }
+    .cp-success__title { font-size: clamp(2.6rem, 11vw, 4.5rem); }
   }
 
+  /* Phones: one field per row, full-width submit. */
   @media (max-width: 640px) {
     .cp-row--2 { flex-direction: column; }
-    .cp-row--submit { flex-direction: column; align-items: flex-start; }
+    .cp-row--submit { flex-direction: column; align-items: stretch; }
   }
 </style>
 
@@ -686,6 +853,30 @@ import Layout from '../layouts/Layout.astro';
 
     if (!form) return;
 
+    // Sent state: the form fades out and the thank-you panel takes its
+    // place; "Send another message" brings the (reset) form back.
+    const success = document.getElementById('cp-success');
+    function showSuccess(on: boolean) {
+      if (!success) return;
+      const from = on ? form! : success;
+      const to = on ? success : form!;
+      gsap.to(from, {
+        opacity: 0, y: -10, duration: 0.35, ease: 'power2.in',
+        onComplete: () => {
+          from.hidden = true;
+          gsap.set(from, { clearProps: 'opacity,transform' });
+          to.hidden = false;
+          gsap.fromTo(to, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', clearProps: 'opacity,transform' });
+          if (on) success.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        },
+      });
+    }
+    document.getElementById('cp-send-another')?.addEventListener('click', () => showSuccess(false));
+
+    // Clear a field's / the consent's error as soon as it's fixed.
+    form.addEventListener('input', (e) => (e.target as HTMLElement).classList.remove('is-invalid'));
+    form.addEventListener('change', (e) => (e.target as HTMLElement).closest('.cp-consent')?.classList.remove('is-invalid'));
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -698,7 +889,10 @@ import Layout from '../layouts/Layout.astro';
       const required = form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[required]');
       required.forEach(el => {
         if (!el.value.trim() && el.type !== 'checkbox') { el.classList.add('is-invalid'); ok = false; }
-        if (el.type === 'checkbox' && !(el as HTMLInputElement).checked) { ok = false; }
+        if (el.type === 'checkbox' && !(el as HTMLInputElement).checked) {
+          el.closest('.cp-consent')?.classList.add('is-invalid');
+          ok = false;
+        }
       });
 
       if (!ok) {
@@ -716,12 +910,13 @@ import Layout from '../layouts/Layout.astro';
         message: String(data.get('message') || ''),
         company: String(data.get('company') || '') || undefined,
         phone: String(data.get('phone') || '') || undefined,
-        service: String(data.get('service') || '') || undefined,
+        service: data.getAll('service').map(String).join(', ') || undefined,
+        budget: String(data.get('budget') || '') || undefined,
       });
 
       if (sent) {
-        if (status) { status.textContent = 'Message sent — I\'ll be in touch soon.'; status.classList.add('cp-submit__note--ok'); }
         form.reset();
+        showSuccess(true);
       } else {
         if (status) { status.textContent = 'Something went wrong. Please email me directly.'; status.classList.add('cp-submit__note--err'); }
       }
@@ -729,11 +924,25 @@ import Layout from '../layouts/Layout.astro';
     });
   }
 
+  // Live London time in the info column.
+  let _clockTimer = 0;
+  function initLocalTime() {
+    clearInterval(_clockTimer);
+    const el = document.getElementById('cp-local-time');
+    if (!el) return;
+    const fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+    const tick = () => { el.textContent = fmt.format(new Date()); };
+    tick();
+    _clockTimer = window.setInterval(tick, 15000);
+  }
+
   onReady(initContact);
   onReady(initContactShrink);
+  onReady(initLocalTime);
   document.addEventListener('astro:page-load', initContactFlame);
   document.addEventListener('astro:before-swap', () => {
     _shrinkCleanup?.();
     _shrinkCleanup = null;
+    clearInterval(_clockTimer);
   });
 </script>
