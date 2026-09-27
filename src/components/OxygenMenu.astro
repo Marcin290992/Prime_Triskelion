@@ -189,8 +189,13 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 
 <style>
   #oxygen-menu-root {
-    --ox-menu-btn-size: 68px;
-    --ox-contact-btn-size: 54px;
+    /* Desktop HUD scales with viewport HEIGHT on short laptop screens
+       (full size from ~800px tall up): 68px chrome took ~10% of a 672px
+       screen vs ~6% of 1080p. The top-bar CTA (.nav-cta, global.css) and
+       the menu chip's width follow the same ratio. Mobile overrides these
+       further down. */
+    --ox-menu-btn-size: clamp(56px, 8.5vh, 68px);
+    --ox-contact-btn-size: clamp(46px, 6.75vh, 54px);
     --ox-menu-icon-width: 24px;
     --ox-menu-icon-height: 20px;
     --ox-menu-line-height: 2px;
@@ -530,8 +535,10 @@ const ICON_EMAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
     /* Wide, centered chip instead of the old content-hugging one — no
        overlap risk here the way mobile has with .hud-contact-link (that's
        a separate vertical dock pinned far right, not swapped in this
-       slot), so this can scale freely with viewport width. */
-    width: clamp(200px, 14vw, 260px);
+       slot), so this can scale freely with viewport width. The 26vh cap
+       keeps its proportions when --ox-menu-btn-size shrinks on short
+       laptop screens (≥900px tall: plain 14vw as before). */
+    width: clamp(170px, min(14vw, 26vh), 260px);
     height: var(--ox-menu-btn-size);
     padding: 0 24px;
     gap: 14px;
