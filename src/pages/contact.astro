@@ -341,6 +341,14 @@ const EMAIL = CONTACT_EMAIL;
     max-width: 760px;
   }
   .cp-chip { position: relative; cursor: pointer; }
+  /* The four intent options as an even 2×2 grid (not a 3 + 1 wrap);
+     one column on phones (see the 640px rule). */
+  .cp-chips--intent {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: min(100%, 580px);
+  }
+  .cp-chips--intent .cp-chip span { width: 100%; box-sizing: border-box; }
   .cp-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
   .cp-chip span {
     display: inline-flex;
@@ -526,7 +534,7 @@ const EMAIL = CONTACT_EMAIL;
   }
   @media (max-width: 640px) {
     .cp-chip span { padding: 0.85rem 1.2rem; }
-    .cp-chips--intent { flex-direction: column; align-items: stretch; width: 100%; }
+    .cp-chips--intent { grid-template-columns: 1fr; width: 100%; }
     .cp-chips--intent .cp-chip span { width: 100%; box-sizing: border-box; padding: 1.15rem 1.2rem; font-size: 1rem; }
     /* ≥16px, so iOS Safari doesn't zoom the page on focus */
     .cp-steps input[type="text"],
