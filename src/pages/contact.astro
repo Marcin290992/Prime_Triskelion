@@ -1,9 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { CONTACT_EMAIL } from '../utils/contactLinks';
 
 const SERVICES = ['Branding', 'Website', 'Development', '3D', 'Motion', 'Strategy'];
 const BUDGETS = ['< £5k', '£5–15k', '£15–30k', '£30k+', 'Not sure yet'];
-const EMAIL = 'hello@primetriskelion.com';
+const EMAIL = CONTACT_EMAIL;
 ---
 
 <Layout title="Contact — Prime Triskelion">
@@ -531,8 +532,10 @@ const EMAIL = 'hello@primetriskelion.com';
   import { afterPageTransition } from '../utils/afterPageTransition';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
+  import { copyContactEmail } from '../utils/copyEmail';
+  import { CONTACT_EMAIL } from '../utils/contactLinks';
 
-  const EMAIL = 'hello@primetriskelion.com';
+  const EMAIL = CONTACT_EMAIL;
   type Step = 'intent' | 'name' | 'services' | 'budget' | 'message' | 'email' | 'copy' | 'done';
   type Intent = 'project' | 'hello' | 'copy';
   const PATHS: Record<Intent, Step[]> = {
@@ -644,7 +647,7 @@ const EMAIL = 'hello@primetriskelion.com';
       if (nextIndex < 0 || nextIndex >= path().length) return;
       index = nextIndex;
       const to = currentId();
-      if (to === 'copy') copyEmail(false);
+      if (to === 'copy') void copyEmail(false);
       show(from, to, dir);
     }
 
@@ -725,41 +728,23 @@ const EMAIL = 'hello@primetriskelion.com';
     /* ── Copy email ── */
     const copyText = document.getElementById('cp-copy-text')!;
     const copyTick = document.getElementById('cp-copy-tick')!;
-    function copyEmail(again: boolean) {
-      const done = (ok: boolean) => {
-        copyTick.hidden = !ok;
-        copyText.textContent = ok
-          ? (again ? 'Copied again' : 'Copied to your clipboard')
-          : "Couldn't copy automatically — select the address above.";
-        if (!ok) {
-          const range = document.createRange();
-          range.selectNodeContents(document.getElementById('cp-big-email')!);
-          const sel = getSelection();
-          sel?.removeAllRanges();
-          sel?.addRange(range);
-        }
-        if (ok && again) gsap.fromTo(copyText.parentElement, { opacity: 0.2 }, { opacity: 1, duration: 0.5 });
-      };
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(EMAIL).then(() => done(true), () => done(fallbackCopy()));
-      } else {
-        done(fallbackCopy());
+    // Shared with the HUD dock: toast above MENU + inline status here.
+    async function copyEmail(again: boolean) {
+      const ok = await copyContactEmail(null);
+      copyTick.hidden = !ok;
+      copyText.textContent = ok
+        ? (again ? 'Copied again' : 'Copied to your clipboard')
+        : "Couldn't copy automatically — select the address above.";
+      if (!ok) {
+        const range = document.createRange();
+        range.selectNodeContents(document.getElementById('cp-big-email')!);
+        const sel = getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
       }
+      if (ok && again) gsap.fromTo(copyText.parentElement, { opacity: 0.2 }, { opacity: 1, duration: 0.5 });
     }
-    function fallbackCopy() {
-      const t = document.createElement('textarea');
-      t.value = EMAIL;
-      t.setAttribute('readonly', '');
-      t.style.position = 'fixed';
-      t.style.opacity = '0';
-      document.body.appendChild(t);
-      t.select();
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch { /* unsupported */ }
-      t.remove();
-      return ok;
-    }
-    document.getElementById('cp-copy-again')?.addEventListener('click', () => copyEmail(true), { signal });
+    document.getElementById('cp-copy-again')?.addEventListener('click', () => { void copyEmail(true); }, { signal });
 
     /* ── Submit ── */
     async function submit() {

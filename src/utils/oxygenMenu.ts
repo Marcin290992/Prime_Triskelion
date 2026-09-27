@@ -83,6 +83,38 @@ if (!(window as any).__oxContactDockDelegated) {
   });
 }
 
+// Desktop contact dock (#hud-dock): hover and keyboard focus open it via
+// CSS; a click on the main button toggles .is-open for touch-screen laptops
+// and anyone who clicks rather than hovers. Clicking elsewhere or Escape
+// closes it. Delegated once, like the mobile dock above.
+if (!(window as any).__oxDeskDockDelegated) {
+  (window as any).__oxDeskDockDelegated = true;
+  const setDeskDock = (open: boolean) => {
+    const dock = document.getElementById('hud-dock');
+    if (!dock) return;
+    dock.classList.toggle('is-open', open);
+    document.getElementById('hud-dock-toggle')?.setAttribute('aria-expanded', String(open));
+  };
+  document.addEventListener('click', (e) => {
+    const dock = document.getElementById('hud-dock');
+    if (!dock) return;
+    const target = e.target as Element | null;
+    if (target?.closest('#hud-dock-toggle')) {
+      setDeskDock(!dock.classList.contains('is-open'));
+    } else if (dock.classList.contains('is-open') && !dock.contains(target)) {
+      setDeskDock(false);
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    setDeskDock(false);
+    // A key press turns focus inside the dock into :focus-visible, which
+    // also opens it (CSS) — let go of that focus too.
+    const active = document.activeElement as HTMLElement | null;
+    if (active && document.getElementById('hud-dock')?.contains(active)) active.blur();
+  });
+}
+
 // Generation-independent safety net against "both hamburger AND contact
 // button visible/unclickable at once" on mobile. The scroll-swap itself is
 // now a single class (.hud-scroll-hidden on #ox-hud-mobile — see
@@ -328,7 +360,7 @@ function initOxygenMenu() {
 
   const isMobile = window.matchMedia('(max-width: 1024px)').matches;
 
-  // ── Mobile contact flyout (WhatsApp / email / call tucked behind the
+  // ── Mobile contact flyout (Book a call / Copy email tucked behind the
   // contact button) ──
   let contactDockCloseTimer: ReturnType<typeof setTimeout> | null = null;
 

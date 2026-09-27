@@ -441,11 +441,84 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   height: 22px;
 }
 
+/* "Copy email" in the HUD dock (utils/copyEmail.ts): the envelope turns
+   into a green tick for ~2s after a successful copy. Unscoped because the
+   icons are injected with set:html. */
+.hud-copy-email .hud-icon-check { display: none; }
+.hud-copy-email.is-copied svg:not(.hud-icon-check) { display: none; }
+.hud-copy-email.is-copied .hud-icon-check {
+  display: block;
+  color: rgb(74 222 128);
+  animation: pt-tick-in 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hud-copy-email.is-copied { border-color: rgb(74 222 128 / 0.45); }
+@keyframes pt-tick-in {
+  from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Copy-confirmation toast (utils/copyEmail.ts), rising above the MENU
+   button — bottom centre is where the eye already is. */
+.pt-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + 68px + 1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 9300;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.85rem 1.25rem;
+  background: rgb(8 8 9);
+  border: 1px solid rgb(var(--c-cream) / 0.14);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  font-family: var(--f-body);
+  font-size: 0.9rem;
+  color: rgb(var(--c-cream) / 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translate(-50%, 14px);
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+.pt-toast.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+.pt-toast__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgb(74 222 128);
+  flex-shrink: 0;
+}
+.pt-toast--warn .pt-toast__dot { background: rgb(var(--c-red)); }
+.pt-toast__sep { color: rgb(var(--c-cream) / 0.35); }
+.pt-toast__email { color: rgb(var(--c-cream)); }
+.pt-toast__email--select { user-select: all; -webkit-user-select: all; }
+@media (max-width: 1024px) {
+  .pt-toast {
+    bottom: calc(1.25rem + 52px + 0.9rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.55rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-toast { filter: none; transition: opacity 0.2s ease; }
+}
+
+/* The Contact page is all contact already — no dock on desktop there. */
+body:has(#contact-page) #hud-right-col { display: none; }
+
 /* Mobile contact TOGGLE (.hud-contact-main, OxygenMenu.astro) only — scaled
    down by the same ratio as --ox-contact-btn-size / MENU_SHRINK_SCALE
    (oxygenMenu.ts) so the icon glyph shrinks along with its button instead
    of staying fixed-size inside a smaller box. Deliberately does NOT match
-   .hud-contact-item (the 3 WhatsApp/email/phone icons the flyout reveals
+   .hud-contact-item (the Book a call / Copy email icons the flyout reveals
    on tap): those stay standard-size — once they're the actual interactive
    targets, comfortable tap size matters more than matching the compact
    toggle's footprint. Has to live here (unscoped), not in

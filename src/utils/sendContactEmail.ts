@@ -9,7 +9,7 @@ export interface ContactPayload {
 }
 
 // ── Single shared send path for every contact form on the site ──
-// (the contact page form and the header "Get in touch" modal both call this).
+// (the step-by-step form on the Contact page calls this).
 // Wire up your email API here, e.g. EmailJS:
 //   import emailjs from '@emailjs/browser';
 //   await emailjs.send('SERVICE_ID', 'TEMPLATE_ID', payload, 'PUBLIC_KEY');
