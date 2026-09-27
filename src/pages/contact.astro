@@ -34,7 +34,6 @@ const EMAIL = 'hello@primetriskelion.com';
               <label class="cp-chip"><input type="radio" name="intent" value="copy" /><span>Copy my email</span></label>
             </div>
             <p class="cp-error" data-error>Pick one to continue.</p>
-            <p class="cp-avail"><span class="cp-dot"></span>Open for new projects · Replies within 24 hours</p>
           </div>
         </div>
 
@@ -164,7 +163,9 @@ const EMAIL = 'hello@primetriskelion.com';
     width: 100%;
     height: 100%;
     z-index: -1;
-    opacity: 0.5;
+    /* Lit last in the entrance (after the title and the options). */
+    opacity: 0;
+    transition: opacity 1.8s ease;
     pointer-events: none;
     -webkit-mask-image:
       linear-gradient(to bottom, transparent 0%, black 32%),
@@ -175,6 +176,7 @@ const EMAIL = 'hello@primetriskelion.com';
       linear-gradient(to right, black 0%, black 14%, transparent 34%, transparent 66%, black 86%, black 100%);
     mask-composite: intersect;
   }
+  #contact-flame-canvas.is-lit { opacity: 0.5; }
 
   .cp-progress {
     position: absolute;
@@ -264,15 +266,6 @@ const EMAIL = 'hello@primetriskelion.com';
     font-size: 0.85rem;
     color: rgb(var(--c-red));
     opacity: 0;
-  }
-  .cp-avail {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin: 0.4rem 0 0;
-    font-size: 0.85rem;
-    font-weight: 300;
-    color: rgb(var(--c-cream) / 0.45);
   }
   .cp-dot {
     width: 6px; height: 6px;
@@ -507,8 +500,8 @@ const EMAIL = 'hello@primetriskelion.com';
   @media (max-width: 1024px) {
     .cp-stage { padding-top: clamp(6rem, 13vh, 8rem); padding-bottom: clamp(7rem, 13vh, 8.5rem); }
     /* Faint full-width ambient glow: no clear side column to burn in. */
+    #contact-flame-canvas.is-lit { opacity: 0.16; }
     #contact-flame-canvas {
-      opacity: 0.16;
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
       mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 80%, transparent 100%);
     }
@@ -524,12 +517,12 @@ const EMAIL = 'hello@primetriskelion.com';
     .cp-steps textarea { font-size: 1.1rem; }
     .cp-controls { width: 100%; }
     .cp-controls > * { flex: 1 1 0; min-width: 0; padding: 0 0.6rem; }
-    .cp-avail { font-size: 0.8rem; text-align: center; }
   }
   @media (prefers-reduced-motion: reduce) {
     .cp-next::before,
     .cp-beam::before,
     .cp-dot { animation: none; }
+    #contact-flame-canvas { transition: none; }
   }
 </style>
 
@@ -801,10 +794,13 @@ const EMAIL = 'hello@primetriskelion.com';
       sent = true;
       show(from, 'done', 1);
       // The flame flares up for a moment as the message goes out.
+      // (CSS transition off meanwhile, so it doesn't fight the tween.)
       if (canvas && !reduce) {
+        const base = parseFloat(getComputedStyle(canvas).opacity) || 0.5;
         gsap.timeline()
-          .to(canvas, { opacity: 0.95, duration: 0.5, ease: 'power2.out' })
-          .to(canvas, { opacity: 0.5, duration: 1.6, ease: 'power2.inOut', clearProps: 'opacity' });
+          .set(canvas, { transition: 'none' })
+          .to(canvas, { opacity: Math.min(1, base * 1.9), duration: 0.5, ease: 'power2.out' })
+          .to(canvas, { opacity: base, duration: 1.6, ease: 'power2.inOut', clearProps: 'opacity,transition' });
       }
     }
 
@@ -816,7 +812,9 @@ const EMAIL = 'hello@primetriskelion.com';
       gsap.timeline({ defaults: { ease: 'power4.out' } })
         .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15 * D, stagger: 0.14 }, 0.08)
         .fromTo(intro, { opacity: 0, y: 16, filter: 'blur(8px)' },
-          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.55);
+          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.55)
+        // The flame comes up last, once the title and options have landed.
+        .add(() => canvas?.classList.add('is-lit'), reduce ? 0 : 1.35);
     });
   }
 
