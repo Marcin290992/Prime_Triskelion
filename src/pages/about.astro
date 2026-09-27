@@ -243,12 +243,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    /* Extra clearance beyond the gutter: OxygenMenu's #hud-right-col contact
-       dock is fixed at right:1.5rem, width 54px (~78px from the viewport
-       edge total) on every desktop width (it only hides below 1024px,
-       where this whole section is display:none anyway) — the plain gutter
-       alone left the right-aligned bio lines running underneath it. */
-    padding-right: calc(var(--site-gutter, 2rem) + 5.5rem);
+    padding-right: var(--site-gutter, 2rem);
     z-index: 1;
   }
   .ab-items {
@@ -611,6 +606,11 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     // Extra crop-in zoom on top of the plain cover-fit (1 = none). Match
     // this to whatever CSS transform: scale() the fallback <img> uses.
     zoom?: number;
+    // Cap on the portrait's drawn height as a fraction of the canvas
+    // height (default: no cap). On wide-but-short screens a width-driven
+    // cover-fit makes the photo taller than the screen; this keeps the
+    // top of the head in frame there.
+    maxFillY?: number;
     // Vertical band (0 = bottom of canvas, 1 = top) where painting is
     // allowed to reveal the front portrait. Everything below revealMinY
     // stays fully masked (back portrait only) no matter how much paint
@@ -968,6 +968,8 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // mobile to make the portrait read bigger/closer without changing
       // the container size.
       uniform float u_zoom;
+      // Max drawn height of the photo, as a fraction of the canvas height.
+      uniform float u_maxFillY;
       // 0 = normal fluid-driven mask below; 1 = fully uncovered regardless
       // of what the fluid sim has painted. Driven from scroll progress for
       // a final, guaranteed-clean reveal of the whole portrait (see
@@ -976,7 +978,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       uniform float u_forceReveal;
 
       vec2 cover(vec2 uv, vec2 sz) {
-          float sc = max(u_res.x / sz.x, u_res.y / sz.y) * u_zoom;
+          float sc = min(max(u_res.x / sz.x, u_res.y / sz.y) * u_zoom, u_res.y * u_maxFillY / sz.y);
           return (uv * u_res - (u_res - sz * sc) * vec2(0.5, 1.0 - u_focalY)) / (sz * sc);
       }
 
@@ -1675,6 +1677,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       gl.uniform2fv(displayProgram.uniforms.u_bsz, botSz);
       gl.uniform1f(displayProgram.uniforms.u_focalY, opts.focalY ?? 0.5);
       gl.uniform1f(displayProgram.uniforms.u_zoom, opts.zoom ?? 1);
+      gl.uniform1f(displayProgram.uniforms.u_maxFillY, opts.maxFillY ?? 1000);
       gl.uniform1f(displayProgram.uniforms.u_revealMinY, opts.revealMinY ?? 0);
       gl.uniform1f(displayProgram.uniforms.u_revealMaxY, opts.revealMaxY ?? 0.001);
       gl.uniform1f(displayProgram.uniforms.u_forceReveal, forceReveal);
@@ -1783,6 +1786,15 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // around texcoord 0.167, chin/helmet edge sits around 0.235.
       revealMinY: 0.17,
       revealMaxY: 0.24,
+      // A touch smaller than a plain cover-fit and anchored to the bottom
+      // edge: shoulders still meet the bottom of the screen, and the mask's
+      // ears get headroom instead of touching the top bar. The margin this
+      // opens up is the photo's own black backdrop (edge-clamped texture).
+      zoom: 0.88,
+      focalY: 1,
+      // …and never taller than 92% of the screen, so short/wide laptops
+      // (e.g. ~1507×672) keep the ears in frame too.
+      maxFillY: 0.92,
       onReady: () => canvasEl.classList.add('is-ready'),
     });
     if (!engine) return;

@@ -147,7 +147,6 @@ html:active-view-transition .top-blur {
 ::view-transition-old(pt-logo),
 ::view-transition-old(pt-top-cta),
 ::view-transition-old(pt-menu-btn),
-::view-transition-old(pt-contact-col),
 ::view-transition-old(pt-location),
 ::view-transition-old(pt-clock) {
   animation: none;
@@ -156,7 +155,6 @@ html:active-view-transition .top-blur {
 ::view-transition-new(pt-logo),
 ::view-transition-new(pt-top-cta),
 ::view-transition-new(pt-menu-btn),
-::view-transition-new(pt-contact-col),
 ::view-transition-new(pt-location),
 ::view-transition-new(pt-clock) {
   animation: none;
@@ -441,24 +439,51 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   height: 22px;
 }
 
-/* Mobile contact TOGGLE (.hud-contact-main, OxygenMenu.astro) only — scaled
-   down by the same ratio as --ox-contact-btn-size / MENU_SHRINK_SCALE
-   (oxygenMenu.ts) so the icon glyph shrinks along with its button instead
-   of staying fixed-size inside a smaller box. Deliberately does NOT match
-   .hud-contact-item (the 3 WhatsApp/email/phone icons the flyout reveals
-   on tap): those stay standard-size — once they're the actual interactive
-   targets, comfortable tap size matters more than matching the compact
-   toggle's footprint. Has to live here (unscoped), not in
-   OxygenMenu.astro's own scoped <style> block: these icons are injected
-   via set:html (ICON_WHATSAPP/PHONE/EMAIL), and Astro only ever adds its
-   data-astro-cid scoping attribute to elements present in the component's
-   own static template — never to markup injected that way — so a scoped
-   selector targeting `svg` here can never match these elements at all. */
+/* Copy-confirmation toast (utils/copyEmail.ts, Contact page), rising above the MENU
+   button — bottom centre is where the eye already is. */
+.pt-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.5rem + 68px + 1rem + env(safe-area-inset-bottom, 0px));
+  z-index: 9300;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: calc(100vw - 2rem);
+  padding: 0.85rem 1.25rem;
+  background: rgb(8 8 9);
+  border: 1px solid rgb(var(--c-cream) / 0.14);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.45);
+  font-family: var(--f-body);
+  font-size: 0.9rem;
+  color: rgb(var(--c-cream) / 0.9);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  filter: blur(6px);
+  transform: translate(-50%, 14px);
+  transition: opacity 0.35s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+}
+.pt-toast.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: translate(-50%, 0);
+  pointer-events: auto;
+}
+.pt-toast--warn { border-color: rgb(var(--c-red) / 0.45); }
+.pt-toast__sep { color: rgb(var(--c-cream) / 0.35); }
+.pt-toast__email { color: rgb(var(--c-cream)); }
+.pt-toast__email--select { user-select: all; -webkit-user-select: all; }
 @media (max-width: 1024px) {
-  .hud-contact-main svg {
-    width: calc(22px * 0.68);
-    height: calc(22px * 0.68);
+  .pt-toast {
+    bottom: calc(1.25rem + 52px + 0.9rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.55rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pt-toast { filter: none; transition: opacity 0.2s ease; }
 }
 
 .cta-red { color: rgb(var(--c-red)); }

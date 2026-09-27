@@ -285,17 +285,6 @@
 			max-width: var(--site-max-width);
 			margin: 0 auto;
 			padding: 0 var(--site-gutter);
-			/* Clear the fixed contact dock (#hud-right-col: right 1.5rem +
-			   54px, ~78px from the viewport edge) — the right-aligned
-			   descriptions ran under it on laptop widths. Only adds room
-			   where the centred max-width stage doesn't already sit clear of
-			   it; on wide monitors this resolves to the plain gutter. Same
-			   inset on BOTH sides, so the photo in the middle stays centred
-			   under the MENU button (right-only padding shifted it left). */
-			/* The inner max(0px, …) is the stage's own offset from the screen
-			   edge — 0 below 1440px wide (without it the padding GREW on
-			   narrower laptops and squeezed the columns). */
-			padding-inline: max(var(--site-gutter), calc(7rem - max(0px, (100% - var(--site-max-width)) / 2)));
 			box-sizing: border-box;
 			overflow: hidden;
 		}
