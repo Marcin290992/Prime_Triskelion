@@ -367,6 +367,16 @@ main {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+/* Top-bar CTA (z-index 1002) sits above the menu overlay (999): hide it
+   while the menu is open so it fades out with the overlay coming in and is
+   already invisible — hence unnamed (nameChrome) — when a menu link starts
+   the page transition. It fades back if the menu just closes. */
+html body.oxygen-menu-open #site-cta-wrap,
+html body.oxygen-menu-open #hero-nav-cta-wrap {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Short laptop screens: shrink with the HUD (see --ox-menu-btn-size in
    OxygenMenu.astro) — full size from ~800px tall up. */
 @media (min-width: 1025px) {
