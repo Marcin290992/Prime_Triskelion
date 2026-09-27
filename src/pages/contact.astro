@@ -107,7 +107,7 @@ const EMAIL = CONTACT_EMAIL;
           <p class="cp-meta">Copy my email</p>
           <div class="cp-ans">
             <p class="cp-big-email" id="cp-big-email">{EMAIL}</p>
-            <p class="cp-status" aria-live="polite"><span class="cp-tick" id="cp-copy-tick">✓</span><span id="cp-copy-text">Copied to your clipboard</span></p>
+            <p class="cp-status" aria-live="polite"><span id="cp-copy-text">Copied to your clipboard</span></p>
             <div class="cp-links">
               <a class="cp-link" href={`mailto:${EMAIL}`}>Open mail app ↗</a>
               <button class="cp-link" type="button" id="cp-copy-again">Copy again</button>
@@ -475,8 +475,6 @@ const EMAIL = CONTACT_EMAIL;
     font-size: 1rem;
     color: rgb(var(--c-cream) / 0.6);
   }
-  .cp-tick { color: rgb(74 222 128); }
-  .cp-tick[hidden] { display: none; }
   .cp-links { display: flex; gap: 1.6rem; flex-wrap: wrap; justify-content: center; }
   .cp-link {
     padding: 0 0 0.2rem;
@@ -730,11 +728,9 @@ const EMAIL = CONTACT_EMAIL;
 
     /* ── Copy email ── */
     const copyText = document.getElementById('cp-copy-text')!;
-    const copyTick = document.getElementById('cp-copy-tick')!;
     // Shared with the HUD dock: toast above MENU + inline status here.
     async function copyEmail(again: boolean) {
       const ok = await copyContactEmail(null);
-      copyTick.hidden = !ok;
       copyText.textContent = ok
         ? (again ? 'Copied again' : 'Copied to your clipboard')
         : "Couldn't copy automatically — select the address above.";
