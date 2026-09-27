@@ -5,6 +5,7 @@ export interface ContactPayload {
   company?: string;
   phone?: string;
   service?: string;
+  budget?: string;
 }
 
 // ── Single shared send path for every contact form on the site ──
