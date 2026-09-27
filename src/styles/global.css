@@ -488,14 +488,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   transform: translate(-50%, 0);
   pointer-events: auto;
 }
-.pt-toast__dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: rgb(74 222 128);
-  flex-shrink: 0;
-}
-.pt-toast--warn .pt-toast__dot { background: rgb(var(--c-red)); }
+.pt-toast--warn { border-color: rgb(var(--c-red) / 0.45); }
 .pt-toast__sep { color: rgb(var(--c-cream) / 0.35); }
 .pt-toast__email { color: rgb(var(--c-cream)); }
 .pt-toast__email--select { user-select: all; -webkit-user-select: all; }

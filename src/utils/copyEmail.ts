@@ -43,7 +43,7 @@ function getToast(): HTMLElement {
     el.className = 'pt-toast';
     el.setAttribute('role', 'status');
     el.setAttribute('aria-live', 'polite');
-    el.innerHTML = '<span class="pt-toast__dot" aria-hidden="true"></span><span class="pt-toast__text"></span>';
+    el.innerHTML = '<span class="pt-toast__text"></span>';
     document.body.appendChild(el);
   }
   return el;

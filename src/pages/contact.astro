@@ -357,7 +357,10 @@ const EMAIL = CONTACT_EMAIL;
   /* ── Controls: BACK | 1 / 5 | NEXT ─────────────────────────────────── */
   .cp-controls {
     grid-area: 2 / 1;
-    display: flex;
+    /* Hidden until a path is chosen — set from JS (syncChrome). Hidden by
+       default so it can't flash on the intent screen before the script
+       has run (it did on mobile). */
+    display: none;
     align-items: stretch;
     justify-content: center;
     gap: 0.5rem;
@@ -586,7 +589,7 @@ const EMAIL = CONTACT_EMAIL;
       const id = currentId();
       const questions = p.length - 1;
       // Controls only exist inside a path; copy/done have their own links.
-      controls.style.display = id === 'intent' || id === 'copy' || id === 'done' ? 'none' : '';
+      controls.style.display = id === 'intent' || id === 'copy' || id === 'done' ? 'none' : 'flex';
       countEl.textContent = `${index} / ${questions}`;
       nextLabel.textContent = id === 'email' ? 'Send' : 'Next';
       updateWaiting();
