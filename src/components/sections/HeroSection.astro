@@ -402,6 +402,7 @@
 <script>
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
+	import { createMenuCtaGate } from '../../utils/menuCtaGate';
 	gsap.registerPlugin(ScrollTrigger);
 
 	let _heroWordTimer: number | null = null;
@@ -680,8 +681,9 @@
 
 		function update() {
 			const scrollY = window.scrollY || window.pageYOffset;
-			wrap!.classList.toggle('hero-nav-cta--visible', scrollY > hero!.offsetHeight * 0.6);
+			wrap!.classList.toggle('hero-nav-cta--visible', gate.allow(scrollY > hero!.offsetHeight * 0.6));
 		}
+		const gate = createMenuCtaGate(update);
 
 		let ticking = false;
 		function onScroll() {
@@ -699,6 +701,7 @@
 
 		document.addEventListener('astro:before-swap', () => {
 			window.removeEventListener('scroll', onScroll);
+			gate.destroy();
 		}, { once: true });
 	}
 
