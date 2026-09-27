@@ -307,11 +307,17 @@
          both fixed bars
        • more inset for the flipped copy. */
   @media (min-width: 1025px) and (max-height: 1100px) {
+    /* 6rem, not a %: the title has to start below the fixed top bar (logo
+       + "Start a project", ~65–77px tall) — the old top: 3.5% slid it ~40px
+       up under the bar. Height-capped font (5.4vh) keeps it compact on
+       short laptop screens. */
     #sc-title {
-      top: 3.5%;
-      font-size: clamp(1.5rem, 2.9vw, 3.1rem);
+      top: 6rem;
+      font-size: clamp(1.3rem, min(2.9vw, 5.4vh), 3.1rem);
     }
-    #sc-scene { padding-top: 12vh; padding-bottom: 12vh; }
+    /* Extra top padding moves the flex-centred card stack down with the
+       lowered title. */
+    #sc-scene { padding-top: calc(12vh + 3rem); padding-bottom: 12vh; }
     #sc-cards { transform: scale(calc(1.34 - 0.18 * var(--zoom))); }
     .sc-card {
       width: auto;
@@ -322,6 +328,19 @@
       font-size: clamp(1.6rem, 2.3vw, 2.3rem);
       overflow-wrap: break-word;
     }
+  }
+  /* Short laptop screens: smaller cards so the stack fits between the
+     lowered title and the bottom MENU button. */
+  @media (min-width: 1025px) and (max-height: 820px) {
+    .sc-card { height: clamp(220px, 36vh, 500px); }
+    /* …and tighter flipped copy, or the description pushed the pillar
+       name out over the top edge of the smaller cards. */
+    .sc-back { padding: clamp(0.9rem, 1.9vh, 1.3rem); }
+    .sc-name {
+      font-size: clamp(1.15rem, 3.3vh, 1.6rem);
+      margin: 0.2rem 0 0.5rem;
+    }
+    .sc-desc { font-size: clamp(0.68rem, 1.7vh, 0.8rem); line-height: 1.4; }
   }
 
   /* ───────── Mobile fallback ───────── */

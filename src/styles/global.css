@@ -367,6 +367,15 @@ main {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
+/* Short laptop screens: shrink with the HUD (see --ox-menu-btn-size in
+   OxygenMenu.astro) — full size from ~800px tall up. */
+@media (min-width: 1025px) {
+  .nav-cta {
+    min-height: clamp(40px, 6vh, 48px);
+    padding: clamp(0.55rem, 1.1vh, 0.75rem) clamp(1.1rem, 2.1vh, 1.4rem);
+    font-size: clamp(0.85rem, 1.45vh, 0.95rem);
+  }
+}
 
 @media (max-width: 1024px) {
   .h-hero-cta-wrap { width: 100%; margin-top: 0 !important; }

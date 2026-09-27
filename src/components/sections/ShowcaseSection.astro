@@ -232,8 +232,10 @@
 		   logo, and that clearance has to stay constant, not shrink along
 		   with the title. Real font-size (not transform: scale()) so the
 		   text reflows and stays crisp instead of getting resampled. */
+		/* 13vh cap: on wide-but-short laptops the 8vw title ate the height
+		   the rail below needs; unchanged on ≥900px-tall screens. */
 		.showcase__intro-content .showcase__title {
-			font-size: calc(clamp(3.5rem, 8vw, 11rem) * var(--title-scale, 1));
+			font-size: calc(clamp(3.5rem, min(8vw, 13vh), 11rem) * var(--title-scale, 1));
 		}
 		.stack { display: none; }
 	}
@@ -266,8 +268,11 @@
 			   just lifts the whole vertically-centered rail — image, numbers,
 			   descriptions — clear of that button instead of centering the
 			   photo right under it. The JS reads the stage's resulting height
-			   for its travel math, so the choreography stays in proportion. */
-			padding-bottom: clamp(90px, 12vh, 132px);
+			   for its travel math, so the choreography stays in proportion.
+			   The button's top edge sits ~92px up (1.5rem + 68px), so the
+			   124px floor keeps ~30px clear on short laptop screens — the old
+			   90px floor let the photo touch the button there. */
+			padding-bottom: clamp(124px, 16vh, 150px);
 		}
 		.process-rail__stage {
 			flex: 1 1 auto;
@@ -280,6 +285,12 @@
 			max-width: var(--site-max-width);
 			margin: 0 auto;
 			padding: 0 var(--site-gutter);
+			/* Clear the fixed contact dock (#hud-right-col: right 1.5rem +
+			   54px, ~78px from the viewport edge) — the right-aligned
+			   descriptions ran under it on laptop widths. Only adds room
+			   where the centred max-width stage doesn't already sit clear of
+			   it; on wide monitors this resolves to the plain gutter. */
+			padding-right: max(var(--site-gutter), calc(7rem - (100vw - var(--site-max-width)) / 2));
 			box-sizing: border-box;
 			overflow: hidden;
 		}
@@ -301,7 +312,9 @@
 			width: 100%;
 			font-family: var(--f-display);
 			font-weight: 700;
-			font-size: clamp(3rem, 6vw, 6rem);
+			/* Height-capped too (10vh) so it shrinks with short laptop
+			   screens along with the photo. */
+			font-size: clamp(3rem, min(6vw, 10vh), 6rem);
 			line-height: 1;
 			letter-spacing: -0.01em;
 			color: rgba(255,255,255,0.16);
@@ -335,7 +348,7 @@
 		.process-desc h3 {
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.6rem, 2.6vw, 2.6rem);
+			font-size: clamp(1.4rem, min(2.6vw, 4.4vh), 2.6rem);
 			letter-spacing: -0.01em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
@@ -358,8 +371,11 @@
 			   above or the fixed menu button below on shorter laptops —
 			   object-fit: cover just crops in that case. The JS reads the
 			   resulting stage height for its travel math, so the number /
-			   description choreography stays in proportion. */
-			width: clamp(360px, 40vw, 600px);
+			   description choreography stays in proportion. Also capped by
+			   viewport height (64vh), so on wide-but-short laptops the frame
+			   scales down with the screen instead of filling the whole stage;
+			   ≥900px-tall screens are unaffected. */
+			width: clamp(320px, min(40vw, 64vh), 600px);
 			max-width: 100%;
 			aspect-ratio: 3 / 2;
 			max-height: 100%;
