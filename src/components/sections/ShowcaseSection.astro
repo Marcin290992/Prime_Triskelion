@@ -289,8 +289,10 @@
 			   54px, ~78px from the viewport edge) — the right-aligned
 			   descriptions ran under it on laptop widths. Only adds room
 			   where the centred max-width stage doesn't already sit clear of
-			   it; on wide monitors this resolves to the plain gutter. */
-			padding-right: max(var(--site-gutter), calc(7rem - (100vw - var(--site-max-width)) / 2));
+			   it; on wide monitors this resolves to the plain gutter. Same
+			   inset on BOTH sides, so the photo in the middle stays centred
+			   under the MENU button (right-only padding shifted it left). */
+			padding-inline: max(var(--site-gutter), calc(7rem - (100% - var(--site-max-width)) / 2));
 			box-sizing: border-box;
 			overflow: hidden;
 		}

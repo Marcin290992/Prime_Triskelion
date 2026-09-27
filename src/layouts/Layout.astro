@@ -422,10 +422,16 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     'hud-location': 'pt-location',
     'hud-time': 'pt-clock',
   };
+  // Hidden chrome (e.g. the top-bar CTA before the page is scrolled) is left
+  // unnamed: WebKit's snapshot of a named element drops the element's own
+  // opacity, so Safari flashed the invisible "Start a project" button in
+  // the top-right corner for the length of the transition. Unnamed, it
+  // stays in the root snapshot, where its opacity: 0 holds.
   function nameChrome(on: boolean) {
     for (const [id, name] of Object.entries(CHROME_NAMES)) {
       const el = document.getElementById(id);
-      if (el) el.style.viewTransitionName = on ? name : '';
+      if (!el) continue;
+      el.style.viewTransitionName = on && parseFloat(getComputedStyle(el).opacity) > 0.01 ? name : '';
     }
   }
   document.addEventListener('astro:after-preparation', () => nameChrome(true));
@@ -447,7 +453,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     if (done) done.then(() => nameChrome(false), () => nameChrome(false));
     else nameChrome(false);
   });
-  document.addEventListener('astro:after-swap', () => nameChrome(true));
 
   // Border beams (.hud-spin-border::before, `global-spin` 4s) on the
   // chrome buttons: re-inserting an element restarts its CSS animations,
@@ -507,4 +512,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     const loc = document.getElementById('hud-location');
     if (loc) loc.style.opacity = '1';
   });
+  // Registered after the listener above so the new page's HUD is already
+  // visible when nameChrome checks opacity.
+  document.addEventListener('astro:after-swap', () => nameChrome(true));
 </script>
