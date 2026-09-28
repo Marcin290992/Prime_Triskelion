@@ -21,8 +21,8 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   <!-- Dark overlay that fades away on scroll, revealing the portrait -->
   <div id="about-overlay">
     <p class="about-title">
-      <span class="about-title__l">Who's</span>
-      <span class="about-title__r">Behind?</span>
+      <span class="about-title__l"><span class="about-title__w">Who's</span></span>
+      <span class="about-title__r"><span class="about-title__w">Behind?</span></span>
     </p>
   </div>
   <!-- Scroll space so the page can actually scroll -->
@@ -198,10 +198,11 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     white-space: nowrap;
     line-height: 1;
   }
-  /* Hidden until the entrance blurs them in (initAboutTitle). Only opacity
-     and filter — their x is driven by the scroll-reveal scrub. */
-  .about-title__l,
-  .about-title__r { opacity: 0; filter: blur(18px); }
+  /* Hidden until the entrance blurs them in (initAboutTitle). The entrance
+     runs on these inner spans: the outer __l/__r belong to the scroll
+     split, which scrubs their x — animating (and clearing) a transform on
+     the same elements made the text jump mid-split. */
+  .about-title__w { display: inline-block; opacity: 0; filter: blur(18px); }
   .about-title__l { color: rgb(var(--c-cream)); }
   .about-title__r { color: rgb(var(--c-red)); }
   #about-space {
@@ -2043,7 +2044,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   // of just appearing with the page.
   function initAboutTitle() {
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
-    const words = document.querySelectorAll<HTMLElement>(isMob ? '.am-who-w' : '.about-title__l, .about-title__r');
+    const words = document.querySelectorAll<HTMLElement>(isMob ? '.am-who-w' : '.about-title__w');
     afterPageTransition(() => {
       revealAfterHero();
       if (!words.length) return;

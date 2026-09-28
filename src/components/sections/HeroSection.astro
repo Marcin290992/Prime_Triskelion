@@ -410,9 +410,13 @@
 	let _heroParallaxST: any = null;
 	let _heroMobileRevealST: any[] = [];
 
-	function initHeroDynamicWord() {
+	// Puts the first red word in place right away — it comes in as part of
+	// the claim's own focus pull, no separate letter animation — and returns
+	// the function that starts the word rotation, so the intro can hold it
+	// back until its main entrance has landed.
+	function initHeroDynamicWord(): () => void {
 		const wordNode = document.getElementById('hero-dynamic-word') as HTMLElement;
-		if (!wordNode) return;
+		if (!wordNode) return () => {};
 
 		const words = ['OBSESSION', 'CLARITY', 'IMPACT'];
 		let currentIndex = 0;
@@ -456,11 +460,9 @@
 			});
 		}
 
-		const initialSpans = splitToSpans(words[currentIndex]);
-		gsap.set(initialSpans, { opacity: 0, filter: 'blur(10px)' });
-		playIn(initialSpans);
+		splitToSpans(words[currentIndex]);
 
-		_heroWordTimer = window.setInterval(() => {
+		function swapWord() {
 			if (isAnimating) return;
 			isAnimating = true;
 			const currentSpans = Array.from(wordNode.querySelectorAll<HTMLSpanElement>('span'));
@@ -470,12 +472,18 @@
 				gsap.set(newSpans, { opacity: 0, filter: 'blur(10px)' });
 				playIn(newSpans, () => { isAnimating = false; });
 			});
-		}, 4200);
+		}
 
-		document.addEventListener('astro:before-swap', () => {
-			if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
-		}, { once: true });
+		// First change right away, then the regular rhythm.
+		return () => {
+			swapWord();
+			_heroWordTimer = window.setInterval(swapWord, 4200);
+		};
 	}
+
+	document.addEventListener('astro:before-swap', () => {
+		if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
+	});
 
 	function initHeroReveal() {
 		_heroParallaxST?.kill();
@@ -615,11 +623,14 @@
 				},
 			});
 
-			// 1. The claim — focus pull, the dynamic word blurring in with it.
+			// Red word: in place now (enters with the claim); its rotation
+			// starts once the light from above is fully up (5).
+			const startDynamicWord = initHeroDynamicWord();
+
+			// 1. The claim — focus pull.
 			tl.to(claim, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, 0.1)
 			  .to(claim, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut' }, 0.1)
-			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1)
-			  .add(() => { initHeroDynamicWord(); }, 0.35);
+			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1);
 
 			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
@@ -639,8 +650,12 @@
 				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
 			}
 
-			// 4. Last: the light from above.
+			// 4. The light from above comes up over the finished composition.
 			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 2.6);
+
+			// 5. Word rotation — first change the moment the light is fully up
+			// (or once the text has landed, if the light was already on).
+			tl.add(startDynamicWord, pastHero ? 2.4 : 5.2);
 		}
 
 		// Start as the new page appears (not before) when arriving via a
