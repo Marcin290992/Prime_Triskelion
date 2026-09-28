@@ -1404,7 +1404,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
     // Content below the hero fades in after it (mobile only, see
     // revealAfterHero) — called unconditionally so it can never stay hidden.
-    afterPageTransition(() => revealAfterHero(900));
+    afterPageTransition(() => revealAfterHero(550));
     if (isMob) {
       initHeroReveal();
     } else {

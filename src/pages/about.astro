@@ -138,10 +138,9 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   #about-canvas.is-ready {
     opacity: 1;
   }
-  /* Subtle grain + vignette over the fluid-sim canvas — the mobile portrait
-     already gets a film-grain overlay (see .am-hero::before further down);
-     this ties the desktop WebGL render to the same filmic treatment
-     instead of reading as a flat, purely digital render. pointer-events:
+  /* Subtle grain + vignette over the desktop fluid-sim canvas, so the
+     WebGL render gets a filmic treatment instead of reading as a flat,
+     purely digital render (mobile has no grain). pointer-events:
      none so it never blocks the paint interaction on the canvas below it. */
   #about-wrap::after {
     content: '';
@@ -199,6 +198,10 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     white-space: nowrap;
     line-height: 1;
   }
+  /* Hidden until the entrance blurs them in (initAboutTitle). Only opacity
+     and filter — their x is driven by the scroll-reveal scrub. */
+  .about-title__l,
+  .about-title__r { opacity: 0; filter: blur(18px); }
   .about-title__l { color: rgb(var(--c-cream)); }
   .about-title__r { color: rgb(var(--c-red)); }
   #about-space {
@@ -386,16 +389,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       padding: 0 var(--site-gutter, 1.5rem);
       pointer-events: none;
     }
-    .am-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
-      background-size: 200px 200px;
-      opacity: 0.045;
-      pointer-events: none;
-      z-index: 1;
-    }
     /* "Who's Behind?" obok siebie, na środku */
     .am-who {
       display: flex;
@@ -550,7 +543,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
-  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
   import { initDitherPortrait, type DitherPortraitHandle } from '../utils/ditherPortrait';
 
@@ -2045,23 +2038,22 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     }, { once: true });
   }
 
-  // Mobile "Who's Behind?" title — same entrance as the Projects/Services
-  // headers so every subpage title blurs in instead of just fading with
-  // the page transition.
-  function initAboutMobileTitle() {
+  // "Who's Behind?" title (mobile and desktop versions) — same entrance as
+  // the Projects/Services headers so every subpage title blurs in instead
+  // of just appearing with the page.
+  function initAboutTitle() {
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
-    const words = document.querySelectorAll<HTMLElement>('.am-who-w');
+    const words = document.querySelectorAll<HTMLElement>(isMob ? '.am-who-w' : '.about-title__l, .about-title__r');
     afterPageTransition(() => {
       revealAfterHero();
-      if (!isMob || !words.length) return;
-      gsap.timeline({ defaults: { ease: 'power4.out' } })
-        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+      if (!words.length) return;
+      titleIn(gsap.timeline(), words);
     });
   }
 
   function initAbout() {
     initAboutDesktop();
-    initAboutMobileTitle();
+    initAboutTitle();
     initAboutMobileReveal();
   }
 

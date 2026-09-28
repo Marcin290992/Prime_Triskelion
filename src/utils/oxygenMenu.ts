@@ -8,6 +8,8 @@
 import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
+import { cutNextTransition } from './afterPageTransition';
+import { warmPages } from './pageCache';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
 // compacting on scroll, see handleScroll() below).
@@ -373,6 +375,9 @@ function initOxygenMenu() {
     // listener above.
     const btn = document.getElementById('hud-menu-btn');
     const overlay = document.getElementById('ox-menu-overlay');
+    // Fetch the menu's pages while it's open, so picking one doesn't have
+    // to wait on the network (see pageCache.ts).
+    warmPages([...(overlay?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? [])].map((a) => a.href));
     state.isMenuOpen = true;
     state.menuAnimating = true;
     state.scrollAccum = 0;
@@ -456,7 +461,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
+        }).to(content, { opacity: 0, duration: 0.28, ease: 'power2.inOut' });
         return;
       }
 
@@ -531,15 +536,16 @@ function initOxygenMenu() {
     async function activate() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
-      // On touch: hold the active state briefly so the user sees the highlight
-      // Long enough for the text roll + sibling dim (OxygenMenu.astro) to
-      // play out before the fade-out starts. Touch has no hover lead-in —
-      // the 0.5s roll only starts at the tap — so it needs the full roll
-      // plus a beat to register; with a mouse it's already rolled on hover.
+      // Hold the active state just long enough for the text roll + sibling
+      // dim (OxygenMenu.astro, 0.34s) to read, then leave. Touch has no
+      // hover lead-in — the roll only starts at the tap — so it gets the
+      // full roll plus a beat; with a mouse it has already rolled on hover.
+      // A touch slower than the Contact page's step transitions — any quicker
+      // and the jump to the next page felt abrupt.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, noHover ? 650 : 280));
+      await new Promise(r => setTimeout(r, noHover ? 520 : 240));
       await closeMenu(true, true);  // keep black overlay visible, blur out
-      if (href) navigate(href); // View Transition starts from black screen
+      if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
 
     link.addEventListener('touchstart', (e) => {

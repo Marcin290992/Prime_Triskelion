@@ -163,7 +163,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				to   { opacity: 0; }
 			}
 			@keyframes vt-blur-in {
-				from { opacity: 0; filter: blur(20px); }
+				from { opacity: 0; filter: blur(10px); }
 				to   { opacity: 1; filter: blur(0px); }
 			}
 			/* Touch devices: plain fade, no blur. Blurring the whole new-page
@@ -194,14 +194,14 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				background-color: rgb(var(--c-bg));
 			}
 
-			/* Root page transition — same fade-out/blur-in as before, just
-			   tightened (~60% of the original durations/delay) so navigating
-			   feels snappier without changing the style of the transition. */
+			/* Root page transition — quick fade-out, then a short, soft blur-in
+			   on the Contact page's step-transition easing, so moving between
+			   pages feels as fast as moving between its questions. */
 			::view-transition-old(root) {
-				animation: vt-fade-out 0.2s ease-in both;
+				animation: vt-fade-out 0.16s ease-in both;
 			}
 			::view-transition-new(root) {
-				animation: vt-blur-in 0.32s ease-out 0.2s both;
+				animation: vt-blur-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 			}
 
 			/* Touch devices: no blur at all, just a fade (see vt-fade-in-mobile) —
@@ -213,9 +213,19 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			   flickering right through it. */
 			@media (pointer: coarse) {
 				::view-transition-new(root) {
-					animation: vt-fade-in-mobile 0.25s ease-out 0.15s both;
+					animation: vt-fade-in-mobile 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 				}
 			}
+
+			/* Leaving through the menu (html.vt-cut, see
+			   utils/afterPageTransition.ts): the old page is already plain
+			   black, so no cross-fade — a straight cut to the new page, whose
+			   title then sharpens in from the first frame. */
+			html.vt-cut::view-transition-old(root),
+			html.vt-cut::view-transition-new(root) {
+				animation: none;
+			}
+			html.vt-cut::view-transition-old(root) { opacity: 0; }
 
 			/* Fallback for browsers with no native Cross-Document View
 			   Transitions support (e.g. Safari on iOS 17) — Astro's router
@@ -240,15 +250,18 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			   avoid on the native path. Fading body instead leaves html's
 			   black behind it untouched. */
 			html[data-astro-transition-fallback="old"] body {
-				animation: vt-fade-out 0.2s ease-in both;
+				animation: vt-fade-out 0.16s ease-in both;
 			}
 			html[data-astro-transition-fallback="new"] body {
-				animation: vt-blur-in 0.32s ease-out 0.2s both;
+				animation: vt-blur-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 			}
 			@media (pointer: coarse) {
 				html[data-astro-transition-fallback="new"] body {
-					animation: vt-fade-in-mobile 0.25s ease-out 0.15s both;
+					animation: vt-fade-in-mobile 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 				}
+			}
+			html.vt-cut[data-astro-transition-fallback] body {
+				animation: none;
 			}
 
 			/* iOS Safari 26+ tints the status-bar strip and the area behind
@@ -319,6 +332,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   import gsap from 'gsap';
   import { isSafari } from '../utils/isSafari';
   import '../utils/afterPageTransition';
+  import '../utils/pageCache';
 
   let _layoutLenis: Lenis | null = null;
   let _layoutRaf: ((t: number) => void) | null = null;
