@@ -143,7 +143,27 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 		<slot name="head" />
 		<script is:inline>
 			if ('scrollRestoration' in history) {
-				history.scrollRestoration = 'auto';
+				// A reload is a restart from the top (and the full entrance, see
+				// entranceMode in utils/afterPageTransition.ts), wherever the
+				// page was scrolled to. Everything else keeps the browser's own
+				// restoration.
+				var navEntry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+				if (navEntry && navEntry.type === 'reload') {
+					history.scrollRestoration = 'manual';
+					window.scrollTo(0, 0);
+					// Astro's router restores history.state's scroll when it
+					// starts (a module script, so after this) — undo that as
+					// soon as it has run, and once more on load.
+					document.addEventListener('DOMContentLoaded', function () {
+						window.scrollTo(0, 0);
+					}, { once: true });
+					window.addEventListener('load', function () {
+						window.scrollTo(0, 0);
+						setTimeout(function () { history.scrollRestoration = 'auto'; }, 0);
+					}, { once: true });
+				} else {
+					history.scrollRestoration = 'auto';
+				}
 			}
 		</script>
 		<style>

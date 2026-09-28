@@ -632,6 +632,14 @@
 				const els = [...claimLines, ...support];
 				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
 				if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
+				// First page of the visit: OxygenMenu pinned the MENU button
+				// (and the hero owns the location label) at 0 for the full
+				// intro's reveal — this path never runs it, so show them here
+				// or they stay invisible (the MENU button vanished this way).
+				if (!chromeShown) {
+					gsap.to(hudMenu, { opacity: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'opacity' });
+					if (hudLoc) gsap.to(hudLoc, { opacity: 1, x: 0, duration: 0.5, ease: 'power2.out' });
+				}
 				gsap.set(els, { opacity: 1, filter: 'none', y: 0, scale: 1 });
 				hero!.style.opacity = '1';
 				(window as any).__ptHeroTextReady = true;

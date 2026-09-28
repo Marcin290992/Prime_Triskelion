@@ -66,7 +66,7 @@ document.addEventListener('astro:before-swap', (e) => {
 
 // ── Entrance mode, per page view ──
 // 'full'  first time this page is seen in the session — the whole entrance;
-// 'short' seen before in this session (or a reload) — one quick, light
+// 'short' seen before in this session (a reload restarts: 'full') — one quick, light
 //         focus pull, no choreography, so going round the site doesn't mean
 //         sitting through the same intro again;
 // 'none'  arrived with the browser's back/forward — straight to the finished
@@ -100,7 +100,10 @@ function decide(traverse: boolean, reload = false): EntranceMode {
 	const seen = readSeen().has(path);
 	markSeen(path);
 	if (traverse) return 'none';
-	return seen || reload ? 'short' : 'full';
+	// A reload is a restart: back at the top (Layout.astro) with the full
+	// entrance, as on a first visit.
+	if (reload) return 'full';
+	return seen ? 'short' : 'full';
 }
 let mode: EntranceMode = (() => {
 	const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
