@@ -140,10 +140,11 @@ export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 
 	if (mode === 'short') {
 		// All words together, lighter blur, ~0.8s.
 		gsap.set(words, { filter: 'blur(8px)' });
-		// End on an explicit filter:none, never clearProps — that drops back to
-		// the page CSS's starting blur(18px) and leaves the title blurred.
-		return tl.to(words, { opacity: 1, filter: 'blur(0px)', duration: 0.8 * speed, ease: 'power2.out',
-			onComplete: () => { gsap.set(words, { filter: 'none' }); } }, 0);
+		// Ends on an inline blur(0px) and leaves it there. Never clearProps —
+		// that drops back to the page CSS's starting blur(18px) and leaves the
+		// title blurred — and no switch to filter:none at the end either:
+		// iOS Safari re-rasterizes the text on that switch, a visible blink.
+		return tl.to(words, { opacity: 1, filter: 'blur(0px)', duration: 0.8 * speed, ease: 'power2.out' }, 0);
 	}
 	const stagger = 0.3 * speed;
 	return tl
@@ -166,14 +167,13 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 	}
 	if (mode === 'short') {
 		gsap.set(el, { filter: 'blur(6px)' });
-		return tl.to(el, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7 * speed, ease: 'power2.out',
-			onComplete: () => { gsap.set(el, { filter: 'none' }); } }, 0.15);
+		// Stays on blur(0px) — see titleIn.
+		return tl.to(el, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7 * speed, ease: 'power2.out' }, 0.15);
 	}
 	gsap.set(el, { filter: 'blur(10px)' });
 	return tl
 		.to(el, { opacity: 1, duration: 0.8 * speed, ease: 'sine.inOut' }, at)
-		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut',
-			onComplete: () => { gsap.set(el, { filter: 'none' }); } }, at);
+		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut' }, at);
 }
 
 export function afterPageTransition(fn: () => void): void {

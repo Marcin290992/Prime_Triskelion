@@ -647,8 +647,8 @@
 				// Text: quick, light focus pull (same as subpageMode 'short').
 				gsap.set(els, { opacity: 0, filter: 'blur(8px)' });
 				gsap.to(els, {
+					// Stays on blur(0px): a switch to filter:none blinks on iOS Safari.
 					opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out', stagger: 0.08,
-					onComplete: () => { gsap.set(els, { filter: 'none' }); },
 				});
 				const rays = document.getElementById('rays-canvas');
 				// Top-down sweep: a soft-edged mask whose edge travels from
