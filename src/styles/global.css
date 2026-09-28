@@ -309,6 +309,11 @@ main {
   pointer-events: none;
   z-index: 2;
 }
+/* Home hero's CTA: no glare until the intro has finished (#hero gets
+   .pt-intro-done from HeroSection.astro), then the first sweep comes a
+   beat after — not in the middle of the entrance. */
+#hero:not(.pt-intro-done) .h-hero-cta--fixed::before { animation: none; }
+#hero.pt-intro-done .h-hero-cta--fixed::before { animation-delay: 0.6s; }
 @keyframes cta-glare {
   0%   { transform: translateX(-160%); }
   22%  { transform: translateX(160%); }

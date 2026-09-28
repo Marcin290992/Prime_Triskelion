@@ -640,6 +640,7 @@
 					// Restored below the hero (nothing to watch) or reduce
 					// motion: light just on.
 					gsap.set('#rays-canvas', { opacity: 1 });
+					hero!.classList.add('pt-intro-done');
 					gsap.delayedCall(1.0, startWord);
 					return;
 				}
@@ -665,6 +666,7 @@
 					delay: 0.5,
 					onComplete: () => {
 						if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; }
+						hero!.classList.add('pt-intro-done'); // CTA glare may start
 						startWord();
 					},
 				})
@@ -730,6 +732,9 @@
 
 			// 4. Word rotation, once everything has landed.
 			tl.add(startDynamicWord, 4.0);
+
+			// Intro over — the CTA's glare sweep may start (global.css).
+			tl.add(() => hero!.classList.add('pt-intro-done'), 4.4);
 		}
 
 		// Start as the new page appears (not before) when arriving via a
