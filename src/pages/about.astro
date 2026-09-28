@@ -539,7 +539,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
-  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, TITLE_IN } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
   import { initDitherPortrait, type DitherPortraitHandle } from '../utils/ditherPortrait';
 
@@ -2044,7 +2044,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       revealAfterHero();
       if (!isMob || !words.length) return;
       gsap.timeline({ defaults: { ease: 'power4.out' } })
-        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+        .to(words, { opacity: 1, filter: 'blur(0px)', duration: TITLE_IN.duration, stagger: TITLE_IN.stagger }, TITLE_IN.at);
     });
   }
 

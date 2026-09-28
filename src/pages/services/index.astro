@@ -461,7 +461,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, TITLE_IN } from '../../utils/afterPageTransition';
   import { trackLeaving } from '../../utils/leavingPage';
 
   let _rowObserver: IntersectionObserver | null = null;
@@ -476,8 +476,8 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords,
-        { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
-        0.08
+        { opacity: 1, filter: 'blur(0px)', duration: TITLE_IN.duration, stagger: TITLE_IN.stagger },
+        TITLE_IN.at
       );
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
       // Mobile: the hint comes in while the title is still sharpening (the

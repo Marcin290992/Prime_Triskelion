@@ -30,6 +30,14 @@ document.addEventListener('astro:before-swap', (e) => {
 	pending = started.catch(() => {});
 });
 
+// Page-title blur-in, shared by the subpage heroes. Touch: starts at once
+// (no 0.08s lead-in, the wait before it already felt long) but sharpens a
+// little slower, so it reads as a deliberate reveal rather than a snap.
+const TOUCH = window.matchMedia('(pointer: coarse)').matches;
+export const TITLE_IN = TOUCH
+	? { duration: 1.4, stagger: 0.17, at: 0 }
+	: { duration: 1.15, stagger: 0.14, at: 0.08 };
+
 export function afterPageTransition(fn: () => void): void {
 	if (pending) pending.then(fn);
 	else fn();
