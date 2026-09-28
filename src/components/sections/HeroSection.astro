@@ -614,10 +614,11 @@
 			const pastHero = (window.scrollY || window.pageYOffset) > hero!.offsetHeight * 0.3;
 
 			// Coming back to Home (seen before this session, a reload, or the
-			// browser's back/forward): the text is simply there, on black, and
-			// only the light comes down from above — a beat of black first so
-			// it reads, then it rises and sweeps down the frame; the words
-			// start rotating once it's full. The chrome isn't hidden on these
+			// browser's back/forward): the text comes in with the same quick,
+			// light focus pull as the subpages, on black, and the light comes
+			// down from above — a beat of black first so it reads, then it
+			// rises and sweeps down the frame; the words start rotating once
+			// it's full. The chrome isn't hidden on these
 			// paths — it just stays as it is.
 			// Reduce motion: always the finished hero at once, light simply on.
 			const reduce = reducedMotion();
@@ -642,6 +643,12 @@
 					gsap.delayedCall(1.0, startWord);
 					return;
 				}
+				// Text: quick, light focus pull (same as subpageMode 'short').
+				gsap.set(els, { opacity: 0, filter: 'blur(8px)' });
+				gsap.to(els, {
+					opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out', stagger: 0.08,
+					onComplete: () => { gsap.set(els, { filter: 'none' }); },
+				});
 				const rays = document.getElementById('rays-canvas');
 				// Top-down sweep: a soft-edged mask whose edge travels from
 				// above the frame to below it, while the light also fades up.
