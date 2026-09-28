@@ -462,8 +462,7 @@
 
 		splitToSpans(words[currentIndex]);
 
-		return () => {
-		_heroWordTimer = window.setInterval(() => {
+		function swapWord() {
 			if (isAnimating) return;
 			isAnimating = true;
 			const currentSpans = Array.from(wordNode.querySelectorAll<HTMLSpanElement>('span'));
@@ -473,7 +472,12 @@
 				gsap.set(newSpans, { opacity: 0, filter: 'blur(10px)' });
 				playIn(newSpans, () => { isAnimating = false; });
 			});
-		}, 4200);
+		}
+
+		// First change right away, then the regular rhythm.
+		return () => {
+			swapWord();
+			_heroWordTimer = window.setInterval(swapWord, 4200);
 		};
 	}
 
@@ -620,7 +624,7 @@
 			});
 
 			// Red word: in place now (enters with the claim); its rotation
-			// starts once the main entrance has landed (4).
+			// starts once the light from above is fully up (5).
 			const startDynamicWord = initHeroDynamicWord();
 
 			// 1. The claim — focus pull.
@@ -646,12 +650,12 @@
 				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
 			}
 
-			// 4. Word rotation, after the main entrance — first change comes one
-			// full hold (4.2s) later, so the whole line reads first.
-			tl.add(startDynamicWord, 2.4);
-
-			// 5. Last: the light from above.
+			// 4. The light from above comes up over the finished composition.
 			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 2.6);
+
+			// 5. Word rotation — first change the moment the light is fully up
+			// (or once the text has landed, if the light was already on).
+			tl.add(startDynamicWord, pastHero ? 2.4 : 5.2);
 		}
 
 		// Start as the new page appears (not before) when arriving via a
