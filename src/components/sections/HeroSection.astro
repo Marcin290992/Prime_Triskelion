@@ -585,10 +585,10 @@
 			// ── Intro: one cinematic sequence on every device ──
 			// Same focus-pull language as the subpage titles (titleIn): each
 			// element rises out of the black as a soft shape first (opacity,
-			// sine), focus lands after (blur, power2.inOut). The claim leads,
-			// the supporting lines follow once it's finding focus, the site
-			// chrome after that (first visit only), and the light from above
-			// comes up last, over the finished composition.
+			// sine), focus lands after (blur, power2.inOut). It opens on black;
+			// the light from above rises first and the claim comes in as it
+			// reaches it, then the supporting lines, the site chrome (first
+			// visit only), and finally the word rotation.
 			const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
 			const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
 			const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
@@ -661,18 +661,25 @@
 			});
 
 			// Red word: in place now (enters with the claim); its rotation
-			// starts once the light from above is fully up (5).
+			// starts once everything has landed (4).
 			const startDynamicWord = initHeroDynamicWord();
 
-			// 1. The claim — focus pull, white line first, the red one 0.3s after.
-			const stagger = 0.3;
-			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, 0.1)
-			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, 0.1)
-			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, 0.1);
+			// 0. Black for a breath, then the light from above starts to rise —
+			// it reveals the composition rather than decorating it afterwards.
+			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.0, ease: 'sine.inOut' }, 0.3);
 
-			// 2. Supporting lines, one after another as the claim finds focus.
+			// 1. The claim, as if caught by the light (it's about half up) —
+			// focus pull, white line first, the red one 0.3s after.
+			const stagger = 0.3;
+			const claimAt = 0.9;
+			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, claimAt)
+			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, claimAt)
+			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
+
+			// 2. Supporting lines, one after another once the light is full and
+			// the claim is finding focus.
 			support.forEach((el, i) => {
-				const at = 1.25 + i * 0.22;
+				const at = 2.0 + i * 0.22;
 				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
 				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
 			});
@@ -680,20 +687,16 @@
 			tl.add(() => {
 				(window as any).__ptHeroTextReady = true;
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-			}, 2.3);
+			}, 2.9);
 
 			// 3. Site chrome (first page of the visit only).
 			if (!chromeShown) {
-				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.0);
-				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
+				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6);
 			}
 
-			// 4. The light from above comes up over the finished composition.
-			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 2.6);
-
-			// 5. Word rotation — first change the moment the light is fully up
-			// (or once the text has landed, if the light was already on).
-			tl.add(startDynamicWord, pastHero ? 2.4 : 5.2);
+			// 4. Word rotation, once everything has landed.
+			tl.add(startDynamicWord, 4.0);
 		}
 
 		// Start as the new page appears (not before) when arriving via a
