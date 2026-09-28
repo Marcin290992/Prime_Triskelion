@@ -820,11 +820,11 @@ const EMAIL = CONTACT_EMAIL;
     const intro = page.querySelector<HTMLElement>('.cp-intro');
     afterPageTransition(() => {
       gsap.timeline({ defaults: { ease: 'power4.out' } })
-        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15 * D, stagger: 0.14 }, 0.08)
+        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 0.8 * D, stagger: 0.1 }, 0.06)
         .fromTo(intro, { opacity: 0, y: 16, filter: 'blur(8px)' },
-          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.55)
+          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.65 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.36)
         // The flame comes up last, once the title and options have landed.
-        .add(() => canvas?.classList.add('is-lit'), reduce ? 0 : 1.35);
+        .add(() => canvas?.classList.add('is-lit'), reduce ? 0 : 0.95);
     });
   }
 

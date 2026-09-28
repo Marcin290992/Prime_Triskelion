@@ -98,7 +98,7 @@ body::after {
    utils/afterPageTransition.ts). `html body` outranks Astro's scoped
    `.class[data-astro-cid]` rules so a page's own opacity can't win. */
 @media (max-width: 1024px) {
-  html body [data-after-hero] { transition: opacity 0.8s ease; }
+  html body [data-after-hero] { transition: opacity 0.55s ease; }
   html body [data-after-hero]:not(.is-in) { opacity: 0; }
 }
 

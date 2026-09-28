@@ -2044,7 +2044,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       revealAfterHero();
       if (!isMob || !words.length) return;
       gsap.timeline({ defaults: { ease: 'power4.out' } })
-        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
+        .to(words, { opacity: 1, filter: 'blur(0px)', duration: 0.8, stagger: 0.1 }, 0.06);
     });
   }
 

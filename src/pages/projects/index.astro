@@ -567,15 +567,15 @@ const projects = [
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
     // Mobile: the hint comes in while the title is still sharpening (the
     // centred first screen is otherwise empty); desktop keeps its later cue.
-    const hintDelay = window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100;
+    const hintDelay = window.matchMedia('(max-width: 1024px)').matches ? 600 : 780;
     // Don't bring the hint in on a page that's already being left (see
     // trackLeaving) — it flashed in just ahead of the next page's hero.
     const isLeaving = trackLeaving();
 
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 }, 0.08);
-      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
+      if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: 0.8, stagger: 0.1 }, 0.06);
+      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.32);
       setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
     });
