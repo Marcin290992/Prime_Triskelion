@@ -54,6 +54,37 @@ document.addEventListener('astro:before-swap', (e) => {
 	});
 });
 
+// Unstyled flash fix. Before the swap, the new page's stylesheets that this
+// page doesn't already have are inlined as <style> (their text comes from
+// the HTTP cache — the router has just preloaded them). A <style> applies
+// in the same frame it's inserted, where a newly inserted <link> — even a
+// cached one — applies asynchronously on iOS Safari: the swapped-in page
+// painted a frame or two unstyled (on back navigations under the view
+// transition too, as a flicker). The CSS only uses absolute url()s, so it
+// reads the same inlined. The guard below stays as a fallback for a sheet
+// that couldn't be inlined.
+document.addEventListener('astro:before-preparation', (e: any) => {
+	const load = e.loader;
+	e.loader = async () => {
+		await load();
+		const doc: Document | undefined = e.newDocument;
+		if (!doc) return;
+		const links = Array.from(doc.querySelectorAll<HTMLLinkElement>('head link[rel="stylesheet"][href]'))
+			.filter((l) => !document.querySelector(`head link[rel="stylesheet"][href="${l.getAttribute('href')}"]`));
+		await Promise.all(links.map(async (l) => {
+			const href = l.getAttribute('href')!;
+			try {
+				const res = await fetch(href);
+				if (!res.ok) return;
+				const style = doc.createElement('style');
+				style.setAttribute('data-pt-href', href);
+				style.textContent = await res.text();
+				l.replaceWith(style);
+			} catch {}
+		}));
+	};
+});
+
 // Unstyled flash guard. The router waits for a new page's stylesheets to
 // download before swapping, not for them to apply — iOS Safari can paint the
 // swapped-in page a frame or two before its (cached) sheet is in effect,
