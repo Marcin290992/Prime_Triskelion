@@ -58,6 +58,53 @@ document.addEventListener('astro:before-swap', (e) => {
 	pending = started.catch(() => {});
 });
 
+// ── Entrance mode, per page view ──
+// 'full'  first time this page is seen in the session — the whole entrance;
+// 'short' seen before in this session (or a reload) — one quick, light
+//         focus pull, no choreography, so going round the site doesn't mean
+//         sitting through the same intro again;
+// 'none'  arrived with the browser's back/forward — straight to the finished
+//         page, nobody expects an intro when returning to where they were.
+// Decided once per page view, on the swap (or at load), before the page's
+// own scripts ask for it.
+export type EntranceMode = 'full' | 'short' | 'none';
+const SEEN_KEY = 'pt-seen-pages';
+const seenMem = new Set<string>();
+function readSeen(): Set<string> {
+	try {
+		const raw = sessionStorage.getItem(SEEN_KEY);
+		if (raw) (JSON.parse(raw) as string[]).forEach((p) => seenMem.add(p));
+	} catch {}
+	return seenMem;
+}
+function markSeen(path: string): void {
+	seenMem.add(path);
+	try { sessionStorage.setItem(SEEN_KEY, JSON.stringify([...seenMem])); } catch {}
+}
+const pathKey = () => location.pathname.replace(/\/$/, '') || '/';
+function decide(traverse: boolean, reload = false): EntranceMode {
+	const path = pathKey();
+	const seen = readSeen().has(path);
+	markSeen(path);
+	if (traverse) return 'none';
+	return seen || reload ? 'short' : 'full';
+}
+let mode: EntranceMode = (() => {
+	const nav = performance.getEntriesByType?.('navigation')[0] as PerformanceNavigationTiming | undefined;
+	return decide(nav?.type === 'back_forward', nav?.type === 'reload');
+})();
+let traverseNext = false;
+document.addEventListener('astro:before-preparation', (e: any) => {
+	traverseNext = e.navigationType === 'traverse';
+});
+document.addEventListener('astro:after-swap', () => {
+	mode = decide(traverseNext);
+	traverseNext = false;
+});
+export function entranceMode(): EntranceMode {
+	return mode;
+}
+
 // Page-title entrance, shared by the subpage heroes (every device) — a
 // camera focus pull rather than a pop: each word rises out of the black as
 // a soft shape first (opacity, ~0.9s), focus lands after (blur, ~1.8s),
@@ -69,6 +116,12 @@ document.addEventListener('astro:before-swap', (e) => {
 // hidden (opacity 0, blur 18px) in each page's CSS.
 export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 0, speed = 1): gsap.core.Timeline {
 	if (!words.length) return tl;
+	if (mode === 'none') { gsap.set(words, { opacity: 1, filter: 'none' }); return tl; }
+	if (mode === 'short') {
+		// All words together, lighter blur, ~0.8s.
+		gsap.set(words, { filter: 'blur(8px)' });
+		return tl.to(words, { opacity: 1, filter: 'blur(0px)', duration: 0.8 * speed, ease: 'power2.out', clearProps: 'filter' }, 0);
+	}
 	const stagger = 0.3 * speed;
 	return tl
 		.to(words, { opacity: 1, duration: 0.9 * speed, ease: 'sine.inOut', stagger }, at)
@@ -82,6 +135,11 @@ export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 
 // title is still blurring read as out of order.
 export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number, speed = 1): gsap.core.Timeline {
 	if (!el) return tl;
+	if (mode === 'none') { gsap.set(el, { opacity: 1, y: 0, filter: 'none' }); return tl; }
+	if (mode === 'short') {
+		gsap.set(el, { filter: 'blur(6px)' });
+		return tl.to(el, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7 * speed, ease: 'power2.out', clearProps: 'filter' }, 0.15);
+	}
 	gsap.set(el, { filter: 'blur(10px)' });
 	return tl
 		.to(el, { opacity: 1, duration: 0.8 * speed, ease: 'sine.inOut' }, at)
@@ -98,6 +156,7 @@ export function afterPageTransition(fn: () => void): void {
 // mobile only) fades in. Call from inside the page's afterPageTransition
 // callback, right after starting the title's own animation.
 export function revealAfterHero(delayMs = 400): void {
+	if (mode !== 'full') delayMs = mode === 'none' ? 0 : Math.min(delayMs, 200);
 	setTimeout(() => {
 		document.querySelectorAll('[data-after-hero]').forEach((el) => el.classList.add('is-in'));
 	}, delayMs);

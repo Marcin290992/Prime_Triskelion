@@ -1274,7 +1274,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
-  import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, entranceMode } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1293,7 +1293,16 @@ import CtaSection from '../components/sections/CtaSection.astro';
     ].filter((el): el is HTMLElement => !!el);
     if (!els.length) return;
 
+    // Back/forward: finished page straight away; repeat visit: quicker.
+    const mode = entranceMode();
+    if (mode === 'none') { gsap.set(els, { opacity: 1, y: 0, filter: 'none' }); return; }
     gsap.set(els, { opacity: 0, y: 10, filter: 'blur(8px)' });
+    if (mode === 'short') {
+      afterPageTransition(() => {
+        gsap.to(els, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', clearProps: 'filter' });
+      });
+      return;
+    }
     afterPageTransition(() => {
       gsap.to(els, {
         opacity: 1, y: 0, filter: 'blur(0px)',
