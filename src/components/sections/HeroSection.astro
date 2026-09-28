@@ -410,9 +410,12 @@
 	let _heroParallaxST: any = null;
 	let _heroMobileRevealST: any[] = [];
 
-	function initHeroDynamicWord() {
+	// Sets the red word up hidden right away and returns the function that
+	// starts it (its first blur-in, then the rotation), so the intro can hold
+	// it back until its main entrance has landed.
+	function initHeroDynamicWord(): () => void {
 		const wordNode = document.getElementById('hero-dynamic-word') as HTMLElement;
-		if (!wordNode) return;
+		if (!wordNode) return () => {};
 
 		const words = ['OBSESSION', 'CLARITY', 'IMPACT'];
 		let currentIndex = 0;
@@ -458,6 +461,8 @@
 
 		const initialSpans = splitToSpans(words[currentIndex]);
 		gsap.set(initialSpans, { opacity: 0, filter: 'blur(10px)' });
+
+		return () => {
 		playIn(initialSpans);
 
 		_heroWordTimer = window.setInterval(() => {
@@ -471,11 +476,12 @@
 				playIn(newSpans, () => { isAnimating = false; });
 			});
 		}, 4200);
-
-		document.addEventListener('astro:before-swap', () => {
-			if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
-		}, { once: true });
+		};
 	}
+
+	document.addEventListener('astro:before-swap', () => {
+		if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
+	});
 
 	function initHeroReveal() {
 		_heroParallaxST?.kill();
@@ -615,11 +621,13 @@
 				},
 			});
 
-			// 1. The claim — focus pull, the dynamic word blurring in with it.
+			// Red word: hidden now, starts once the main entrance has landed (4).
+			const startDynamicWord = initHeroDynamicWord();
+
+			// 1. The claim — focus pull.
 			tl.to(claim, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, 0.1)
 			  .to(claim, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut' }, 0.1)
-			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1)
-			  .add(() => { initHeroDynamicWord(); }, 0.35);
+			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1);
 
 			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
@@ -639,7 +647,10 @@
 				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
 			}
 
-			// 4. Last: the light from above.
+			// 4. The red word, after the main entrance (claim + supporting lines).
+			tl.add(startDynamicWord, 2.4);
+
+			// 5. Last: the light from above.
 			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 2.6);
 		}
 
