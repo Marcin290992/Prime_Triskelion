@@ -217,6 +217,16 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}
 			}
 
+			/* Touch, leaving through the menu (html.vt-cut, see
+			   utils/afterPageTransition.ts): the old page is already plain
+			   black, so no cross-fade — a straight cut to the new page, whose
+			   title then sharpens in from the first frame. */
+			html.vt-cut::view-transition-old(root),
+			html.vt-cut::view-transition-new(root) {
+				animation: none;
+			}
+			html.vt-cut::view-transition-old(root) { opacity: 0; }
+
 			/* Fallback for browsers with no native Cross-Document View
 			   Transitions support (e.g. Safari on iOS 17) — Astro's router
 			   still runs its own "animate" fallback in that case (the
@@ -249,6 +259,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				html[data-astro-transition-fallback="new"] body {
 					animation: vt-fade-in-mobile 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0s both;
 				}
+			}
+			html.vt-cut[data-astro-transition-fallback] body {
+				animation: none;
 			}
 
 			/* iOS Safari 26+ tints the status-bar strip and the area behind

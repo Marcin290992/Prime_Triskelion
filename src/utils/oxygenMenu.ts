@@ -8,6 +8,7 @@
 import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
+import { cutNextTransition } from './afterPageTransition';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
 // compacting on scroll, see handleScroll() below).
@@ -540,7 +541,7 @@ function initOxygenMenu() {
       const noHover = window.matchMedia('(hover: none)').matches;
       await new Promise(r => setTimeout(r, noHover ? 520 : 240));
       await closeMenu(true, true);  // keep black overlay visible, blur out
-      if (href) navigate(href); // View Transition starts from black screen
+      if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
 
     link.addEventListener('touchstart', (e) => {

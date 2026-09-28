@@ -16,9 +16,39 @@
 // Touch: no wait at all — its fade-in starts almost at once (Layout.astro),
 // and after the menu the old page is plain black anyway, so any extra beat
 // here just read as a black screen hanging before the title.
-const START_AFTER_READY_MS = window.matchMedia('(pointer: coarse)').matches ? 0 : 160;
+const TOUCH = window.matchMedia('(pointer: coarse)').matches;
+const START_AFTER_READY_MS = TOUCH ? 0 : 160;
 
 let pending: Promise<unknown> | null = null;
+
+// Touch, leaving through the menu: by the time navigate() runs the menu has
+// already faded its content out over its black overlay, so the old page is
+// plain black and cross-fading it into the new (black, title still hidden)
+// page only adds dead time. html.vt-cut switches the root fades off
+// (Layout.astro) and the title starts sharpening from the very first frame.
+// Re-applied after the swap because Astro replaces <html>'s attributes.
+let cutNext = false;
+export function cutNextTransition(): void {
+	if (!TOUCH) return;
+	cutNext = true;
+	document.documentElement.classList.add('vt-cut');
+}
+let cutting = false;
+document.addEventListener('astro:after-swap', () => {
+	if (cutting) document.documentElement.classList.add('vt-cut');
+});
+document.addEventListener('astro:before-swap', (e) => {
+	if (!cutNext) return;
+	cutNext = false;
+	cutting = true;
+	// Keep the class until the transition is over (dropping it earlier would
+	// re-apply the root fades mid-transition), then clear it.
+	const done = e.viewTransition?.finished ?? Promise.resolve();
+	done.catch(() => {}).then(() => {
+		cutting = false;
+		document.documentElement.classList.remove('vt-cut');
+	});
+});
 
 document.addEventListener('astro:before-swap', (e) => {
 	const vt = e.viewTransition;
@@ -33,9 +63,8 @@ document.addEventListener('astro:before-swap', (e) => {
 // Page-title blur-in, shared by the subpage heroes. Touch: starts at once
 // (no 0.08s lead-in, the wait before it already felt long) but sharpens a
 // little slower, so it reads as a deliberate reveal rather than a snap.
-const TOUCH = window.matchMedia('(pointer: coarse)').matches;
 export const TITLE_IN = TOUCH
-	? { duration: 1.4, stagger: 0.17, at: 0 }
+	? { duration: 1.7, stagger: 0.2, at: 0 }
 	: { duration: 1.15, stagger: 0.14, at: 0.08 };
 
 export function afterPageTransition(fn: () => void): void {
