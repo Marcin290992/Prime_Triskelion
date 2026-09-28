@@ -105,13 +105,12 @@ export function entranceMode(): EntranceMode {
 	return mode;
 }
 
-// Subpages (titles, leads, hints — everything but the home hero): on
-// mobile the short entrance is the only one, first visit included — the
-// full choreography read as too long there. Back/forward still 'none';
-// desktop keeps all three.
+// Subpages (titles, leads, hints — everything but the home hero): the
+// short entrance is the only one, first visit included, on every device —
+// the full choreography read as too long there. Back/forward still 'none'.
+// The home hero keeps all three (entranceMode).
 export function subpageMode(): EntranceMode {
-	if (mode === 'full' && window.matchMedia('(max-width: 1024px)').matches) return 'short';
-	return mode;
+	return mode === 'full' ? 'short' : mode;
 }
 
 // Page-title entrance, shared by the subpage heroes (every device) — a
