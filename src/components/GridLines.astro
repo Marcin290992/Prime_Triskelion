@@ -23,12 +23,11 @@
 <script>
   import gsap from 'gsap';
 
-  const LINE_ALPHA = 0.055;
-  // Phones/tablets: crisp full-width lines on a 3x screen read much brighter
-  // than the old soft CSS ones did — thinner (one device px less) and a bit
-  // dimmer there.
-  const MOBILE_ALPHA = 0.04;
-  const mobileQuery = window.matchMedia('(max-width: 1024px)');
+  // Barely-there, the same on every page and device: on pure black this
+  // lifts a line by ~6/255 — how visible the lines read in the home hero,
+  // where the same lines sit on a background the rays already lift to
+  // ~15–20. (0.055 made them glow on the subpages' true black.)
+  const LINE_ALPHA = 0.024;
 
   function drawGridLines() {
     const canvas = document.getElementById('grid-lines') as HTMLCanvasElement | null;
@@ -41,8 +40,7 @@
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, W, H);
-    const mobile = mobileQuery.matches;
-    const alpha = mobile ? MOBILE_ALPHA : LINE_ALPHA;
+    const alpha = LINE_ALPHA;
     // Fades in over the top 10% and out over the bottom 10%, as before.
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, 'rgba(255,255,255,0)');
@@ -50,10 +48,8 @@
     g.addColorStop(0.9, `rgba(255,255,255,${alpha})`);
     g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = g;
-    // Desktop: 1 device px on 1x/1.25x/1.5x screens, 2 on retina (= 1 CSS
-    // px there). Mobile: one device px less (2 on 3x phones, 1 on 2x).
-    const full = Math.round(dpr);
-    const lineW = Math.max(1, mobile && full > 1 ? full - 1 : full);
+    // 1 CSS px, snapped: 1 device px on 1x/1.25x, 2 on 1.5x/2x, 3 on 3x.
+    const lineW = Math.max(1, Math.round(dpr));
     for (const f of [0.2, 0.4, 0.6, 0.8]) {
       ctx.fillRect(Math.round(W * f), 0, lineW, H);
     }
