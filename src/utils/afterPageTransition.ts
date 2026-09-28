@@ -35,6 +35,27 @@ let cutting = false;
 document.addEventListener('astro:after-swap', () => {
 	if (cutting) document.documentElement.classList.add('vt-cut');
 });
+
+// Touch, in-page links (not the menu, not back/forward): the same shape as
+// leaving through the menu — the page fades down to black (while the next
+// one loads, so it costs no extra wait when that takes longer), then a cut
+// and the new title focuses in. The quick root cross-fade they used to get
+// read as abrupt next to the menu's exit. Only the page content fades —
+// the logo, menu and edge strips stay (the set html.ox-menu-covered hides).
+document.addEventListener('astro:before-preparation', (e: any) => {
+	if (cutNext || e.navigationType === 'traverse') return;
+	if (!window.matchMedia('(pointer: coarse)').matches) return;
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+	const content = document.querySelectorAll<HTMLElement>(
+		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
+	);
+	const fade = new Promise<void>((resolve) => {
+		gsap.to(content, { opacity: 0, duration: 0.5, ease: 'power2.inOut', onComplete: () => resolve() });
+	});
+	const load = e.loader;
+	e.loader = async () => { await Promise.all([load(), fade]); };
+	cutNextTransition();
+});
 document.addEventListener('astro:before-swap', (e) => {
 	if (!cutNext) return;
 	cutNext = false;
@@ -52,6 +73,56 @@ document.addEventListener('astro:before-swap', (e) => {
 		cutting = false;
 		document.documentElement.classList.remove('vt-cut');
 	});
+});
+
+// Unstyled flash fix. Before the swap, the new page's stylesheets that this
+// page doesn't already have are inlined as <style> (their text comes from
+// the HTTP cache — the router has just preloaded them). A <style> applies
+// in the same frame it's inserted, where a newly inserted <link> — even a
+// cached one — applies asynchronously on iOS Safari: the swapped-in page
+// painted a frame or two unstyled (on back navigations under the view
+// transition too, as a flicker). The CSS only uses absolute url()s, so it
+// reads the same inlined. The guard below stays as a fallback for a sheet
+// that couldn't be inlined.
+document.addEventListener('astro:before-preparation', (e: any) => {
+	const load = e.loader;
+	e.loader = async () => {
+		await load();
+		const doc: Document | undefined = e.newDocument;
+		if (!doc) return;
+		const links = Array.from(doc.querySelectorAll<HTMLLinkElement>('head link[rel="stylesheet"][href]'))
+			.filter((l) => !document.querySelector(`head link[rel="stylesheet"][href="${l.getAttribute('href')}"]`));
+		await Promise.all(links.map(async (l) => {
+			const href = l.getAttribute('href')!;
+			try {
+				const res = await fetch(href);
+				if (!res.ok) return;
+				const style = doc.createElement('style');
+				style.setAttribute('data-pt-href', href);
+				style.textContent = await res.text();
+				l.replaceWith(style);
+			} catch {}
+		}));
+	};
+});
+
+// Unstyled flash guard. The router waits for a new page's stylesheets to
+// download before swapping, not for them to apply — iOS Safari can paint the
+// swapped-in page a frame or two before its (cached) sheet is in effect,
+// and with the menu's cut there's no view-transition snapshot covering
+// that anymore. Until every new sheet has loaded, html.pt-styles-wait
+// hides the page content (global.css) — logo, menu and the black stay.
+document.addEventListener('astro:after-swap', () => {
+	const waiting = Array.from(document.querySelectorAll<HTMLLinkElement>('head link[rel="stylesheet"]'))
+		.filter((l) => !l.sheet);
+	if (!waiting.length) return;
+	const root = document.documentElement;
+	root.classList.add('pt-styles-wait');
+	Promise.all(waiting.map((l) => new Promise<void>((r) => {
+		l.addEventListener('load', () => r(), { once: true });
+		l.addEventListener('error', () => r(), { once: true });
+		setTimeout(r, 1500); // never leave the page hidden
+	}))).then(() => requestAnimationFrame(() => root.classList.remove('pt-styles-wait')));
 });
 
 document.addEventListener('astro:before-swap', (e) => {
@@ -116,6 +187,19 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
+	// Back/forward lands mid-page (restored scroll) — on mobile right in the
+	// content below the hero, which starts hidden and fades in 0.8s after
+	// the title (revealAfterHero). Show it now, before the first paint and
+	// without the fade: it read as a blink on Projects, where you come back
+	// into the middle of the list.
+	if (mode === 'none') {
+		document.querySelectorAll<HTMLElement>('[data-after-hero]').forEach((el) => {
+			el.style.transition = 'none';
+			el.classList.add('is-in');
+			void el.offsetHeight;
+			el.style.transition = '';
+		});
+	}
 });
 export function entranceMode(): EntranceMode {
 	return mode;
