@@ -456,7 +456,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
+        }).to(content, { opacity: 0, duration: 0.2, ease: 'power2.inOut' });
         return;
       }
 
@@ -531,13 +531,13 @@ function initOxygenMenu() {
     async function activate() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
-      // On touch: hold the active state briefly so the user sees the highlight
-      // Long enough for the text roll + sibling dim (OxygenMenu.astro) to
-      // play out before the fade-out starts. Touch has no hover lead-in —
-      // the 0.5s roll only starts at the tap — so it needs the full roll
-      // plus a beat to register; with a mouse it's already rolled on hover.
+      // Hold the active state just long enough for the text roll + sibling
+      // dim (OxygenMenu.astro, 0.34s) to read, then leave. Touch has no
+      // hover lead-in — the roll only starts at the tap — so it gets the
+      // full roll plus a beat; with a mouse it has already rolled on hover.
+      // Tuned to feel as quick as the Contact page's step transitions.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, noHover ? 650 : 280));
+      await new Promise(r => setTimeout(r, noHover ? 380 : 140));
       await closeMenu(true, true);  // keep black overlay visible, blur out
       if (href) navigate(href); // View Transition starts from black screen
     }
