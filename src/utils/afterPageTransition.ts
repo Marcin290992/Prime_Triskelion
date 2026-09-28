@@ -57,10 +57,23 @@ document.addEventListener('astro:before-swap', (e) => {
 	pending = started.catch(() => {});
 });
 
-// Page-title blur-in, shared by the subpage heroes (every device): starts at
-// once (no lead-in, the wait before it already felt long) but sharpens
-// slowly, so it reads as a deliberate reveal rather than a snap.
-export const TITLE_IN = { duration: 1.7, stagger: 0.2, at: 0 };
+// Page-title entrance, shared by the subpage heroes (every device) — a
+// camera focus pull rather than a pop: each word rises out of the black as
+// a soft shape first (opacity, ~0.9s), focus lands after (blur, ~1.8s),
+// and it settles from a hair oversized to 100% meanwhile. Gentle in/out
+// curves throughout — power4.out did ~70% of the change in the first
+// third of a second, so it read as a snap however long it ran. Words are
+// 0.3s apart so the next one arrives as the previous one finds focus.
+// Starts at once: the wait before it already felt long. The words start
+// hidden (opacity 0, blur 18px) in each page's CSS.
+export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 0, speed = 1): gsap.core.Timeline {
+	if (!words.length) return tl;
+	const stagger = 0.3 * speed;
+	return tl
+		.to(words, { opacity: 1, duration: 0.9 * speed, ease: 'sine.inOut', stagger }, at)
+		.to(words, { filter: 'blur(0px)', duration: 1.8 * speed, ease: 'power2.inOut', stagger }, at)
+		.fromTo(words, { scale: 1.04 }, { scale: 1, duration: 2 * speed, ease: 'power2.out', stagger, clearProps: 'scale' }, at);
+}
 
 export function afterPageTransition(fn: () => void): void {
 	if (pending) pending.then(fn);

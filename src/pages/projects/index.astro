@@ -555,7 +555,7 @@ const projects = [
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero, TITLE_IN } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn } from '../../utils/afterPageTransition';
   import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
@@ -574,7 +574,7 @@ const projects = [
 
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      if (titleWords.length) tl.to(titleWords, { opacity: 1, filter: 'blur(0px)', duration: TITLE_IN.duration, stagger: TITLE_IN.stagger }, TITLE_IN.at);
+      titleIn(tl, titleWords);
       if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
       setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
