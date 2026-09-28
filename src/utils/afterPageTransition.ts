@@ -12,16 +12,14 @@
 // on every page from the first load — a page script loaded only after
 // navigating to it would otherwise miss the swap it needs to wait for.
 
-// ≈ when the new page is starting to show (its fade-in has a ~0.1s delay).
-// Touch: no wait at all — its fade-in starts almost at once (Layout.astro),
-// and after the menu the old page is plain black anyway, so any extra beat
-// here just read as a black screen hanging before the title.
-const TOUCH = window.matchMedia('(pointer: coarse)').matches;
-const START_AFTER_READY_MS = TOUCH ? 0 : 160;
+// No extra wait after the transition is ready: after the menu the old page
+// is plain black anyway (see vt-cut below), and any beat here just read as a
+// black screen hanging before the title. Same on every device.
+const START_AFTER_READY_MS = 0;
 
 let pending: Promise<unknown> | null = null;
 
-// Touch, leaving through the menu: by the time navigate() runs the menu has
+// Leaving through the menu: by the time navigate() runs the menu has
 // already faded its content out over its black overlay, so the old page is
 // plain black and cross-fading it into the new (black, title still hidden)
 // page only adds dead time. html.vt-cut switches the root fades off
@@ -29,7 +27,6 @@ let pending: Promise<unknown> | null = null;
 // Re-applied after the swap because Astro replaces <html>'s attributes.
 let cutNext = false;
 export function cutNextTransition(): void {
-	if (!TOUCH) return;
 	cutNext = true;
 	document.documentElement.classList.add('vt-cut');
 }
@@ -60,12 +57,10 @@ document.addEventListener('astro:before-swap', (e) => {
 	pending = started.catch(() => {});
 });
 
-// Page-title blur-in, shared by the subpage heroes. Touch: starts at once
-// (no 0.08s lead-in, the wait before it already felt long) but sharpens a
-// little slower, so it reads as a deliberate reveal rather than a snap.
-export const TITLE_IN = TOUCH
-	? { duration: 1.7, stagger: 0.2, at: 0 }
-	: { duration: 1.15, stagger: 0.14, at: 0.08 };
+// Page-title blur-in, shared by the subpage heroes (every device): starts at
+// once (no lead-in, the wait before it already felt long) but sharpens
+// slowly, so it reads as a deliberate reveal rather than a snap.
+export const TITLE_IN = { duration: 1.7, stagger: 0.2, at: 0 };
 
 export function afterPageTransition(fn: () => void): void {
 	if (pending) pending.then(fn);
