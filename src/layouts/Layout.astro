@@ -150,10 +150,18 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				var navEntry = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
 				if (navEntry && navEntry.type === 'reload') {
 					history.scrollRestoration = 'manual';
-					window.scrollTo(0, 0);
 					// Astro's router restores history.state's scroll when it
-					// starts (a module script, so after this) — undo that as
-					// soon as it has run, and once more on load.
+					// starts (a module script, so after this). Zero the saved
+					// position before it reads it — scrolling back afterwards
+					// let the mid-page position paint for a frame first, a
+					// visible flash of the old spot before the restart.
+					try {
+						if (history.state && typeof history.state === 'object') {
+							var st = Object.assign({}, history.state, { scrollX: 0, scrollY: 0 });
+							history.replaceState(st, '');
+						}
+					} catch (e) {}
+					window.scrollTo(0, 0);
 					document.addEventListener('DOMContentLoaded', function () {
 						window.scrollTo(0, 0);
 					}, { once: true });
