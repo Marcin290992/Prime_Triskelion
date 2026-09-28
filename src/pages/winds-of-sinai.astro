@@ -1299,7 +1299,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
     gsap.set(els, { opacity: 0, y: 10, filter: 'blur(8px)' });
     if (mode === 'short') {
       afterPageTransition(() => {
-        gsap.to(els, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', clearProps: 'filter' });
+        gsap.to(els, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.6, ease: 'power2.out',
+          onComplete: () => { gsap.set(els, { filter: 'none' }); } });
       });
       return;
     }
