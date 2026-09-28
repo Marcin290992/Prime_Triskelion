@@ -1,22 +1,21 @@
 ---
 ---
 
-<div id="grid-lines" aria-hidden="true"></div>
+<canvas id="grid-lines" aria-hidden="true"></canvas>
 
 <style>
+  /* Four faint vertical lines at 20/40/60/80%, drawn on a canvas at the
+     screen's real pixel resolution so each line lands on whole device
+     pixels. As a CSS background, a 1px line fell between device pixels on
+     scaled displays (Windows 125%/150%, retina) and rendered as two
+     half-bright columns — the lines looked doubled and greyed the black. */
   #grid-lines {
     position: fixed;
     inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
     pointer-events: none;
-    background-image:
-      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
-      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
-      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%),
-      linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.055) 10%, rgba(255,255,255,0.055) 90%, transparent 100%);
-    background-size: 1px 100%, 1px 100%, 1px 100%, 1px 100%;
-    background-position: 20% 0, 40% 0, 60% 0, 80% 0;
-    background-repeat: no-repeat;
     opacity: 0;
   }
 </style>
@@ -24,11 +23,60 @@
 <script>
   import gsap from 'gsap';
 
+  const LINE_ALPHA = 0.055;
+
+  function drawGridLines() {
+    const canvas = document.getElementById('grid-lines') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const H = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width !== W) canvas.width = W;
+    if (canvas.height !== H) canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, W, H);
+    // Fades in over the top 10% and out over the bottom 10%, as before.
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.1, `rgba(255,255,255,${LINE_ALPHA})`);
+    g.addColorStop(0.9, `rgba(255,255,255,${LINE_ALPHA})`);
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    // 1 device px on 1x/1.25x/1.5x screens, 2 on retina (= 1 CSS px there).
+    const lineW = Math.max(1, Math.round(dpr));
+    for (const f of [0.2, 0.4, 0.6, 0.8]) {
+      ctx.fillRect(Math.round(W * f), 0, lineW, H);
+    }
+  }
+
+  let dprQuery: MediaQueryList | null = null;
+  function watchDpr() {
+    // Redraw when the window moves to a screen with a different scaling.
+    dprQuery?.removeEventListener('change', onDprChange);
+    dprQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    dprQuery.addEventListener('change', onDprChange);
+  }
+  function onDprChange() { drawGridLines(); watchDpr(); }
+
+  let rafId = 0;
+  function onResize() {
+    if (rafId) return;
+    rafId = requestAnimationFrame(() => { rafId = 0; drawGridLines(); });
+  }
+
   function initGridLines() {
     const el = document.getElementById('grid-lines');
     if (!el) return;
+    drawGridLines();
     gsap.set(el, { opacity: 0 });
     gsap.to(el, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.2 });
+  }
+
+  if (!(window as any).__gridLinesResize) {
+    (window as any).__gridLinesResize = true;
+    window.addEventListener('resize', onResize, { passive: true });
+    watchDpr();
   }
 
   if (document.readyState === 'loading') {
