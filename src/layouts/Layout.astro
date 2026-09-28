@@ -175,15 +175,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				from { opacity: 0; }
 				to   { opacity: 1; }
 			}
-			/* Slow camera push-in: the new page arrives a touch zoomed in and
-			   settles to 100% well after its fade has finished — the cinematic
-			   part of the transition. Transform only (compositor-cheap, no blur),
-			   so it runs on phones too. Persistent chrome (pt-* groups) isn't in
-			   the root snapshot, so the logo/MENU/clock stay still over it. */
-			@keyframes vt-push-in {
-				from { transform: scale(1.03); }
-				to   { transform: scale(1); }
-			}
 
 			/* The old/new snapshots (below) only ever animate `opacity` and
 			   `filter` — neither one paints a background. `::view-transition-old`
@@ -210,9 +201,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				animation: vt-fade-out 0.16s ease-in both;
 			}
 			::view-transition-new(root) {
-				animation:
-					vt-blur-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both,
-					vt-push-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+				animation: vt-blur-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0.12s both;
 			}
 
 			/* Touch devices: no blur at all, just a fade (see vt-fade-in-mobile) —
@@ -224,19 +213,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 			   flickering right through it. */
 			@media (pointer: coarse) {
 				::view-transition-new(root) {
-					animation:
-						vt-fade-in-mobile 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both,
-						vt-push-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+					animation: vt-fade-in-mobile 0.26s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 				}
 			}
-			@media (prefers-reduced-motion: reduce) {
-				::view-transition-new(root) {
-					animation: vt-fade-in-mobile 0.26s ease-out 0.1s both;
-				}
-			}
-			/* (No push-in on the body fallback below: a transform on body would
-			   re-anchor every position:fixed element, and the router waits for
-			   the fallback animation to end before continuing.) */
 
 			/* Fallback for browsers with no native Cross-Document View
 			   Transitions support (e.g. Safari on iOS 17) — Astro's router
