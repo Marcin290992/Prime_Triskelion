@@ -54,6 +54,25 @@ document.addEventListener('astro:before-swap', (e) => {
 	});
 });
 
+// Unstyled flash guard. The router waits for a new page's stylesheets to
+// download before swapping, not for them to apply — iOS Safari can paint the
+// swapped-in page a frame or two before its (cached) sheet is in effect,
+// and with the menu's cut there's no view-transition snapshot covering
+// that anymore. Until every new sheet has loaded, html.pt-styles-wait
+// hides the page content (global.css) — logo, menu and the black stay.
+document.addEventListener('astro:after-swap', () => {
+	const waiting = Array.from(document.querySelectorAll<HTMLLinkElement>('head link[rel="stylesheet"]'))
+		.filter((l) => !l.sheet);
+	if (!waiting.length) return;
+	const root = document.documentElement;
+	root.classList.add('pt-styles-wait');
+	Promise.all(waiting.map((l) => new Promise<void>((r) => {
+		l.addEventListener('load', () => r(), { once: true });
+		l.addEventListener('error', () => r(), { once: true });
+		setTimeout(r, 1500); // never leave the page hidden
+	}))).then(() => requestAnimationFrame(() => root.classList.remove('pt-styles-wait')));
+});
+
 document.addEventListener('astro:before-swap', (e) => {
 	const vt = e.viewTransition;
 	if (!vt) { pending = null; return; }

@@ -102,6 +102,14 @@ body::after {
   html body [data-after-hero]:not(.is-in) { opacity: 0; }
 }
 
+/* While a swapped-in page's stylesheets are still loading (see the
+   unstyled-flash guard in utils/afterPageTransition.ts): hide the page
+   content, keep the menu, logo and edge strips — same set as
+   html.ox-menu-covered in OxygenMenu.astro. */
+html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint) {
+  visibility: hidden;
+}
+
 /* Hide scrollbar */
 html {
   width: 100%;
