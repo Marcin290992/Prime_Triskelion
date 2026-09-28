@@ -13,7 +13,10 @@
 // navigating to it would otherwise miss the swap it needs to wait for.
 
 // ≈ when the new page is starting to show (its fade-in has a ~0.1s delay).
-const START_AFTER_READY_MS = 160;
+// Touch: no wait at all — its fade-in starts almost at once (Layout.astro),
+// and after the menu the old page is plain black anyway, so any extra beat
+// here just read as a black screen hanging before the title.
+const START_AFTER_READY_MS = window.matchMedia('(pointer: coarse)').matches ? 0 : 160;
 
 let pending: Promise<unknown> | null = null;
 
