@@ -9,6 +9,7 @@ import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
 import { cutNextTransition } from './afterPageTransition';
+import { warmPages } from './pageCache';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
 // compacting on scroll, see handleScroll() below).
@@ -374,6 +375,9 @@ function initOxygenMenu() {
     // listener above.
     const btn = document.getElementById('hud-menu-btn');
     const overlay = document.getElementById('ox-menu-overlay');
+    // Fetch the menu's pages while it's open, so picking one doesn't have
+    // to wait on the network (see pageCache.ts).
+    warmPages([...(overlay?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? [])].map((a) => a.href));
     state.isMenuOpen = true;
     state.menuAnimating = true;
     state.scrollAccum = 0;

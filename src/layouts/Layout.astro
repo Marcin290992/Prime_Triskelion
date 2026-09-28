@@ -332,6 +332,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   import gsap from 'gsap';
   import { isSafari } from '../utils/isSafari';
   import '../utils/afterPageTransition';
+  import '../utils/pageCache';
 
   let _layoutLenis: Lenis | null = null;
   let _layoutRaf: ((t: number) => void) | null = null;
