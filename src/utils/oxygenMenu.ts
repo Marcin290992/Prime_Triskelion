@@ -461,7 +461,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, duration: 0.28, ease: 'power2.inOut' });
+        }).to(content, { opacity: 0, duration: 0.4, ease: 'power2.inOut' });
         return;
       }
 
@@ -533,18 +533,46 @@ function initOxygenMenu() {
     // gesture) instead of running the whole sequence a second time.
     let handledByTouch = false;
 
+    // Cinematic exit: everything but the chosen link racks out of focus and
+    // dissolves, rippling outward from the choice; the chosen link is left
+    // alone on black for a beat, then goes out of focus itself as the menu
+    // fades (the reverse of the new page's title focusing in after the cut).
+    // Blur only on single lines of text (each <li> — its own overflow:hidden
+    // would clip a blur on anything inside it) and the thin top/bottom
+    // bars; the right panel just fades, a filter on that block steps on
+    // touch Safari.
+    function dissolveOthers() {
+      const overlay = document.getElementById('ox-menu-overlay');
+      if (!overlay) return;
+      const chosen = link.closest<HTMLElement>('.ox-menu-item');
+      const items = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'));
+      const at = chosen ? items.indexOf(chosen) : -1;
+      const others = items
+        .filter((el) => el !== chosen)
+        .sort((a, b) => Math.abs(items.indexOf(a) - at) - Math.abs(items.indexOf(b) - at));
+      const out = { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
+      gsap.to(others, { ...out, stagger: 0.07 });
+      gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: 0.12 });
+      // Right panel: its info block always goes; the whole panel (with the
+      // featured project) only when a nav link was chosen.
+      const aside = overlay.querySelector<HTMLElement>('aside');
+      const panelOut = chosen ? aside : aside?.firstElementChild;
+      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.55, ease: 'power2.inOut', delay: 0.12 });
+    }
+
     async function activate() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
-      // Hold the active state just long enough for the text roll + sibling
-      // dim (OxygenMenu.astro, 0.34s) to read, then leave. Touch has no
+      dissolveOthers();
+      // Hold on the chosen link while the rest dissolves around it and its
+      // text roll (OxygenMenu.astro, 0.34s) reads, then leave. Touch has no
       // hover lead-in — the roll only starts at the tap — so it gets the
       // full roll plus a beat; with a mouse it has already rolled on hover.
-      // A touch slower than the Contact page's step transitions — any quicker
-      // and the jump to the next page felt abrupt.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, noHover ? 520 : 240));
-      await closeMenu(true, true);  // keep black overlay visible, blur out
+      await new Promise(r => setTimeout(r, noHover ? 720 : 520));
+      // The chosen link racks out of focus as the menu fades to black.
+      gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
+      await closeMenu(true, true);  // keep black overlay visible, fade out
       if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
 

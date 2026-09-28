@@ -403,7 +403,7 @@
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { createMenuCtaGate } from '../../utils/menuCtaGate';
-	import { afterPageTransition } from '../../utils/afterPageTransition';
+	import { afterPageTransition, entranceMode } from '../../utils/afterPageTransition';
 	gsap.registerPlugin(ScrollTrigger);
 
 	let _heroWordTimer: number | null = null;
@@ -476,6 +476,7 @@
 
 		// First change right away, then the regular rhythm.
 		return () => {
+			if (!wordNode.isConnected) return; // page already left
 			swapWord();
 			_heroWordTimer = window.setInterval(swapWord, 4200);
 		};
@@ -603,6 +604,42 @@
 			// layout flush instead of letting the browser batch it normally.
 			const pastHero = (window.scrollY || window.pageYOffset) > hero!.offsetHeight * 0.3;
 
+			// Home already seen this session (or a reload): one quick, light
+			// focus pull of the whole block, light already on, words rotating
+			// straight after. Back/forward: the finished hero at once. The
+			// chrome isn't hidden on these paths — it just stays as it is.
+			const mode = entranceMode();
+			// The claim's two lines (white, then red) come in one after the
+			// other, not as one block — same rhythm as the subpage titles.
+			const claimLines = claim ? Array.from(claim.querySelectorAll<HTMLElement>('.h-hero-claim__line')) : [];
+			if (claim) gsap.set(claim, { opacity: 1, filter: 'none', scale: 1, y: 0 });
+			if (mode !== 'full') {
+				const startWord = initHeroDynamicWord();
+				const els = [...claimLines, ...support];
+				const textReady = () => {
+					(window as any).__ptHeroTextReady = true;
+					window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+				};
+				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
+				if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
+				gsap.set('#rays-canvas', { opacity: 1 });
+				if (mode === 'none') {
+					gsap.set(els, { opacity: 1, filter: 'none', y: 0, scale: 1 });
+					hero!.style.opacity = '1';
+					textReady();
+					gsap.delayedCall(1.0, startWord);
+					return;
+				}
+				gsap.set(els, { opacity: 0, filter: 'blur(8px)', y: 0 });
+				hero!.style.opacity = '1';
+				gsap.to(els, {
+					opacity: 1, filter: 'blur(0px)', duration: 1.0, ease: 'power2.out', stagger: 0.12,
+					onComplete: () => { gsap.set(els, { filter: 'none' }); textReady(); },
+				});
+				gsap.delayedCall(1.1, startWord);
+				return;
+			}
+
 			const claimBlur = isMobileReveal ? 16 : 24;
 			gsap.set(title, { opacity: 1, filter: 'none', y: 0 }); // container always visible — children carry the reveal
 			if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
@@ -610,7 +647,7 @@
 				hideChrome();
 				if (hudLoc) gsap.set(hudLoc, { opacity: 0, x: -20 });
 			}
-			gsap.set(claim, { opacity: 0, filter: `blur(${claimBlur}px)`, scale: 1.04, y: 0 });
+			gsap.set(claimLines, { opacity: 0, filter: `blur(${claimBlur}px)`, scale: 1.04 });
 			gsap.set(support, { opacity: 0, filter: 'blur(10px)', y: 12 });
 			hero!.style.opacity = '1';
 			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
@@ -619,7 +656,7 @@
 				onComplete: () => {
 					// Tweens end on filter: blur(0px), which iOS Safari still
 					// treats as an active filter (re-rendered while scrolling).
-					gsap.set([claim, ...support, ...(chromeShown ? [] : [...logoArms, logoText])].filter(Boolean), { filter: 'none' });
+					gsap.set([...claimLines, ...support, ...(chromeShown ? [] : [...logoArms, logoText])].filter(Boolean), { filter: 'none' });
 				},
 			});
 
@@ -627,14 +664,15 @@
 			// starts once the light from above is fully up (5).
 			const startDynamicWord = initHeroDynamicWord();
 
-			// 1. The claim — focus pull.
-			tl.to(claim, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, 0.1)
-			  .to(claim, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut' }, 0.1)
-			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1);
+			// 1. The claim — focus pull, white line first, the red one 0.3s after.
+			const stagger = 0.3;
+			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, 0.1)
+			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, 0.1)
+			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, 0.1);
 
 			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
-				const at = 1.0 + i * 0.22;
+				const at = 1.25 + i * 0.22;
 				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
 				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
 			});
