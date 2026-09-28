@@ -68,6 +68,13 @@ document.addEventListener('astro:before-swap', (e) => {
 // Decided once per page view, on the swap (or at load), before the page's
 // own scripts ask for it.
 export type EntranceMode = 'full' | 'short' | 'none';
+
+// System "reduce motion" setting: every entrance becomes a plain, short
+// fade — no blur, no scale, no sweeps. Read live, so toggling it applies
+// from the next page view.
+export function reducedMotion(): boolean {
+	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
 const SEEN_KEY = 'pt-seen-pages';
 const seenMem = new Set<string>();
 function readSeen(): Set<string> {
@@ -126,6 +133,10 @@ export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 
 	if (!words.length) return tl;
 	const mode = subpageMode();
 	if (mode === 'none') { gsap.set(words, { opacity: 1, filter: 'none' }); return tl; }
+	if (reducedMotion()) {
+		gsap.set(words, { filter: 'none' });
+		return tl.to(words, { opacity: 1, duration: 0.3, ease: 'none' }, 0);
+	}
 	if (mode === 'short') {
 		// All words together, lighter blur, ~0.8s.
 		gsap.set(words, { filter: 'blur(8px)' });
@@ -149,6 +160,10 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 	if (!el) return tl;
 	const mode = subpageMode();
 	if (mode === 'none') { gsap.set(el, { opacity: 1, y: 0, filter: 'none' }); return tl; }
+	if (reducedMotion()) {
+		gsap.set(el, { y: 0, filter: 'none' });
+		return tl.to(el, { opacity: 1, duration: 0.3, ease: 'none' }, 0.1);
+	}
 	if (mode === 'short') {
 		gsap.set(el, { filter: 'blur(6px)' });
 		return tl.to(el, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.7 * speed, ease: 'power2.out',

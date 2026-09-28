@@ -403,7 +403,7 @@
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { createMenuCtaGate } from '../../utils/menuCtaGate';
-	import { afterPageTransition, entranceMode } from '../../utils/afterPageTransition';
+	import { afterPageTransition, entranceMode, reducedMotion } from '../../utils/afterPageTransition';
 	gsap.registerPlugin(ScrollTrigger);
 
 	let _heroWordTimer: number | null = null;
@@ -446,7 +446,12 @@
 			});
 		}
 
+		// Reduce motion: a plain cross-fade of the whole word, no blur/drift.
 		function playIn(spans: HTMLSpanElement[], onDone?: () => void): void {
+			if (reducedMotion()) {
+				gsap.fromTo(spans, { opacity: 0, filter: 'none', y: 0 }, { opacity: 1, duration: 0.4, ease: 'none', onComplete: onDone });
+				return;
+			}
 			gsap.fromTo(spans,
 				{ opacity: 0, filter: 'blur(18px)', y: () => gsap.utils.random(-14, 14) },
 				{ opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.4, ease: 'power4.out', stagger: { each: 0.1, from: 'random' }, onComplete: onDone }
@@ -454,6 +459,10 @@
 		}
 
 		function playOut(spans: HTMLSpanElement[], onComplete: () => void): void {
+			if (reducedMotion()) {
+				gsap.to(spans, { opacity: 0, duration: 0.4, ease: 'none', onComplete });
+				return;
+			}
 			gsap.to(spans, {
 				opacity: 0, filter: 'blur(18px)', y: () => gsap.utils.random(-10, 10),
 				duration: 0.65, ease: 'power3.in', stagger: { each: 0.06, from: 'random' }, onComplete,
@@ -610,7 +619,9 @@
 			// it reads, then it rises and sweeps down the frame; the words
 			// start rotating once it's full. The chrome isn't hidden on these
 			// paths — it just stays as it is.
-			const mode = entranceMode();
+			// Reduce motion: always the finished hero at once, light simply on.
+			const reduce = reducedMotion();
+			const mode = reduce ? 'none' : entranceMode();
 			// The claim's two lines (white, then red) come in one after the
 			// other, not as one block — same rhythm as the subpage titles.
 			const claimLines = claim ? Array.from(claim.querySelectorAll<HTMLElement>('.h-hero-claim__line')) : [];
@@ -624,8 +635,9 @@
 				hero!.style.opacity = '1';
 				(window as any).__ptHeroTextReady = true;
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-				if (pastHero) {
-					// Restored below the hero: nothing to watch, light just on.
+				if (pastHero || reduce) {
+					// Restored below the hero (nothing to watch) or reduce
+					// motion: light just on.
 					gsap.set('#rays-canvas', { opacity: 1 });
 					gsap.delayedCall(1.0, startWord);
 					return;

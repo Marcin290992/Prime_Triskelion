@@ -217,6 +217,17 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				}
 			}
 
+			/* Reduce motion: the new page just fades in — no blur (desktop's
+			   blur-in included). */
+			@media (prefers-reduced-motion: reduce) {
+				::view-transition-new(root) {
+					animation: vt-fade-in-mobile 0.2s ease-out 0s both;
+				}
+				html:root[data-astro-transition-fallback="new"] body {
+					animation: vt-fade-in-mobile 0.2s ease-out 0s both;
+				}
+			}
+
 			/* Leaving through the menu (html.vt-cut, see
 			   utils/afterPageTransition.ts): the old page is already plain
 			   black, so no cross-fade — a straight cut to the new page, whose

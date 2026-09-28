@@ -454,7 +454,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     font-size: clamp(0.88rem, 1.1vw, 1rem);
     font-weight: 300;
     line-height: 1.7;
-    color: rgb(var(--c-cream) / 0.45);
+    color: rgb(var(--c-cream) / 0.7);
     max-width: 42ch;
     margin: 0 0 clamp(2rem, 4vh, 3rem);
   }
@@ -1274,7 +1274,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
-  import { afterPageTransition, revealAfterHero, titleIn, subpageMode } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, subpageMode, reducedMotion } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1296,6 +1296,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
     // Back/forward: finished page straight away; repeat visit: quicker.
     const mode = subpageMode();
     if (mode === 'none') { gsap.set(els, { opacity: 1, y: 0, filter: 'none' }); return; }
+    if (reducedMotion()) {
+      gsap.set(els, { opacity: 0, y: 0, filter: 'none' });
+      afterPageTransition(() => { gsap.to(els, { opacity: 1, duration: 0.3, ease: 'none' }); });
+      return;
+    }
     gsap.set(els, { opacity: 0, y: 10, filter: 'blur(8px)' });
     if (mode === 'short') {
       afterPageTransition(() => {
