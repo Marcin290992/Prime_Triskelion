@@ -41,9 +41,43 @@ export function warmPages(hrefs: Iterable<string>): void {
 			return r;
 		});
 		res.catch(() => cache.delete(key));
+		res.then((r) => r.clone().text()).then(preloadAssets, () => {});
 		cache.set(key, { t: performance.now(), res });
 	}
 }
+
+// A page's first visit was still slower than later ones: the router won't
+// show the new page until its own stylesheet has loaded, and its scripts
+// and hero images come after that — all network on a phone. Preload them
+// as soon as the page's HTML is in, so the first visit is as quick as a
+// repeat one. Hashed /_astro files, so the HTTP cache keeps them.
+const preloaded = new Set<string>();
+function preloadAssets(html: string): void {
+	const doc = new DOMParser().parseFromString(html, 'text/html');
+	const add = (href: string | null, rel: string, as?: string, media?: string | null) => {
+		if (!href || preloaded.has(href)) return;
+		preloaded.add(href);
+		const link = document.createElement('link');
+		link.rel = rel;
+		link.href = href;
+		if (as) link.as = as;
+		if (media) link.media = media;
+		document.head.appendChild(link);
+	};
+	doc.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]').forEach((l) => add(l.getAttribute('href'), 'preload', 'style'));
+	doc.querySelectorAll<HTMLScriptElement>('script[type="module"][src]').forEach((s) => add(s.getAttribute('src'), 'modulepreload'));
+	doc.querySelectorAll<HTMLLinkElement>('link[rel="preload"][as="image"]').forEach((l) => add(l.getAttribute('href'), 'preload', 'image', l.getAttribute('media')));
+}
+
+// Warm the menu's pages shortly after each page settles too, not only when
+// the menu opens — gives a first visit more head start on a slow connection.
+document.addEventListener('astro:page-load', () => {
+	setTimeout(() => {
+		const links = document.querySelectorAll<HTMLAnchorElement>('#ox-menu-overlay a[href]');
+		const idle = (window as any).requestIdleCallback ?? ((f: () => void) => setTimeout(f, 0));
+		idle(() => warmPages([...links].map((a) => a.href)));
+	}, 1500);
+});
 
 window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
 	const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
