@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 // astro:page-load fires as soon as the new DOM is swapped in — before the
 // page View Transition (quick fade-out, then the new page fading in, see
 // Layout.astro) has played. Run entrance animations through this so they
@@ -73,6 +74,18 @@ export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 
 		.to(words, { opacity: 1, duration: 0.9 * speed, ease: 'sine.inOut', stagger }, at)
 		.to(words, { filter: 'blur(0px)', duration: 1.8 * speed, ease: 'power2.inOut', stagger }, at)
 		.fromTo(words, { scale: 1.04 }, { scale: 1, duration: 2 * speed, ease: 'power2.out', stagger, clearProps: 'scale' }, at);
+}
+
+// Supporting line under a title (lead / intro), same focus pull but
+// softer. Mobile places it after the title has found focus — its centred
+// first screen is just title + lead, and a lead already sharp while the
+// title is still blurring read as out of order.
+export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number, speed = 1): gsap.core.Timeline {
+	if (!el) return tl;
+	gsap.set(el, { filter: 'blur(10px)' });
+	return tl
+		.to(el, { opacity: 1, duration: 0.8 * speed, ease: 'sine.inOut' }, at)
+		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut', clearProps: 'filter' }, at);
 }
 
 export function afterPageTransition(fn: () => void): void {

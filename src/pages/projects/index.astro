@@ -555,7 +555,7 @@ const projects = [
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero, titleIn } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, supportIn } from '../../utils/afterPageTransition';
   import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
@@ -565,9 +565,10 @@ const projects = [
     const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
     const lead = document.querySelector<HTMLElement>('.proj-header__lead');
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
-    // Mobile: the hint comes in while the title is still sharpening (the
-    // centred first screen is otherwise empty); desktop keeps its later cue.
-    const hintDelay = window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100;
+    // Mobile: the hint comes in once title and lead have landed; desktop
+    // keeps its own cue.
+    const isMob = window.matchMedia('(max-width: 1024px)').matches;
+    const hintDelay = isMob ? 2400 : 1100;
     // Don't bring the hint in on a page that's already being left (see
     // trackLeaving) — it flashed in just ahead of the next page's hero.
     const isLeaving = trackLeaving();
@@ -575,7 +576,8 @@ const projects = [
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       titleIn(tl, titleWords);
-      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
+      if (isMob) supportIn(tl, lead, 1.3);
+      else if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
       setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
     });

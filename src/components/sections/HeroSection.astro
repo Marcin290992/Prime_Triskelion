@@ -403,6 +403,7 @@
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { createMenuCtaGate } from '../../utils/menuCtaGate';
+	import { afterPageTransition } from '../../utils/afterPageTransition';
 	gsap.registerPlugin(ScrollTrigger);
 
 	let _heroWordTimer: number | null = null;
@@ -482,13 +483,6 @@
 		_heroMobileRevealST.forEach((st) => st?.kill?.());
 		_heroMobileRevealST = [];
 
-		const heroMotion = {
-			mobileBlur: 8, mobileY: 10, mobileDuration: 0.9, mobileDelayStep: 0.11,
-			baseBlur: 9, baseY: 8,
-			titleDur: 1.0, navDur: 1.0, claimDur: 1.1, ctaDur: 0.92, statsDur: 0.9, bottomDur: 0.9,
-			navAt: 0.2, claimAt: 0.42, hookAt: 0.42, ctaAt: 0.66, statsAt: 0.78, bottomAt: 0.86,
-		};
-
 		const hero = document.getElementById('hero') as HTMLElement | null;
 		if (!hero) return;
 
@@ -559,14 +553,14 @@
 			// outranking oxygenMenu.ts's CSS-class-driven show/hide on scroll
 			// (inline style always beats a class rule) — the button would look
 			// stuck visible no matter what state.barHidden says.
-			function revealChrome(tl: gsap.core.Timeline, menuDuration: number) {
+			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0) {
 				tl.to(logoText, {
 					opacity: 1,
 					scale: 1,
 					filter: 'blur(0px)',
 					duration: 0.85,
 					ease: 'power4.out',
-				}, 1.05)
+				}, 1.05 + delay)
 				  .to(logoArms, {
 					opacity: 1,
 					scale: 1,
@@ -575,103 +569,83 @@
 					duration: 0.95,
 					ease: 'back.out(1.6)',
 					stagger: 0.08,
-				}, 1.95)
-				  .to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6);
+				}, 1.95 + delay)
+				  .to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6 + delay);
 			}
 
-			if (isMobileReveal) {
-				const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
-				const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
-				const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
-				const mobileRevealEls = [kicker, claim, sub, ctaRow, inlineStats].filter((el): el is HTMLElement => !!el);
-
-				gsap.set(mobileRevealEls, { opacity: 0, filter: `blur(${heroMotion.mobileBlur}px)`, y: heroMotion.mobileY });
-				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
-				if (!chromeShown) hideChrome();
-				gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
-				hero!.style.opacity = '1';
-
-				const mobileTl = gsap.timeline({
-					onComplete: () => {
-						// Tweens end on filter: blur(0px), which iOS Safari still
-						// treats as an active filter (re-rendered while scrolling).
-						gsap.set([...mobileRevealEls, ...(chromeShown ? [] : [...logoArms, logoText])].filter(Boolean), { filter: 'none' });
-						(window as any).__ptHeroTextReady = true;
-						window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-					},
-				});
-
-				mobileTl.to(mobileRevealEls, {
-					opacity: 1,
-					filter: 'blur(0px)',
-					y: 0,
-					duration: heroMotion.mobileDuration,
-					stagger: heroMotion.mobileDelayStep,
-					ease: 'power3.out',
-				}, 0.15)
-				  .add(() => { initHeroDynamicWord(); }, 0.15)
-				  .to('#rays-canvas', {
-						opacity: 1,
-						duration: 1.6,
-						ease: 'power2.inOut',
-					}, 1.2);
-				if (!chromeShown) revealChrome(mobileTl, 0.5);
-
-				return;
-			}
-
-			const kicker   = document.querySelector('.hero-kicker') as HTMLElement | null;
-			const sub      = document.querySelector('.h-hero-sub')  as HTMLElement | null;
-			const hudLoc   = document.getElementById('hud-location');
+			// ── Intro: one cinematic sequence on every device ──
+			// Same focus-pull language as the subpage titles (titleIn): each
+			// element rises out of the black as a soft shape first (opacity,
+			// sine), focus lands after (blur, power2.inOut). The claim leads,
+			// the supporting lines follow once it's finding focus, the site
+			// chrome after that (first visit only), and the light from above
+			// comes up last, over the finished composition.
+			const kicker = document.querySelector('.hero-kicker') as HTMLElement | null;
+			const sub    = document.querySelector('.h-hero-sub')  as HTMLElement | null;
+			const ctaRow = document.querySelector('.hero-cta-row') as HTMLElement | null;
+			const hudLoc = isMobileReveal ? null : document.getElementById('hud-location');
+			// Mobile keeps the whole CTA row / hides nothing at the bottom;
+			// desktop reveals the CTA wrap and the bottom bar.
+			const ctaEl  = isMobileReveal ? ctaRow : (ctaWrap ?? cta);
+			const support = [kicker, sub, ctaEl, inlineStats, isMobileReveal ? null : bottom]
+				.filter((el): el is HTMLElement => !!el);
 
 			// Read geometry before the style-write batch below — querying
 			// offsetHeight after those writes would force a synchronous
 			// layout flush instead of letting the browser batch it normally.
 			const pastHero = (window.scrollY || window.pageYOffset) > hero!.offsetHeight * 0.3;
 
-			// UI shell — hidden until after content
-			gsap.set(title,    { opacity: 1 }); // container itself always visible — children below carry the reveal
+			const claimBlur = isMobileReveal ? 16 : 24;
+			gsap.set(title, { opacity: 1, filter: 'none', y: 0 }); // container always visible — children carry the reveal
+			if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
 			if (!chromeShown) {
 				hideChrome();
-				gsap.set(hudLoc, { opacity: 0, x: -20 });
+				if (hudLoc) gsap.set(hudLoc, { opacity: 0, x: -20 });
 			}
-
-			// Content
-			gsap.set(claim,          { opacity: 0, filter: 'blur(80px)', y: 50 });
-			gsap.set(kicker,         { opacity: 0, filter: 'blur(8px)' });
-			gsap.set(sub,            { opacity: 0, filter: 'blur(10px)', y: 20 });
-			gsap.set(ctaWrap ?? cta, { opacity: 0, filter: 'blur(8px)',  y: 14 });
-			gsap.set(inlineStats,    { opacity: 0, filter: 'blur(6px)' });
-			gsap.set(bottom,         { opacity: 0, filter: 'blur(4px)' });
+			gsap.set(claim, { opacity: 0, filter: `blur(${claimBlur}px)`, scale: 1.04, y: 0 });
+			gsap.set(support, { opacity: 0, filter: 'blur(10px)', y: 12 });
 			hero!.style.opacity = '1';
-
 			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
 
 			const tl = gsap.timeline({
 				onComplete: () => {
-					(window as any).__ptHeroTextReady = true;
-					window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+					// Tweens end on filter: blur(0px), which iOS Safari still
+					// treats as an active filter (re-rendered while scrolling).
+					gsap.set([claim, ...support, ...(chromeShown ? [] : [...logoArms, logoText])].filter(Boolean), { filter: 'none' });
 				},
 			});
 
-			// 1. Treść
-			tl.to(claim,          { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.4,  ease: 'power4.out' }, 0.18)
-			  .add(() => { initHeroDynamicWord(); }, 0.18)
-			  .to(kicker,         { opacity: 1, filter: 'blur(0px)',       duration: 0.9,  ease: 'power2.out' }, 0.36)
-			  .to(sub,            { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.9,  ease: 'power3.out' }, 0.46)
-			  .to(ctaWrap ?? cta, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.85, ease: 'power3.out' }, 0.58)
-			  .to(inlineStats,    { opacity: 1, filter: 'blur(0px)',       duration: 0.8,  ease: 'power2.out' }, 0.70)
-			  .to(bottom,         { opacity: 1, filter: 'blur(0px)',       duration: 0.75, ease: 'power2.out' }, 0.78);
-			// 2. UI shell
+			// 1. The claim — focus pull, the dynamic word blurring in with it.
+			tl.to(claim, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, 0.1)
+			  .to(claim, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut' }, 0.1)
+			  .to(claim, { scale: 1, duration: 2.1, ease: 'power2.out', clearProps: 'scale' }, 0.1)
+			  .add(() => { initHeroDynamicWord(); }, 0.35);
+
+			// 2. Supporting lines, one after another as the claim finds focus.
+			support.forEach((el, i) => {
+				const at = 1.0 + i * 0.22;
+				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
+				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
+			});
+			// Text has landed — anything waiting on it can go.
+			tl.add(() => {
+				(window as any).__ptHeroTextReady = true;
+				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+			}, 2.3);
+
+			// 3. Site chrome (first page of the visit only).
 			if (!chromeShown) {
-				tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 1.05);
-				revealChrome(tl, 0.6);
+				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.0);
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
 			}
 
-			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 1.8, ease: 'power2.inOut' }, 1.2);
+			// 4. Last: the light from above.
+			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 2.6);
 		}
 
-		runReveal();
+		// Start as the new page appears (not before) when arriving via a
+		// page transition; on a hard load this runs straight away.
+		afterPageTransition(runReveal);
 	}
 
 	function initHeroNavCta() {

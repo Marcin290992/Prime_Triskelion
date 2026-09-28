@@ -553,7 +553,7 @@ const EMAIL = CONTACT_EMAIL;
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, titleIn } from '../utils/afterPageTransition';
+  import { afterPageTransition, titleIn, supportIn } from '../utils/afterPageTransition';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
   import { copyContactEmail } from '../utils/copyEmail';
@@ -819,11 +819,19 @@ const EMAIL = CONTACT_EMAIL;
     const words = page.querySelectorAll<HTMLElement>('.cp-title__word');
     const intro = page.querySelector<HTMLElement>('.cp-intro');
     afterPageTransition(() => {
-      titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), words, 0, D)
-        .fromTo(intro, { opacity: 0, y: 16, filter: 'blur(8px)' },
-          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.55)
-        // The flame comes up last, once the title and options have landed.
-        .add(() => canvas?.classList.add('is-lit'), reduce ? 0 : 1.35);
+      const tl = titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), words, 0, D);
+      // Mobile: the question and options follow once the title has found
+      // focus (same focus pull); desktop keeps its earlier, quicker cue.
+      const isMob = window.matchMedia('(max-width: 1024px)').matches;
+      if (isMob) {
+        gsap.set(intro, { y: 16 });
+        supportIn(tl, intro, 1.6 * D, D);
+      } else {
+        tl.fromTo(intro, { opacity: 0, y: 16, filter: 'blur(8px)' },
+          { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9 * D, ease: 'power3.out', clearProps: 'filter,transform' }, 0.55);
+      }
+      // The flame comes up last, once the title and options have landed.
+      tl.add(() => canvas?.classList.add('is-lit'), reduce ? 0 : isMob ? 2.6 : 1.35);
     });
   }
 
