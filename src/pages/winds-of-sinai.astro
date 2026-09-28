@@ -61,8 +61,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
         <img src="https://picsum.photos/seed/sinai/800/1200?grayscale" alt="" draggable="false">
       </div>
       <div class="wos-cin__texts" aria-hidden="true">
-        <span class="wos-cin__l">WINDS OF</span>
-        <span class="wos-cin__r">SINAI</span>
+        <span class="wos-cin__l"><span class="wos-cin__w">WINDS OF</span></span>
+        <span class="wos-cin__r"><span class="wos-cin__w">SINAI</span></span>
       </div>
       <!-- Bottom overlay: widoczny od razu, nie czeka na scroll -->
       <div class="wos-cin__bottom">
@@ -590,6 +590,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
     will-change: transform;
     line-height: 1;
   }
+
+  /* Entrance (titleIn, same focus pull as the other pages' titles) runs
+     on these inner spans — the outer ones belong to the scroll split,
+     which scrubs their own x and opacity. */
+  .wos-cin__w { display: inline-block; opacity: 0; filter: blur(18px); }
 
   /* Bottom overlay — widoczny od razu podczas animacji */
   .wos-cin__bottom {
@@ -1269,7 +1274,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
-  import { afterPageTransition, revealAfterHero } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1328,6 +1333,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
         stagger: 0.1, ease: 'power3.out',
       }, 0.48);
     }
+
+    // Entrance: the word split focus-pulls in like every other page title.
+    const words = section.querySelectorAll<HTMLElement>('.wos-cin__w');
+    afterPageTransition(() => { titleIn(gsap.timeline(), words); });
 
     _cinST = ScrollTrigger.create({
       trigger: section,
