@@ -8,7 +8,7 @@
 import gsap from 'gsap';
 import { navigate } from 'astro:transitions/client';
 import { SpecularButton } from './specularButtonFx';
-import { cutNextTransition } from './afterPageTransition';
+import { cutNextTransition, reducedMotion } from './afterPageTransition';
 import { warmPages } from './pageCache';
 
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
@@ -550,7 +550,10 @@ function initOxygenMenu() {
       const others = items
         .filter((el) => el !== chosen)
         .sort((a, b) => Math.abs(items.indexOf(a) - at) - Math.abs(items.indexOf(b) - at));
-      const out = { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
+      // Reduce motion: a plain fade, no blur.
+      const out = reducedMotion()
+        ? { opacity: 0, duration: 0.4, ease: 'none' }
+        : { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
       gsap.to(others, { ...out, stagger: 0.07 });
       gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: 0.12 });
       // Right panel: its info block always goes; the whole panel (with the
@@ -571,7 +574,7 @@ function initOxygenMenu() {
       const noHover = window.matchMedia('(hover: none)').matches;
       await new Promise(r => setTimeout(r, noHover ? 720 : 520));
       // The chosen link racks out of focus as the menu fades to black.
-      gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
+      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
       await closeMenu(true, true);  // keep black overlay visible, fade out
       if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
