@@ -553,7 +553,7 @@ const EMAIL = CONTACT_EMAIL;
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, titleIn, supportIn, entranceMode } from '../utils/afterPageTransition';
+  import { afterPageTransition, titleIn, supportIn, subpageMode } from '../utils/afterPageTransition';
   import { sendContactEmail } from '../utils/sendContactEmail';
   import { initFlameCanvas } from '../utils/flameCanvas';
   import { copyContactEmail } from '../utils/copyEmail';
@@ -823,8 +823,8 @@ const EMAIL = CONTACT_EMAIL;
       // Mobile: the question and options follow once the title has found
       // focus (same focus pull); desktop keeps its earlier, quicker cue.
       const isMob = window.matchMedia('(max-width: 1024px)').matches;
-      // Repeat / back visits (entranceMode) skip the choreography.
-      const mode = entranceMode();
+      // Repeat / back visits (subpageMode) skip the choreography.
+      const mode = subpageMode();
       if (isMob || mode !== 'full') {
         gsap.set(intro, { y: 16 });
         supportIn(tl, intro, 1.6 * D, D);

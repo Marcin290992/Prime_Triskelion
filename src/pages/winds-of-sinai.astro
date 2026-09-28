@@ -1274,7 +1274,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
-  import { afterPageTransition, revealAfterHero, titleIn, entranceMode } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, subpageMode } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1294,7 +1294,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     if (!els.length) return;
 
     // Back/forward: finished page straight away; repeat visit: quicker.
-    const mode = entranceMode();
+    const mode = subpageMode();
     if (mode === 'none') { gsap.set(els, { opacity: 1, y: 0, filter: 'none' }); return; }
     gsap.set(els, { opacity: 0, y: 10, filter: 'blur(8px)' });
     if (mode === 'short') {

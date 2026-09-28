@@ -105,6 +105,15 @@ export function entranceMode(): EntranceMode {
 	return mode;
 }
 
+// Subpages (titles, leads, hints — everything but the home hero): on
+// mobile the short entrance is the only one, first visit included — the
+// full choreography read as too long there. Back/forward still 'none';
+// desktop keeps all three.
+export function subpageMode(): EntranceMode {
+	if (mode === 'full' && window.matchMedia('(max-width: 1024px)').matches) return 'short';
+	return mode;
+}
+
 // Page-title entrance, shared by the subpage heroes (every device) — a
 // camera focus pull rather than a pop: each word rises out of the black as
 // a soft shape first (opacity, ~0.9s), focus lands after (blur, ~1.8s),
@@ -116,6 +125,7 @@ export function entranceMode(): EntranceMode {
 // hidden (opacity 0, blur 18px) in each page's CSS.
 export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 0, speed = 1): gsap.core.Timeline {
 	if (!words.length) return tl;
+	const mode = subpageMode();
 	if (mode === 'none') { gsap.set(words, { opacity: 1, filter: 'none' }); return tl; }
 	if (mode === 'short') {
 		// All words together, lighter blur, ~0.8s.
@@ -138,6 +148,7 @@ export function titleIn(tl: gsap.core.Timeline, words: ArrayLike<Element>, at = 
 // title is still blurring read as out of order.
 export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number, speed = 1): gsap.core.Timeline {
 	if (!el) return tl;
+	const mode = subpageMode();
 	if (mode === 'none') { gsap.set(el, { opacity: 1, y: 0, filter: 'none' }); return tl; }
 	if (mode === 'short') {
 		gsap.set(el, { filter: 'blur(6px)' });
@@ -161,6 +172,7 @@ export function afterPageTransition(fn: () => void): void {
 // mobile only) fades in. Call from inside the page's afterPageTransition
 // callback, right after starting the title's own animation.
 export function revealAfterHero(delayMs = 400): void {
+	const mode = subpageMode();
 	if (mode !== 'full') delayMs = mode === 'none' ? 0 : Math.min(delayMs, 200);
 	setTimeout(() => {
 		document.querySelectorAll('[data-after-hero]').forEach((el) => el.classList.add('is-in'));
