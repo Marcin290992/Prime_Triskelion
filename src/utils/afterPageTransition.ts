@@ -35,6 +35,27 @@ let cutting = false;
 document.addEventListener('astro:after-swap', () => {
 	if (cutting) document.documentElement.classList.add('vt-cut');
 });
+
+// Touch, in-page links (not the menu, not back/forward): the same shape as
+// leaving through the menu — the page fades down to black (while the next
+// one loads, so it costs no extra wait when that takes longer), then a cut
+// and the new title focuses in. The quick root cross-fade they used to get
+// read as abrupt next to the menu's exit. Only the page content fades —
+// the logo, menu and edge strips stay (the set html.ox-menu-covered hides).
+document.addEventListener('astro:before-preparation', (e: any) => {
+	if (cutNext || e.navigationType === 'traverse') return;
+	if (!window.matchMedia('(pointer: coarse)').matches) return;
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+	const content = document.querySelectorAll<HTMLElement>(
+		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
+	);
+	const fade = new Promise<void>((resolve) => {
+		gsap.to(content, { opacity: 0, duration: 0.5, ease: 'power2.inOut', onComplete: () => resolve() });
+	});
+	const load = e.loader;
+	e.loader = async () => { await Promise.all([load(), fade]); };
+	cutNextTransition();
+});
 document.addEventListener('astro:before-swap', (e) => {
 	if (!cutNext) return;
 	cutNext = false;
