@@ -166,6 +166,19 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
+	// Back/forward lands mid-page (restored scroll) — on mobile right in the
+	// content below the hero, which starts hidden and fades in 0.8s after
+	// the title (revealAfterHero). Show it now, before the first paint and
+	// without the fade: it read as a blink on Projects, where you come back
+	// into the middle of the list.
+	if (mode === 'none') {
+		document.querySelectorAll<HTMLElement>('[data-after-hero]').forEach((el) => {
+			el.style.transition = 'none';
+			el.classList.add('is-in');
+			void el.offsetHeight;
+			el.style.transition = '';
+		});
+	}
 });
 export function entranceMode(): EntranceMode {
 	return mode;
