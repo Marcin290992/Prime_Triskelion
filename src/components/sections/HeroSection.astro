@@ -410,9 +410,10 @@
 	let _heroParallaxST: any = null;
 	let _heroMobileRevealST: any[] = [];
 
-	// Sets the red word up hidden right away and returns the function that
-	// starts it (its first blur-in, then the rotation), so the intro can hold
-	// it back until its main entrance has landed.
+	// Puts the first red word in place right away — it comes in as part of
+	// the claim's own focus pull, no separate letter animation — and returns
+	// the function that starts the word rotation, so the intro can hold it
+	// back until its main entrance has landed.
 	function initHeroDynamicWord(): () => void {
 		const wordNode = document.getElementById('hero-dynamic-word') as HTMLElement;
 		if (!wordNode) return () => {};
@@ -459,12 +460,9 @@
 			});
 		}
 
-		const initialSpans = splitToSpans(words[currentIndex]);
-		gsap.set(initialSpans, { opacity: 0, filter: 'blur(10px)' });
+		splitToSpans(words[currentIndex]);
 
 		return () => {
-		playIn(initialSpans);
-
 		_heroWordTimer = window.setInterval(() => {
 			if (isAnimating) return;
 			isAnimating = true;
@@ -621,7 +619,8 @@
 				},
 			});
 
-			// Red word: hidden now, starts once the main entrance has landed (4).
+			// Red word: in place now (enters with the claim); its rotation
+			// starts once the main entrance has landed (4).
 			const startDynamicWord = initHeroDynamicWord();
 
 			// 1. The claim — focus pull.
@@ -647,7 +646,8 @@
 				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.0);
 			}
 
-			// 4. The red word, after the main entrance (claim + supporting lines).
+			// 4. Word rotation, after the main entrance — first change comes one
+			// full hold (4.2s) later, so the whole line reads first.
 			tl.add(startDynamicWord, 2.4);
 
 			// 5. Last: the light from above.
