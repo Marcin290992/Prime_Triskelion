@@ -39,6 +39,12 @@ document.addEventListener('astro:before-swap', (e) => {
 	if (!cutNext) return;
 	cutNext = false;
 	cutting = true;
+	// A cut animates nothing, so skip the browser's view transition outright.
+	// Left running, iOS Safari showed the new page as a frozen snapshot for
+	// its duration — and when the toolbar re-expanded after the scroll reset
+	// (it had collapsed from scrolling the previous page), that snapshot slid
+	// up and down before the live page replaced it.
+	e.viewTransition?.skipTransition?.();
 	// Keep the class until the transition is over (dropping it earlier would
 	// re-apply the root fades mid-transition), then clear it.
 	const done = e.viewTransition?.finished ?? Promise.resolve();
