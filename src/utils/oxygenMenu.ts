@@ -534,9 +534,10 @@ function initOxygenMenu() {
     let handledByTouch = false;
 
     // Cinematic exit: everything but the chosen link racks out of focus and
-    // dissolves, rippling outward from the choice; the chosen link is left
-    // alone on black for a beat, then goes out of focus itself as the menu
-    // fades (the reverse of the new page's title focusing in after the cut).
+    // dissolves, all together (a stepped, one-after-another dissolve read
+    // as stutter); the chosen link is left alone on black for a beat, then
+    // goes out of focus itself as the menu fades (the reverse of the new
+    // page's title focusing in after the cut).
     // Blur only on single lines of text (each <li> — its own overflow:hidden
     // would clip a blur on anything inside it) and the thin top/bottom
     // bars; the right panel just fades, a filter on that block steps on
@@ -545,16 +546,13 @@ function initOxygenMenu() {
       const overlay = document.getElementById('ox-menu-overlay');
       if (!overlay) return;
       const chosen = link.closest<HTMLElement>('.ox-menu-item');
-      const items = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'));
-      const at = chosen ? items.indexOf(chosen) : -1;
-      const others = items
-        .filter((el) => el !== chosen)
-        .sort((a, b) => Math.abs(items.indexOf(a) - at) - Math.abs(items.indexOf(b) - at));
+      const others = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'))
+        .filter((el) => el !== chosen);
       // Reduce motion: a plain fade, no blur.
       const out = reducedMotion()
         ? { opacity: 0, duration: 0.4, ease: 'none' }
         : { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
-      gsap.to(others, { ...out, stagger: 0.07 });
+      gsap.to(others, out);
       gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: 0.12 });
       // Right panel: its info block always goes; the whole panel (with the
       // featured project) only when a nav link was chosen.
