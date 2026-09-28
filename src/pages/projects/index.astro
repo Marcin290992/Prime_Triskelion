@@ -555,7 +555,7 @@ const projects = [
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero, titleIn, supportIn, entranceMode } from '../../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
   import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
@@ -568,8 +568,8 @@ const projects = [
     // Mobile: the hint comes in once title and lead have landed; desktop
     // keeps its own cue.
     const isMob = window.matchMedia('(max-width: 1024px)').matches;
-    // Repeat / back visits (entranceMode) skip the choreography, so no wait.
-    const mode = entranceMode();
+    // Repeat / back visits (subpageMode) skip the choreography, so no wait.
+    const mode = subpageMode();
     const hintDelay = mode === 'none' ? 0 : mode === 'short' ? 700 : isMob ? 2400 : 1100;
     // Don't bring the hint in on a page that's already being left (see
     // trackLeaving) — it flashed in just ahead of the next page's hero.

@@ -735,13 +735,12 @@ const navLinks = [
   .oxygen-menu-open {
     overscroll-behavior: none;
   }
-  /* Mobile only — deep black menu: the overlay's own grain lifts its #000
-     to a visible grey next to the solid-black bars iOS Safari paints
-     above/below it. (The global grain is off on mobile altogether — see
-     body::after in global.css.) */
-  @media (max-width: 1024px) {
-    .ox-overlay-grain { display: none; }
-  }
+  /* Off everywhere — deep black menu, same as the page behind it. On
+     mobile it lifted the #000 to a visible grey next to iOS Safari's
+     solid-black bars; on desktop it stacked on the global grain
+     (body::after in global.css), so the menu read ~60% brighter than
+     the pages. The global grain alone keeps desktop's texture. */
+  .ox-overlay-grain { display: none; }
 
   /* Set by oxygenMenu.ts once the menu overlay has fully faded in — see
      setPageCovered() there. Everything except the menu itself and the logo

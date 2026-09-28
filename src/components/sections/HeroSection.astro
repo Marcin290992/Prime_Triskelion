@@ -604,10 +604,12 @@
 			// layout flush instead of letting the browser batch it normally.
 			const pastHero = (window.scrollY || window.pageYOffset) > hero!.offsetHeight * 0.3;
 
-			// Home already seen this session (or a reload): one quick, light
-			// focus pull of the whole block, light already on, words rotating
-			// straight after. Back/forward: the finished hero at once. The
-			// chrome isn't hidden on these paths — it just stays as it is.
+			// Coming back to Home (seen before this session, a reload, or the
+			// browser's back/forward): the text is simply there, on black, and
+			// only the light comes down from above — a beat of black first so
+			// it reads, then it rises and sweeps down the frame; the words
+			// start rotating once it's full. The chrome isn't hidden on these
+			// paths — it just stays as it is.
 			const mode = entranceMode();
 			// The claim's two lines (white, then red) come in one after the
 			// other, not as one block — same rhythm as the subpage titles.
@@ -616,27 +618,39 @@
 			if (mode !== 'full') {
 				const startWord = initHeroDynamicWord();
 				const els = [...claimLines, ...support];
-				const textReady = () => {
-					(window as any).__ptHeroTextReady = true;
-					window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-				};
 				gsap.set(title, { opacity: 1, filter: 'none', y: 0 });
 				if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
-				gsap.set('#rays-canvas', { opacity: 1 });
-				if (mode === 'none') {
-					gsap.set(els, { opacity: 1, filter: 'none', y: 0, scale: 1 });
-					hero!.style.opacity = '1';
-					textReady();
+				gsap.set(els, { opacity: 1, filter: 'none', y: 0, scale: 1 });
+				hero!.style.opacity = '1';
+				(window as any).__ptHeroTextReady = true;
+				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
+				if (pastHero) {
+					// Restored below the hero: nothing to watch, light just on.
+					gsap.set('#rays-canvas', { opacity: 1 });
 					gsap.delayedCall(1.0, startWord);
 					return;
 				}
-				gsap.set(els, { opacity: 0, filter: 'blur(8px)', y: 0 });
-				hero!.style.opacity = '1';
-				gsap.to(els, {
-					opacity: 1, filter: 'blur(0px)', duration: 1.0, ease: 'power2.out', stagger: 0.12,
-					onComplete: () => { gsap.set(els, { filter: 'none' }); textReady(); },
-				});
-				gsap.delayedCall(1.1, startWord);
+				const rays = document.getElementById('rays-canvas');
+				// Top-down sweep: a soft-edged mask whose edge travels from
+				// above the frame to below it, while the light also fades up.
+				const sweep = { edge: -40 };
+				const setMask = () => {
+					if (!rays) return;
+					const m = `linear-gradient(to bottom, #000 ${sweep.edge}%, transparent ${sweep.edge + 40}%)`;
+					rays.style.maskImage = m;
+					(rays.style as any).webkitMaskImage = m;
+				};
+				setMask();
+				gsap.set(rays, { opacity: 0 });
+				gsap.timeline({
+					delay: 0.5,
+					onComplete: () => {
+						if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; }
+						startWord();
+					},
+				})
+					.to(rays, { opacity: 1, duration: 1.8, ease: 'sine.inOut' }, 0)
+					.to(sweep, { edge: 100, duration: 2.0, ease: 'power2.inOut', onUpdate: setMask }, 0);
 				return;
 			}
 
