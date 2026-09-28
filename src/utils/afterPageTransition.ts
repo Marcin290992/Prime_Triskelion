@@ -1,19 +1,30 @@
-// astro:page-load fires as soon as the new DOM is swapped in — BEFORE the
-// page View Transition (fade-out, then a whole-page blur-in, see
-// Layout.astro) has played. A title that starts its own blur-in on
-// page-load therefore gets caught mid-animation by the page blur-in and
-// visibly blurs in twice. Run entrance animations through this instead:
-// it waits for the running transition to finish (native or Astro's
-// fallback — both expose `finished`), and runs immediately on a hard load.
+// astro:page-load fires as soon as the new DOM is swapped in — before the
+// page View Transition (quick fade-out, then the new page fading in, see
+// Layout.astro) has played. Run entrance animations through this so they
+// start as the new page begins to appear: shortly after the transition's
+// animations kick off (`ready`), not once it has fully finished — waiting
+// for `finished` left a noticeable pause of plain page before anything
+// moved. The titles start at opacity 0, so the page's own short fade-in
+// can't make them read as blurring in twice. Falls back to `finished` (or
+// runs immediately) where `ready` isn't available, e.g. on a hard load.
 //
 // Imported by Layout.astro too, so the before-swap listener is registered
 // on every page from the first load — a page script loaded only after
 // navigating to it would otherwise miss the swap it needs to wait for.
 
+// ≈ when the new page is starting to show (its fade-in has a ~0.1s delay).
+const START_AFTER_READY_MS = 160;
+
 let pending: Promise<unknown> | null = null;
 
 document.addEventListener('astro:before-swap', (e) => {
-	pending = e.viewTransition?.finished.catch(() => {}) ?? null;
+	const vt = e.viewTransition;
+	if (!vt) { pending = null; return; }
+	const started = vt.ready
+		? vt.ready.then(() => new Promise((r) => setTimeout(r, START_AFTER_READY_MS)))
+		: vt.finished;
+	// A skipped/aborted transition rejects — run the entrance anyway.
+	pending = started.catch(() => {});
 });
 
 export function afterPageTransition(fn: () => void): void {

@@ -476,14 +476,14 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       if (titleWords.length) tl.to(titleWords,
-        { opacity: 1, filter: 'blur(0px)', duration: 0.8, stagger: 0.1 },
+        { opacity: 1, filter: 'blur(0px)', duration: 1.15, stagger: 0.14 },
         0.08
       );
-      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0.32);
+      if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
       // Mobile: the hint comes in while the title is still sharpening (the
       // centred first screen is otherwise empty); desktop keeps its later cue.
       setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); },
-        window.matchMedia('(max-width: 1024px)').matches ? 600 : 780);
+        window.matchMedia('(max-width: 1024px)').matches ? 850 : 1100);
       revealAfterHero();
     });
 
