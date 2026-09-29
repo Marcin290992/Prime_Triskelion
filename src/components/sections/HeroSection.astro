@@ -539,7 +539,8 @@
 			const logoText = document.querySelector('.h-title__text') as HTMLElement | null;
 
 			// Logo mark — three arms scattered/blurred, about to spin into place;
-			// wordmark racked out of focus, about to snap sharp with the mark.
+			// wordmark soft and hidden, about to come in with the claim's focus
+			// pull.
 			function hideChrome() {
 				gsap.set(hudMenu, { opacity: 0, y: -8 });
 				gsap.set(logoArms, {
@@ -553,14 +554,16 @@
 				gsap.set(logoArms[2], { rotation: 185 });
 				gsap.set(logoText, {
 					opacity: 0,
-					scale: 1.4,
-					filter: 'blur(16px)',
+					scale: 1.04,
+					filter: 'blur(12px)',
 					transformOrigin: '0% 50%',
 				});
 			}
 
-			// Wordmark racks into focus first, then the mark spins/snaps into
-			// place after. Menu button — after the message (headline/sub/cta/
+			// The wordmark comes in with the claim's focus pull (opacity, then
+			// focus, settling from a hair oversized) once the supporting lines
+			// are landing, and the mark spins/snaps into place last of all —
+			// the final beat of the intro. Menu button — after the message (headline/sub/cta/
 			// stats) has landed, but not held hostage by the decorative logo
 			// spin, so impatient users get a visible, clickable nav control
 			// well before the full ~3s reveal finishes.
@@ -571,14 +574,12 @@
 			// outranking oxygenMenu.ts's CSS-class-driven show/hide on scroll
 			// (inline style always beats a class rule) — the button would look
 			// stuck visible no matter what state.barHidden says.
+			const NAME_AT = 3.0;
+			const ARMS_AT = NAME_AT + 1.2;
 			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0) {
-				tl.to(logoText, {
-					opacity: 1,
-					scale: 1,
-					filter: 'blur(0px)',
-					duration: 0.85,
-					ease: 'power4.out',
-				}, 1.05 + delay)
+				tl.to(logoText, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, NAME_AT)
+				  .to(logoText, { filter: 'blur(0px)', duration: 1.6, ease: 'power2.inOut' }, NAME_AT)
+				  .to(logoText, { scale: 1, duration: 1.8, ease: 'power2.out' }, NAME_AT)
 				  .to(logoArms, {
 					opacity: 1,
 					scale: 1,
@@ -587,7 +588,7 @@
 					duration: 0.95,
 					ease: 'back.out(1.6)',
 					stagger: 0.08,
-				}, 1.95 + delay)
+				}, ARMS_AT)
 				  .to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6 + delay);
 			}
 
@@ -738,11 +739,13 @@
 				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6);
 			}
 
-			// 4. Word rotation, once everything has landed.
-			tl.add(startDynamicWord, 4.0);
+			// 4. Word rotation, once everything has landed — the logo mark
+			// included, when it's part of this intro.
+			const endAt = chromeShown ? 4.0 : ARMS_AT + 1.1;
+			tl.add(startDynamicWord, endAt);
 
 			// Intro over — the CTA's glare sweep may start (global.css).
-			tl.add(() => hero!.classList.add('pt-intro-done'), 4.4);
+			tl.add(() => hero!.classList.add('pt-intro-done'), endAt + 0.4);
 		}
 
 		// Start as the new page appears (not before) when arriving via a
