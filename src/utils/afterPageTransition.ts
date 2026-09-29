@@ -151,10 +151,9 @@ document.addEventListener('astro:before-swap', (e) => {
 // 'short' seen before in this session (a reload restarts: 'full') — one quick, light
 //         focus pull, no choreography, so going round the site doesn't mean
 //         sitting through the same intro again;
-// 'none'  arrived with a back/forward the browser animated itself (Safari's
-//         swipe) or a hard back/forward load — straight to the finished page.
-//         A client-side back/forward (button, browser arrow) plays the same
-//         'short' entrance as going forward to a page seen before.
+// 'none'  arrived with the browser's back/forward — straight to the finished
+//         page; the whole content comes in with one light blur-in instead
+//         (below), or is simply there after Safari's own swipe animation.
 // Decided once per page view, on the swap (or at load), before the page's
 // own scripts ask for it.
 export type EntranceMode = 'full' | 'short' | 'none';
@@ -194,17 +193,47 @@ let mode: EntranceMode = (() => {
 	return decide(nav?.type === 'back_forward', nav?.type === 'reload');
 })();
 let traverseNext = false;
+let blurInNext = false;
 document.addEventListener('astro:before-preparation', (e: any) => {
-	traverseNext = e.navigationType === 'traverse' && uaVisualNext;
+	traverseNext = e.navigationType === 'traverse';
+	blurInNext = traverseNext && !uaVisualNext;
 	uaVisualNext = false;
 });
+
+// Back/forward (not the Safari swipe): the whole page content comes in with
+// one light focus pull out of the black — the same blur as the subpage
+// titles' short entrance — instead of each page's own entrance ('none'
+// below), wherever the restored scroll lands. Chrome (logo, menu, top CTA
+// and its blur strip, grid lines) isn't touched: a filter on those would
+// blank their glass. clearProps at the end — a filter left on a whole
+// section would make it the containing block of anything fixed inside.
+const BLUR_IN_SET = 'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
+	+ ':not(.top-blur):not(#site-cta-wrap):not(#grid-lines):not(script):not(style)';
+document.addEventListener('astro:after-swap', () => {
+	if (!blurInNext) return;
+	blurInNext = false;
+	const content = document.querySelectorAll<HTMLElement>(BLUR_IN_SET);
+	const reduce = reducedMotion();
+	gsap.set(content, reduce ? { opacity: 0 } : { opacity: 0, filter: 'blur(8px)' });
+	afterPageTransition(() => {
+		gsap.to(content, {
+			opacity: 1,
+			...(reduce ? {} : { filter: 'blur(0px)' }),
+			duration: reduce ? 0.3 : 0.8,
+			ease: reduce ? 'none' : 'power2.out',
+			clearProps: 'opacity,filter',
+		});
+	});
+});
+
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
-	// Swipe-back lands mid-page (restored scroll) — on mobile right in the
+	// Back/forward lands mid-page (restored scroll) — on mobile right in the
 	// content below the hero, which starts hidden and fades in 0.8s after
 	// the title (revealAfterHero). Show it now, before the first paint and
-	// without the fade: under the browser's own slide it read as a blink.
+	// without its own fade: the page-wide blur-in above brings it in (and
+	// under Safari's swipe the page is simply there).
 	if (mode === 'none') {
 		document.querySelectorAll<HTMLElement>('[data-after-hero]').forEach((el) => {
 			el.style.transition = 'none';
@@ -220,7 +249,7 @@ export function entranceMode(): EntranceMode {
 
 // Subpages (titles, leads, hints — everything but the home hero): the
 // short entrance is the only one, first visit included, on every device —
-// the full choreography read as too long there. Swipe-back still 'none'.
+// the full choreography read as too long there. Back/forward still 'none'.
 // The home hero keeps all three (entranceMode).
 export function subpageMode(): EntranceMode {
 	return mode === 'full' ? 'short' : mode;
