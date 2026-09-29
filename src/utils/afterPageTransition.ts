@@ -36,14 +36,25 @@ document.addEventListener('astro:after-swap', () => {
 	if (cutting) document.documentElement.classList.add('vt-cut');
 });
 
-// Touch, in-page links (not the menu, not back/forward): the same shape as
+// Back/forward that the browser already animated itself — the iOS / macOS
+// Safari swipe gesture slides the previous page in (hasUAVisualTransition,
+// Astro then skips its own transition). Playing ours on top would run a
+// second transition after the page is already there, so those keep the old
+// behaviour: no exit fade, finished page at once (mode 'none'). A capture
+// listener runs before the router's own popstate handler on window.
+let uaVisualNext = false;
+window.addEventListener('popstate', (e: any) => {
+	uaVisualNext = !!e.hasUAVisualTransition;
+}, true);
+
+// Touch, in-page links and back/forward (not the menu): the same shape as
 // leaving through the menu — the page fades down to black (while the next
 // one loads, so it costs no extra wait when that takes longer), then a cut
 // and the new title focuses in. The quick root cross-fade they used to get
 // read as abrupt next to the menu's exit. Only the page content fades —
 // the logo, menu and edge strips stay (the set html.ox-menu-covered hides).
 document.addEventListener('astro:before-preparation', (e: any) => {
-	if (cutNext || e.navigationType === 'traverse') return;
+	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (!window.matchMedia('(pointer: coarse)').matches) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
@@ -140,8 +151,10 @@ document.addEventListener('astro:before-swap', (e) => {
 // 'short' seen before in this session (a reload restarts: 'full') — one quick, light
 //         focus pull, no choreography, so going round the site doesn't mean
 //         sitting through the same intro again;
-// 'none'  arrived with the browser's back/forward — straight to the finished
-//         page, nobody expects an intro when returning to where they were.
+// 'none'  arrived with a back/forward the browser animated itself (Safari's
+//         swipe) or a hard back/forward load — straight to the finished page.
+//         A client-side back/forward (button, browser arrow) plays the same
+//         'short' entrance as going forward to a page seen before.
 // Decided once per page view, on the swap (or at load), before the page's
 // own scripts ask for it.
 export type EntranceMode = 'full' | 'short' | 'none';
@@ -182,16 +195,16 @@ let mode: EntranceMode = (() => {
 })();
 let traverseNext = false;
 document.addEventListener('astro:before-preparation', (e: any) => {
-	traverseNext = e.navigationType === 'traverse';
+	traverseNext = e.navigationType === 'traverse' && uaVisualNext;
+	uaVisualNext = false;
 });
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
-	// Back/forward lands mid-page (restored scroll) — on mobile right in the
+	// Swipe-back lands mid-page (restored scroll) — on mobile right in the
 	// content below the hero, which starts hidden and fades in 0.8s after
 	// the title (revealAfterHero). Show it now, before the first paint and
-	// without the fade: it read as a blink on Projects, where you come back
-	// into the middle of the list.
+	// without the fade: under the browser's own slide it read as a blink.
 	if (mode === 'none') {
 		document.querySelectorAll<HTMLElement>('[data-after-hero]').forEach((el) => {
 			el.style.transition = 'none';
@@ -207,7 +220,7 @@ export function entranceMode(): EntranceMode {
 
 // Subpages (titles, leads, hints — everything but the home hero): the
 // short entrance is the only one, first visit included, on every device —
-// the full choreography read as too long there. Back/forward still 'none'.
+// the full choreography read as too long there. Swipe-back still 'none'.
 // The home hero keeps all three (entranceMode).
 export function subpageMode(): EntranceMode {
 	return mode === 'full' ? 'short' : mode;
