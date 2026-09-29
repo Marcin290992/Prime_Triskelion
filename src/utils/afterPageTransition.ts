@@ -47,6 +47,141 @@ window.addEventListener('popstate', (e: any) => {
 	uaVisualNext = !!e.hasUAVisualTransition;
 }, true);
 
+// Into a case study (links in a data-case element, every device): the
+// project's picture opens up from its card to the whole screen — a frame
+// (clip-path, card's corner radius easing to square) widening over a
+// full-screen picture, which settles from the card's own crop to the full
+// one with a slight push in and back out on the way, like the scroll-expand
+// reveals; a scrim deepens and the page behind goes to black. The case study
+// loads meanwhile. The picture lives on <html>, outside <body>, so it
+// survives the swap (the router only replaces <body>); on the new page it
+// fades down to black, and then the title focuses in like every other
+// hero. A cut otherwise (no browser view transition), so it plays the
+// same everywhere. The chrome (logo, menu, z-index 1002) stays above it.
+const CASE_OPEN_S = 1.2;
+const CASE_PUSH = 0.12;  // extra zoom at the middle of the move
+const CASE_SCRIM = 0.4;
+let caseShot: HTMLElement | null = null;
+const casePreloaded = new Set<string>();
+document.addEventListener('astro:before-preparation', (e: any) => {
+	const link = (e.sourceElement as Element | undefined)?.closest?.('[data-case]');
+	const img = link?.querySelector<HTMLImageElement>('img');
+	if (!link || !img || reducedMotion()) return;
+	const media = img.closest<HTMLElement>('[data-case-media]') ?? img;
+	if (!media.offsetWidth || !media.offsetHeight || !img.naturalWidth) return;
+
+	// A navigation that never swapped (superseded by this one) mustn't
+	// leave its picture over the page.
+	caseShot?.remove();
+	const shot = document.createElement('div');
+	shot.setAttribute('aria-hidden', 'true');
+	shot.style.cssText = 'position:fixed;inset:0;z-index:1000;pointer-events:none;visibility:hidden';
+	document.documentElement.append(shot);
+	caseShot = shot;
+
+	// Everything is measured in the layer's own box — on iOS Safari a fixed
+	// inset:0 layer isn't always innerWidth x innerHeight (toolbar), and a
+	// mismatch showed as the picture jumping on the first frame.
+	const sr = shot.getBoundingClientRect();
+	const W = sr.width;
+	const H = sr.height;
+	const ir = img.getBoundingClientRect();
+	const mr = media.getBoundingClientRect();
+
+	// Start: the full-screen picture scaled and moved so that, seen through
+	// the card-sized window, it's exactly the card's picture — measured on
+	// the <img> itself (Home's cards zoom it for their parallax), with its
+	// crop (object-position, e.g. Projects' "center 30%" on mobile).
+	const iw = img.naturalWidth;
+	const ih = img.naturalHeight;
+	const cover = (w: number, h: number) => Math.max(w / iw, h / ih);
+	const kv = cover(W, H);
+	const kc = cover(ir.width, ir.height);
+	const s0 = kc / kv;
+	const [posX, posY] = getComputedStyle(img).objectPosition.split(' ');
+	const offset = (pos: string | undefined, free: number) =>
+		!pos ? free / 2 : pos.endsWith('%') ? free * parseFloat(pos) / 100 : parseFloat(pos) || 0;
+	const ox = offset(posX, ir.width - iw * kc);
+	const oy = offset(posY ?? posX, ir.height - ih * kc);
+	const dx = ir.left - sr.left + ox + (iw * kc) / 2 - W / 2;
+	const dy = ir.top - sr.top + oy + (ih * kc) / 2 - H / 2;
+	const inset = [mr.top - sr.top, sr.right - mr.right, sr.bottom - mr.bottom, mr.left - sr.left];
+	const radius = parseFloat(getComputedStyle(media).borderTopLeftRadius) || 0;
+
+	shot.innerHTML = '<div style="position:absolute;inset:0;overflow:hidden;will-change:clip-path">'
+		// The stage is the whole picture at its full-screen cover size (not
+		// the screen's), so scaled down to the card nothing of it is cut.
+		+ `<div style="position:absolute;left:${(W - iw * kv) / 2}px;top:${(H - ih * kv) / 2}px;width:${iw * kv}px;height:${ih * kv}px;will-change:transform"></div>`
+		+ '<div style="position:absolute;inset:0;opacity:0;background:linear-gradient(to top,rgb(0 0 0 / .75),rgb(0 0 0 / .1) 45%,rgb(0 0 0 / .35))"></div>'
+		+ '</div>';
+	const frame = shot.firstElementChild as HTMLElement;
+	const stage = frame.firstElementChild as HTMLElement;
+	const scrim = frame.lastElementChild as HTMLElement;
+	const addPic = (src: string) => {
+		const pic = document.createElement('img');
+		pic.src = src;
+		pic.alt = '';
+		pic.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block';
+		stage.append(pic);
+		return pic;
+	};
+	// Starts as the card's own picture (same pixels, same crop). It's a
+	// thumbnail, soft once blown up to the whole screen, so the full-size
+	// version (data-case-src, preloaded on first touch/hover, below) is
+	// laid over it and fades in as soon as it's decoded — within the first
+	// moments of the move when preloaded. Same centre crop, so no shift.
+	const first = addPic(img.currentSrc || img.src);
+	const fullSrc = link.getAttribute('data-case-src');
+	if (fullSrc) {
+		const sharp = addPic(fullSrc);
+		sharp.style.opacity = '0';
+		sharp.decode().then(() => gsap.to(sharp, { opacity: 1, duration: 0.25, ease: 'none' }), () => {});
+	}
+
+	const apply = (p: number) => {
+		const k = 1 - p;
+		frame.style.clipPath = `inset(${inset.map((v) => (v * k).toFixed(1) + 'px').join(' ')} round ${(radius * k).toFixed(1)}px)`;
+		const scale = (s0 + (1 - s0) * p) * (1 + CASE_PUSH * Math.sin(Math.PI * p));
+		stage.style.transform = `translate3d(${(dx * k).toFixed(1)}px,${(dy * k).toFixed(1)}px,0) scale(${scale.toFixed(4)})`;
+		scrim.style.opacity = String(CASE_SCRIM * p);
+		shot.style.backgroundColor = `rgb(0 0 0 / ${Math.min(1, p * 1.6).toFixed(3)})`;
+	};
+	apply(0);
+	// Shown and started only once the picture can paint: a freshly made
+	// <img> can take a frame or two even from cache, and until then the
+	// card itself is still there underneath, identical.
+	const v = { p: 0 };
+	const open = Promise.race([first.decode().catch(() => {}), new Promise((r) => setTimeout(r, 250))])
+		.then(() => {
+			shot.style.visibility = '';
+			return gsap.to(v, { p: 1, duration: CASE_OPEN_S, ease: 'power2.inOut', onUpdate: () => apply(v.p) }).then();
+		});
+	const load = e.loader;
+	e.loader = async () => { await Promise.all([load(), open]); };
+	cutNextTransition();
+});
+const preloadCase = (e: Event) => {
+	const src = (e.target as Element | null)?.closest?.('[data-case]')?.getAttribute('data-case-src');
+	if (!src || casePreloaded.has(src)) return;
+	casePreloaded.add(src);
+	new Image().src = src;
+};
+document.addEventListener('pointerover', preloadCase, { passive: true });
+document.addEventListener('touchstart', preloadCase, { passive: true });
+document.addEventListener('astro:after-swap', () => {
+	const shot = caseShot;
+	if (!shot) return;
+	caseShot = null;
+	// The picture goes down to black; only then does the new page's own
+	// entrance (the title's focus pull, like every other hero) start —
+	// afterPageTransition() waits on this instead of the skipped
+	// transition. The page underneath is black with its title still hidden,
+	// so dropping the layer after the fade shows nothing new.
+	const out = gsap.to(shot.firstElementChild, { opacity: 0, duration: 0.7, ease: 'power2.inOut' })
+		.then(() => { shot.remove(); });
+	pending = out;
+});
+
 // Touch, in-page links and back/forward (not the menu): the same shape as
 // leaving through the menu — the page fades down to black (while the next
 // one loads, so it costs no extra wait when that takes longer), then a cut
