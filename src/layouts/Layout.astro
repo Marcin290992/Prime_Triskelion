@@ -371,7 +371,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   import gsap from 'gsap';
   import { isSafari } from '../utils/isSafari';
   import '../utils/afterPageTransition';
-  import { initMobileReveal } from '../utils/mobileReveal';
   import '../utils/pageCache';
 
   let _layoutLenis: Lenis | null = null;
@@ -443,8 +442,6 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   }
 
   document.addEventListener('astro:page-load', initLayoutLenis);
-  // A frame later: after the sections' own page-load setup.
-  document.addEventListener('astro:page-load', () => requestAnimationFrame(initMobileReveal));
   document.addEventListener('astro:before-swap', destroyLayoutLenis);
 
   // Persistent site chrome (logo, top-bar CTA, menu button, desktop
