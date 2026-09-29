@@ -47,7 +47,8 @@ window.addEventListener('popstate', (e: any) => {
 	uaVisualNext = !!e.hasUAVisualTransition;
 }, true);
 
-// Into a case study (links in a data-case element, every device): the
+// Into a case study (links in a data-case element; desktop only — touch
+// keeps the fade to black below, the user preferred it there): the
 // project's picture opens up from its card to the whole screen — a frame
 // (clip-path, card's corner radius easing to square) widening over a
 // full-screen picture, which settles from the card's own crop to the full
@@ -67,6 +68,7 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	const link = (e.sourceElement as Element | undefined)?.closest?.('[data-case]');
 	const img = link?.querySelector<HTMLImageElement>('img');
 	if (!link || !img || reducedMotion()) return;
+	if (window.matchMedia('(pointer: coarse)').matches) return;
 	const media = img.closest<HTMLElement>('[data-case-media]') ?? img;
 	if (!media.offsetWidth || !media.offsetHeight || !img.naturalWidth) return;
 
@@ -127,7 +129,7 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	};
 	// Starts as the card's own picture (same pixels, same crop). It's a
 	// thumbnail, soft once blown up to the whole screen, so the full-size
-	// version (data-case-src, preloaded on first touch/hover, below) is
+	// version (data-case-src, preloaded on first hover, below) is
 	// laid over it and fades in as soon as it's decoded — within the first
 	// moments of the move when preloaded. Same centre crop, so no shift.
 	const first = addPic(img.currentSrc || img.src);
@@ -167,7 +169,6 @@ const preloadCase = (e: Event) => {
 	new Image().src = src;
 };
 document.addEventListener('pointerover', preloadCase, { passive: true });
-document.addEventListener('touchstart', preloadCase, { passive: true });
 document.addEventListener('astro:after-swap', () => {
 	const shot = caseShot;
 	if (!shot) return;
