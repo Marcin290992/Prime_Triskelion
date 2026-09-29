@@ -200,30 +200,32 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	uaVisualNext = false;
 });
 
-// Back/forward (not the Safari swipe): the whole page content comes in with
-// one light focus pull out of the black — the same blur as the subpage
-// titles' short entrance — instead of each page's own entrance ('none'
-// below), wherever the restored scroll lands. Chrome (logo, menu, top CTA
-// and its blur strip, grid lines) isn't touched: a filter on those would
-// blank their glass. clearProps at the end — a filter left on a whole
-// section would make it the containing block of anything fixed inside.
-const BLUR_IN_SET = 'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
-	+ ':not(.top-blur):not(#site-cta-wrap):not(#grid-lines):not(script):not(style)';
+// Back/forward (not the Safari swipe): the page comes in out of the black
+// with one light focus pull — the same blur as the subpage titles' short
+// entrance — wherever the restored scroll lands. Done with a veil over the
+// page (below the chrome) that clears, not by filtering the page itself,
+// so nothing on it (About's fluid canvas, fixed layers) is touched.
 document.addEventListener('astro:after-swap', () => {
 	if (!blurInNext) return;
 	blurInNext = false;
-	const content = document.querySelectorAll<HTMLElement>(BLUR_IN_SET);
-	const reduce = reducedMotion();
-	gsap.set(content, reduce ? { opacity: 0 } : { opacity: 0, filter: 'blur(8px)' });
-	afterPageTransition(() => {
-		gsap.to(content, {
-			opacity: 1,
-			...(reduce ? {} : { filter: 'blur(0px)' }),
-			duration: reduce ? 0.3 : 0.8,
-			ease: reduce ? 'none' : 'power2.out',
-			clearProps: 'opacity,filter',
-		});
-	});
+	const veil = document.createElement('div');
+	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
+	document.body.append(veil);
+	const blur = reducedMotion() ? 0 : 8;
+	const v = { t: 1 };
+	const paint = () => {
+		veil.style.opacity = String(v.t);
+		if (!blur) return;
+		const f = `blur(${(blur * v.t).toFixed(2)}px)`;
+		veil.style.backdropFilter = f;
+		veil.style.setProperty('-webkit-backdrop-filter', f);
+	};
+	paint();
+	// Two frames later: a heavy page's first frames (About's fluid sim
+	// starting up) would otherwise swallow the start of the clear.
+	afterPageTransition(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+		gsap.to(v, { t: 0, duration: blur ? 0.8 : 0.3, ease: 'power2.out', onUpdate: paint, onComplete: () => veil.remove() });
+	})));
 });
 
 document.addEventListener('astro:after-swap', () => {
