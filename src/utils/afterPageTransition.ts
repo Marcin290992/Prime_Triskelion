@@ -36,14 +36,25 @@ document.addEventListener('astro:after-swap', () => {
 	if (cutting) document.documentElement.classList.add('vt-cut');
 });
 
-// Touch, in-page links (not the menu, not back/forward): the same shape as
+// Back/forward that the browser already animated itself — the iOS / macOS
+// Safari swipe gesture slides the previous page in (hasUAVisualTransition,
+// Astro then skips its own transition). Playing ours on top would run a
+// second transition after the page is already there, so those keep the old
+// behaviour: no exit fade, finished page at once (mode 'none'). A capture
+// listener runs before the router's own popstate handler on window.
+let uaVisualNext = false;
+window.addEventListener('popstate', (e: any) => {
+	uaVisualNext = !!e.hasUAVisualTransition;
+}, true);
+
+// Touch, in-page links and back/forward (not the menu): the same shape as
 // leaving through the menu — the page fades down to black (while the next
 // one loads, so it costs no extra wait when that takes longer), then a cut
 // and the new title focuses in. The quick root cross-fade they used to get
 // read as abrupt next to the menu's exit. Only the page content fades —
 // the logo, menu and edge strips stay (the set html.ox-menu-covered hides).
 document.addEventListener('astro:before-preparation', (e: any) => {
-	if (cutNext || e.navigationType === 'traverse') return;
+	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (!window.matchMedia('(pointer: coarse)').matches) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
@@ -141,7 +152,8 @@ document.addEventListener('astro:before-swap', (e) => {
 //         focus pull, no choreography, so going round the site doesn't mean
 //         sitting through the same intro again;
 // 'none'  arrived with the browser's back/forward — straight to the finished
-//         page, nobody expects an intro when returning to where they were.
+//         page; the whole content comes in with one light blur-in instead
+//         (below), or is simply there after Safari's own swipe animation.
 // Decided once per page view, on the swap (or at load), before the page's
 // own scripts ask for it.
 export type EntranceMode = 'full' | 'short' | 'none';
@@ -181,17 +193,49 @@ let mode: EntranceMode = (() => {
 	return decide(nav?.type === 'back_forward', nav?.type === 'reload');
 })();
 let traverseNext = false;
+let blurInNext = false;
 document.addEventListener('astro:before-preparation', (e: any) => {
 	traverseNext = e.navigationType === 'traverse';
+	blurInNext = traverseNext && !uaVisualNext;
+	uaVisualNext = false;
 });
+
+// Back/forward (not the Safari swipe): the page comes in out of the black
+// with one light focus pull — the same blur as the subpage titles' short
+// entrance — wherever the restored scroll lands. Done with a veil over the
+// page (below the chrome) that clears, not by filtering the page itself,
+// so nothing on it (About's fluid canvas, fixed layers) is touched.
+document.addEventListener('astro:after-swap', () => {
+	if (!blurInNext) return;
+	blurInNext = false;
+	const veil = document.createElement('div');
+	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
+	document.body.append(veil);
+	const blur = reducedMotion() ? 0 : 8;
+	const v = { t: 1 };
+	const paint = () => {
+		veil.style.opacity = String(v.t);
+		if (!blur) return;
+		const f = `blur(${(blur * v.t).toFixed(2)}px)`;
+		veil.style.backdropFilter = f;
+		veil.style.setProperty('-webkit-backdrop-filter', f);
+	};
+	paint();
+	// Two frames later: a heavy page's first frames (About's fluid sim
+	// starting up) would otherwise swallow the start of the clear.
+	afterPageTransition(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+		gsap.to(v, { t: 0, duration: blur ? 0.8 : 0.3, ease: 'power2.out', onUpdate: paint, onComplete: () => veil.remove() });
+	})));
+});
+
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
 	// Back/forward lands mid-page (restored scroll) — on mobile right in the
 	// content below the hero, which starts hidden and fades in 0.8s after
 	// the title (revealAfterHero). Show it now, before the first paint and
-	// without the fade: it read as a blink on Projects, where you come back
-	// into the middle of the list.
+	// without its own fade: the page-wide blur-in above brings it in (and
+	// under Safari's swipe the page is simply there).
 	if (mode === 'none') {
 		document.querySelectorAll<HTMLElement>('[data-after-hero]').forEach((el) => {
 			el.style.transition = 'none';
