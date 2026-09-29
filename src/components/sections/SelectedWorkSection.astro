@@ -1,10 +1,13 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import deeer2 from '../../img/deeer2.webp';
 // deeer2.webp is a huge source file (7360px wide) — <Image> generates a
 // properly-downscaled asset instead of shipping the original into these
 // small boxes (heavy enough to jank scroll on iOS Safari). width/height
 // match .wr-img-inner's own 4:3 aspect-ratio.
+// Full-screen version for the case-study entrance (data-case-src, see
+// afterPageTransition.ts) — the 640px row thumbnail blows up soft.
+const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 ---
 <section id="selected-work">
 
@@ -21,8 +24,8 @@ import deeer2 from '../../img/deeer2.webp';
 					<a href="/projects" class="link-btn">View All Projects +</a>
 				</div>
 
-				<div class="slide slide-card card-fade">
-					<a href="/winds-of-sinai" class="img-box">
+				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
+					<a href="/winds-of-sinai" class="img-box" data-case-media>
 						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
 					</a>
 					<div class="card-info">
@@ -115,11 +118,11 @@ import deeer2 from '../../img/deeer2.webp';
 
 	<div class="work-list">
 
-		<a href="/winds-of-sinai" class="work-row">
+		<a href="/winds-of-sinai" class="work-row" data-case data-case-src={deeer2Full.src}>
 			<span class="wr-num">01</span>
 			<div class="wr-img-col">
 				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
+					<div class="wr-img-inner" data-case-media><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
 				</div></div>
 			</div>
 			<div class="wr-content">

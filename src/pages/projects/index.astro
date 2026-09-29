@@ -8,6 +8,8 @@ import deeer2Raw from '../../img/deeer2.webp';
 // string src (`img` also holds external URLs for the other entries), so
 // getImage() pre-generates a downscaled asset to use instead of the original.
 const deeer2 = await getImage({ src: deeer2Raw, width: 900, height: 1200 });
+// Full-screen version for the case-study entrance (data-case-src).
+const deeer2Full = await getImage({ src: deeer2Raw, width: 2400 });
 
 const projects = [
   {
@@ -17,6 +19,7 @@ const projects = [
     categories: ['Brand Identity', 'Web Design'],
     year: '2024',
     img: deeer2.src,
+    full: deeer2Full.src,
     bg: '#0c0d0b',
     speed: 1,
   },
@@ -80,7 +83,7 @@ const projects = [
         style={`--bg: ${p.bg}`}
         aria-label={p.title}
       >
-        <a class="proj-inner" href={p.slug}>
+        <a class="proj-inner" href={p.slug} data-case data-case-src={p.full}>
 
           <!-- Giant bg text -->
           <span class="proj-bg-text" data-speed={p.speed} aria-hidden="true">
@@ -88,7 +91,7 @@ const projects = [
           </span>
 
           <!-- Project image -->
-          <div class="proj-img-wrap">
+          <div class="proj-img-wrap" data-case-media>
             {p.img
               ? <img src={p.img} alt={p.title} crossorigin="anonymous" />
               : (
