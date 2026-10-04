@@ -103,7 +103,7 @@ const navLinks = [
             <a href="/winds-of-sinai" class="block group ox-featured-link">
               <div class="ox-featured-visual"></div>
               <div class="flex justify-between items-baseline mt-2.5">
-                <span class="ox-panel-value group-hover:text-white/75 transition-colors duration-300">Winds Of Sinai</span>
+                <span class="ox-panel-value group-hover:text-white transition-colors duration-300">Winds Of Sinai</span>
                 <span class="ox-panel-sub">2025</span>
               </div>
             </a>
@@ -137,7 +137,7 @@ const navLinks = [
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm9.985 11.078h-3.543c-.162-2.132-.88-4.107-1.998-5.77 1.74.93 3.123 2.415 3.93 4.217.226.484.405.99.528 1.514a9.98 9.98 0 011.083.039zm-5.574-6.804c1.24 1.692 2.03 3.722 2.198 5.944h-3.39c-.148-2.21-.878-4.241-2.028-5.944 1.1.002 2.26.078 3.22 0zM12 2.015c1.156 0 2.27.198 3.31.556-1.13 1.698-1.866 3.722-2.015 5.938h-2.59c-.149-2.216-.885-4.24-2.015-5.938A9.963 9.963 0 0112 2.015zm-4.61 6.494H4.015A9.985 9.985 0 018.29 4.274c-1.12 1.663-1.84 3.638-2 5.77a9.933 9.933 0 01-.9-.535zm-3.36 1.56h3.54c.148 2.22.876 4.248 2.024 5.944-1.74-.93-3.12-2.415-3.926-4.217a9.99 9.99 0 01-.526-1.515 9.954 9.954 0 01-1.112-.212zM8.7 20.727c-1.238-1.693-2.027-3.723-2.196-5.943h3.39c.148 2.207.877 4.237 2.026 5.942-1.1-.002-2.264-.076-3.22.001zm3.3 1.258a9.969 9.969 0 01-3.31-.556c1.13-1.698 1.865-3.722 2.014-5.938h2.59c.149 2.216.886 4.24 2.016 5.938A9.97 9.97 0 0112 21.985zm4.61-6.494h3.375a9.987 9.987 0 01-4.275 4.235c1.12-1.663 1.84-3.638 2-5.77.3.17.604.35.9.535zM15.3 13.96h3.685c-.148 2.218-.876 4.246-2.025 5.942 1.239-1.693 2.028-3.722 2.197-5.942h-3.857z"/></svg>
             </a>
           </div>
-          <span class="text-[9px] uppercase tracking-[3px] text-white/20" style="font-family:var(--f-body)">© 2026 All Rights Reserved</span>
+          <span class="text-[11px] uppercase tracking-[3px] text-white/60" style="font-family:var(--f-body)">© 2026 All Rights Reserved</span>
         </div>
       </div>
     </div>
@@ -231,14 +231,14 @@ const navLinks = [
 
   /* ── Panel email link ── */
   .ox-panel-email {
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.75);
     text-decoration: none;
     transition: color 0.3s ease;
     word-break: break-all;
   }
-  .ox-panel-email:hover { color: rgba(255,255,255,0.85); }
+  .ox-panel-email:hover { color: rgba(255,255,255,1); }
 
   /* ── Overlay ambient effects ── */
   .ox-overlay-grain {
@@ -271,27 +271,27 @@ const navLinks = [
   /* ── Right panel labels / values ── */
   .ox-panel-label {
     font-family: var(--f-body);
-    font-size: 9px;
-    font-weight: 300;
+    font-size: 11px;
+    font-weight: 400;
     letter-spacing: 0.42em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.28);
+    color: rgba(255,255,255,0.6);
   }
   .ox-panel-value {
     font-family: var(--f-body);
-    font-size: 10px;
-    font-weight: 300;
+    font-size: 12px;
+    font-weight: 400;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.52);
+    color: rgba(255,255,255,0.85);
   }
   .ox-panel-sub {
     font-family: var(--f-body);
-    font-size: 9px;
-    font-weight: 300;
+    font-size: 11px;
+    font-weight: 400;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: rgba(255,255,255,0.24);
+    color: rgba(255,255,255,0.55);
   }
   /* ── Featured project card ── */
   .ox-featured-visual {
@@ -316,7 +316,7 @@ const navLinks = [
      mirrors the :hover/.group-hover styles above so the card stays lit
      while the menu content blurs out instead of resetting to idle. */
   .ox-featured-link--active .ox-featured-visual { border-color: rgba(255,255,255,0.16); }
-  .ox-featured-link--active .ox-panel-value { color: rgba(255,255,255,0.75); }
+  .ox-featured-link--active .ox-panel-value { color: rgba(255,255,255,1); }
   /* Rolling text — white on top, red below; both slide up on hover */
   .ox-link-text--base {
     color: rgba(255, 255, 255, 0.88);
@@ -473,12 +473,12 @@ const navLinks = [
   .hud-location__city {
     font-size: 13px;
     letter-spacing: 0.3em;
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.85);
   }
   .hud-location__tag {
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.28em;
-    color: rgba(255,255,255,0.28);
+    color: rgba(255,255,255,0.62);
   }
   .hud-side--right { right: 2rem; font-size: 16px; letter-spacing: 0.08em; }
 
@@ -631,7 +631,7 @@ const navLinks = [
     bottom: 1.5rem;
     font-size: 14px;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.85);
     text-transform: uppercase;
     font-variant-numeric: tabular-nums;
     z-index: 9100;
