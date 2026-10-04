@@ -633,13 +633,13 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		.work-row:hover .wr-arrow { transform: rotate(-45deg); color: rgb(var(--c-red)); transition: transform 0.4s cubic-bezier(0.25,1,0.5,1) 0.25s, color 0.4s ease 0.25s; }
 	}
 
-	@media (min-width: 1025px) {
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.scroll-section { display: block; }
 		.sw-header { display: none; }
 		.work-list { display: none; }
 	}
 
-	@media (min-width: 1025px) and (max-width: 1600px) {
+	@media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
 		.track { padding-left: 5vw; gap: 5vw; }
 		.slide-intro { width: 44vw; padding-right: 2vw; }
 		.slide-card { width: 42vw; }
@@ -652,12 +652,12 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 	   the card WIDTH untouched (it drives the horizontal-scroll track math
 	   and the final-slide reveal) — only drop the decorative offset and
 	   flatten the image to a cinematic crop to reclaim the height. */
-	@media (min-width: 1025px) and (max-height: 1000px) {
+	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
 		.slide-card { margin-top: 0; }
 		.img-box { aspect-ratio: 2 / 1; }
 	}
 
-	@media (min-width: 1025px) and (max-height: 820px) {
+	@media (min-width: 1025px) and (hover: hover) and (max-height: 820px), (min-width: 1025px) and (pointer: fine) and (max-height: 820px) {
 		.img-box { aspect-ratio: 21 / 9; }
 	}
 
@@ -665,11 +665,11 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 	   lines overflowed the viewport top/bottom (and the wide words bled off
 	   the sides), so the closing reveal looked broken. Cap it against height
 	   too. */
-	@media (min-width: 1025px) and (max-height: 1000px) {
+	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
 		.final-title { font-size: min(11vw, 13.5vh); }
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		/* .wr-expand/.wr-expand-inner exist purely to animate the desktop
 		   hover-reveal (grid-template-rows 0fr -> 1fr, gated on
 		   @media(hover:hover) — never triggers here anyway since touch has
@@ -714,7 +714,7 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 	   with its number watermark. Reusing the already-solid stacked mobile
 	   layout for the whole ≤1024px range (instead of designing a third,
 	   separate tablet treatment) sidesteps that entirely. */
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.work-list { padding-bottom: clamp(3rem, 8vw, 5rem); }
 		.work-row {
 			grid-template-columns: 2.5rem 1fr;
@@ -736,7 +736,24 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		.wr-img-col { grid-area: img; }
 		.wr-tags    { grid-area: tags; padding-top: 0; }
 		.wr-toggle  { display: none; }
-		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; }
+		/* Capped at about half the screen's height — on a tablet in
+		   landscape the full column width made each photo fill the screen. */
+		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; width: min(100%, 85vh); }
+		/* Tablet width: photo on the left, number / name / description and
+		   tags on the right, instead of a full-width stack. */
+		@media (min-width: 700px) {
+			.work-row {
+				grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+				grid-template-rows: auto auto 1fr;
+				grid-template-areas: 'img num' 'img content' 'img tags';
+				gap: 0.35rem clamp(1.5rem, 4vw, 2.75rem);
+				align-items: start;
+			}
+			.wr-img-col { align-self: center; }
+			.wr-num { padding-top: 0; }
+			.wr-img-inner { width: 100%; margin-top: 0; }
+			.wr-title { font-size: clamp(1.4rem, 2.6vw, 2rem) !important; }
+		}
 		/* Dropped entirely on mobile rather than just GPU-layer-promoted —
 		   it wasn't earning its cost there (desktop's hover-reveal is the
 		   whole reason it existed) and mobile should stay as light as
@@ -758,7 +775,7 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		const section = document.getElementById('selected-work');
 		if (!section) return;
 
-		if (window.matchMedia('(max-width: 1024px)').matches) {
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
 			section.querySelectorAll<HTMLElement>('.work-row').forEach(r => r.classList.add('visible'));
 			return;

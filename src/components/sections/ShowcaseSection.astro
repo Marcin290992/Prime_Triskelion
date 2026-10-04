@@ -199,7 +199,7 @@
 	   end. Folding both into one sticky parent sidesteps the mismatch
 	   entirely: there's only one release point because there's only one
 	   sticky element. */
-	@media (min-width: 1025px) {
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.showcase__intro {
 			padding-top: clamp(5.5rem, 7vh, 7rem);
 			/* More breathing room below the title before the rail starts —
@@ -242,7 +242,7 @@
 
 	/* ── Process rail (desktop "meet in the middle") ── */
 	.process-rail { display: none; }
-	@media (min-width: 1025px) {
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.process-rail {
 			display: block;
 			height: 460vh;
@@ -470,8 +470,27 @@
 		color: rgb(var(--c-cream) / 0.48);
 	}
 
+	/* Tablet width (the phone list, wider): a landscape frame no taller
+	   than about half the screen — the phone's tall 3:4 box filled a
+	   tablet's whole screen in landscape. */
+	@media (min-width: 700px) {
+		/* Photo on the left, number / title / description on the right. */
+		.proc {
+			display: grid;
+			grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+			grid-template-areas: 'media head' 'media title' 'media desc';
+			grid-template-rows: auto auto 1fr;
+			gap: 0.9rem clamp(1.5rem, 4vw, 2.75rem);
+			align-items: start;
+		}
+		.proc__head { grid-area: head; }
+		.proc__title { grid-area: title; font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+		.proc__desc { grid-area: desc; }
+		.proc__media { grid-area: media; align-self: center; aspect-ratio: 4 / 3; max-height: none; width: 100%; }
+	}
+
 	/* ── Mobile ── */
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.stack {
 			display: flex;
 			flex-direction: column;
@@ -521,7 +540,7 @@
 		const section = document.getElementById('showcase');
 		if (!section) return;
 
-		const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		if (isMobile) return;
 
 		const sectionEl = section;

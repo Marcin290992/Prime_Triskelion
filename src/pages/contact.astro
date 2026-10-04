@@ -522,7 +522,7 @@ const EMAIL = CONTACT_EMAIL;
   }
 
   /* ── Tablet / phone ────────────────────────────────────────────────── */
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .cp-stage { padding-top: clamp(6rem, 13vh, 8rem); padding-bottom: clamp(7rem, 13vh, 8.5rem); }
     /* Faint full-width ambient glow: no clear side column to burn in. */
     #contact-flame-canvas.is-lit { opacity: 0.16; }
@@ -822,7 +822,7 @@ const EMAIL = CONTACT_EMAIL;
       const tl = titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), words, 0, D);
       // Mobile: the question and options follow once the title has found
       // focus (same focus pull); desktop keeps its earlier, quicker cue.
-      const isMob = window.matchMedia('(max-width: 1024px)').matches;
+      const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
       // Repeat / back visits (subpageMode) skip the choreography.
       const mode = subpageMode();
       if (isMob || mode !== 'full') {

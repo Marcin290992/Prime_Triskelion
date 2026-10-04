@@ -4,7 +4,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 export function initBlurReveal(emEl: HTMLElement, triggerEl?: HTMLElement, start = 'top 82%') {
-	if (window.matchMedia('(max-width: 1024px)').matches) return;
+	if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
 	const text = emEl.textContent ?? '';
 	emEl.innerHTML = '';

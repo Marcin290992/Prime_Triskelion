@@ -123,7 +123,7 @@
 	.tst__name { font-family: var(--f-body); font-size: 1rem; font-weight: 600; color: rgb(var(--c-cream)); }
 	.tst__role { font-family: var(--f-body); font-size: 0.85rem; color: rgb(var(--c-cream) / 0.45); }
 
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.tst__inner { padding: clamp(3rem, 8vw, 5rem) var(--site-gutter) clamp(3rem, 8vw, 5rem); }
 		.tst__top {
 			flex-direction: column;
@@ -230,7 +230,7 @@
 		// Desktop-only blur-up reveal on scroll — mobile gets instant
 		// visibility from the global mobile override (global.css), same
 		// convention as every other section's .xxx__header.
-		if (!window.matchMedia('(max-width: 1024px)').matches) {
+		if (!window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			const inner = section.querySelector<HTMLElement>('.tst__inner');
 			if (inner) {
 				const io = new IntersectionObserver((entries) => {

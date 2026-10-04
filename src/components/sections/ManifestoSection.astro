@@ -1,6 +1,6 @@
 <!-- ═══════ MANIFESTO ═══════ -->
 <section id="manifesto" class="relative" style="height:180vh;height:180lvh;height:calc(var(--app-stable-vh) * 180);z-index:10">
-	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 lg:px-32" style="height:calc(var(--app-stable-vh) * 100)">
+	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
 			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
@@ -35,7 +35,7 @@
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#manifesto {
 			height: auto !important;
 		}
@@ -74,7 +74,7 @@
 
 		gsap.registerPlugin(ScrollTrigger);
 
-		const isMobile = window.matchMedia('(max-width: 1024px)').matches
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
 			|| navigator.maxTouchPoints > 0
 			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');

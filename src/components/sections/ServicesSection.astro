@@ -159,7 +159,7 @@
 	}
 	.svc__btn:hover .svc__btn__line { width: 56px; }
 	/* Mobile layout — animation handled by global mobile CSS block */
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.svc__list { position: relative; }
 		/* Left-aligned, with room carved out on the right so the text never
 		   runs under the floating image (128px wide, see .svc-mobile-img)
@@ -264,7 +264,7 @@
 		const section = document.getElementById('services');
 		if (!section) return;
 
-		if (window.matchMedia('(max-width: 1024px)').matches) { _isBackNav = false; initServicesMobile(section); return; }
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) { _isBackNav = false; initServicesMobile(section); return; }
 
 		const isBack = _isBackNav;
 		_isBackNav = false;

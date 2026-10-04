@@ -308,7 +308,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
 
   /* -- Laptop (1024-1536px) — zmniejszone czcionki, żeby nie nachodziły na twarz -- */
-  @media (min-width: 1025px) and (max-width: 1536px) {
+  @media (min-width: 1025px) and (hover: hover) and (max-width: 1536px), (min-width: 1025px) and (pointer: fine) and (max-width: 1536px) {
     .ai-text { max-width: 38%; }
     .ai-name { font-size: clamp(3rem, 6.5vw, 7rem); }
     .about-title__l,
@@ -328,12 +328,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     #about-bio    { display: none !important; }
 
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
-
-    /* global.css's after-the-title fade, which only covers ≤1024px — a
-       tablet in landscape gets it here, as on a phone. */
-    [data-after-hero] { transition: opacity 0.8s ease; }
-    [data-after-hero]:not(.is-in) { opacity: 0; }
-
     /* -- Scroll-linked intro (see initAboutMobileReveal) --
        340 stable-vh of scroll room with a sticky full-screen pin inside,
        same pattern as #manifesto on Home: --app-stable-vh is measured
@@ -439,6 +433,22 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       top: 25%;
       height: 50%;
       overflow: hidden;
+    }
+    /* A tablet in landscape: full width at half the height made a wide
+       strip, and the 16:9 photo, cropped top and bottom to fill it, lost
+       the top of the head. Keep the phone's proportions, centred. */
+    @media (min-width: 1025px) {
+      .am-portrait-stack {
+        left: 50%;
+        right: auto;
+        top: 10%;
+        height: 80%;
+        width: min(100%, 96vh);
+        transform: translateX(-50%);
+      }
+      /* The photo now ends at 90% of the pin, so the name/bio below
+         pull up by the remaining 10% (see .am-reveal). */
+      .am-reveal { margin-bottom: calc(var(--app-stable-vh, 1svh) * -10); }
     }
     .am-portrait-stack::after {
       content: '';

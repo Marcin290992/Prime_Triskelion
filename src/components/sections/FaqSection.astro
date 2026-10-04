@@ -219,7 +219,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	   bottom-left location badge (OxygenMenu's #ox-hud-mobile). Pull the
 	   whole sidebar up and tighten it so it clears that badge. Taller
 	   screens keep the roomy original spacing. */
-	@media (min-width: 1025px) and (max-height: 900px) {
+	@media (min-width: 1025px) and (hover: hover) and (max-height: 900px), (min-width: 1025px) and (pointer: fine) and (max-height: 900px) {
 		.faq__sidebar {
 			top: 3.5rem;
 			padding-top: clamp(4rem, 9vh, 9rem);
@@ -228,7 +228,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		.faq__contact-text { margin-bottom: 1.1rem; }
 	}
 
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		/* Heading, then the list, then the photo/CTA last — the photo+CTA sat
 		   as a left column next to the heading+list on desktop; here they're
 		   all one column, ordered by grid-template-areas rows instead of
@@ -261,7 +261,9 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		.disc-header { padding: 0 0 clamp(2rem, 5vw, 3rem); }
 		.faq__content .disc-list { padding-bottom: 0; }
 	}
-	@media (max-width: 768px) {
+	/* Phone list: every answer open, since there's no hover to open it.
+	   Tablets (touch, any width) get the same, not the hover-only list. */
+	@media (max-width: 768px), (hover: none) and (pointer: coarse) {
 		.disc-item__row { grid-template-columns: 2.5rem 1fr; }
 		.disc-item__body { grid-template-rows: 1fr; }
 		.disc-item__desc { padding-left: calc(2.5rem + 0.75rem); }
@@ -285,7 +287,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		const section = document.getElementById('faq');
 		if (!section) return;
 
-		if (window.matchMedia('(max-width: 1024px)').matches) return;
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
 		ScrollTrigger.create({
 			trigger: section,
