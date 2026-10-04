@@ -252,6 +252,10 @@ export function initFlameCanvas(
 
 	if (reduceMotion) {
 		render(0);
+		document.addEventListener('astro:before-swap', () => {
+			window.removeEventListener('resize', onResize);
+			gl!.getExtension('WEBGL_lose_context')?.loseContext();
+		}, { once: true });
 		return;
 	}
 
@@ -288,5 +292,10 @@ export function initFlameCanvas(
 			section.removeEventListener('pointermove', onPointerMove);
 			section.removeEventListener('pointerleave', onPointerLeave);
 		}
+		// Free the GPU context now rather than whenever the old canvas is
+		// garbage-collected — this flame is on every page (the CTA), so each
+		// navigation left one more behind, and after a few Android Chrome
+		// ran short on GPU memory and animations started dropping frames.
+		gl!.getExtension('WEBGL_lose_context')?.loseContext();
 	}, { once: true });
 }
