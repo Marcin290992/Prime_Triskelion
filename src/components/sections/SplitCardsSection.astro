@@ -393,13 +393,14 @@
         transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 0.12s);
     }
     .sc-card-m.is-in { opacity: 1; transform: none; }
-    /* Tall slices like the tablet's row — stacked here, each card shows
-       the same third of the photo it has side by side. Height-capped so a
+    /* Square slices of the photo — stacked here, each card shows the
+       same third of it that the tablet's row (taller, 4:5) shows side by
+       side. Height-capped so a
        short phone still sees the card's copy with its picture. */
     .sc-card-m__media {
       position: relative;
-      aspect-ratio: 4 / 5;
-      max-height: 58vh;
+      aspect-ratio: 1 / 1;
+      max-height: 44vh;
       background-image: url('../../img/scroll-bckg.webp');
       background-repeat: no-repeat;
       background-size: 300% auto;
@@ -428,7 +429,7 @@
 
     @media (min-width: 700px) {
       .sc-cards-m { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
-      .sc-card-m__media { max-height: none; }
+      .sc-card-m__media { aspect-ratio: 4 / 5; max-height: none; }
       .sc-card-m .sc-name { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
       .sc-card-m .sc-desc { font-size: 0.8rem; }
     }
