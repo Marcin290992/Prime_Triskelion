@@ -1,0 +1,87 @@
+<!-- Phones held sideways: the site is built for portrait there (pinned
+     full-screen sections get ~400px of height), so this asks to turn the
+     phone back. Phones only — touch, landscape and under 500px tall; a
+     tablet in landscape is ~740px+ tall and never sees it. Pure CSS, so it
+     comes and goes with the rotation and the page underneath keeps its
+     place. -->
+<div id="pt-rotate" role="alert">
+	<svg class="pt-rotate__mark" viewBox="128 152 744 644" aria-hidden="true">
+		<defs><polygon id="pt-rotate-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
+		<use href="#pt-rotate-arm"/>
+		<use href="#pt-rotate-arm" transform="rotate(120 500.000 577.259)"/>
+		<use href="#pt-rotate-arm" transform="rotate(240 500.000 577.259)"/>
+	</svg>
+	<svg class="pt-rotate__phone" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+		<rect x="15" y="6" width="18" height="32" rx="3"/>
+		<path d="M22 34h4"/>
+		<path d="M38 26a14 14 0 0 1-9 13" class="pt-rotate__arrow"/>
+		<path d="M29 35.5l0 3.5 3.5 0.5" class="pt-rotate__arrow"/>
+	</svg>
+	<p class="pt-rotate__title">Turn your phone</p>
+	<p class="pt-rotate__text">Best experienced in portrait</p>
+</div>
+
+<style>
+	#pt-rotate { display: none; }
+
+	@media (hover: none) and (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
+		#pt-rotate {
+			position: fixed;
+			inset: 0;
+			z-index: 2147483000;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.9rem;
+			padding: 1.5rem;
+			background: rgb(var(--c-bg));
+			color: rgb(var(--c-cream));
+			text-align: center;
+			/* A swipe on the notice mustn't scroll the hidden page under it. */
+			touch-action: none;
+			overscroll-behavior: contain;
+		}
+	}
+
+	.pt-rotate__mark {
+		width: 34px;
+		height: auto;
+		fill: rgb(var(--c-cream));
+		margin-bottom: 0.6rem;
+	}
+	.pt-rotate__phone {
+		width: 44px;
+		height: 44px;
+		color: rgb(var(--c-cream) / 0.7);
+		animation: pt-rotate-tilt 2.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+	}
+	.pt-rotate__arrow { stroke: rgb(var(--c-red)); }
+	.pt-rotate__title {
+		margin: 0;
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: 1.4rem;
+		letter-spacing: -0.01em;
+		text-transform: uppercase;
+	}
+	.pt-rotate__text {
+		margin: 0;
+		font-family: var(--f-body);
+		font-size: 9px;
+		font-weight: 300;
+		letter-spacing: 0.42em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.45);
+	}
+
+	/* Lying on its side, then a quarter turn up to portrait, a hold, back. */
+	@keyframes pt-rotate-tilt {
+		0%, 15% { transform: rotate(-90deg); }
+		50%, 85% { transform: rotate(0deg); }
+		100% { transform: rotate(-90deg); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.pt-rotate__phone { animation: none; }
+	}
+</style>

@@ -392,7 +392,7 @@ const projects = [
 
   /* â•â• MOBILE / TABLET â•â• */
   /* Laptop 1025–1600px */
-  @media (min-width: 1025px) and (max-width: 1600px) {
+  @media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
     .proj-foot {
       bottom: clamp(5.5rem, 11vh, 8rem);
       grid-template-columns: 1fr auto 1fr;
@@ -416,7 +416,7 @@ const projects = [
     }
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
     /* Cinematic first screen: the title alone, vertically centred, the
        cards only on scroll. Sized off the stable --app-stable-vh (set once
@@ -570,7 +570,7 @@ const projects = [
     const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
     // Mobile: the hint comes in once title and lead have landed; desktop
     // keeps its own cue.
-    const isMob = window.matchMedia('(max-width: 1024px)').matches;
+    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
     // Repeat / back visits (subpageMode) skip the choreography, so no wait.
     const mode = subpageMode();
     const hintDelay = mode === 'none' ? 0 : mode === 'short' ? 700 : isMob ? 2400 : 1100;
@@ -588,7 +588,7 @@ const projects = [
     });
 
     // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€
-    if (window.matchMedia('(max-width: 1024px)').matches) return;
+    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
     // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
     // Cache references once — never query DOM inside the render loop

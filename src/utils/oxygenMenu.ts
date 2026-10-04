@@ -287,7 +287,7 @@ function initOxygenMenu() {
     }
   }
 
-  const isMobile = window.matchMedia('(max-width: 1024px)').matches;
+  const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 
   // HUD swap: one class on the shared #ox-hud-mobile ancestor, driving both
   // buttons purely via CSS (see .hud-scroll-hidden in OxygenMenu.astro).

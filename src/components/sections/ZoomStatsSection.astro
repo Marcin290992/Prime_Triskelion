@@ -166,7 +166,7 @@
 		.zoom-col:hover .zoom-col__num { color: rgb(var(--c-cream)); }
 		.zoom-col:hover .zoom-col__num em { color: #FF3E1E; }
 	}
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#zoom-stats { height: auto; }
 		.zoom-stats__inner { position: relative; top: auto; height: auto; overflow: visible; }
 		.zoom-stats__bg { transform: scale(1) !important; }
@@ -222,7 +222,7 @@
 
 		const contents = document.querySelectorAll<HTMLElement>('#zoom-stats .zoom-col__content');
 
-		if (window.matchMedia('(max-width: 1024px)').matches) {
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			gsap.set(bg, { scale: 1 });
 			gsap.set(contents, { y: 0, opacity: 1 });
 			if (meta) gsap.set(meta, { autoAlpha: 1, y: 0 });

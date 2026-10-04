@@ -643,7 +643,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     align-items: flex-start;
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Toggle: ukryj cinematic, pokaż klasyczny hero */
     .wos-cin { display: none; }
     .wos-hero { display: flex; }
@@ -665,7 +665,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   /* ─── Cinematic: małe laptopy (1025–1440px) ─── */
-  @media (min-width: 1025px) and (max-width: 1440px) {
+  @media (min-width: 1025px) and (hover: hover) and (max-width: 1440px), (min-width: 1025px) and (pointer: fine) and (max-width: 1440px) {
     .wos-cin__image { width: 52%; }
     .wos-cin__bottom {
       width: calc(44% - var(--site-gutter, 2rem));
@@ -674,7 +674,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   /* ─── Cinematic: krótkie ekrany (laptopy 768px high) ─── */
-  @media (max-height: 800px) and (min-width: 1025px) {
+  @media (min-width: 1025px) and (hover: hover) and (max-height: 800px), (min-width: 1025px) and (pointer: fine) and (max-height: 800px) {
     .wos-cin__bottom {
       gap: 0.85rem;
     }
@@ -737,7 +737,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   /* Desktop: show sticky stack, hide mobile version */
   .wos-process-m { display: none; }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Hide desktop sticky stack */
     .wos-stack { display: none; }
 
@@ -877,7 +877,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     width: min(calc(100% - var(--site-gutter) * 2), calc(var(--site-max-width) - var(--site-gutter) * 2));
     margin-inline: auto;
   }
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .browser-frame--wide {
       border-radius: 12px;
       width: calc(100% - var(--site-gutter) * 2);
@@ -1043,7 +1043,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   .skew-fig--neg { transform: skewX(-3deg); }
   .skew-fig--pos { transform: skewX(3deg); }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .skew-sec__inner { grid-template-columns: 1fr; }
     .skew-sec__sticky { position: relative; height: auto; padding-block: clamp(3rem, 8vw, 5rem); }
     .skew-fig--neg, .skew-fig--pos { transform: none; }
@@ -1173,7 +1173,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     flex-shrink: 0;
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Stats */
     .showcase-stat__sep { display: none; }
     .showcase-stats { gap: 1.5rem 2.5rem; }
@@ -1186,7 +1186,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
   .scr-mobile { display: none; }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .scr-outer  { display: none; }
     .scr-mobile { display: block; }
   }
@@ -1365,7 +1365,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   function initScreensScroll() {
-    if (window.matchMedia('(max-width: 1024px)').matches) return;
+    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
     const outer   = document.querySelector<HTMLElement>('.scr-outer');
     const track   = document.querySelector<HTMLElement>('.scr-track');
     const fill    = document.querySelector<HTMLElement>('.scr-progress__fill');
@@ -1425,7 +1425,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     }
 
     // 2. Animacje — mobile/desktop rozdzielone jak w CSS
-    const isMob = window.matchMedia('(max-width: 1024px)').matches;
+    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
     // Content below the hero fades in after it (mobile only, see
     // revealAfterHero) — called unconditionally so it can never stay hidden.
     afterPageTransition(() => revealAfterHero(550));

@@ -6,6 +6,7 @@ import TopBarCta from '../components/TopBarCta.astro';
 import OxygenMenu from '../components/OxygenMenu.astro';
 import GridLines from '../components/GridLines.astro';
 import Footer from '../components/Footer.astro';
+import RotateNotice from '../components/RotateNotice.astro';
 
 interface Props {
 	title: string;
@@ -363,6 +364,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 		<OxygenMenu />
 		<slot />
 		<Footer />
+		<RotateNotice />
 	</body>
 </html>
 

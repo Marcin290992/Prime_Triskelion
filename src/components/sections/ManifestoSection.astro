@@ -35,7 +35,7 @@
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	@media (max-width: 1024px) {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#manifesto {
 			height: auto !important;
 		}
@@ -74,7 +74,7 @@
 
 		gsap.registerPlugin(ScrollTrigger);
 
-		const isMobile = window.matchMedia('(max-width: 1024px)').matches
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
 			|| navigator.maxTouchPoints > 0
 			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');

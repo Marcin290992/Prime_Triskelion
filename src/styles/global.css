@@ -89,7 +89,7 @@ body::after {
    page's black to a dark grey next to the pure-black bars iOS Safari paints
    above/below the page (.edge-tint in Layout.astro), and it's a full-screen
    layer composited over every scroll frame. Desktop keeps it. */
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   body::after { display: none; }
 }
 
@@ -97,7 +97,7 @@ body::after {
    title has blurred in, then fades in (revealAfterHero in
    utils/afterPageTransition.ts). `html body` outranks Astro's scoped
    `.class[data-astro-cid]` rules so a page's own opacity can't win. */
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   html body [data-after-hero] { transition: opacity 0.8s ease; }
   html body [data-after-hero]:not(.is-in) { opacity: 0; }
 }
@@ -286,7 +286,7 @@ main {
    screen it just competes with this variant's own glare sweep below.
    Keep the glare (the site's one CTA motion cue on mobile), drop the
    beam back to the sitewide-suppressed default here. */
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .h-hero-cta.h-hero-cta--fixed .hud-spin-border::before {
     display: none;
   }
@@ -401,7 +401,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 
 /* Short laptop screens: shrink with the HUD (see --ox-menu-btn-size in
    OxygenMenu.astro) — full size from ~800px tall up. */
-@media (min-width: 1025px) {
+@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
   .nav-cta {
     min-height: clamp(40px, 6vh, 48px);
     padding: clamp(0.55rem, 1.1vh, 0.75rem) clamp(1.1rem, 2.1vh, 1.4rem);
@@ -409,7 +409,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .h-hero-cta-wrap { width: 100%; margin-top: 0 !important; }
   .h-hero-cta {
     width: 100%;
@@ -426,7 +426,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 }
 
 /* â”€â”€ Mobile: instant visibility for all scroll-reveal sections â”€â”€ */
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .sw-header,
   .work-row,
   .work-item,
@@ -497,7 +497,7 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 .pt-toast__sep { color: rgb(var(--c-cream) / 0.35); }
 .pt-toast__email { color: rgb(var(--c-cream)); }
 .pt-toast__email--select { user-select: all; -webkit-user-select: all; }
-@media (max-width: 1024px) {
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .pt-toast {
     bottom: calc(1.25rem + 52px + 0.9rem + env(safe-area-inset-bottom, 0px));
     gap: 0.55rem;

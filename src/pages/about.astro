@@ -308,7 +308,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
 
   /* -- Laptop (1024-1536px) — zmniejszone czcionki, żeby nie nachodziły na twarz -- */
-  @media (min-width: 1025px) and (max-width: 1536px) {
+  @media (min-width: 1025px) and (hover: hover) and (max-width: 1536px), (min-width: 1025px) and (pointer: fine) and (max-width: 1536px) {
     .ai-text { max-width: 38%; }
     .ai-name { font-size: clamp(3rem, 6.5vw, 7rem); }
     .about-title__l,
@@ -328,12 +328,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     #about-bio    { display: none !important; }
 
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
-
-    /* global.css's after-the-title fade, which only covers ≤1024px — a
-       tablet in landscape gets it here, as on a phone. */
-    [data-after-hero] { transition: opacity 0.8s ease; }
-    [data-after-hero]:not(.is-in) { opacity: 0; }
-
     /* -- Scroll-linked intro (see initAboutMobileReveal) --
        340 stable-vh of scroll room with a sticky full-screen pin inside,
        same pattern as #manifesto on Home: --app-stable-vh is measured
