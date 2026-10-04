@@ -434,6 +434,17 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       height: 50%;
       overflow: hidden;
     }
+    /* A tablet in landscape: full width at half the height made a wide
+       strip, and the 16:9 photo, cropped top and bottom to fill it, lost
+       the top of the head. Keep the phone's proportions, centred. */
+    @media (min-width: 1025px) {
+      .am-portrait-stack {
+        left: 50%;
+        right: auto;
+        width: min(100%, 60vh);
+        transform: translateX(-50%);
+      }
+    }
     .am-portrait-stack::after {
       content: '';
       position: absolute;

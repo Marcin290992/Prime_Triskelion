@@ -736,7 +736,9 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		.wr-img-col { grid-area: img; }
 		.wr-tags    { grid-area: tags; padding-top: 0; }
 		.wr-toggle  { display: none; }
-		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; }
+		/* Capped at about half the screen's height — on a tablet in
+		   landscape the full column width made each photo fill the screen. */
+		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; width: min(100%, 85vh); }
 		/* Dropped entirely on mobile rather than just GPU-layer-promoted —
 		   it wasn't earning its cost there (desktop's hover-reveal is the
 		   whole reason it existed) and mobile should stay as light as

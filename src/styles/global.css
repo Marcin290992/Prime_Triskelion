@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* desk: = the desktop layout — wider than 1024px AND a mouse or trackpad.
+   Tailwind's lg: goes by width alone, so a tablet in landscape got desktop
+   bits inside the phone layout. Same query pair as every layout rule. */
+@custom-variant desk {
+  @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+    @slot;
+  }
+}
+
 /* â”€â”€ Self-hosted fonts â”€â”€ */
 @font-face {
   font-family: 'DM Sans';
@@ -100,6 +109,14 @@ body::after {
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   html body [data-after-hero] { transition: opacity 0.8s ease; }
   html body [data-after-hero]:not(.is-in) { opacity: 0; }
+}
+
+/* Tablets in landscape get the phone layout (touch, any width) — keep it
+   in a centred column about an iPad's portrait width instead of stretched
+   across 1200px+. Every section pads with --site-gutter; the fixed chrome
+   (logo, menu) doesn't use it and stays at the screen's edges. */
+@media (hover: none) and (pointer: coarse) and (min-width: 1025px) {
+  :root { --site-gutter: max(clamp(1rem, 3.6vw, 3rem), calc((100vw - 880px) / 2)); }
 }
 
 /* While a swapped-in page's stylesheets are still loading (see the

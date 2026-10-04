@@ -470,6 +470,13 @@
 		color: rgb(var(--c-cream) / 0.48);
 	}
 
+	/* Tablet width (the phone list, wider): a landscape frame no taller
+	   than about half the screen — the phone's tall 3:4 box filled a
+	   tablet's whole screen in landscape. */
+	@media (min-width: 700px) {
+		.proc__media { aspect-ratio: 3 / 2; max-height: none; width: min(100%, 75vh); }
+	}
+
 	/* ── Mobile ── */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.stack {

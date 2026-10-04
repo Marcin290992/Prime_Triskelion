@@ -55,7 +55,7 @@ const navLinks = [
     <div class="ox-overlay-grain absolute inset-0 pointer-events-none opacity-[0.04]"></div>
 
     <!-- Content -->
-    <div class="relative z-10 h-full grid grid-rows-[auto_1fr_auto] px-8 lg:px-16 py-10 lg:py-14 ox-menu-content">
+    <div class="relative z-10 h-full grid grid-rows-[auto_1fr_auto] px-8 desk:px-16 py-10 desk:py-14 ox-menu-content">
 
       <!-- Top bar -->
       <div class="ox-menu-topbar opacity-0 translate-y-5">
@@ -80,7 +80,7 @@ const navLinks = [
         </nav>
 
         <!-- Right panel (desktop only) -->
-        <aside class="hidden lg:flex flex-col justify-between self-stretch py-2 w-72 pl-12 border-l border-white/6">
+        <aside class="hidden desk:flex flex-col justify-between self-stretch py-2 w-72 pl-12 border-l border-white/6">
           <div class="flex flex-col gap-7">
             <div>
               <p class="ox-panel-label">Currently</p>
@@ -114,7 +114,7 @@ const navLinks = [
       <!-- Bottom -->
       <div class="ox-menu-bottom opacity-0 translate-y-5">
         <div class="h-px bg-linear-to-r from-[rgba(188,198,208,0.25)] via-white/5 to-transparent mb-5"></div>
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-col gap-3 desk:flex-row desk:items-center desk:justify-between">
           <div class="flex gap-6 items-center">
             <!-- Instagram -->
             <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer" class="ox-social" aria-label="Instagram">
@@ -369,7 +369,9 @@ const navLinks = [
 
   /* Mobile + Tablet (≤ 1024px) */
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    .ox-link-text { font-size: 14vw; letter-spacing: 0.03em; }
+    /* Height cap too: a tablet in landscape is wide but short, and 14vw
+       there pushed the last links off the screen. */
+    .ox-link-text { font-size: min(14vw, 10vh); letter-spacing: 0.03em; }
     .ox-menu-link { padding: 6px 0; }
     .ox-menu-bottom { padding-bottom: 80px; }
     /* Logo is pinned at a constant height/offset below 1024px (no vw scaling

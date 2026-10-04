@@ -487,6 +487,13 @@ const projects = [
       box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
     }
     .proj-img-wrap img { object-position: center 30%; }
+    /* Tablet width: the phone's 4:5 card at a tablet's column width came
+       out taller than the screen. A landscape frame, capped by height. */
+    @media (min-width: 700px) {
+      .proj-img-wrap { aspect-ratio: 3 / 2; }
+      /* The card as a whole (its info bar and gradient sit on .proj-inner). */
+      .proj-inner { width: min(100%, 90vh); margin-inline: auto; }
+    }
 
     .proj-bg-text { display: none; }
 
