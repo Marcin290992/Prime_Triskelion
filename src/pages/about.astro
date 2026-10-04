@@ -317,8 +317,10 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     .ab-item { font-size: clamp(1rem, 1.7vw, 2rem); }
   }
 
-  /* -- Mobile / tablet (≤1023px) — po wszystkich desktopowych regułach -- */
-  @media (max-width: 1024px) {
+  /* -- Mobile / tablet (≤1024px, or any touch device: an iPad in
+     landscape gets this too) — po wszystkich desktopowych regułach.
+     Same query as isAboutMobile() in the script. -- */
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     #about-wrap,
     #about-overlay,
     #about-space,
@@ -326,6 +328,11 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     #about-bio    { display: none !important; }
 
     #about-mobile { display: block; background: rgb(var(--c-bg)); }
+
+    /* global.css's after-the-title fade, which only covers ≤1024px — a
+       tablet in landscape gets it here, as on a phone. */
+    [data-after-hero] { transition: opacity 0.8s ease; }
+    [data-after-hero]:not(.is-in) { opacity: 0; }
 
     /* -- Scroll-linked intro (see initAboutMobileReveal) --
        340 stable-vh of scroll room with a sticky full-screen pin inside,
@@ -1756,12 +1763,17 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     };
   }
 
+  // Phones and tablets (any width — an iPad in landscape too) get the
+  // scroll reveal; the fluid mask is for a mouse. Must match the CSS
+  // breakpoint above exactly, or a device gets the WebGL fluid sim
+  // running invisibly behind the CSS-hidden mobile DOM.
+  function isAboutMobile(): boolean {
+    return window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+  }
+
   // ── Desktop: pinned canvas + scroll-driven reveal choreography ──
   function initAboutDesktop() {
-    // Must match the CSS breakpoint (@media max-width: 1024px) exactly —
-    // otherwise devices at exactly 1024px (e.g. iPad landscape) get the
-    // WebGL fluid sim running invisibly behind the CSS-hidden mobile DOM.
-    if (window.matchMedia('(max-width: 1024px)').matches) return;
+    if (isAboutMobile()) return;
 
     const canvasEl = document.getElementById('about-canvas') as HTMLCanvasElement | null;
     if (!canvasEl) return;
@@ -1959,7 +1971,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   let _amDither: DitherPortraitHandle | null = null;
   let _amSinkST: ScrollTrigger | null = null;
   function initAboutMobileReveal() {
-    if (!window.matchMedia('(max-width: 1024px)').matches) return;
+    if (!isAboutMobile()) return;
     const reveal = document.querySelector<HTMLElement>('.am-reveal');
     const pin    = document.querySelector<HTMLElement>('.am-reveal__pin');
     const veil   = document.querySelector<HTMLElement>('.am-veil');
@@ -2045,7 +2057,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   // the Projects/Services headers so every subpage title blurs in instead
   // of just appearing with the page.
   function initAboutTitle() {
-    const isMob = window.matchMedia('(max-width: 1024px)').matches;
+    const isMob = isAboutMobile();
     const words = document.querySelectorAll<HTMLElement>(isMob ? '.am-who-w' : '.about-title__w');
     afterPageTransition(() => {
       revealAfterHero();
