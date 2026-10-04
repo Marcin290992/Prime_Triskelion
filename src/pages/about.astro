@@ -441,14 +441,14 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       .am-portrait-stack {
         left: 50%;
         right: auto;
-        top: 17.5%;
-        height: 65%;
-        width: min(100%, 78vh);
+        top: 10%;
+        height: 80%;
+        width: min(100%, 96vh);
         transform: translateX(-50%);
       }
-      /* The photo now ends at 82.5% of the pin, so the name/bio below
-         pull up by the remaining 17.5% (see .am-reveal). */
-      .am-reveal { margin-bottom: calc(var(--app-stable-vh, 1svh) * -17.5); }
+      /* The photo now ends at 90% of the pin, so the name/bio below
+         pull up by the remaining 10% (see .am-reveal). */
+      .am-reveal { margin-bottom: calc(var(--app-stable-vh, 1svh) * -10); }
     }
     .am-portrait-stack::after {
       content: '';
