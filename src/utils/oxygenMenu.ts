@@ -520,6 +520,9 @@ function initOxygenMenu() {
   // default link interception and skipped the close+blur-out entirely
   // (the overlay just jump-cut instead of blurring away with everything
   // else).
+  // Seconds the dissolve waits on touch so the chosen link's roll plays alone.
+  const TOUCH_ROLL_LEAD = () => (window.matchMedia('(hover: none)').matches && !reducedMotion() ? 0.3 : 0);
+
   function bindMenuNavLink(link: HTMLAnchorElement, activeClass: string) {
     // Mobile: touchstart gives immediate visual feedback before click fires
     let releaseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -552,13 +555,18 @@ function initOxygenMenu() {
       const out = reducedMotion()
         ? { opacity: 0, duration: 0.4, ease: 'none' }
         : { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
-      gsap.to(others, out);
-      gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: 0.12 });
+      // Touch: the chosen link's red roll only starts at the tap, and a
+      // blur on the big menu text has to be re-rasterized every frame —
+      // run together, Android dropped frames in the roll. Let the roll
+      // (0.34s) play on its own first. A mouse has rolled it on hover.
+      const lead = TOUCH_ROLL_LEAD();
+      gsap.to(others, { ...out, delay: lead });
+      gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: lead + 0.12 });
       // Right panel: its info block always goes; the whole panel (with the
       // featured project) only when a nav link was chosen.
       const aside = overlay.querySelector<HTMLElement>('aside');
       const panelOut = chosen ? aside : aside?.firstElementChild;
-      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.55, ease: 'power2.inOut', delay: 0.12 });
+      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.55, ease: 'power2.inOut', delay: lead + 0.12 });
     }
 
     async function activate() {
@@ -570,7 +578,7 @@ function initOxygenMenu() {
       // hover lead-in — the roll only starts at the tap — so it gets the
       // full roll plus a beat; with a mouse it has already rolled on hover.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, noHover ? 720 : 520));
+      await new Promise(r => setTimeout(r, (noHover ? 720 : 520) + TOUCH_ROLL_LEAD() * 1000));
       // The chosen link racks out of focus as the menu fades to black.
       if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
       await closeMenu(true, true);  // keep black overlay visible, fade out
