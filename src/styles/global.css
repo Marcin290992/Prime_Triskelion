@@ -317,6 +317,22 @@ main {
 .h-hero-cta--fixed .h-hero-cta__arrow {
   display: none;
 }
+/* The main call to action ("Start a project") on touch: there's no hover
+   to light it up, so the resting state was all a phone ever showed — a
+   faint ghost. It rests in the lit, red-edged state a mouse gets on
+   hover, with full-strength text. Secondary buttons stay quiet. */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  html .h-hero-cta.h-hero-cta--primary {
+    color: rgb(var(--c-cream));
+    font-weight: 500;
+    border-color: rgb(var(--c-red) / 0.6);
+    background: rgb(var(--c-red) / 0.1);
+    box-shadow:
+      inset 0 0 0 1px rgb(var(--c-red) / 0.14),
+      0 0 22px rgb(var(--c-red) / 0.18),
+      0 8px 24px rgb(var(--c-bg) / 0.25);
+  }
+}
 .h-hero-cta--fixed .h-hero-cta__text {
   background: none;
   -webkit-text-fill-color: inherit;
