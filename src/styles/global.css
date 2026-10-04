@@ -549,3 +549,23 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 
 .cta-red { color: rgb(var(--c-red)); }
 
+
+/* One type style for every button's label — the MENU button's: 11px
+   capitals, 0.28em tracking, weight 500. Instances had drifted to five
+   sizes (10–16px) with their own tracking and weight, so the menu button
+   looked off next to them. !important on purpose: several components set
+   a per-instance size in their own scoped CSS (FAQ's Contact, the
+   pre-footer CTA, the top-bar and hero CTAs); this keeps them one size. */
+html body .h-hero-cta,
+html body .link-btn,
+html body .cp-next,
+html body .cp-back {
+  font-size: 11px !important;
+  letter-spacing: 0.28em !important;
+  font-weight: 500 !important;
+  text-transform: uppercase !important;
+}
+html body .hud-menu-btn::after {
+  font-size: 11px !important;
+  letter-spacing: 0.28em !important;
+}
