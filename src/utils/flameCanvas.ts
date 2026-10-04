@@ -172,14 +172,21 @@ export function initFlameCanvas(
 	// scroll jank reported repeatedly elsewhere in this codebase. Desktop
 	// keeps the original DPR 2 cap; this only tightens the mobile case.
 	const maxDpr = window.matchMedia('(pointer: coarse)').matches ? 1 : 2;
+	// Resizing the buffer clears it, and on a phone (24fps cap) the next
+	// drawn frame can be a couple of display frames away — the flame
+	// blinked out. Only resize on a real change, and redraw straight away.
+	let drawn = false;
 	function resize() {
 		const dpr = Math.min(devicePixelRatio, maxDpr);
-		W = canvas.offsetWidth * dpr; H = canvas.offsetHeight * dpr;
+		const w = Math.round(canvas.offsetWidth * dpr), h = Math.round(canvas.offsetHeight * dpr);
+		if (w === W && h === H) return;
+		W = w; H = h;
 		canvas.width = W; canvas.height = H;
 		gl!.viewport(0, 0, W, H);
+		if (drawn) render(elapsedTime);
 	}
 	function onResize() {
-		if (canvas.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
+		if (Math.round(canvas.offsetWidth * Math.min(devicePixelRatio, maxDpr)) === W) return;
 		resize();
 	}
 	window.addEventListener('resize', onResize, { passive: true });
@@ -239,6 +246,7 @@ export function initFlameCanvas(
 		elapsedTime += (ts - prevFrameTs) * 0.001;
 		prevFrameTs = ts;
 		render(elapsedTime);
+		drawn = true;
 		rafId = requestAnimationFrame(loop);
 	}
 

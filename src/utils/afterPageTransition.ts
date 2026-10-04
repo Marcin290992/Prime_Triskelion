@@ -1,4 +1,7 @@
 import gsap from 'gsap';
+import ScrollTrigger from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 // astro:page-load fires as soon as the new DOM is swapped in — before the
 // page View Transition (quick fade-out, then the new page fading in, see
 // Layout.astro) has played. Run entrance animations through this so they
@@ -330,11 +333,96 @@ let mode: EntranceMode = (() => {
 })();
 let traverseNext = false;
 let blurInNext = false;
+let restoreY: number | null = null;
 document.addEventListener('astro:before-preparation', (e: any) => {
 	traverseNext = e.navigationType === 'traverse';
 	blurInNext = traverseNext && !uaVisualNext;
 	uaVisualNext = false;
+	// On popstate history.state is already the entry being returned to —
+	// the router saved its scroll there when the page was left.
+	const y = history.state?.scrollY;
+	restoreY = traverseNext && typeof y === 'number' ? y : null;
 });
+
+// Back/forward: the router restores the scroll right after the swap, but
+// the page's scripts only build its layout after that (Process moves its
+// title into the pinned rail, ScrollTriggers pin and set their states,
+// reveals switch on) — scroll-driven parts slid into place and the page
+// shifted under the restored position, in plain view. Wait for them, put
+// the scroll back to where it was in the finished layout and finish any
+// entrance already started, all while the veil below is still black.
+let restoring = false;
+const restoreHolds: Promise<unknown>[] = [];
+
+// Work a page still has queued for itself (onReady()'s deferred inits,
+// afterPageTransition() entrances): the veil waits for it, however long it
+// takes on a slow phone — a reveal that only set itself up after the veil
+// had cleared hid its text and played it in again, a visible blink.
+export function holdRestore(): () => void {
+	if (!restoring) return () => {};
+	let release!: () => void;
+	restoreHolds.push(new Promise<void>((r) => { release = r; }));
+	return release;
+}
+
+const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function settleRestoredPage(y: number | null): Promise<void> {
+	const root = document.documentElement;
+	root.classList.add('pt-restoring');
+	restoring = true;
+	restoreHolds.length = 0;
+	const swapAt = gsap.globalTimeline.time();
+	const toSaved = () => {
+		if (y === null) return;
+		const lenis = (window as any).__lenis;
+		if (lenis) {
+			lenis.resize?.();
+			lenis.scrollTo(y, { immediate: true, force: true });
+		} else {
+			window.scrollTo(0, y);
+		}
+		ScrollTrigger.update();
+	};
+	const pageLoaded = new Promise<void>((r) => document.addEventListener('astro:page-load', () => r(), { once: true }));
+	const ready = (async () => {
+		await pageLoaded;
+		// Scripts that are new to this visit add their page-load listeners
+		// after this module's, so let them run first.
+		await wait(0);
+		// Holds can queue more holds (an init that waits for the transition).
+		let seen = -1;
+		while (seen !== restoreHolds.length) {
+			seen = restoreHolds.length;
+			await Promise.all(restoreHolds);
+			await nextFrame();
+		}
+		// The display fonts (the Process title's measurements depend on them).
+		await document.fonts?.ready.catch(() => {});
+		// Reveals fire from ScrollTrigger at the real position; give the short
+		// timers they chain (the CTA button follows its title by 130ms) time.
+		toSaved();
+		await wait(200);
+		await nextFrame();
+	})();
+	// Never leave the page behind the veil.
+	return Promise.race([ready, wait(2500)]).then(async () => {
+		toSaved();
+		// Entrances started since the swap jump to their end (not loops,
+		// scroll-linked tweens or delayed calls).
+		gsap.globalTimeline.getChildren(false, true, true).forEach((t) => {
+			if (t.startTime() < swapAt - 0.01 || t.paused() || t.repeat() === -1) return;
+			if ((t as any).scrollTrigger || t.totalDuration() > 20) return;
+			if (t instanceof gsap.core.Tween && !t.targets().length) return;
+			t.progress(1);
+		});
+		restoring = false;
+		void root.offsetHeight;
+		await nextFrame();
+		root.classList.remove('pt-restoring');
+	});
+}
 
 // Back/forward (not the Safari swipe): the page comes in out of the black
 // with one light focus pull — the same blur as the subpage titles' short
@@ -357,9 +445,12 @@ document.addEventListener('astro:after-swap', () => {
 		veil.style.setProperty('-webkit-backdrop-filter', f);
 	};
 	paint();
+	const settled = settleRestoredPage(restoreY);
+	restoreY = null;
 	// Two frames later: a heavy page's first frames (About's fluid sim
-	// starting up) would otherwise swallow the start of the clear.
-	afterPageTransition(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+	// starting up) would otherwise swallow the start of the clear. Not
+	// through afterPageTransition(): that would hold the settle it waits for.
+	Promise.all([pending, settled]).then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
 		gsap.to(v, { t: 0, duration: blur ? 0.8 : 0.3, ease: 'power2.out', onUpdate: paint, onComplete: () => veil.remove() });
 	})));
 });
@@ -450,8 +541,10 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 }
 
 export function afterPageTransition(fn: () => void): void {
-	if (pending) pending.then(fn);
-	else fn();
+	const release = holdRestore();
+	const run = () => { try { fn(); } finally { release(); } };
+	if (pending) pending.then(run);
+	else run();
 }
 
 // Mobile subpage entrance order: the hero title blurs in first, then the

@@ -110,6 +110,16 @@ html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)
   visibility: hidden;
 }
 
+/* Back/forward, while the restored page settles under its black veil (see
+   settleRestoredPage in utils/afterPageTransition.ts): reveals that the
+   page's scripts switch on land in their end state at once instead of
+   sliding in after the veil has cleared. */
+html.pt-restoring body *,
+html.pt-restoring body *::before,
+html.pt-restoring body *::after {
+  transition: none !important;
+}
+
 /* Hide scrollbar */
 html {
   width: 100%;
