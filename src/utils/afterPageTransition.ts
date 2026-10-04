@@ -186,21 +186,21 @@ document.addEventListener('astro:after-swap', () => {
 	pending = out;
 });
 
-// Touch, in-page links and back/forward (not the menu): the same shape as
-// leaving through the menu — the page fades down to black (while the next
-// one loads, so it costs no extra wait when that takes longer), then a cut
-// and the new title focuses in. The quick root cross-fade they used to get
-// read as abrupt next to the menu's exit. Only the page content fades —
-// the logo, menu and edge strips stay (the set html.ox-menu-covered hides).
+// In-page links and back/forward (not the menu, not a case study's own
+// opening), on every device: the same shape as leaving through the menu —
+// the page fades down to black (while the next one loads, so it costs no
+// extra wait when that takes longer), then a cut and the new title focuses
+// in. Desktop used to get the quick root cross-fade, which read as stiff
+// and abrupt next to the menu's exit. Only the page content fades — the
+// logo, menu and edge strips stay (the set html.ox-menu-covered hides).
 document.addEventListener('astro:before-preparation', (e: any) => {
 	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
-	if (!window.matchMedia('(pointer: coarse)').matches) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
 		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
 	);
 	const fade = new Promise<void>((resolve) => {
-		gsap.to(content, { opacity: 0, duration: 0.5, ease: 'power2.inOut', onComplete: () => resolve() });
+		gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut', onComplete: () => resolve() });
 	});
 	const load = e.loader;
 	e.loader = async () => { await Promise.all([load(), fade]); };
