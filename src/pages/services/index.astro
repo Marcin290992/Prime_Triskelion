@@ -31,7 +31,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
           </div>
         </div>
         <div class="svc-content">
-          <span class="svc-pill">01 / Websites</span>
           <h2 class="svc-content__title">High-performance websites built to convert and scale.</h2>
           <ul class="svc-list">
             <li>Landing pages</li>
@@ -60,7 +59,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
           </div>
         </div>
         <div class="svc-content">
-          <span class="svc-pill">02 / Branding</span>
           <h2 class="svc-content__title">Brand strategy, identity, and guidelines. The fundamentals of your image.</h2>
           <ul class="svc-list">
             <li>Naming & positioning</li>
@@ -89,7 +87,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
           </div>
         </div>
         <div class="svc-content">
-          <span class="svc-pill">03 / Motion</span>
           <h2 class="svc-content__title">Animations and motion systems that bring interfaces to life.</h2>
           <ul class="svc-list">
             <li>Web animations & microinteractions</li>
@@ -118,7 +115,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
           </div>
         </div>
         <div class="svc-content">
-          <span class="svc-pill">04 / Strategy</span>
           <h2 class="svc-content__title">Creative direction and strategy built around your goals.</h2>
           <ul class="svc-list">
             <li>Brand strategy workshops</li>
@@ -306,18 +302,6 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     align-items: flex-start;
     padding-top: clamp(0.5rem, 1vw, 1rem);
   }
-  .svc-pill {
-    display: inline-block;
-    font-family: var(--f-body);
-    font-size: 9px;
-    font-weight: 300;
-    letter-spacing: 0.38em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.62);
-    border: 1px solid rgb(var(--c-cream) / 0.12);
-    padding: 0.3rem 0.75rem;
-    margin-bottom: 1.8rem;
-  }
   .svc-content__title {
     font-family: var(--f-display);
     font-weight: 600;
@@ -497,7 +481,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
         const targets = entry.target.querySelectorAll<HTMLElement>(
-          '.svc-pill, .svc-content__title, .svc-list li, .svc-cta-wrap'
+          '.svc-content__title, .svc-list li, .svc-cta-wrap'
         );
         gsap.to(targets, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.58, ease: 'power3.out', stagger: 0.07 });
         _rowObserver?.unobserve(entry.target);
@@ -506,7 +490,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
 
     document.querySelectorAll<HTMLElement>('.svc-row').forEach(row => {
       const targets = row.querySelectorAll<HTMLElement>(
-        '.svc-pill, .svc-content__title, .svc-list li, .svc-cta-wrap'
+        '.svc-content__title, .svc-list li, .svc-cta-wrap'
       );
       gsap.set(targets, { opacity: 0, filter: 'blur(8px)', y: 14 });
       _rowObserver!.observe(row);
