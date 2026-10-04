@@ -254,10 +254,11 @@ main {
   min-height: 56px;
   gap: 0.8rem;
   font-family: var(--f-body);
-  font-size: 0.82rem;
+  /* Capitals on every button, spaced like the site's other small caps. */
+  font-size: 0.74rem;
   font-weight: 400;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   color: rgb(var(--c-cream) / 0.65);
   text-decoration: none;
   border: 1px solid rgb(var(--c-cream) / 0.18);
@@ -319,17 +320,17 @@ main {
 }
 /* The main call to action ("Start a project") on touch: there's no hover
    to light it up, so the resting state was all a phone ever showed — a
-   faint ghost. It rests in the lit, red-edged state a mouse gets on
-   hover, with full-strength text. Secondary buttons stay quiet. */
+   faint ghost. It rests stronger, in the site's own neutrals (no red):
+   full-strength text, a clear cream edge and a light cream fill.
+   Secondary buttons stay quiet. */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   html .h-hero-cta.h-hero-cta--primary {
     color: rgb(var(--c-cream));
     font-weight: 500;
-    border-color: rgb(var(--c-red) / 0.6);
-    background: rgb(var(--c-red) / 0.1);
+    border-color: rgb(var(--c-cream) / 0.55);
+    background: rgb(var(--c-cream) / 0.07);
     box-shadow:
-      inset 0 0 0 1px rgb(var(--c-red) / 0.14),
-      0 0 22px rgb(var(--c-red) / 0.18),
+      inset 0 1px 0 rgb(var(--c-cream) / 0.08),
       0 8px 24px rgb(var(--c-bg) / 0.25);
   }
 }
@@ -448,9 +449,9 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
     width: 100%;
     justify-content: center;
     padding: 1rem;
-    font-size: 0.82rem;
-    letter-spacing: 0.02em;
-    text-transform: none;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
     border-radius: 0;
   }
 }
