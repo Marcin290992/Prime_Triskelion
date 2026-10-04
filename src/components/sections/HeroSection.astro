@@ -980,6 +980,11 @@
 			window.removeEventListener('touchmove', onTouchMove as EventListener);
 			window.removeEventListener('resize', onResize);
 			document.removeEventListener('visibilitychange', onVisibilityChange);
+			// Free the GPU context now rather than whenever the old canvas is
+			// garbage-collected — each visit made a new one, and after a few
+			// navigations Android Chrome ran short on GPU memory and every
+			// animation (the menu's included) started dropping frames.
+			gl.getExtension('WEBGL_lose_context')?.loseContext();
 		}, { once: true });
 	}
 
