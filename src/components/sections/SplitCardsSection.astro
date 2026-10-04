@@ -397,10 +397,13 @@
       background-image: url('../../img/scroll-bckg.webp');
       background-repeat: no-repeat;
       background-size: 300% auto;
-      background-position: 0% 50%;
+      /* Phone (stacked): each card centred on its own monolith — the
+         photo's three stand at about 27%, 50% and 73% of its width, and
+         a third-wide window is centred on one at (3x − 0.5) / 2. */
+      background-position: 16% 50%;
     }
     .c2 .sc-card-m__media { background-position: 50% 50%; }
-    .c3 .sc-card-m__media { background-position: 100% 50%; }
+    .c3 .sc-card-m__media { background-position: 85% 50%; }
     /* The photo melts into the card's own colour. */
     .sc-card-m__media::after {
       content: '';
@@ -421,6 +424,9 @@
     .sc-card-m .sc-desc { font-size: 0.86rem; line-height: 1.5; opacity: 0.8; max-width: 40ch; }
 
     @media (min-width: 700px) {
+      /* Side by side the three thirds meet into the whole photo again. */
+      .c1 .sc-card-m__media { background-position: 0% 50%; }
+      .c3 .sc-card-m__media { background-position: 100% 50%; }
       .sc-cards-m { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
       .sc-card-m__media { aspect-ratio: 4 / 5; max-height: none; }
       .sc-card-m .sc-name { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
