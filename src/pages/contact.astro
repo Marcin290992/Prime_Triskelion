@@ -253,10 +253,10 @@ const EMAIL = CONTACT_EMAIL;
     gap: 0.6rem;
     margin: 0 0 1.3rem;
     font-family: var(--f-body);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.36em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.62);
+    color: rgb(var(--c-cream) / 0.8);
   }
   .cp-q {
     margin: 0 0 clamp(1.8rem, 5vh, 2.8rem);
@@ -275,7 +275,7 @@ const EMAIL = CONTACT_EMAIL;
     align-items: center;
     gap: 1.6rem;
   }
-  .cp-hint { margin: -0.6rem 0 0; font-size: 0.85rem; color: rgb(var(--c-cream) / 0.62); }
+  .cp-hint { margin: -0.6rem 0 0; font-size: 0.85rem; color: rgb(var(--c-cream) / 0.75); }
   .cp-error {
     min-height: 1.3em;
     margin: 0.6rem 0 0;
@@ -318,7 +318,7 @@ const EMAIL = CONTACT_EMAIL;
       linear-gradient(rgb(var(--c-cream) / 0.16), rgb(var(--c-cream) / 0.16)) no-repeat center bottom / 100% 1px;
     transition: background-size 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .cp-steps ::placeholder { color: rgb(var(--c-cream) / 0.2); }
+  .cp-steps ::placeholder { color: rgb(var(--c-cream) / 0.42); }
   .cp-steps input:focus,
   .cp-steps textarea:focus { background-size: 100% 1px, 100% 1px; }
   /* Errors are the one place red appears on a field. */
@@ -361,7 +361,7 @@ const EMAIL = CONTACT_EMAIL;
     font-size: clamp(0.85rem, 1vw, 1rem);
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.7);
+    color: rgb(var(--c-cream) / 0.85);
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition: border-color 0.3s ease, color 0.3s ease, background 0.3s ease;
@@ -408,7 +408,7 @@ const EMAIL = CONTACT_EMAIL;
     border: 1px solid rgb(var(--c-cream) / 0.18);
     border-radius: 0;
     background: rgb(var(--c-cream) / 0.02);
-    color: rgb(var(--c-cream) / 0.65);
+    color: rgb(var(--c-cream) / 0.8);
     transition: color 0.3s ease, border-color 0.3s ease;
   }
   @media (hover: hover) {
@@ -417,7 +417,7 @@ const EMAIL = CONTACT_EMAIL;
   .cp-count {
     border: 1px solid rgb(var(--c-cream) / 0.08);
     background: rgb(var(--c-cream) / 0.04);
-    color: rgb(var(--c-cream) / 0.55);
+    color: rgb(var(--c-cream) / 0.75);
     letter-spacing: 0.14em;
     font-variant-numeric: tabular-nums;
     user-select: none;
@@ -474,7 +474,7 @@ const EMAIL = CONTACT_EMAIL;
   .cp-next__label { position: relative; z-index: 3; white-space: nowrap; }
   /* Dims until the step's required fields are filled (still clickable, so a
      press explains what's missing). */
-  .cp-next.is-waiting { color: rgb(var(--c-cream) / 0.35); }
+  .cp-next.is-waiting { color: rgb(var(--c-cream) / 0.5); }
   .cp-next.is-waiting .cp-beam { opacity: 0.35; }
   .cp-next:disabled { opacity: 0.55; cursor: progress; }
 
@@ -507,7 +507,7 @@ const EMAIL = CONTACT_EMAIL;
     cursor: pointer;
     font-family: var(--f-body);
     font-size: 0.95rem;
-    color: rgb(var(--c-cream) / 0.7);
+    color: rgb(var(--c-cream) / 0.85);
     text-decoration: none;
     transition: color 0.25s ease, border-color 0.25s ease;
   }
