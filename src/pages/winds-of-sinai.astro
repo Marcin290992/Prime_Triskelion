@@ -663,6 +663,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
     .wos-hero__desc { max-width: 100%; }
     .wos-hero__btns { flex-direction: column; gap: 0.75rem; }
   }
+  /* Tablet width: the two buttons side by side at their own width. */
+  @media (max-width: 1024px) and (min-width: 700px), (hover: none) and (pointer: coarse) and (min-width: 700px) {
+    .wos-hero__btns { flex-direction: row; }
+    .wos-hero__btns .h-hero-cta-wrap { width: 260px; }
+  }
 
   /* ─── Cinematic: małe laptopy (1025–1440px) ─── */
   @media (min-width: 1025px) and (hover: hover) and (max-width: 1440px), (min-width: 1025px) and (pointer: fine) and (max-width: 1440px) {

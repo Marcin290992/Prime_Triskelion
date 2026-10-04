@@ -739,6 +739,21 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		/* Capped at about half the screen's height — on a tablet in
 		   landscape the full column width made each photo fill the screen. */
 		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; width: min(100%, 85vh); }
+		/* Tablet width: photo on the left, number / name / description and
+		   tags on the right, instead of a full-width stack. */
+		@media (min-width: 700px) {
+			.work-row {
+				grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+				grid-template-rows: auto auto 1fr;
+				grid-template-areas: 'img num' 'img content' 'img tags';
+				gap: 0.35rem clamp(1.5rem, 4vw, 2.75rem);
+				align-items: start;
+			}
+			.wr-img-col { align-self: center; }
+			.wr-num { padding-top: 0; }
+			.wr-img-inner { width: 100%; margin-top: 0; }
+			.wr-title { font-size: clamp(1.4rem, 2.6vw, 2rem) !important; }
+		}
 		/* Dropped entirely on mobile rather than just GPU-layer-promoted —
 		   it wasn't earning its cost there (desktop's hover-reveal is the
 		   whole reason it existed) and mobile should stay as light as

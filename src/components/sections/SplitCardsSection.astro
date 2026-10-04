@@ -56,7 +56,6 @@
     <article class="sc-card-m c1" style="--i: 0">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
-        <span class="sc-card-m__num" aria-hidden="true">01</span>
         <h3 class="sc-name">Strategy</h3>
         <p class="sc-desc">I map the mountain before the first step — positioning, narrative and the route that gets you to the top without burning the team.</p>
       </div>
@@ -64,7 +63,6 @@
     <article class="sc-card-m c2" style="--i: 1">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
-        <span class="sc-card-m__num" aria-hidden="true">02</span>
         <h3 class="sc-name">Design</h3>
         <p class="sc-desc">I make the climb visible. Brand systems, sites and product surfaces engineered to look inevitable and earn trust on first contact.</p>
       </div>
@@ -72,7 +70,6 @@
     <article class="sc-card-m c3" style="--i: 2">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
-        <span class="sc-card-m__num" aria-hidden="true">03</span>
         <h3 class="sc-name">Engineering</h3>
         <p class="sc-desc">I ship. Fast, clean, performant code — built so the next ten thousand users feel the same craft as the first ten.</p>
       </div>
@@ -372,8 +369,8 @@
     .sc-title-m em { font-style: normal; color: rgb(var(--c-red)); }
 
     /* The desktop scene in miniature: each pillar carries its slice of the
-       one project photo (left / middle / right third) over its colour, a
-       big pillar number, and the cards rise in one after another. Side by
+       one project photo (left / middle / right third) over its colour,
+       and the cards rise in one after another. Side by
        side from tablet width, where the three slices meet into the whole
        picture again. */
     .sc-cards-m {
@@ -419,23 +416,9 @@
       flex-direction: column;
       padding: 1.15rem 1.35rem 1.45rem;
     }
-    .sc-card-m__num {
-      position: absolute;
-      top: -0.55em;
-      right: 1.1rem;
-      font-family: var(--f-display);
-      font-weight: 700;
-      font-size: clamp(2.8rem, 13vw, 4.2rem);
-      line-height: 1;
-      letter-spacing: -0.03em;
-      opacity: 0.9;
-    }
     .c1 { --card-top: #f5efe7; background: linear-gradient(180deg, #f5efe7 0%, #b9b3a9 100%); color: rgb(var(--c-bg)); }
     .c2 { --card-top: #e8361c; background: linear-gradient(180deg, #e8361c 0%, #7a0a05 100%); color: rgb(var(--c-cream)); }
     .c3 { --card-top: #1a1a1c; background: linear-gradient(180deg, #1a1a1c 0%, #050505 100%); color: rgb(var(--c-cream)); }
-    .c1 .sc-card-m__num { color: rgb(var(--c-red)); }
-    .c2 .sc-card-m__num { color: rgb(var(--c-cream)); }
-    .c3 .sc-card-m__num { color: rgb(var(--c-red)); }
     .sc-card-m .sc-name { font-size: clamp(1.7rem, 7vw, 2.2rem); line-height: 1; margin: 0 0 0.6rem; }
     .sc-card-m .sc-desc { font-size: 0.86rem; line-height: 1.5; opacity: 0.8; max-width: 40ch; }
 
@@ -443,7 +426,6 @@
       .sc-cards-m { grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
       /* Taller slices so the three read as one photo across the row. */
       .sc-card-m__media { aspect-ratio: 4 / 5; }
-      .sc-card-m__num { font-size: clamp(2.6rem, 5vw, 3.6rem); }
       .sc-card-m .sc-name { font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
       .sc-card-m .sc-desc { font-size: 0.8rem; }
     }

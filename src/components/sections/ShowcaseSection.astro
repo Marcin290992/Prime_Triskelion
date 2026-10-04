@@ -474,7 +474,19 @@
 	   than about half the screen — the phone's tall 3:4 box filled a
 	   tablet's whole screen in landscape. */
 	@media (min-width: 700px) {
-		.proc__media { aspect-ratio: 3 / 2; max-height: none; width: min(100%, 75vh); }
+		/* Photo on the left, number / title / description on the right. */
+		.proc {
+			display: grid;
+			grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+			grid-template-areas: 'media head' 'media title' 'media desc';
+			grid-template-rows: auto auto 1fr;
+			gap: 0.9rem clamp(1.5rem, 4vw, 2.75rem);
+			align-items: start;
+		}
+		.proc__head { grid-area: head; }
+		.proc__title { grid-area: title; font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+		.proc__desc { grid-area: desc; }
+		.proc__media { grid-area: media; align-self: center; aspect-ratio: 4 / 3; max-height: none; width: 100%; }
 	}
 
 	/* ── Mobile ── */

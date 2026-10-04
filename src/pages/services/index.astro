@@ -453,6 +453,22 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     .svc-cta-wrap { max-width: 100%; width: 100%; }
   }
 
+  /* Tablet width: the service's card on the left (sticky while its list
+     scrolls past), the copy, list and button on the right — not one
+     full-width stack. */
+  @media (max-width: 1024px) and (min-width: 700px), (hover: none) and (pointer: coarse) and (min-width: 700px) {
+    .svc-row {
+      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+      gap: clamp(1.5rem, 4vw, 3rem);
+      align-items: start;
+    }
+    .svc-sticky { position: sticky; top: clamp(5rem, 10vh, 6.5rem); }
+    .svc-badge { min-height: 240px; }
+    .svc-badge__bgnum { font-size: clamp(7rem, 13vw, 10rem); }
+    .svc-badge__name { font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
+    .svc-content__title { font-size: clamp(1.5rem, 3vw, 2.3rem); }
+  }
+
   @media (max-width: 480px) {
     .svc-badge { min-height: 170px; }
     .svc-badge__bgnum { font-size: clamp(6rem, 28vw, 8rem); }

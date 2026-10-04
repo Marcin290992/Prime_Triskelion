@@ -438,6 +438,10 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
     border-radius: 0;
   }
 }
+/* From tablet width the full-width phone buttons became 880px bars. */
+@media (max-width: 1024px) and (min-width: 700px), (hover: none) and (pointer: coarse) and (min-width: 700px) {
+  .h-hero-cta-wrap { max-width: 320px; }
+}
 @media (max-width: 640px) {
   .h-hero-cta { padding: 0.95rem 1rem; }
 }
