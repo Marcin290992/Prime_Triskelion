@@ -321,6 +321,8 @@ const navLinks = [
   .ox-link-text--base {
     color: rgba(255, 255, 255, 0.88);
     transform: translateY(0);
+    /* Own layer before the tap, not created on its first frame. */
+    will-change: transform;
     /* Symmetric ease on every device — the old expo-out shot most of the
        way in its first ~100ms, which felt abrupt on a tap (no hover lead-in). */
     transition: transform 0.34s cubic-bezier(0.65, 0, 0.35, 1);
@@ -332,6 +334,7 @@ const navLinks = [
     left: 0;
     width: 100%;
     transform: translateY(0);
+    will-change: transform;
     transition: transform 0.34s cubic-bezier(0.65, 0, 0.35, 1);
   }
   @media (hover: hover) {
