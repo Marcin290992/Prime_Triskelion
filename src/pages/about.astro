@@ -397,7 +397,9 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       flex-wrap: wrap;
       justify-content: center;
       align-items: baseline;
-      gap: 0.22em;
+      /* 0.22em of the words' own size — a bare 0.22em here resolved
+         against this element's 16px, leaving the words ~3px apart. */
+      gap: calc(clamp(2.2rem, 9vw, 5rem) * 0.22);
       margin: 0;
       position: relative;
       z-index: 2;
