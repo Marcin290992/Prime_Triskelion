@@ -53,21 +53,21 @@
   <h2 class="sc-title-m">Three pillars.<br /><em>One ascent.</em></h2>
 
   <div class="sc-cards-m">
-    <article class="sc-card-m c1" style="--i: 0">
+    <article class="sc-card-m c1">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
         <h3 class="sc-name">Strategy</h3>
         <p class="sc-desc">I map the mountain before the first step — positioning, narrative and the route that gets you to the top without burning the team.</p>
       </div>
     </article>
-    <article class="sc-card-m c2" style="--i: 1">
+    <article class="sc-card-m c2">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
         <h3 class="sc-name">Design</h3>
         <p class="sc-desc">I make the climb visible. Brand systems, sites and product surfaces engineered to look inevitable and earn trust on first contact.</p>
       </div>
     </article>
-    <article class="sc-card-m c3" style="--i: 2">
+    <article class="sc-card-m c3">
       <div class="sc-card-m__media" aria-hidden="true"></div>
       <div class="sc-card-m__body">
         <h3 class="sc-name">Engineering</h3>
@@ -369,8 +369,7 @@
     .sc-title-m em { font-style: normal; color: rgb(var(--c-red)); }
 
     /* The desktop scene in miniature: each pillar carries its slice of the
-       one project photo (left / middle / right third) over its colour,
-       and the cards rise in one after another. Side by
+       one project photo (left / middle / right third) over its colour. Side by
        side from tablet width, where the three slices meet into the whole
        picture again. */
     .sc-cards-m {
@@ -386,13 +385,7 @@
       box-shadow:
         0 16px 32px -18px rgba(0, 0, 0, 0.55),
         0 6px 12px -6px rgba(0, 0, 0, 0.35);
-      opacity: 0;
-      transform: translateY(32px);
-      transition:
-        opacity 0.7s ease calc(var(--i, 0) * 0.12s),
-        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--i, 0) * 0.12s);
     }
-    .sc-card-m.is-in { opacity: 1; transform: none; }
     /* Square slices of the photo — stacked here, each card shows the
        same third of it that the tablet's row (taller, 4:5) shows side by
        side. Height-capped so a
@@ -434,9 +427,7 @@
       .sc-card-m .sc-desc { font-size: 0.8rem; }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .sc-card-m { opacity: 1; transform: none; transition: none; }
-    }
+
   }
 </style>
 
@@ -447,25 +438,8 @@
 
   let _st: ScrollTrigger | null = null;
 
-  // Mobile cards: each rises in as it comes into view.
-  let _io: IntersectionObserver | null = null;
-  function initSplitCardsMobile() {
-    _io?.disconnect();
-    const cards = document.querySelectorAll<HTMLElement>('.sc-card-m');
-    if (!cards.length) return;
-    _io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        e.target.classList.add('is-in');
-        _io?.unobserve(e.target);
-      });
-    }, { rootMargin: '0px 0px -12% 0px' });
-    cards.forEach((c) => _io!.observe(c));
-  }
-
   function initSplitCards() {
     if (_st) { _st.kill(); _st = null; }
-    initSplitCardsMobile();
 
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
@@ -502,7 +476,5 @@
 
   document.addEventListener('astro:before-swap', () => {
     if (_st) { _st.kill(); _st = null; }
-    _io?.disconnect();
-    _io = null;
   });
 </script>
