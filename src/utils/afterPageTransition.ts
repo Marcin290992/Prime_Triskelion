@@ -23,6 +23,34 @@ const START_AFTER_READY_MS = 0;
 
 let pending: Promise<unknown> | null = null;
 
+// Entrances never skip. Lenis wants lag smoothing off (scroll-linked
+// tweens stay in step with the scroll), but then one long frame is played
+// out in full: a page's first visit compiles its shaders and uploads its
+// pictures (About's fluid sim, ~400ms) right as its title starts, and the
+// title jumped from a third of the way to done — no blur-in at all, only
+// on the first visit. For the first seconds of every page view a frame
+// over 100ms counts as 33ms instead (the entrance pauses through it), then
+// it's back to off. Pages set "off" through syncTickerToScroll(), which
+// leaves the entrance window alone.
+const ENTRANCE_GUARD_MS = 4000;
+let entranceGuardUntil = 0;
+let entranceGuardTimer: ReturnType<typeof setTimeout> | undefined;
+function guardEntrance(): void {
+	entranceGuardUntil = performance.now() + ENTRANCE_GUARD_MS;
+	gsap.ticker.lagSmoothing(100, 33);
+	clearTimeout(entranceGuardTimer);
+	entranceGuardTimer = setTimeout(() => {
+		entranceGuardUntil = 0;
+		gsap.ticker.lagSmoothing(0);
+	}, ENTRANCE_GUARD_MS);
+}
+export function syncTickerToScroll(): void {
+	if (performance.now() < entranceGuardUntil) return;
+	gsap.ticker.lagSmoothing(0);
+}
+guardEntrance();
+document.addEventListener('astro:after-swap', guardEntrance);
+
 // Leaving through the menu: by the time navigate() runs the menu has
 // already faded its content out over its black overlay, so the old page is
 // plain black and cross-fading it into the new (black, title still hidden)
@@ -193,12 +221,18 @@ document.addEventListener('astro:after-swap', () => {
 // in. Desktop used to get the quick root cross-fade, which read as stiff
 // and abrupt next to the menu's exit. Only the page content fades — the
 // logo, menu and edge strips stay (the set html.ox-menu-covered hides).
+// A black cover over other content ([data-leave-keep], About's overlay over
+// the portrait) keeps its opacity: faded on its own it went see-through and
+// showed what it hides before everything reached black.
 document.addEventListener('astro:before-preparation', (e: any) => {
 	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
-		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint)'
+		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not([data-leave-keep])'
 	);
+	// Its own content (the title on it) still fades with the page.
+	const keptContent = document.querySelectorAll<HTMLElement>('[data-leave-keep] > *');
+	if (keptContent.length) gsap.to(keptContent, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
 	const fade = new Promise<void>((resolve) => {
 		gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut', onComplete: () => resolve() });
 	});

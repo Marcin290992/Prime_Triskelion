@@ -19,7 +19,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     <canvas id="about-canvas" data-top={portraitTop.src} data-bot={portraitBottom.src}></canvas>
   </div>
   <!-- Dark overlay that fades away on scroll, revealing the portrait -->
-  <div id="about-overlay">
+  <div id="about-overlay" data-leave-keep>
     <p class="about-title">
       <span class="about-title__l"><span class="about-title__w">Who's</span></span>
       <span class="about-title__r"><span class="about-title__w">Behind?</span></span>
@@ -563,7 +563,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
-  import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, syncTickerToScroll } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
   import { initDitherPortrait, type DitherPortraitHandle } from '../utils/ditherPortrait';
 
@@ -1832,7 +1832,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     _lenis.on('scroll', ScrollTrigger.update);
     _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
     gsap.ticker.add(_lenisRaf);
-    gsap.ticker.lagSmoothing(0);
+    syncTickerToScroll();
 
     // -- Scroll scrub: overlay fades → portrait emerges from darkness --
 

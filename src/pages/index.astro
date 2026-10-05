@@ -30,6 +30,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		import Lenis from 'lenis';
 		import gsap from 'gsap';
 		import ScrollTrigger from 'gsap/ScrollTrigger';
+		import { syncTickerToScroll } from '../utils/afterPageTransition';
 
 		let lenisInstance: Lenis | null = null;
 		let lenisTickerCb: ((time: number) => void) | null = null;
@@ -65,7 +66,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				(window as any).__lenis = lenisInstance;
 				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
 				gsap.ticker.add(lenisTickerCb);
-				gsap.ticker.lagSmoothing(0);
+				syncTickerToScroll();
 				lenisInstance.on('scroll', ScrollTrigger.update);
 			}
 
