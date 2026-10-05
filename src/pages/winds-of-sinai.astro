@@ -1260,7 +1260,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { isSafari } from '../utils/isSafari';
-  import { afterPageTransition, revealAfterHero, titleIn, subpageMode, reducedMotion } from '../utils/afterPageTransition';
+  import { afterPageTransition, revealAfterHero, titleIn, subpageMode, reducedMotion, syncTickerToScroll } from '../utils/afterPageTransition';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -1404,7 +1404,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
       _lenis.on('scroll', ScrollTrigger.update);
       _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
       gsap.ticker.add(_lenisRaf);
-      gsap.ticker.lagSmoothing(0);
+      syncTickerToScroll();
     } else {
       (window as any).__lenis = null;
       (window as any).__lenisHandled = true;
