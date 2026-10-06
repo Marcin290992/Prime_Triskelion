@@ -1,8 +1,56 @@
+---
+import { Image } from 'astro:assets';
+// Placeholder pictures (Unsplash, stored locally — the site's CSP blocks
+// remote images). Swap the files in src/img/services/ for real work.
+import imgWebsites from '../../img/services/websites.jpg';
+import imgBranding from '../../img/services/branding.jpg';
+import imgMotion from '../../img/services/motion.jpg';
+import imgStrategy from '../../img/services/strategy.jpg';
+
+const services = [
+	{ name: 'Websites', img: imgWebsites, desc: 'High-performance websites built to convert and scale.' },
+	{ name: 'Branding', img: imgBranding, desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
+	{ name: 'Motion', img: imgMotion, desc: 'Animation and motion systems that bring interfaces to life.' },
+	{ name: 'Strategy', img: imgStrategy, desc: 'Creative direction and strategy built around your goals.' },
+];
+---
 <!-- ═══════ SERVICES ═══════ -->
 <section id="services">
 
 	<div class="svc__header">
 		<h2 class="svc__title-main">My<br><em>Services.</em></h2>
+	</div>
+
+	<!-- Phones and tablets: a pinned scene — scrolling steps through the
+	     four services, each with its picture and one line (initServicesMobile).
+	     Desktop keeps the hover list below. -->
+	<div class="svc-m">
+		<div class="svc-m__pin">
+			<div class="svc-m__stage">
+				<div class="svc-m__copy">
+					<ol class="svc-m__list">
+						{services.map((sv, i) => <li class:list={['svc-m__name', i === 0 && 'is-active']} data-i={i}>{sv.name}</li>)}
+					</ol>
+					<div class="svc-m__descs">
+						{services.map((sv, i) => <p class:list={['svc-m__desc', i === 0 && 'is-active']} data-i={i}>{sv.desc}</p>)}
+					</div>
+					<div class="svc-m__progress" aria-hidden="true"><span></span></div>
+				</div>
+				<div class="svc-m__media" aria-hidden="true">
+					{services.map((sv, i) => (
+						<Image
+							src={sv.img}
+							alt=""
+							widths={[480, 800, 1200]}
+							sizes="(min-width: 700px) 55vw, 100vw"
+							loading="lazy"
+							class:list={['svc-m__img', i === 0 && 'is-active']}
+							data-i={i}
+						/>
+					))}
+				</div>
+			</div>
+		</div>
 	</div>
 
 	<div class="svc__list">
@@ -22,11 +70,6 @@
 			<span class="svc__name">Strategy</span>
 			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/04.svg" alt="" loading="lazy" /></div>
 		</div>
-
-		<!-- Mobile only: one shared floating image swapped on tap instead of
-		     each item's own hover-following box (see .svc-mobile-img below
-		     and initServicesMobile in the script). -->
-		<div class="svc-mobile-img" aria-hidden="true"><img id="svcMobileImg" src="/work-thumbs/01.svg" alt="" /></div>
 	</div>
 
 	<div class="svc__footer">
@@ -123,9 +166,8 @@
 		transition: opacity 0.3s ease 0.18s, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
 	.svc__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-	/* Mobile-only floating image — hidden on desktop, shown in the
-	   max-width:1024px block below. */
-	.svc-mobile-img { display: none; }
+	/* Phones/tablets only — see the mobile block below. */
+	.svc-m { display: none; }
 	.svc__footer {
 		width: 100%;
 		padding: 0 var(--site-gutter) var(--section-space-bottom);
@@ -158,69 +200,123 @@
 		flex-shrink: 0;
 	}
 	.svc__btn:hover .svc__btn__line { width: 56px; }
-	/* Mobile layout — animation handled by global mobile CSS block */
+	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.svc__list { position: relative; }
-		/* Left-aligned, with room carved out on the right so the text never
-		   runs under the floating image (128px wide, see .svc-mobile-img)
-		   instead of the desktop's centered layout. */
-		.svc__item {
-			padding: 0.55rem calc(128px + var(--site-gutter) + 0.75rem) 0.55rem var(--site-gutter);
-			text-align: left;
-		}
-		.svc__img { display: none; }
-		.svc__name {
-			font-size: clamp(1.8rem, 7.6vw, 2.6rem);
-			margin: 0;
-			width: auto;
-			mix-blend-mode: normal;
-			cursor: pointer;
-			/* Muted by default, lit up by .is-active — color rather than
-			   opacity/filter, since the global mobile instant-visibility
-			   override (global.css) forces this section's opacity/filter to
-			   their "revealed" values with !important. */
-			color: rgb(var(--c-cream) / 0.32);
-			transition: color 0.3s ease;
-		}
-		.svc__item.is-active .svc__name { color: rgb(var(--c-cream)); }
-
-		/* One shared floating image (see markup comment) instead of each
-		   item's own hover-following box — tapping a name swaps its src. */
-		.svc-mobile-img {
+		.svc__list { display: none; }
+		.svc__header { padding-bottom: 0; }
+		/* Scroll room for the four steps; the stage stays pinned meanwhile.
+		   Stable vh (Layout.astro), like Manifesto's pin, so the toolbar
+		   can't resize it mid-scroll. */
+		.svc-m {
 			display: block;
-			position: absolute;
-			right: var(--site-gutter);
-			/* translateY is set in px by JS (initServicesMobile) to the
-			   vertical center of the active item, so the image tracks
-			   whichever service is selected instead of sitting fixed in the
-			   middle of the list. transform instead of animating `top`
-			   directly — `top` triggers layout on every frame (flagged as a
-			   non-composited/janky animation), transform doesn't. */
-			top: 0;
-			transform: translateY(0);
-			transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-			/* work-thumbs/*.svg are wide browser-mockup graphics (viewBox
-			   320x200) — a narrow portrait box here would object-fit:cover-crop
-			   almost all of the (already very dark) artwork away, leaving what
-			   looks like an empty dark square. Match their ~1.6 aspect ratio
-			   instead, same as the desktop hover box (420x280) below. */
-			width: 128px;
-			height: 96px;
-			border-radius: 0;
-			overflow: hidden;
-			background: #141414;
-			border: 1px solid rgba(255, 255, 255, 0.07);
-			box-shadow: -10px 0 20px rgba(0, 0, 0, 0.5);
-			z-index: 5;
-			pointer-events: none;
+			position: relative;
+			height: 300svh;
+			height: calc(var(--app-stable-vh, 1svh) * 300);
 		}
-		.svc-mobile-img img {
+		.svc-m__pin {
+			position: sticky;
+			top: 0;
+			height: 100svh;
+			height: calc(var(--app-stable-vh, 1svh) * 100);
+			display: flex;
+			align-items: center;
+			padding: 4.5rem var(--site-gutter) 5.5rem;
+			box-sizing: border-box;
+		}
+		.svc-m__stage {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			gap: clamp(1.25rem, 3vh, 2rem);
+		}
+		.svc-m__list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 0.1em;
+		}
+		.svc-m__name {
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2rem, 9vw, 3.4rem);
+			line-height: 1;
+			letter-spacing: -0.03em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.2);
+			cursor: pointer;
+			transition: color 0.45s ease;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.svc-m__name.is-active { color: rgb(var(--c-cream)); }
+		/* All four lines stacked in one spot; the active one fades up. */
+		.svc-m__descs {
+			display: grid;
+			margin-top: clamp(0.9rem, 2.5vh, 1.4rem);
+		}
+		.svc-m__desc {
+			grid-area: 1 / 1;
+			margin: 0;
+			max-width: 38ch;
+			font-family: var(--f-body);
+			font-size: 0.95rem;
+			font-weight: 300;
+			line-height: 1.6;
+			color: rgb(var(--c-cream) / 0.72);
+			opacity: 0;
+			transform: translateY(8px);
+			transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc-m__desc.is-active { opacity: 1; transform: none; }
+		/* How far through the four the scroll is. */
+		.svc-m__progress {
+			height: 1px;
+			margin-top: clamp(1rem, 2.5vh, 1.5rem);
+			background: rgb(var(--c-cream) / 0.12);
+			overflow: hidden;
+		}
+		.svc-m__progress span {
+			display: block;
+			height: 100%;
+			background: rgb(var(--c-red));
+			transform-origin: left center;
+			transform: scaleX(var(--p, 0));
+		}
+		.svc-m__media {
+			position: relative;
+			aspect-ratio: 4 / 3;
+			max-height: 36vh;
+			overflow: hidden;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			background: #060608;
+		}
+		.svc-m__img {
+			position: absolute;
+			inset: 0;
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			display: block;
-			opacity: 1;
-			transition: opacity 0.25s ease;
+			filter: grayscale(100%) contrast(1.1) brightness(0.8);
+			opacity: 0;
+			transform: scale(1.06);
+			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc-m__img.is-active { opacity: 1; transform: none; }
+
+		/* Tablet width: names and line on the left, the picture on the right. */
+		@media (min-width: 700px) {
+			.svc-m__stage {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+				gap: clamp(1.5rem, 4vw, 3rem);
+				align-items: center;
+			}
+			.svc-m__name { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+			.svc-m__media { max-height: none; }
+		}
+		@media (prefers-reduced-motion: reduce) {
+			.svc-m__desc, .svc-m__img { transition: opacity 0.2s linear; transform: none; }
 		}
 	}
 </style>
@@ -234,31 +330,46 @@
 		_isBackNav = (e.navigationType ?? '') === 'traverse';
 	});
 
+	// Phones/tablets: the pinned scene steps through the services as the
+	// page scrolls past it; tapping a name scrolls to its step.
+	let _svcScroll: (() => void) | null = null;
 	function initServicesMobile(section: HTMLElement) {
-		// -- Services list: tapping a name moves the shared floating image to
-		// that item's height and swaps its src --
-		const items = Array.from(section.querySelectorAll<HTMLElement>('.svc__item'));
-		const mobileImg = section.querySelector<HTMLImageElement>('#svcMobileImg');
-		const mobileImgBox = mobileImg?.closest<HTMLElement>('.svc-mobile-img');
-		if (items.length && mobileImg && mobileImgBox) {
-			const activate = (item: HTMLElement) => {
-				items.forEach(i => i.classList.remove('is-active'));
-				item.classList.add('is-active');
-				const y = item.offsetTop + item.offsetHeight / 2 - mobileImgBox.offsetHeight / 2;
-				mobileImgBox.style.transform = `translateY(${y}px)`;
-				const src = item.dataset.img;
-				if (src && mobileImg.getAttribute('src') !== src) {
-					mobileImg.style.opacity = '0';
-					window.setTimeout(() => {
-						mobileImg.src = src;
-						mobileImg.style.opacity = '1';
-					}, 200);
-				}
-			};
-			activate(items[0]);
-			items.forEach(item => item.addEventListener('click', () => activate(item)));
-		}
+		const scene = section.querySelector<HTMLElement>('.svc-m');
+		const pin = section.querySelector<HTMLElement>('.svc-m__pin');
+		if (!scene || !pin) return;
+		const names = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__name'));
+		const descs = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__desc'));
+		const imgs = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__img'));
+		const bar = scene.querySelector<HTMLElement>('.svc-m__progress');
+		const count = names.length;
+		let active = 0;
+		const set = (i: number) => {
+			if (i === active) return;
+			active = i;
+			[names, descs, imgs].forEach((list) => list.forEach((el, k) => el.classList.toggle('is-active', k === i)));
+		};
+		const range = () => Math.max(1, scene.offsetHeight - pin.offsetHeight);
+		let ticking = false;
+		const update = () => {
+			ticking = false;
+			const p = Math.min(1, Math.max(0, -scene.getBoundingClientRect().top / range()));
+			bar?.style.setProperty('--p', p.toFixed(4));
+			set(Math.min(count - 1, Math.floor(p * count)));
+		};
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+		if (_svcScroll) window.removeEventListener('scroll', _svcScroll);
+		window.addEventListener('scroll', onScroll, { passive: true });
+		_svcScroll = onScroll;
+		update();
+		names.forEach((name, i) => name.addEventListener('click', () => {
+			const top = scene.getBoundingClientRect().top + window.scrollY;
+			window.scrollTo({ top: top + range() * ((i + 0.5) / count), behavior: 'smooth' });
+		}));
 	}
+	document.addEventListener('astro:before-swap', () => {
+		if (_svcScroll) window.removeEventListener('scroll', _svcScroll);
+		_svcScroll = null;
+	});
 
 	function initServices() {
 		const section = document.getElementById('services');
