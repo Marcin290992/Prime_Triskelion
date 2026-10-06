@@ -141,7 +141,10 @@ const projects = [
 				return (
 					<Tag class="sw-m__card" href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
 						<div class="sw-m__media" data-case-media={p.caseSrc ? '' : undefined}>
-							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 42vw, 82vw" loading="lazy" />
+							{/* Eager, not lazy: Safari only starts a lazy image once it's
+							    nearly in view, so swiping showed the next card empty and its
+							    picture popping in. Six card-sized images, loaded with the page. */}
+							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 78vw, 82vw" loading="eager" decoding="async" />
 						</div>
 						<div class="sw-m__bar">
 							<div class="sw-m__text">
