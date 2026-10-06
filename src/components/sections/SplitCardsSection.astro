@@ -392,6 +392,10 @@
        short phone still sees the card's copy with its picture. */
     .sc-card-m__media {
       position: relative;
+      /* Explicit width: with aspect-ratio + max-height, Safari narrows the box
+         to keep the ratio once the height cap kicks in (Chrome keeps it full
+         width), so on an iPhone the picture didn't fill the card. */
+      width: 100%;
       aspect-ratio: 1 / 1;
       max-height: 44vh;
       background-image: url('../../img/scroll-bckg.webp');
