@@ -358,8 +358,9 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     .am-greeting { font-size: 1.1rem; }
     .am-name { font-size: clamp(3.5rem, 7vw, 7rem); }
     .am-item { font-size: clamp(1.1rem, 1.8vw, 2rem); }
-    /* The lens follows a mouse over the portrait. */
-    .am-portrait-stack { cursor: none; pointer-events: auto; }
+    /* The lens follows a mouse over the portrait (the cursor stays: once
+       the face has developed the lens shows nothing new to find it by). */
+    .am-portrait-stack { pointer-events: auto; }
   }
 
 </style>
