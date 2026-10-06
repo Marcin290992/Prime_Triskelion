@@ -353,10 +353,19 @@ const services = [
 			.svc-m__progress { margin-top: 0.8rem; }
 			.svc-m__media { max-height: 24vh; }
 		}
-		/* Landscape tablet: a short screen under the pinned title. */
-		@media (min-width: 700px) and (max-height: 900px) {
-			.svc-m__name { font-size: clamp(2rem, min(7vw, 5vh), 4.6rem); }
-			.svc-m__media { max-height: 22vh; }
+		/* Landscape tablet: names and line on the left, the picture on the
+		   right — the wide, short screen suits two columns better than the
+		   portrait stack. */
+		@media (min-width: 700px) and (orientation: landscape) {
+			.svc-m__stage {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+				gap: clamp(1.5rem, 4vw, 3rem);
+				align-items: center;
+			}
+			.svc-m__name { font-size: clamp(2.2rem, min(5vw, 7vh), 3.6rem); }
+			.svc-m__desc { font-size: 1rem; }
+			.svc-m__media { max-height: 52vh; }
 		}
 		@media (prefers-reduced-motion: reduce) {
 			.svc-m__desc, .svc-m__img { transition: opacity 0.2s linear; transform: none; }
