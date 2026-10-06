@@ -1,4 +1,4 @@
-// Mobile About portrait: the photo starts as a coarse two-tone
+// About portrait (every device): the photo starts as a coarse two-tone
 // Floyd–Steinberg dither, the cells shrink as the intro scrolls, then the
 // real photo "develops" in through a Bayer-ordered cell pattern. Driven
 // entirely from outside via setProgress (the page's ScrollTrigger) and only
@@ -35,8 +35,9 @@ export interface DitherPortraitOpts {
 export interface DitherPortraitHandle {
   setProgress(p: number): void;
   setSink(s: number): void;
-  // A lens resolving the dots into the photo around (x, y), in CSS px
-  // from the canvas's top-left; amount 0..1 fades it in and out.
+  // A focus lens around (x, y), in CSS px from the canvas's top-left: the
+  // dither there runs at a much finer cell, as if a lens pulled that part
+  // of the face into focus. amount 0..1 fades it in and out.
   setLens(x: number, y: number, amount: number): void;
   destroy(): void;
 }
@@ -80,6 +81,7 @@ uniform vec2 uSinkFocus;
 uniform float uSinkRadius;
 uniform vec3 uLens; // x, y (device px, top-down), amount
 uniform float uLensRadius;
+uniform float uFineCell;
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -118,6 +120,20 @@ void main() {
   float radius = mix(1.4, uSinkRadius, uSink);
   float vign = 1.0 - smoothstep(radius, radius + 0.3, length(q));
 
+  // Focus lens: inside it, an ordered dither at a much finer cell — the
+  // same tone curve and knockout — so that patch of the face resolves.
+  // The rim swaps cell by cell in Bayer order, so it reads as dither too.
+  float lens = (1.0 - smoothstep(uLensRadius * 0.5, uLensRadius, distance(px, uLens.xy))) * uLens.z;
+  if (lens > 0.0) {
+    vec2 fcell = floor(px / uFineCell);
+    vec2 fcenter = (fcell + 0.5) * uFineCell;
+    vec3 fc = texture(tImage, imageUv(vec2(fcenter.x / uResolution.x, 1.0 - fcenter.y / uResolution.y))).rgb;
+    float fknock = uKey * (1.0 - smoothstep(0.05, 0.22, distance(fc, uMatte)));
+    float fv = pow(clamp((dot(fc, vec3(0.2126, 0.7152, 0.0722)) - 0.5) * uContrast + 0.5 + uBrightness, 0.0, 1.0), 1.6);
+    float fine = step(bayer(fcell), fv * (1.0 - fknock));
+    level = mix(level, fine, step(bayer(cell.yx), lens));
+  }
+
   vec3 color = mix(uInk, uPaper, level);
   vec3 photo = texture(tImage, imageUv(vUv)).rgb;
   // Outside the vignette the photo dissolves back into dither, cell by
@@ -126,11 +142,6 @@ void main() {
   color = mix(color, photo, step(bayer(cell.yx), shown));
   // Dim toward ~30% in the face, to black at the edges.
   color *= mix(1.0, 0.3 * vign, uSink);
-  // Lens: the photo, at full strength, inside a circle round the pointer —
-  // its rim dissolves cell by cell in the same Bayer order, so the edge
-  // reads as dither, not a soft blur.
-  float lens = (1.0 - smoothstep(uLensRadius * 0.55, uLensRadius, distance(px, uLens.xy))) * uLens.z;
-  color = mix(color, photo, step(bayer(cell.yx), lens));
   fragColor = vec4(color, 1.0);
 }`;
 
@@ -217,7 +228,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const names = [
     'tImage', 'tDiffused', 'uDiffused', 'uResolution', 'uCover', 'uOffset', 'uCell',
     'uInk', 'uPaper', 'uMatte', 'uKey', 'uContrast', 'uBrightness', 'uDevelop',
-    'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius',
+    'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius', 'uFineCell',
   ] as const;
   const u = {} as Record<(typeof names)[number], WebGLUniformLocation | null>;
   for (const n of names) u[n] = gl.getUniformLocation(program, n);
@@ -268,7 +279,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   let lensX = 0;
   let lensY = 0;
   let lensAmt = 0;
-  const LENS_RADIUS = 120; // CSS px
+  const LENS_RADIUS = 140; // CSS px
   let diffusionBlocked = false;
   // Diffused cells keyed by cell size — the scrub only ever visits a
   // handful of integer sizes, so scrolling back and forth never re-runs the
@@ -406,6 +417,8 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     gl!.uniform1f(u.uSinkRadius, sinkRadius);
     gl!.uniform3f(u.uLens, lensX * dpr, lensY * dpr, lensAmt);
     gl!.uniform1f(u.uLensRadius, LENS_RADIUS * dpr);
+    // A third of the current cell, never under ~1.5 CSS px.
+    gl!.uniform1f(u.uFineCell, Math.max(1.5 * dpr, cell / 3));
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 
     if (!ready) {
