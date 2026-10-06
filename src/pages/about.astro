@@ -438,7 +438,12 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // — not innerHeight.
       end: () => `+=${reveal.offsetHeight - pin.offsetHeight}`,
       scrub: true,
+      // The lens wakes once the title has split off the face (the split
+      // runs over the first quarter of the timeline).
+      onUpdate: (self) => _lensGate?.(self.progress >= 0.25),
     });
+    // Landing mid-scene (back/forward): set the lens from where it is now.
+    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= 0.25));
 
     // As the name/bio slide in, the portrait sinks back toward the dark:
     // dims, the vignette closes on the face and the edges re-dither. Tied
@@ -469,6 +474,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   // (DitherPortraitHandle.setLens). It eases after the pointer and fades
   // in and out at the portrait's edge; a frame loop only while moving.
   let _lensOff: (() => void) | null = null;
+  let _lensGate: ((open: boolean) => void) | null = null;
   function initAboutLens(canvas: HTMLCanvasElement, dither: DitherPortraitHandle) {
     _lensOff?.();
     _lensOff = null;
@@ -487,18 +493,29 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       if (moving) raf = requestAnimationFrame(tick);
     };
     const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
+    // Shut until "Who's Behind?" has split apart (see _amRevealST).
+    let open = false;
+    let over = false;
     const onMove = (e: PointerEvent) => {
       const r = canvas.getBoundingClientRect();
       goal.x = e.clientX - r.left;
       goal.y = e.clientY - r.top;
       if (goal.on === 0) { cur.x = goal.x; cur.y = goal.y; }
-      goal.on = 1;
+      over = true;
+      goal.on = open ? 1 : 0;
       wake();
     };
-    const onLeave = () => { goal.on = 0; wake(); };
+    const onLeave = () => { over = false; goal.on = 0; wake(); };
+    _lensGate = (next) => {
+      if (next === open) return;
+      open = next;
+      goal.on = open && over ? 1 : 0;
+      wake();
+    };
     box.addEventListener('pointermove', onMove);
     box.addEventListener('pointerleave', onLeave);
     _lensOff = () => {
+      _lensGate = null;
       cancelAnimationFrame(raf);
       box.removeEventListener('pointermove', onMove);
       box.removeEventListener('pointerleave', onLeave);
