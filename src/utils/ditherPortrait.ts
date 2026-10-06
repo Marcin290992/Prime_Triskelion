@@ -35,6 +35,9 @@ export interface DitherPortraitOpts {
 export interface DitherPortraitHandle {
   setProgress(p: number): void;
   setSink(s: number): void;
+  // A lens resolving the dots into the photo around (x, y), in CSS px
+  // from the canvas's top-left; amount 0..1 fades it in and out.
+  setLens(x: number, y: number, amount: number): void;
   destroy(): void;
 }
 
@@ -75,6 +78,8 @@ uniform float uDevelop;
 uniform float uSink;
 uniform vec2 uSinkFocus;
 uniform float uSinkRadius;
+uniform vec3 uLens; // x, y (device px, top-down), amount
+uniform float uLensRadius;
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -121,6 +126,11 @@ void main() {
   color = mix(color, photo, step(bayer(cell.yx), shown));
   // Dim toward ~30% in the face, to black at the edges.
   color *= mix(1.0, 0.3 * vign, uSink);
+  // Lens: the photo, at full strength, inside a circle round the pointer —
+  // its rim dissolves cell by cell in the same Bayer order, so the edge
+  // reads as dither, not a soft blur.
+  float lens = (1.0 - smoothstep(uLensRadius * 0.55, uLensRadius, distance(px, uLens.xy))) * uLens.z;
+  color = mix(color, photo, step(bayer(cell.yx), lens));
   fragColor = vec4(color, 1.0);
 }`;
 
@@ -207,7 +217,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const names = [
     'tImage', 'tDiffused', 'uDiffused', 'uResolution', 'uCover', 'uOffset', 'uCell',
     'uInk', 'uPaper', 'uMatte', 'uKey', 'uContrast', 'uBrightness', 'uDevelop',
-    'uSink', 'uSinkFocus', 'uSinkRadius',
+    'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius',
   ] as const;
   const u = {} as Record<(typeof names)[number], WebGLUniformLocation | null>;
   for (const n of names) u[n] = gl.getUniformLocation(program, n);
@@ -255,6 +265,10 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   let raf = 0;
   let ready = false;
   let destroyed = false;
+  let lensX = 0;
+  let lensY = 0;
+  let lensAmt = 0;
+  const LENS_RADIUS = 120; // CSS px
   let diffusionBlocked = false;
   // Diffused cells keyed by cell size — the scrub only ever visits a
   // handful of integer sizes, so scrolling back and forth never re-runs the
@@ -390,6 +404,8 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     gl!.uniform1f(u.uSink, sink);
     gl!.uniform2f(u.uSinkFocus, sinkFocusX, sinkFocusY);
     gl!.uniform1f(u.uSinkRadius, sinkRadius);
+    gl!.uniform3f(u.uLens, lensX * dpr, lensY * dpr, lensAmt);
+    gl!.uniform1f(u.uLensRadius, LENS_RADIUS * dpr);
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 
     if (!ready) {
@@ -448,6 +464,14 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
       const next = Math.min(1, Math.max(0, s));
       if (next === sink) return;
       sink = next;
+      schedule();
+    },
+    setLens(x: number, y: number, amount: number) {
+      const a = Math.min(1, Math.max(0, amount));
+      if (x === lensX && y === lensY && a === lensAmt) return;
+      lensX = x;
+      lensY = y;
+      lensAmt = a;
       schedule();
     },
     destroy() {
