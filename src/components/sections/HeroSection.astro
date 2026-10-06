@@ -320,7 +320,7 @@
 			z-index: 30;
 		}
 		.hero-kicker { margin-top: 0; font-size: 0.63rem; white-space: normal; }
-		.h-hero-claim { font-size: clamp(2.5rem, 9.5vw, 5rem) !important; line-height: 0.88; margin-top: 0 !important; }
+		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.88; margin-top: 0 !important; }
 		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.03rem; color: rgb(var(--c-cream) / 0.86); overflow-wrap: anywhere; }
 		.hero-cta-row {
 			width: 100%;
@@ -374,7 +374,7 @@
 
 	@media (max-width: 420px) {
 		.hero-kicker { font-size: 0.56rem; letter-spacing: 0.1em; margin-top: 0; }
-		.h-hero-claim { font-size: clamp(3.2rem, 10vw, 4rem) !important; margin-top: 0 !important; }
+		.h-hero-claim { font-size: var(--hero-size) !important; margin-top: 0 !important; }
 		.hero-center { padding-bottom: max(0.25rem, env(safe-area-inset-bottom)); }
 		.hero-cta-row { max-width: 300px; }
 		.hero-inline-stats { margin-top: 0.65rem; }
