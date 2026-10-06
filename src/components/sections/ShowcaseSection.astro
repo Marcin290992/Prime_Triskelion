@@ -396,6 +396,14 @@ const steps = [
 			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
 		}
 		.showcase__title { font-size: clamp(2.8rem, 11vw, 4.6rem); }
+		/* The title lets go with the deck, not after it: its margin reaches
+		   down a card's height plus the stack's bottom padding
+		   (--pstack-lead, measured), and the stack pulls back up by the
+		   same — layout unchanged, only the title's pin runs out with the
+		   cards'. Flex column, so the margins don't collapse. */
+		#showcase { display: flex; flex-direction: column; }
+		.showcase__intro { margin-bottom: var(--pstack-lead, 0px); }
+		.pstack { margin-top: calc(-1 * var(--pstack-lead, 0px)); }
 		.pstack {
 			display: block;
 			padding: 0.5rem var(--site-gutter) clamp(5rem, 14vw, 7rem);
@@ -406,8 +414,8 @@ const steps = [
 		/* Small: the next card follows right under the one that just
 		   stuck instead of arriving out of a long stretch of black. */
 		.pstack__mark:not(:first-child) {
-			margin-top: 12svh;
-			margin-top: calc(var(--app-stable-vh, 1svh) * 12);
+			margin-top: 22svh;
+			margin-top: calc(var(--app-stable-vh, 1svh) * 22);
 		}
 		.pstack__card {
 			/* Each sticks a little lower than the one before, so the deck's
@@ -809,10 +817,17 @@ const steps = [
 		const section = document.getElementById('showcase');
 		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
 		if (!section || !intro || !section.querySelector('.pstack')) return;
-		const set = () => section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+		const stack = section.querySelector<HTMLElement>('.pstack')!;
+		const card = stack.querySelector<HTMLElement>('.pstack__card');
+		const set = () => {
+			section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+			const pad = parseFloat(getComputedStyle(stack).paddingBottom) || 0;
+			if (card) section.style.setProperty('--pstack-lead', `${card.offsetHeight + pad}px`);
+		};
 		set();
 		_stackTopObserver = new ResizeObserver(set);
 		_stackTopObserver.observe(intro);
+		if (card) _stackTopObserver.observe(card);
 	}
 	document.addEventListener('astro:page-load', initProcessStackTop);
 

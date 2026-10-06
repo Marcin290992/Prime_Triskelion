@@ -17,6 +17,10 @@ const services = [
 <!-- ═══════ SERVICES ═══════ -->
 <section id="services">
 
+	<!-- The title and the phone/tablet scene share one box, so the title's
+	     pin lets go the moment the scene ends — after the last picture it
+	     goes with it, not hanging on over See more and Client Stories. -->
+	<div class="svc__pinbox">
 	<div class="svc__header">
 		<h2 class="svc__title-main">My<br><em>Services.</em></h2>
 	</div>
@@ -52,6 +56,7 @@ const services = [
 				</a>
 			</div>
 		</div>
+	</div>
 	</div>
 
 	<div class="svc__list">
@@ -217,6 +222,14 @@ const services = [
 			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
 		}
 		.svc__title-main { font-size: clamp(2.4rem, min(10vw, 8vh), 5rem); }
+		/* The title lets go the moment the scene's pin does (when the scene's
+		   end reaches the bottom of the screen), not a screen later: its
+		   margin reaches down the pin's height and the scene pulls back up by
+		   the same — no change to the layout, only to where the title's pin
+		   runs out. Flex column, so the two margins don't collapse. */
+		.svc__pinbox { display: flex; flex-direction: column; }
+		.svc__header { margin-bottom: calc(var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px)); }
+		.svc-m { margin-top: calc(-1 * (var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px))); }
 		/* Scroll room for the four steps; the stage stays pinned meanwhile.
 		   Stable vh (Layout.astro), like Manifesto's pin, so the toolbar
 		   can't resize it mid-scroll. */
