@@ -1,13 +1,28 @@
 ---
 import { Image, getImage } from 'astro:assets';
 import deeer2 from '../../img/deeer2.webp';
-// deeer2.webp is a huge source file (7360px wide) — <Image> generates a
-// properly-downscaled asset instead of shipping the original into these
-// small boxes (heavy enough to jank scroll on iOS Safari). width/height
-// match .wr-img-inner's own 4:3 aspect-ratio.
+// deeer2.webp is a huge source file (7360px wide) — <Image> generates
+// properly-downscaled assets instead of shipping the original (heavy
+// enough to jank scroll on iOS Safari).
 // Full-screen version for the case-study entrance (data-case-src, see
-// afterPageTransition.ts) — the 640px row thumbnail blows up soft.
+// afterPageTransition.ts) — a card-sized image blows up soft.
 const deeer2Full = await getImage({ src: deeer2, width: 2400 });
+// Phones/tablets carousel. Placeholder pictures (stored locally — the
+// site's CSP blocks remote images) for all but Winds of Sinai; swap the
+// img for each project's own shot.
+import imgUnfall from '../../img/services/websites.jpg';
+import imgMousa from '../../img/process/development.jpg';
+import imgSteak from '../../img/process/launch.jpg';
+import imgJosh from '../../img/process/support.jpg';
+import imgUmzug from '../../img/process/discovery.jpg';
+const projects = [
+	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', tags: ['Branding', 'Web'], img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: imgUnfall, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: imgMousa, href: '/work/mousa-export' },
+	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: imgSteak },
+	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: imgJosh },
+	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: imgUmzug },
+];
 ---
 <section id="selected-work">
 
@@ -116,124 +131,43 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		</div>
 	</div>
 
-	<div class="work-list">
-
-		<a href="/winds-of-sinai" class="work-row" data-case data-case-src={deeer2Full.src}>
-			<span class="wr-num">01</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner" data-case-media><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">Winds Of Sinai</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">Luxury travel brand identity &amp; digital presence</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Branding</span><span>#Web</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
-		</a>
-
-		<a href="/work/unfallfix24" class="work-row">
-			<span class="wr-num">02</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">UnfallFix24</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">Accident reporting &amp; claims management platform</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Webseite</span><span>#Software</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
-		</a>
-
-		<a href="/work/mousa-export" class="work-row">
-			<span class="wr-num">03</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">Mousa Export</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">International export logistics platform</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Webseite</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
-		</a>
-
-		<div class="work-row" role="button" tabindex="0">
-			<span class="wr-num">04</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">Steak Club</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">Premium steakhouse brand with booking system</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Webseite</span><span>#Branding</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
+	<!-- Phones and tablets: the work as a carousel you swipe — native
+	     horizontal scroll that snaps card to card (no script per frame),
+	     the next card peeking in. Desktop keeps the horizontal scene above. -->
+	<div class="sw-m">
+		<div class="sw-m__track" aria-label="Selected work">
+			{projects.map((p) => {
+				const Tag = p.href ? 'a' : 'div';
+				return (
+					<Tag class="sw-m__card" href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
+						<div class="sw-m__media" data-case-media={p.caseSrc ? '' : undefined}>
+							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 42vw, 82vw" loading="lazy" />
+						</div>
+						<div class="sw-m__bar">
+							<div class="sw-m__text">
+								<h3 class="sw-m__title">{p.title}</h3>
+								<p class="sw-m__desc">{p.desc}</p>
+								<span class="sw-m__tags">{p.tags.join(' · ')}</span>
+							</div>
+							{p.href && <span class="sw-m__arrow" aria-hidden="true">→</span>}
+						</div>
+					</Tag>
+				);
+			})}
 		</div>
-
-		<div class="work-row" role="button" tabindex="0">
-			<span class="wr-num">05</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">Josh Jabs</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">Personal brand &amp; portfolio for a musician</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Webseite</span><span>#Branding</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
+		<div class="sw-m__foot">
+			<div class="sw-m__progress" aria-hidden="true"><span></span></div>
+			<span class="sw-m__count" aria-hidden="true">01 / {String(projects.length).padStart(2, '0')}</span>
 		</div>
-
-		<div class="work-row" role="button" tabindex="0">
-			<span class="wr-num">06</span>
-			<div class="wr-img-col">
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<div class="wr-img-inner"><Image src={deeer2} alt="" width={640} height={480} loading="eager" /></div>
-				</div></div>
-			</div>
-			<div class="wr-content">
-				<h3 class="wr-title">Umzugsservice</h3>
-				<div class="wr-expand"><div class="wr-expand-inner">
-					<p class="wr-desc">Moving service with SEO &amp; lead generation</p>
-				</div></div>
-			</div>
-			<div class="wr-tags"><span>#Webseite</span><span>#SEO</span></div>
-			<div class="wr-toggle" aria-hidden="true">
-				<svg class="wr-arrow" viewBox="0 0 20 20" fill="none"><line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><polyline points="11,5 16,10 11,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-			</div>
+		<div class="h-hero-cta-wrap sw-m__cta">
+			<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+			<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+			<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
+				<span class="hud-spin-border"></span>
+				<span class="h-hero-cta__text">View all projects</span>
+			</a>
 		</div>
-
 	</div>
-
 </section>
 
 <style>
@@ -477,166 +411,9 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		color: rgb(var(--c-cream) / 0.62);
 	}
 
-	/* Mobile list rows */
-	.work-list {
-		width: 100%;
-		padding: 0 var(--site-gutter) var(--section-space-bottom);
-		box-sizing: border-box;
-	}
-	.work-row {
-		display: grid;
-		grid-template-columns: clamp(2.5rem, 4vw, 4rem) clamp(160px, 22vw, 280px) 1fr clamp(140px, 18vw, 240px) 48px;
-		gap: clamp(1rem, 3vw, 3rem);
-		padding: clamp(2rem, 3.2vw, 3.8rem) clamp(0.5rem, 1vw, 1rem);
-		align-items: start;
-		text-decoration: none;
-		color: inherit;
-		cursor: pointer;
-		background: transparent;
-		opacity: 0;
-		transform: translateY(14px);
-		filter: blur(8px);
-		transition: background 0.4s ease, opacity 0.6s ease,
-		            transform 0.6s cubic-bezier(0.16,1,0.3,1), filter 0.8s cubic-bezier(0.16,1,0.3,1);
-	}
-	.work-row.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
-	@media (hover: hover) {
-		.work-row:hover { background: rgba(255,255,255,0.026); }
-	}
-
-	.wr-expand {
-		display: grid;
-		grid-template-rows: 0fr;
-		transition: grid-template-rows 0.38s cubic-bezier(0.25,1,0.5,1);
-	}
-	.wr-expand-inner { overflow: hidden; }
-	@media (hover: hover) {
-		.work-row:hover .wr-expand {
-			grid-template-rows: 1fr;
-			transition: grid-template-rows 0.52s cubic-bezier(0.25,1,0.5,1) 0.25s;
-		}
-	}
-
-	.wr-num {
-		font-family: var(--f-body);
-		font-size: 11px;
-		font-weight: 300;
-		letter-spacing: 0.3em;
-		color: rgb(var(--c-cream) / 0.62);
-		padding-top: 0.4rem;
-		transition: color 0.3s ease;
-	}
-	@media (hover: hover) {
-		.work-row:hover .wr-num { color: rgb(var(--c-red) / 0.75); transition: color 0.4s ease 0.25s; }
-	}
-
-	.wr-img-inner {
-		width: 100%;
-		aspect-ratio: 4 / 3;
-		background: #0d0d0f;
-		border: 1px solid rgba(255,255,255,0.05);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		opacity: 0;
-		transform: scale(0.97);
-		transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.25,1,0.5,1);
-	}
-	@media (hover: hover) {
-		.work-row:hover .wr-img-inner {
-			opacity: 1;
-			transform: scale(1);
-			transition: opacity 0.42s ease 0.3s, transform 0.52s cubic-bezier(0.25,1,0.5,1) 0.28s;
-		}
-	}
-	.wr-img-inner img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-		filter: grayscale(100%) contrast(1.05) brightness(0.8);
-		/* iOS Safari doesn't reliably promote a filtered element to its own
-		   compositor layer on its own — scrolling six of these past the
-		   viewport in a row can fall back to repainting each one on every
-		   scroll frame instead of just translating a cached layer, which is
-		   what reads as this section specifically janking/stuttering there
-		   (Chrome's compositor doesn't have the same gap, hence fine there).
-		   translateZ(0) is the standard, well-worn nudge that forces the
-		   promotion explicitly. */
-		transform: translateZ(0);
-		-webkit-transform: translateZ(0);
-	}
-	.wr-content { display: flex; flex-direction: column; }
-	.wr-title {
-		font-family: var(--f-display);
-		font-weight: 600;
-		font-size: clamp(1.3rem, 1.8vw, 2rem);
-		letter-spacing: -0.01em;
-		text-transform: uppercase;
-		line-height: 1.05;
-		color: rgb(var(--c-cream) / 0.35);
-		margin: 0;
-		transition: font-size 0.35s cubic-bezier(0.25,1,0.5,1),
-		            color 0.3s ease,
-		            margin-bottom 0.35s cubic-bezier(0.25,1,0.5,1);
-	}
-	@media (hover: hover) {
-		.work-row:hover .wr-title {
-			font-size: clamp(2rem, 3.2vw, 3.8rem);
-			color: rgb(var(--c-cream));
-			margin-bottom: 0.9rem;
-			transition: font-size 0.52s cubic-bezier(0.25,1,0.5,1) 0.25s,
-			            color 0.4s ease 0.25s,
-			            margin-bottom 0.52s cubic-bezier(0.25,1,0.5,1) 0.25s;
-		}
-	}
-	.wr-desc {
-		font-family: var(--f-body);
-		font-size: clamp(0.78rem, 1vw, 0.9rem);
-		font-weight: 300;
-		color: rgb(var(--c-cream) / 0.82);
-		line-height: 1.7;
-		margin: 0;
-		padding-bottom: 0.5rem;
-	}
-
-	.wr-tags { display: flex; flex-wrap: wrap; gap: 0.2rem 0.6rem; padding-top: 0.4rem; align-content: flex-start; }
-	.wr-tags span {
-		font-family: var(--f-body);
-		font-size: clamp(0.68rem, 0.9vw, 0.82rem);
-		font-weight: 300;
-		letter-spacing: 0.04em;
-		color: rgb(var(--c-cream) / 0.62);
-		transition: color 0.3s ease;
-	}
-	@media (hover: hover) {
-		.work-row:hover .wr-tags span { color: rgb(var(--c-cream) / 0.85); transition: color 0.4s ease 0.25s; }
-	}
-
-	.wr-toggle {
-		width: 36px; height: 36px;
-		border-radius: 50%;
-		border: 1px solid rgba(255,255,255,0.14);
-		display: flex; align-items: center; justify-content: center;
-		flex-shrink: 0; margin-top: 0.2rem;
-		transition: border-color 0.3s ease;
-	}
-	.wr-arrow {
-		width: 16px; height: 16px;
-		color: rgb(var(--c-cream) / 0.45);
-		transition: transform 0.3s cubic-bezier(0.25,1,0.5,1), color 0.3s ease;
-		flex-shrink: 0;
-	}
-	@media (hover: hover) {
-		.work-row:hover .wr-toggle { border-color: rgb(var(--c-red) / 0.55); transition: border-color 0.4s ease 0.25s; }
-		.work-row:hover .wr-arrow { transform: rotate(-45deg); color: rgb(var(--c-red)); transition: transform 0.4s cubic-bezier(0.25,1,0.5,1) 0.25s, color 0.4s ease 0.25s; }
-	}
-
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.scroll-section { display: block; }
 		.sw-header { display: none; }
-		.work-list { display: none; }
 	}
 
 	@media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
@@ -669,107 +446,186 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 		.final-title { font-size: min(11vw, 13.5vh); }
 	}
 
+	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
+	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		/* .wr-expand/.wr-expand-inner exist purely to animate the desktop
-		   hover-reveal (grid-template-rows 0fr -> 1fr, gated on
-		   @media(hover:hover) — never triggers here anyway since touch has
-		   no hover). Forcing grid-template-rows:1fr !important used to just
-		   freeze that machinery "open" while still paying for it: two extra
-		   boxes per row (image + description, so 12 across this list) each
-		   still running their own grid/overflow layout and paint
-		   participation for no visual benefit on mobile, where everything
-		   is always shown anyway. display:contents removes their own boxes
-		   entirely — children (.wr-img-inner, .wr-desc) become direct
-		   layout children of .wr-img-col/.wr-content instead, visually
-		   identical (each still has exactly one real child there) but with
-		   12 fewer boxes for Safari to lay out and paint on every scroll
-		   frame, which is what this section's jank tracked back to more
-		   than the images themselves — the list still janked with real
-		   photos in it and Lenis fixed, and had none of this cost before
-		   real content ever needed to render through it. */
-		.wr-expand, .wr-expand-inner { display: contents; }
-		/* :has(img) — not a blanket .wr-img-inner rule — because projects
-		   04/05/06 have no <img> at all, just a bare number watermark
-		   (.wr-img-num) sitting on this box's own #0d0d0f fill. Forcing
-		   opacity:1 unconditionally reveals that fill for those rows too: a
-		   visibly lighter-than-black rectangle with nothing in it but a
-		   number, on every mobile page that renders this section (this is
-		   Home's SelectedWorkSection, not a per-page thing) — reported and
-		   confirmed by measuring actual rendered pixels (#0d0d0f ≈ the
-		   measured RGB, well above the surrounding page's near-#000). Rows
-		   with a real <img> still need this: without it they're invisible
-		   on mobile (no :hover to reveal them there), which is what this
-		   rule originally existed to fix. Placeholder-only rows are better
-		   left at their default opacity:0 — the empty grid cell blends with
-		   the page's own black instead of showing a boxed-in placeholder. */
-		.wr-img-inner:has(img) { opacity: 1 !important; transform: none !important; }
-		.wr-title     { font-size: clamp(1.3rem, 5vw, 2rem) !important; color: rgb(var(--c-cream)) !important; margin-bottom: 0.4rem !important; }
-		.wr-tags span { color: rgb(var(--c-cream) / 0.62) !important; }
-	}
-
-	/* Was max-width: 768px (phone only) — the tablet range (769-1024px)
-	   fell through to the row-grid layout above instead, which relies on
-	   :hover to reveal .wr-img-inner (opacity:0 by default). Tablets have
-	   no hover, so the thumbnail never appeared — just the empty dark box
-	   with its number watermark. Reusing the already-solid stacked mobile
-	   layout for the whole ≤1024px range (instead of designing a third,
-	   separate tablet treatment) sidesteps that entirely. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.work-list { padding-bottom: clamp(3rem, 8vw, 5rem); }
-		.work-row {
-			grid-template-columns: 2.5rem 1fr;
-			grid-template-rows: auto auto auto;
-			grid-template-areas: 'num content' 'img img' 'tags tags';
-			gap: 0.5rem 0.8rem;
-			padding: clamp(1.4rem, 4vw, 2rem) 0;
-			transition: none !important;
-			/* .work-row.visible still carries filter: blur(0) + a transform
-			   from the desktop reveal — not "none", so iOS Safari keeps every
-			   row (photo included) as a filtered offscreen surface and
-			   re-renders them while scrolling. Rows are shown instantly on
-			   mobile anyway (see initSelectedWork), so drop both outright. */
-			filter: none !important;
-			transform: none !important;
-		}
-		.wr-num     { grid-area: num; padding-top: 0.25rem; }
-		.wr-content { grid-area: content; }
-		.wr-img-col { grid-area: img; }
-		.wr-tags    { grid-area: tags; padding-top: 0; }
-		.wr-toggle  { display: none; }
-		/* Capped at about half the screen's height — on a tablet in
-		   landscape the full column width made each photo fill the screen. */
-		.wr-img-inner { aspect-ratio: 16 / 9; margin-top: 0.4rem; width: min(100%, 85vh); }
-		/* Tablet width: photo on the left, number / name / description and
-		   tags on the right, instead of a full-width stack. */
-		@media (min-width: 700px) {
-			.work-row {
-				grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-				grid-template-rows: auto auto 1fr;
-				grid-template-areas: 'img num' 'img content' 'img tags';
-				gap: 0.35rem clamp(1.5rem, 4vw, 2.75rem);
-				align-items: start;
-			}
-			.wr-img-col { align-self: center; }
-			.wr-num { padding-top: 0; }
-			.wr-img-inner { width: 100%; margin-top: 0; }
-			.wr-title { font-size: clamp(1.4rem, 2.6vw, 2rem) !important; }
-		}
-		/* Dropped entirely on mobile rather than just GPU-layer-promoted —
-		   it wasn't earning its cost there (desktop's hover-reveal is the
-		   whole reason it existed) and mobile should stay as light as
-		   possible. */
-		/* translateZ(0) only existed to layer-promote the grayscale filter —
-		   with the filter gone it just forces six extra GPU layers. */
-		.wr-img-inner img { filter: none; transform: none; -webkit-transform: none; }
-		.wr-desc      { font-size: 0.82rem; line-height: 1.65; }
-		.wr-tags      { gap: 0.2rem 0.5rem; }
-		.wr-tags span { font-size: 0.7rem; }
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
+		.sw-m {
+			display: block;
+			padding-bottom: clamp(3.5rem, 10vw, 5.5rem);
+		}
+		.sw-m__track {
+			display: flex;
+			gap: 0.75rem;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			scroll-snap-type: x mandatory;
+			scroll-padding-inline: var(--site-gutter);
+			padding: 0 var(--site-gutter);
+			scrollbar-width: none;
+			-webkit-overflow-scrolling: touch;
+		}
+		.sw-m__track::-webkit-scrollbar { display: none; }
+		.sw-m__card {
+			position: relative;
+			flex: 0 0 82%;
+			scroll-snap-align: start;
+			aspect-ratio: 4 / 5;
+			max-height: 66vh;
+			overflow: hidden;
+			display: block;
+			color: inherit;
+			text-decoration: none;
+			background: #0b0b0d;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			-webkit-tap-highlight-color: transparent;
+		}
+		.sw-m__media { position: absolute; inset: 0; }
+		.sw-m__media img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			display: block;
+		}
+		/* Legibility for the bar at the foot. */
+		.sw-m__media::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(to top, rgb(0 0 0 / 0.75) 0%, rgb(0 0 0 / 0.15) 45%, transparent 70%);
+		}
+		/* Same glass info bar as the Projects page cards. */
+		.sw-m__bar {
+			position: absolute;
+			left: 0.75rem;
+			right: 0.75rem;
+			bottom: 0.75rem;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+			padding: 1rem 1.1rem;
+			background: rgb(var(--c-bg) / 0.38);
+			backdrop-filter: blur(20px) saturate(160%);
+			-webkit-backdrop-filter: blur(20px) saturate(160%);
+			border: 1px solid rgb(255 255 255 / 0.1);
+		}
+		.sw-m__text { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+		.sw-m__title {
+			margin: 0;
+			font-family: var(--f-display);
+			font-weight: 600;
+			font-size: clamp(1.35rem, 6vw, 1.9rem);
+			line-height: 1;
+			letter-spacing: -0.01em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream));
+		}
+		.sw-m__desc {
+			margin: 0;
+			font-family: var(--f-body);
+			font-size: 0.82rem;
+			font-weight: 300;
+			line-height: 1.45;
+			color: rgb(var(--c-cream) / 0.75);
+		}
+		.sw-m__tags {
+			font-family: var(--f-body);
+			font-size: 9px;
+			font-weight: 500;
+			letter-spacing: 0.32em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.55);
+		}
+		.sw-m__arrow {
+			flex: none;
+			font-size: 1.1rem;
+			color: rgb(var(--c-red));
+		}
+		/* Where in the row you are. */
+		.sw-m__foot {
+			display: flex;
+			align-items: center;
+			gap: 1rem;
+			padding: 1.25rem var(--site-gutter) 0;
+		}
+		.sw-m__progress {
+			flex: 1 1 auto;
+			height: 1px;
+			background: rgb(var(--c-cream) / 0.14);
+			overflow: hidden;
+		}
+		.sw-m__progress span {
+			display: block;
+			height: 100%;
+			background: rgb(var(--c-red));
+			transform-origin: left center;
+			transform: scaleX(var(--p, 0.1667));
+			transition: transform 0.2s linear;
+		}
+		.sw-m__count {
+			font-family: var(--f-body);
+			font-size: 11px;
+			font-weight: 500;
+			letter-spacing: 0.28em;
+			font-variant-numeric: tabular-nums;
+			color: rgb(var(--c-cream) / 0.6);
+		}
+		.sw-m__cta { margin: 1.75rem var(--site-gutter) 0; width: auto !important; }
+		/* Tablet width: two and a bit cards in view. */
+		@media (min-width: 700px) {
+			.sw-m__card { flex-basis: 42%; max-height: none; }
+			.sw-m__cta { margin-inline: var(--site-gutter) auto; }
+		}
 	}
 </style>
 
 <script>
 	import { onReady } from '../../utils/onReady';
+
+	// Phones/tablets: the carousel scrolls natively; this only keeps the
+	// counter and the progress hairline in step (on scroll, a frame at most).
+	let _workCarouselOff: (() => void) | null = null;
+	function initWorkCarousel(section: HTMLElement) {
+		_workCarouselOff?.();
+		_workCarouselOff = null;
+		const track = section.querySelector<HTMLElement>('.sw-m__track');
+		const cards = Array.from(section.querySelectorAll<HTMLElement>('.sw-m__card'));
+		const bar = section.querySelector<HTMLElement>('.sw-m__progress');
+		const count = section.querySelector<HTMLElement>('.sw-m__count');
+		if (!track || cards.length < 2) return;
+		const total = String(cards.length).padStart(2, '0');
+		let ticking = false;
+		let shown = -1;
+		const update = () => {
+			ticking = false;
+			// The card nearest the start edge; the last one once the row is
+			// scrolled to its end (on a tablet a few are in view at once).
+			const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+			const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 2;
+			let i = cards.length - 1;
+			if (!atEnd) {
+				let best = Infinity;
+				cards.forEach((c, k) => {
+					const d = Math.abs(c.offsetLeft - pad - track.scrollLeft);
+					if (d < best) { best = d; i = k; }
+				});
+			}
+			bar?.style.setProperty('--p', ((i + 1) / cards.length).toFixed(4));
+			if (i !== shown && count) {
+				shown = i;
+				count.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
+			}
+		};
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+		track.addEventListener('scroll', onScroll, { passive: true });
+		update();
+		_workCarouselOff = () => track.removeEventListener('scroll', onScroll);
+	}
+	document.addEventListener('astro:before-swap', () => {
+		_workCarouselOff?.();
+		_workCarouselOff = null;
+	});
 
 	function initSelectedWork() {
 		const section = document.getElementById('selected-work');
@@ -777,7 +633,7 @@ const deeer2Full = await getImage({ src: deeer2, width: 2400 });
 
 		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
-			section.querySelectorAll<HTMLElement>('.work-row').forEach(r => r.classList.add('visible'));
+			initWorkCarousel(section);
 			return;
 		}
 

@@ -1,3 +1,22 @@
+---
+import { Image } from 'astro:assets';
+// Placeholder pictures (Unsplash, stored locally — the site's CSP blocks
+// remote images, so the old hotlinked ones never showed in production).
+// Swap the files in src/img/process/ for real work.
+import imgDiscovery from '../../img/process/discovery.jpg';
+import imgDesign from '../../img/process/design.jpg';
+import imgDevelopment from '../../img/process/development.jpg';
+import imgLaunch from '../../img/process/launch.jpg';
+import imgSupport from '../../img/process/support.jpg';
+
+const steps = [
+	{ title: 'Discovery & Strategy', img: imgDiscovery, desc: 'I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.' },
+	{ title: 'Design & Motion', img: imgDesign, desc: 'I craft interfaces, motion systems, and brand visuals with precision. Every transition and micro-interaction is intentional — designed to guide, not distract.' },
+	{ title: 'Development', img: imgDevelopment, desc: 'I build in Astro, React, and Tailwind — performant, accessible, and animation-ready. Clean code, fast load times, and pixel-perfect output across all devices.' },
+	{ title: 'QA & Launch', img: imgLaunch, desc: 'I test across devices and browsers, handle DNS, analytics, and deployment. The go-live is coordinated, calm, and delivered on schedule.' },
+	{ title: 'Support & Growth', img: imgSupport, desc: 'After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.' },
+];
+---
 <!-- ═══════ SHOWCASE ═══════ -->
 <section id="showcase">
 
@@ -18,9 +37,9 @@
 	<!-- Desktop: "meet in the middle" rail — a number tile (left) and its
 	     matching description tile (right) travel toward each other and
 	     cross at vertical center as you scroll; the center image swaps to
-	     whichever pair is currently crossing. Placeholder Unsplash photos
-	     for now — swap for real project shots later. Mobile is untouched:
-	     see .stack further down, which mobile actually renders. -->
+	     whichever pair is currently crossing. Placeholder photos for now
+	     (src/img/process/) — swap for real project shots later. Phones
+	     and tablets get .pstack further down instead. -->
 	<div class="process-rail" id="process-rail">
 		<div class="process-rail__pin">
 
@@ -35,11 +54,11 @@
 			</div>
 
 			<div class="process-rail__media">
-				<img class="process-rail__img" data-index="0" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1400&auto=format&fit=crop" alt="" />
-				<img class="process-rail__img" data-index="1" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400&auto=format&fit=crop" alt="" />
-				<img class="process-rail__img" data-index="2" src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1400&auto=format&fit=crop" alt="" />
-				<img class="process-rail__img" data-index="3" src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1400&auto=format&fit=crop" alt="" />
-				<img class="process-rail__img" data-index="4" src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1400&auto=format&fit=crop" alt="" />
+				<Image class="process-rail__img" data-index="0" src={steps[0].img} alt="" widths={[800, 1200]} sizes="600px" />
+				<Image class="process-rail__img" data-index="1" src={steps[1].img} alt="" widths={[800, 1200]} sizes="600px" />
+				<Image class="process-rail__img" data-index="2" src={steps[2].img} alt="" widths={[800, 1200]} sizes="600px" />
+				<Image class="process-rail__img" data-index="3" src={steps[3].img} alt="" widths={[800, 1200]} sizes="600px" />
+				<Image class="process-rail__img" data-index="4" src={steps[4].img} alt="" widths={[800, 1200]} sizes="600px" />
 			</div>
 
 			<div class="process-rail__col process-rail__col--desc">
@@ -74,80 +93,37 @@
 		</div>
 	</div>
 
-	<!-- Mobile: static stack mirroring the desktop rail — same numbers, tag,
-	     titles, copy and grayscale imagery, just no scroll choreography. -->
-	<div class="stack">
-
-		<div class="stack__item">
-			<div class="proc">
-				<div class="proc__head">
-					<span class="proc__num">01</span>
-					<span class="proc__tag">The Process</span>
+	<!-- Phones and tablets: the steps as cards that stack as you scroll,
+	     under the section title (which stays pinned). Each card sticks a
+	     little lower than the last, so the next slides up over it; the one
+	     covered recedes and goes dark. Pure CSS — sticky plus scroll-driven
+	     animations — so it moves with the browser's own scroll, no script
+	     per frame. Desktop keeps the rail above. -->
+	<div class="pstack" aria-label="The process, step by step">
+		{steps.map((st, i) => (<>
+			<span class="pstack__mark" style={`view-timeline-name:--pm${i}`} aria-hidden="true"></span>
+			<article class="pstack__card" style={`--i:${i};--next:${i < steps.length - 1 ? `--pm${i + 1}` : 'none'}`}>
+				<div class="pstack__media">
+					<Image
+						class="pstack__img"
+						src={st.img}
+						alt=""
+						widths={[480, 800, 1200]}
+						sizes="(min-width: 700px) 440px, 100vw"
+						loading="lazy"
+					/>
 				</div>
-				<h3 class="proc__title">Discovery &amp; Strategy</h3>
-				<div class="proc__media">
-					<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=900&auto=format&fit=crop" alt="" loading="lazy" />
+				<div class="pstack__copy">
+					<div class="pstack__head">
+						<span class="pstack__num">{String(i + 1).padStart(2, '0')}</span>
+						<span class="pstack__tag">The Process</span>
+					</div>
+					<h3 class="pstack__title">{st.title}</h3>
+					<p class="pstack__desc">{st.desc}</p>
 				</div>
-				<p class="proc__desc">I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.</p>
-			</div>
-		</div>
-
-		<div class="stack__item">
-			<div class="proc">
-				<div class="proc__head">
-					<span class="proc__num">02</span>
-					<span class="proc__tag">The Process</span>
-				</div>
-				<h3 class="proc__title">Design &amp; Motion</h3>
-				<div class="proc__media">
-					<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=900&auto=format&fit=crop" alt="" loading="lazy" />
-				</div>
-				<p class="proc__desc">I craft interfaces, motion systems, and brand visuals with precision. Every transition and micro-interaction is intentional — designed to guide, not distract.</p>
-			</div>
-		</div>
-
-		<div class="stack__item">
-			<div class="proc">
-				<div class="proc__head">
-					<span class="proc__num">03</span>
-					<span class="proc__tag">The Process</span>
-				</div>
-				<h3 class="proc__title">Development</h3>
-				<div class="proc__media">
-					<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=900&auto=format&fit=crop" alt="" loading="lazy" />
-				</div>
-				<p class="proc__desc">I build in Astro, React, and Tailwind — performant, accessible, and animation-ready. Clean code, fast load times, and pixel-perfect output across all devices.</p>
-			</div>
-		</div>
-
-		<div class="stack__item">
-			<div class="proc">
-				<div class="proc__head">
-					<span class="proc__num">04</span>
-					<span class="proc__tag">The Process</span>
-				</div>
-				<h3 class="proc__title">QA &amp; Launch</h3>
-				<div class="proc__media">
-					<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=900&auto=format&fit=crop" alt="" loading="lazy" />
-				</div>
-				<p class="proc__desc">I test across devices and browsers, handle DNS, analytics, and deployment. The go-live is coordinated, calm, and delivered on schedule.</p>
-			</div>
-		</div>
-
-		<div class="stack__item">
-			<div class="proc">
-				<div class="proc__head">
-					<span class="proc__num">05</span>
-					<span class="proc__tag">The Process</span>
-				</div>
-				<h3 class="proc__title">Support &amp; Growth</h3>
-				<div class="proc__media">
-					<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=900&auto=format&fit=crop" alt="" loading="lazy" />
-				</div>
-				<p class="proc__desc">After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.</p>
-			</div>
-		</div>
-
+				<span class="pstack__dim" aria-hidden="true"></span>
+			</article>
+		</>))}
 	</div>
 
 </section>
@@ -210,8 +186,7 @@
 			   viewport (see .is-visible, toggled by an IntersectionObserver
 			   below) — the title arrives on its own first, well before the
 			   lead-in slot lets any pair start sliding in, so there's no
-			   risk of it lagging behind already-visible content the way
-			   the old stack design did. filter: none overrides the base
+			   risk of it lagging behind already-visible content. filter: none overrides the base
 			   (mobile) blur-in rule — combined with the font-size shrink
 			   further down, that filter was getting real compositor
 			   glitches out of a software-rendered browser during the
@@ -237,7 +212,6 @@
 		.showcase__intro-content .showcase__title {
 			font-size: calc(clamp(3.5rem, min(8vw, 13vh), 11rem) * var(--title-scale, 1));
 		}
-		.stack { display: none; }
 	}
 
 	/* ── Process rail (desktop "meet in the middle") ── */
@@ -362,8 +336,7 @@
 
 		.process-rail__media {
 			flex: 0 0 auto;
-			/* Landscape frame on desktop (mobile .proc__media stays portrait
-			   3/4). Width-driven within a premium range; height follows the
+			/* Landscape frame. Width-driven within a premium range; height follows the
 			   3/2 ratio and is still clamped to the pinned stage's own box
 			   via max-height: 100% so it can't run into the shrunk title
 			   above or the fixed menu button below on shorter laptops —
@@ -408,98 +381,163 @@
 		}
 	}
 
-	/* ── Process list (mobile only — mirrors the desktop rail's content &
-	   type; .stack is display:none from 1025px up) ── */
-	.proc {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-	.proc__head {
-		display: flex;
-		align-items: baseline;
-		gap: 1rem;
-	}
-	.proc__num {
-		font-family: var(--f-display);
-		font-weight: 700;
-		font-size: clamp(2.4rem, 13vw, 3.6rem);
-		line-height: 1;
-		letter-spacing: -0.01em;
-		color: rgb(var(--c-cream));
-	}
-	.proc__tag {
-		font-family: var(--f-body);
-		font-size: 9px;
-		font-weight: 300;
-		letter-spacing: 0.42em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.62);
-	}
-	.proc__title {
-		margin: 0;
-		font-family: var(--f-display);
-		font-weight: 600;
-		font-size: clamp(1.9rem, 8vw, 2.6rem);
-		letter-spacing: -0.01em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream));
-		line-height: 0.98;
-	}
-	/* Same frame as the Three Pillars cards on a phone: square, at most
-	   44% of the screen's height. */
-	.proc__media {
-		aspect-ratio: 1 / 1;
-		max-height: 44vh;
-		overflow: hidden;
-		border: 1px solid rgba(255,255,255,0.08);
-		background: #060608;
-	}
-	.proc__media img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		display: block;
-		filter: grayscale(100%) contrast(1.1) brightness(0.75);
-	}
-	.proc__desc {
-		margin: 0;
-		max-width: 52ch;
-		font-family: var(--f-body);
-		font-size: 0.95rem;
-		font-weight: 300;
-		line-height: 1.7;
-		color: rgb(var(--c-cream) / 0.82);
-	}
-
-	/* Tablet width (the phone list, wider): a landscape frame no taller
-	   than about half the screen — the phone's tall 3:4 box filled a
-	   tablet's whole screen in landscape. */
-	@media (min-width: 700px) {
-		/* Photo on the left, number / title / description on the right. */
-		.proc {
-			display: grid;
-			grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-			grid-template-areas: 'media head' 'media title' 'media desc';
-			grid-template-rows: auto auto 1fr;
-			gap: 0.9rem clamp(1.5rem, 4vw, 2.75rem);
-			align-items: start;
-		}
-		.proc__head { grid-area: head; }
-		.proc__title { grid-area: title; font-size: clamp(1.5rem, 2.8vw, 2.2rem); }
-		.proc__desc { grid-area: desc; }
-		.proc__media { grid-area: media; align-self: center; aspect-ratio: 4 / 3; max-height: none; width: 100%; }
-	}
-
-	/* ── Mobile ── */
+	/* ── Process stack (phones and tablets; desktop has the rail) ── */
+	.pstack { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.stack {
+		/* The title stays pinned while the cards stack under it; the cards
+		   stick just below it (--pstack-top, its measured height, set by
+		   initProcessStackTop). Its own fade covers cards sliding under. */
+		.showcase__intro {
+			position: sticky;
+			top: 0;
+			z-index: 6;
+			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
+			padding: 4.75rem var(--site-gutter) 1.1rem;
+			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
+		}
+		.showcase__title { font-size: clamp(2.8rem, 11vw, 4.6rem); }
+		.pstack {
+			display: block;
+			padding: 0.5rem var(--site-gutter) clamp(5rem, 14vw, 7rem);
+		}
+		/* Zero-height markers in the flow, one before each card: the next
+		   card's marker is the timeline its predecessor recedes on. */
+		.pstack__mark { display: block; height: 0; }
+		/* Small: the next card follows right under the one that just
+		   stuck instead of arriving out of a long stretch of black. */
+		.pstack__mark:not(:first-child) {
+			margin-top: 12svh;
+			margin-top: calc(var(--app-stable-vh, 1svh) * 12);
+		}
+		.pstack__card {
+			/* Each sticks a little lower than the one before, so the deck's
+			   earlier edges stay in view. */
+			position: sticky;
+			top: calc(var(--pstack-top, 10rem) + var(--i) * 14px);
+			transform-origin: 50% 0;
 			display: flex;
 			flex-direction: column;
-			gap: clamp(4rem, 14vw, 7rem);
-			padding: clamp(2.5rem, 9vw, 5rem) var(--site-gutter) clamp(4rem, 12vw, 7rem);
+			background: #0c0c0e;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			/* Cast up onto the card it's covering — the depth of the deck. */
+			box-shadow: 0 -22px 44px -16px rgb(0 0 0 / 0.85);
+			overflow: hidden;
 		}
-		.showcase__intro { padding-bottom: 2rem; }
+		/* Darkens the card as the next one covers it. */
+		.pstack__dim {
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			background: #000;
+			opacity: 0;
+			pointer-events: none;
+		}
+		.pstack__media {
+			position: relative;
+			aspect-ratio: 16 / 10;
+			max-height: 30vh;
+			overflow: hidden;
+			background: #060608;
+		}
+		.pstack__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			filter: grayscale(100%) contrast(1.1) brightness(0.78);
+		}
+		.pstack__copy {
+			display: flex;
+			flex-direction: column;
+			gap: 0.75rem;
+			padding: 1.3rem 1.3rem 1.5rem;
+		}
+		.pstack__head {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+		.pstack__num {
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2rem, 9vw, 2.8rem);
+			line-height: 1;
+			letter-spacing: -0.01em;
+			color: rgb(var(--c-red));
+		}
+		.pstack__tag {
+			font-family: var(--f-body);
+			font-size: 11px;
+			font-weight: 500;
+			letter-spacing: 0.28em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.5);
+		}
+		.pstack__title {
+			margin: 0;
+			font-family: var(--f-display);
+			font-weight: 600;
+			font-size: clamp(1.6rem, 7vw, 2.4rem);
+			line-height: 0.98;
+			letter-spacing: -0.01em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream));
+		}
+		.pstack__desc {
+			margin: 0;
+			max-width: 46ch;
+			font-family: var(--f-body);
+			font-size: 0.9rem;
+			font-weight: 300;
+			line-height: 1.65;
+			color: rgb(var(--c-cream) / 0.72);
+		}
+		/* Tablet width: picture on the left, the copy on the right. */
+		@media (min-width: 700px) {
+			.pstack__card {
+				flex-direction: row;
+				align-items: stretch;
+			}
+			.pstack__media {
+				flex: 0 0 48%;
+				aspect-ratio: auto;
+				max-height: none;
+				min-height: clamp(260px, 42vh, 380px);
+			}
+			.pstack__copy {
+				flex: 1 1 auto;
+				justify-content: center;
+				padding: 2rem 2.2rem;
+			}
+			.pstack__title { font-size: clamp(1.8rem, 3.6vw, 2.6rem); }
+			.pstack__desc { font-size: 0.95rem; }
+			.pstack__media { min-height: clamp(240px, 38vh, 360px); }
+		}
+		/* The card being covered steps back into the deck — a touch smaller
+		   and up — and goes into the dark, scrubbed by the next card's
+		   approach. Compositor-driven (scroll-driven animations): Chrome /
+		   Android and Safari 26+. Elsewhere the cards simply stack. */
+		@supports (animation-timeline: view()) {
+			.pstack { timeline-scope: --pm1, --pm2, --pm3, --pm4; }
+			.pstack__card,
+			.pstack__dim {
+				animation-duration: 1ms;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
+				animation-timeline: var(--next);
+				animation-range: cover 12% cover 76%;
+			}
+			.pstack__card { animation-name: pstack-recede; }
+			.pstack__dim { animation-name: pstack-dark; }
+		}
+	}
+	@keyframes pstack-recede {
+		to { transform: translateY(-6px) scale(0.92); }
+	}
+	@keyframes pstack-dark {
+		to { opacity: 0.72; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -758,8 +796,27 @@
 
 	onReady(initShowcase);
 
+	// Phones/tablets: the process cards stick just under the pinned title —
+	// hand its height to the CSS. A ResizeObserver, not a scroll handler.
+	let _stackTopObserver: ResizeObserver | null = null;
+	function initProcessStackTop() {
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
+		const section = document.getElementById('showcase');
+		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
+		if (!section || !intro || !section.querySelector('.pstack')) return;
+		const set = () => section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+		set();
+		_stackTopObserver = new ResizeObserver(set);
+		_stackTopObserver.observe(intro);
+	}
+	document.addEventListener('astro:page-load', initProcessStackTop);
+
 	document.addEventListener('astro:before-swap', () => {
 		_railCleanup?.();
 		_railCleanup = null;
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
 	});
 </script>
+

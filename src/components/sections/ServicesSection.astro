@@ -36,7 +36,8 @@ const services = [
 					</div>
 					<div class="svc-m__progress" aria-hidden="true"><span></span></div>
 				</div>
-				<div class="svc-m__media" aria-hidden="true">
+				<!-- The picture is a way in, like See more below. -->
+				<a href="/services" class="svc-m__media" aria-label="See all services">
 					{services.map((sv, i) => (
 						<Image
 							src={sv.img}
@@ -48,7 +49,7 @@ const services = [
 							data-i={i}
 						/>
 					))}
-				</div>
+				</a>
 			</div>
 		</div>
 	</div>
@@ -247,7 +248,13 @@ const services = [
 			color: rgb(var(--c-cream) / 0.2);
 			cursor: pointer;
 			transition: color 0.45s ease;
+			/* A tap is a choice, not a text selection: no blue tap flash, no
+			   selection highlight or callout on a long press. */
 			-webkit-tap-highlight-color: transparent;
+			-webkit-user-select: none;
+			user-select: none;
+			-webkit-touch-callout: none;
+			outline: none;
 		}
 		.svc-m__name.is-active { color: rgb(var(--c-cream)); }
 		/* All four lines stacked in one spot; the active one fades up. */
@@ -285,12 +292,16 @@ const services = [
 		}
 		.svc-m__media {
 			position: relative;
+			display: block;
+			-webkit-tap-highlight-color: transparent;
+			-webkit-touch-callout: none;
 			aspect-ratio: 4 / 3;
 			max-height: 36vh;
 			overflow: hidden;
 			border: 1px solid rgba(255, 255, 255, 0.08);
 			background: #060608;
 		}
+		.svc-m__media:focus:not(:focus-visible) { outline: none; }
 		.svc-m__img {
 			position: absolute;
 			inset: 0;
