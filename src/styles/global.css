@@ -469,7 +469,6 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   .work-row,
   .work-item,
   .showcase__intro,
-  .stack__item,
   .svc__header,
   .svc__item,
   .faq__sidebar,
@@ -485,13 +484,6 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
     transform: none !important;
     transition: none !important;
     clip-path: none !important;
-  }
-  .stack__item {
-    position: relative !important;
-    top: auto !important;
-    height: auto !important;
-    min-height: auto !important;
-    z-index: auto !important;
   }
 }
 
