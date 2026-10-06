@@ -466,7 +466,6 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
 /* â”€â”€ Mobile: instant visibility for all scroll-reveal sections â”€â”€ */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   .sw-header,
-  .work-row,
   .work-item,
   .showcase__intro,
   .svc__header,
