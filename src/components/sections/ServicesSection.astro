@@ -204,7 +204,19 @@ const services = [
 	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.svc__list { display: none; }
-		.svc__header { padding-bottom: 0; }
+		/* The title stays pinned over the scene, like The Process's; the
+		   scene's pin starts just under it (--svc-head, its measured
+		   height, set by initServicesMobile). Its fade covers what slides
+		   under. Same size as What we've built's title. */
+		.svc__header {
+			position: sticky;
+			top: 0;
+			z-index: 6;
+			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
+			padding: 4.75rem var(--site-gutter) 1rem;
+			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
+		}
+		.svc__title-main { font-size: clamp(2.4rem, min(10vw, 8vh), 5rem); }
 		/* Scroll room for the four steps; the stage stays pinned meanwhile.
 		   Stable vh (Layout.astro), like Manifesto's pin, so the toolbar
 		   can't resize it mid-scroll. */
@@ -216,12 +228,13 @@ const services = [
 		}
 		.svc-m__pin {
 			position: sticky;
-			top: 0;
-			height: 100svh;
-			height: calc(var(--app-stable-vh, 1svh) * 100);
+			top: var(--svc-head, 0px);
+			height: calc(100svh - var(--svc-head, 0px));
+			height: calc(var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px));
 			display: flex;
 			align-items: center;
-			padding: 4.5rem var(--site-gutter) 5.5rem;
+			/* Bottom: clear of the fixed MENU button. */
+			padding: 0.5rem var(--site-gutter) 5.5rem;
 			box-sizing: border-box;
 		}
 		.svc-m__stage {
@@ -319,16 +332,40 @@ const services = [
 		}
 		.svc-m__img.is-active { opacity: 1; transform: none; }
 
-		/* Tablet width: names and line on the left, the picture on the right. */
+		/* Tablet width: the phone's stacked layout, scaled up — names, line
+		   and picture all bigger; the title the same size as What we've
+		   built's. */
 		@media (min-width: 700px) {
+			/* Height-capped too, so a landscape tablet's short screen still
+			   fits names, line and picture between the logo and the MENU. */
+			.svc-m__name { font-size: clamp(2.4rem, min(7vw, 6.5vh), 4.6rem); }
+			.svc-m__desc { font-size: 1.15rem; max-width: 44ch; }
+			.svc-m__media { max-height: 36vh; }
+		}
+		/* Short phone screens (an iPhone with Safari's bars showing): names,
+		   line and picture scale down to fit under the pinned title and
+		   above the MENU button. */
+		@media (max-width: 699px) and (max-height: 760px) {
+			.svc-m__name { font-size: clamp(1.7rem, min(9vw, 4.4vh), 3.4rem); }
+			.svc-m__stage { gap: 0.9rem; }
+			.svc-m__descs { margin-top: 0.6rem; }
+			.svc-m__desc { font-size: 0.88rem; }
+			.svc-m__progress { margin-top: 0.8rem; }
+			.svc-m__media { max-height: 24vh; }
+		}
+		/* Landscape tablet: names and line on the left, the picture on the
+		   right — the wide, short screen suits two columns better than the
+		   portrait stack. */
+		@media (min-width: 700px) and (orientation: landscape) {
 			.svc-m__stage {
 				display: grid;
 				grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 				gap: clamp(1.5rem, 4vw, 3rem);
 				align-items: center;
 			}
-			.svc-m__name { font-size: clamp(2.2rem, 5vw, 3.6rem); }
-			.svc-m__media { max-height: none; }
+			.svc-m__name { font-size: clamp(2.2rem, min(5vw, 7vh), 3.6rem); }
+			.svc-m__desc { font-size: 1rem; }
+			.svc-m__media { max-height: 52vh; }
 		}
 		@media (prefers-reduced-motion: reduce) {
 			.svc-m__desc, .svc-m__img { transition: opacity 0.2s linear; transform: none; }
@@ -348,6 +385,7 @@ const services = [
 	// Phones/tablets: the pinned scene steps through the services as the
 	// page scrolls past it; tapping a name scrolls to its step.
 	let _svcScroll: (() => void) | null = null;
+	let _svcHeadObserver: ResizeObserver | null = null;
 	function initServicesMobile(section: HTMLElement) {
 		const scene = section.querySelector<HTMLElement>('.svc-m');
 		const pin = section.querySelector<HTMLElement>('.svc-m__pin');
@@ -357,6 +395,15 @@ const services = [
 		const imgs = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__img'));
 		const bar = scene.querySelector<HTMLElement>('.svc-m__progress');
 		const count = names.length;
+		// The pinned title's height, handed to the CSS (the scene pins just
+		// under it). A ResizeObserver, not a scroll handler.
+		const header = section.querySelector<HTMLElement>('.svc__header');
+		const setHead = () => { if (header) section.style.setProperty('--svc-head', `${header.offsetHeight}px`); };
+		setHead();
+		_svcHeadObserver?.disconnect();
+		_svcHeadObserver = header ? new ResizeObserver(setHead) : null;
+		if (header) _svcHeadObserver?.observe(header);
+		const head = () => parseFloat(getComputedStyle(pin).top) || 0;
 		let active = 0;
 		const set = (i: number) => {
 			if (i === active) return;
@@ -367,7 +414,7 @@ const services = [
 		let ticking = false;
 		const update = () => {
 			ticking = false;
-			const p = Math.min(1, Math.max(0, -scene.getBoundingClientRect().top / range()));
+			const p = Math.min(1, Math.max(0, (head() - scene.getBoundingClientRect().top) / range()));
 			bar?.style.setProperty('--p', p.toFixed(4));
 			set(Math.min(count - 1, Math.floor(p * count)));
 		};
@@ -378,12 +425,14 @@ const services = [
 		update();
 		names.forEach((name, i) => name.addEventListener('click', () => {
 			const top = scene.getBoundingClientRect().top + window.scrollY;
-			window.scrollTo({ top: top + range() * ((i + 0.5) / count), behavior: 'smooth' });
+			window.scrollTo({ top: top - head() + range() * ((i + 0.5) / count), behavior: 'smooth' });
 		}));
 	}
 	document.addEventListener('astro:before-swap', () => {
 		if (_svcScroll) window.removeEventListener('scroll', _svcScroll);
 		_svcScroll = null;
+		_svcHeadObserver?.disconnect();
+		_svcHeadObserver = null;
 	});
 
 	function initServices() {

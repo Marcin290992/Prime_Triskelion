@@ -141,7 +141,10 @@ const projects = [
 				return (
 					<Tag class="sw-m__card" href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
 						<div class="sw-m__media" data-case-media={p.caseSrc ? '' : undefined}>
-							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 42vw, 82vw" loading="lazy" />
+							{/* Eager, not lazy: Safari only starts a lazy image once it's
+							    nearly in view, so swiping showed the next card empty and its
+							    picture popping in. Six card-sized images, loaded with the page. */}
+							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 78vw, 82vw" loading="eager" decoding="async" />
 						</div>
 						<div class="sw-m__bar">
 							<div class="sw-m__text">
@@ -572,9 +575,11 @@ const projects = [
 			color: rgb(var(--c-cream) / 0.6);
 		}
 		.sw-m__cta { margin: 1.75rem var(--site-gutter) 0; width: auto !important; }
-		/* Tablet width: two and a bit cards in view. */
+		/* Tablet width: still one main card with the next peeking in (as on
+		   a phone), in a landscape frame — 4:5 at this width ran taller
+		   than the screen. */
 		@media (min-width: 700px) {
-			.sw-m__card { flex-basis: 42%; max-height: none; }
+			.sw-m__card { flex-basis: 78%; aspect-ratio: 3 / 2; max-height: 70vh; }
 			.sw-m__cta { margin-inline: var(--site-gutter) auto; }
 		}
 	}

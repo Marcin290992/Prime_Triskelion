@@ -46,13 +46,19 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 	   (Safari before 26) the words are simply there. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#manifesto { height: auto !important; }
+		/* About three quarters of a screen, the line centred in it: as the
+		   words come into focus the line is alone on black, the next
+		   section not yet in view (at its natural height it ran straight
+		   into What we've built, worst on a tall portrait tablet). */
 		#manifesto > .sticky {
 			position: relative !important;
 			top: auto !important;
 			height: auto !important;
-			min-height: 0 !important;
+			min-height: 75svh !important;
+			min-height: calc(var(--app-stable-vh, 1svh) * 75) !important;
 			padding-top: clamp(3.5rem, 12vw, 5rem);
 			padding-bottom: clamp(3.5rem, 12vw, 5rem);
+			box-sizing: border-box;
 		}
 		@supports (animation-timeline: view()) {
 			#manifesto h2 { view-timeline-name: --manifesto; }

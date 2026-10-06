@@ -560,3 +560,31 @@ html body .hud-menu-btn::after {
   font-size: 11px !important;
   letter-spacing: 0.28em !important;
 }
+
+/* ── Type hierarchy on phones and tablets ──
+   The home hero's animated line (I build for …) is the biggest type on
+   the site; every main section and page title is 80% of it, so none ever
+   matches or outgrows it (several did: the pre-footer, Contact, Winds of
+   Sinai, the subpage titles). --hero-size is the hero's own size —
+   HeroSection.astro reads it. Desktop keeps its own sizes (already in
+   order there). */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  :root { --hero-size: clamp(2.5rem, 9.5vw, 5rem); }
+  html body .sw-header__title,
+  html body .svc__title-main,
+  html body .showcase__title,
+  html body .sc-title-m,
+  html body .disc-header__title,
+  html body .cta-title,
+  html body .proj-title,
+  html body .svc-title,
+  html body .am-who-l,
+  html body .am-who-r,
+  html body .cp-title,
+  html body .wos-hero__title {
+    font-size: calc(var(--hero-size) * 0.8) !important;
+  }
+}
+@media (max-width: 420px) {
+  :root { --hero-size: clamp(3.2rem, 10vw, 4rem); }
+}
