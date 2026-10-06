@@ -39,8 +39,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 	   pinned, the line sat in the middle of a full black screen with a
 	   lot of empty space above and below it. Here the section is its
 	   natural height and the words focus one after another as the text
-	   rises from the bottom of the screen to about its middle (cover
-	   15%–55% of the heading's own view timeline; --s/--e give each word
+	   rises from the lower part of the screen to above its middle (cover
+	   28%–62% of the heading's own view timeline; --s/--e give each word
 	   its slice, same stagger as desktop). Scroll-driven CSS, run by the
 	   browser with its own scroll — no GSAP per frame. Without support
 	   (Safari before 26) the words are simply there. */
@@ -60,7 +60,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 				animation: mw-focus linear both;
 				animation-duration: 1ms;
 				animation-timeline: --manifesto;
-				animation-range: cover calc(15% + var(--s) * 0.4) cover calc(15% + var(--e) * 0.4);
+				animation-range: cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34);
 			}
 		}
 	}
