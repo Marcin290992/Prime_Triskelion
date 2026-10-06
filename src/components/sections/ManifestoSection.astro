@@ -35,20 +35,32 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets: the same pinned focus-in as desktop, but scrubbed
-	   by a scroll-driven animation the browser runs alongside its own
-	   scroll — no GSAP per frame (desktop's ScrollTrigger scrub lagged and
-	   stuttered on phones). Each word focuses over its own slice of the
-	   pinned stretch (--s/--e, same stagger as desktop). Without support
+	/* Phones and tablets: desktop's word-by-word focus-in, without the pin —
+	   pinned, the line sat in the middle of a full black screen with a
+	   lot of empty space above and below it. Here the section is its
+	   natural height and the words focus one after another as the text
+	   rises from the bottom of the screen to about its middle (cover
+	   15%–55% of the heading's own view timeline; --s/--e give each word
+	   its slice, same stagger as desktop). Scroll-driven CSS, run by the
+	   browser with its own scroll — no GSAP per frame. Without support
 	   (Safari before 26) the words are simply there. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto { height: auto !important; }
+		#manifesto > .sticky {
+			position: relative !important;
+			top: auto !important;
+			height: auto !important;
+			min-height: 0 !important;
+			padding-top: clamp(3.5rem, 12vw, 5rem);
+			padding-bottom: clamp(3.5rem, 12vw, 5rem);
+		}
 		@supports (animation-timeline: view()) {
-			#manifesto { view-timeline-name: --manifesto; }
+			#manifesto h2 { view-timeline-name: --manifesto; }
 			#manifesto .mw:not(.br) {
 				animation: mw-focus linear both;
 				animation-duration: 1ms;
 				animation-timeline: --manifesto;
-				animation-range: contain var(--s) contain var(--e);
+				animation-range: cover calc(15% + var(--s) * 0.4) cover calc(15% + var(--e) * 0.4);
 			}
 		}
 	}
