@@ -293,6 +293,10 @@ const services = [
 		.svc-m__media {
 			position: relative;
 			display: block;
+			/* Explicit width: with aspect-ratio + max-height, Safari narrows the box
+			   to keep the ratio once the height cap kicks in (Chrome keeps it full
+			   width), so on an iPhone the picture didn't fill the card. */
+			width: 100%;
 			-webkit-tap-highlight-color: transparent;
 			-webkit-touch-callout: none;
 			aspect-ratio: 4 / 3;
