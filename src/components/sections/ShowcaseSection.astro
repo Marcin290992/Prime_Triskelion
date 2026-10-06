@@ -16,7 +16,6 @@ const steps = [
 	{ title: 'QA & Launch', img: imgLaunch, desc: 'I test across devices and browsers, handle DNS, analytics, and deployment. The go-live is coordinated, calm, and delivered on schedule.' },
 	{ title: 'Support & Growth', img: imgSupport, desc: 'After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.' },
 ];
-const total = String(steps.length).padStart(2, '0');
 ---
 <!-- ═══════ SHOWCASE ═══════ -->
 <section id="showcase">
@@ -38,9 +37,9 @@ const total = String(steps.length).padStart(2, '0');
 	<!-- Desktop: "meet in the middle" rail — a number tile (left) and its
 	     matching description tile (right) travel toward each other and
 	     cross at vertical center as you scroll; the center image swaps to
-	     whichever pair is currently crossing. Placeholder Unsplash photos
-	     for now — swap for real project shots later. Mobile is untouched:
-	     see .pdeck further down, which mobile actually renders. -->
+	     whichever pair is currently crossing. Placeholder photos for now
+	     (src/img/process/) — swap for real project shots later. Phones
+	     and tablets get .pstack further down instead. -->
 	<div class="process-rail" id="process-rail">
 		<div class="process-rail__pin">
 
@@ -94,35 +93,37 @@ const total = String(steps.length).padStart(2, '0');
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the steps as a deck of cards — scrolling deals
-	     the next card up over the last, which tilts back and dims
-	     (initProcessDeck). Desktop keeps the rail above. -->
-	<div class="pdeck" aria-label="The process, step by step">
-		<div class="pdeck__pin">
-			<div class="pdeck__cards">
-				{steps.map((st, i) => (
-					<article class="pdeck__card" style={`z-index:${i + 1}`}>
-						<Image
-							class="pdeck__img"
-							src={st.img}
-							alt=""
-							widths={[480, 800, 1200]}
-							sizes="(min-width: 700px) 880px, 100vw"
-							loading="lazy"
-						/>
-						<span class="pdeck__shade" aria-hidden="true"></span>
-						<span class="pdeck__dim" aria-hidden="true"></span>
-						<span class="pdeck__count">{String(i + 1).padStart(2, '0')} / {total}</span>
-						<div class="pdeck__copy">
-							<span class="pdeck__eyebrow">The Process</span>
-							<h3 class="pdeck__title">{st.title}</h3>
-							<p class="pdeck__desc">{st.desc}</p>
-						</div>
-					</article>
-				))}
-			</div>
-			<div class="pdeck__progress" aria-hidden="true"><span></span></div>
-		</div>
+	<!-- Phones and tablets: the steps as cards that stack as you scroll,
+	     under the section title (which stays pinned). Each card sticks a
+	     little lower than the last, so the next slides up over it; the one
+	     covered recedes and goes dark. Pure CSS — sticky plus scroll-driven
+	     animations — so it moves with the browser's own scroll, no script
+	     per frame. Desktop keeps the rail above. -->
+	<div class="pstack" aria-label="The process, step by step">
+		{steps.map((st, i) => (<>
+			<span class="pstack__mark" style={`view-timeline-name:--pm${i}`} aria-hidden="true"></span>
+			<article class="pstack__card" style={`--i:${i};--next:${i < steps.length - 1 ? `--pm${i + 1}` : 'none'}`}>
+				<div class="pstack__media">
+					<Image
+						class="pstack__img"
+						src={st.img}
+						alt=""
+						widths={[480, 800, 1200]}
+						sizes="(min-width: 700px) 440px, 100vw"
+						loading="lazy"
+					/>
+				</div>
+				<div class="pstack__copy">
+					<div class="pstack__head">
+						<span class="pstack__num">{String(i + 1).padStart(2, '0')}</span>
+						<span class="pstack__tag">The Process</span>
+					</div>
+					<h3 class="pstack__title">{st.title}</h3>
+					<p class="pstack__desc">{st.desc}</p>
+				</div>
+				<span class="pstack__dim" aria-hidden="true"></span>
+			</article>
+		</>))}
 	</div>
 
 </section>
@@ -185,8 +186,7 @@ const total = String(steps.length).padStart(2, '0');
 			   viewport (see .is-visible, toggled by an IntersectionObserver
 			   below) — the title arrives on its own first, well before the
 			   lead-in slot lets any pair start sliding in, so there's no
-			   risk of it lagging behind already-visible content the way
-			   the old stack design did. filter: none overrides the base
+			   risk of it lagging behind already-visible content. filter: none overrides the base
 			   (mobile) blur-in rule — combined with the font-size shrink
 			   further down, that filter was getting real compositor
 			   glitches out of a software-rendered browser during the
@@ -212,7 +212,6 @@ const total = String(steps.length).padStart(2, '0');
 		.showcase__intro-content .showcase__title {
 			font-size: calc(clamp(3.5rem, min(8vw, 13vh), 11rem) * var(--title-scale, 1));
 		}
-
 	}
 
 	/* ── Process rail (desktop "meet in the middle") ── */
@@ -337,8 +336,7 @@ const total = String(steps.length).padStart(2, '0');
 
 		.process-rail__media {
 			flex: 0 0 auto;
-			/* Landscape frame on desktop (mobile .proc__media stays portrait
-			   3/4). Width-driven within a premium range; height follows the
+			/* Landscape frame. Width-driven within a premium range; height follows the
 			   3/2 ratio and is still clamped to the pinned stage's own box
 			   via max-height: 100% so it can't run into the shrunk title
 			   above or the fixed menu button below on shorter laptops —
@@ -383,143 +381,163 @@ const total = String(steps.length).padStart(2, '0');
 		}
 	}
 
-	/* ── Process deck (phones and tablets; desktop has the rail) ── */
-	.pdeck { display: none; }
+	/* ── Process stack (phones and tablets; desktop has the rail) ── */
+	.pstack { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.showcase__intro { padding-bottom: 0; }
-		/* Scroll room: one screen, plus about a screen per card dealt.
-		   Stable vh (Layout.astro), like the other mobile pins, so the
-		   toolbar can't resize it mid-scroll. Height set from the step
-		   count in initProcessDeck; this is the 5-card default. */
-		.pdeck {
-			display: block;
-			position: relative;
-			height: 580svh;
-			height: calc(var(--app-stable-vh, 1svh) * 580);
-		}
-		.pdeck__pin {
+		/* The title stays pinned while the cards stack under it; the cards
+		   stick just below it (--pstack-top, its measured height, set by
+		   initProcessStackTop). Its own fade covers cards sliding under. */
+		.showcase__intro {
 			position: sticky;
 			top: 0;
-			height: 100svh;
-			height: calc(var(--app-stable-vh, 1svh) * 100);
+			z-index: 6;
+			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
+			padding: 4.75rem var(--site-gutter) 1.1rem;
+			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
+		}
+		.showcase__title { font-size: clamp(2.8rem, 11vw, 4.6rem); }
+		.pstack {
+			display: block;
+			padding: 0.5rem var(--site-gutter) clamp(5rem, 14vw, 7rem);
+		}
+		/* Zero-height markers in the flow, one before each card: the next
+		   card's marker is the timeline its predecessor recedes on. */
+		.pstack__mark { display: block; height: 0; }
+		/* Small: the next card follows right under the one that just
+		   stuck instead of arriving out of a long stretch of black. */
+		.pstack__mark:not(:first-child) {
+			margin-top: 4svh;
+			margin-top: calc(var(--app-stable-vh, 1svh) * 4);
+		}
+		.pstack__card {
+			/* Each sticks a little lower than the one before, so the deck's
+			   earlier edges stay in view. */
+			position: sticky;
+			top: calc(var(--pstack-top, 10rem) + var(--i) * 14px);
+			transform-origin: 50% 0;
 			display: flex;
 			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: clamp(0.9rem, 2.5vh, 1.4rem);
-			/* Clear of the fixed logo above and the MENU button below. */
-			padding: 4.5rem var(--site-gutter) 6rem;
-			box-sizing: border-box;
+			background: #0c0c0e;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			/* Cast up onto the card it's covering — the depth of the deck. */
+			box-shadow: 0 -22px 44px -16px rgb(0 0 0 / 0.85);
 			overflow: hidden;
 		}
-		.pdeck__cards {
-			position: relative;
-			width: 100%;
-			flex: 1 1 auto;
-			max-height: 640px;
-		}
-		.pdeck__card {
+		/* Darkens the card as the next one covers it. */
+		.pstack__dim {
 			position: absolute;
 			inset: 0;
-			overflow: hidden;
-			display: flex;
-			flex-direction: column;
-			justify-content: flex-end;
-			background: #0b0b0d;
-			border: 1px solid rgb(var(--c-cream) / 0.1);
-			box-shadow: 0 30px 60px -28px rgb(0 0 0 / 0.75);
-			transform-origin: 50% 100%;
-			backface-visibility: hidden;
-			will-change: transform;
+			z-index: 2;
+			background: #000;
+			opacity: 0;
+			pointer-events: none;
 		}
-		.pdeck__img {
+		.pstack__media {
+			position: relative;
+			aspect-ratio: 16 / 10;
+			max-height: 30vh;
+			overflow: hidden;
+			background: #060608;
+		}
+		.pstack__img {
 			position: absolute;
 			inset: 0;
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
-			filter: grayscale(100%) contrast(1.1) brightness(0.8);
+			filter: grayscale(100%) contrast(1.1) brightness(0.78);
 		}
-		/* Legibility for the copy at the foot of the card. */
-		.pdeck__shade {
-			position: absolute;
-			inset: 0;
-			background: linear-gradient(to top, rgb(0 0 0 / 0.92) 0%, rgb(0 0 0 / 0.55) 38%, rgb(0 0 0 / 0.05) 72%);
-		}
-		/* A card dealt over goes dark through this layer — cheaper than an
-		   animated filter on the whole card. */
-		.pdeck__dim {
-			position: absolute;
-			inset: 0;
-			background: #000;
-			opacity: 0;
-		}
-		.pdeck__count {
-			position: absolute;
-			top: 1.1rem;
-			right: 1.2rem;
-			font-family: var(--f-body);
-			font-size: 11px;
-			font-weight: 500;
-			letter-spacing: 0.28em;
-			font-variant-numeric: tabular-nums;
-			color: rgb(var(--c-cream) / 0.6);
-		}
-		.pdeck__copy {
-			position: relative;
+		.pstack__copy {
 			display: flex;
 			flex-direction: column;
-			gap: 0.7rem;
-			padding: 1.4rem 1.35rem 1.6rem;
+			gap: 0.75rem;
+			padding: 1.3rem 1.3rem 1.5rem;
 		}
-		.pdeck__eyebrow {
+		.pstack__head {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+		.pstack__num {
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2rem, 9vw, 2.8rem);
+			line-height: 1;
+			letter-spacing: -0.01em;
+			color: rgb(var(--c-red));
+		}
+		.pstack__tag {
 			font-family: var(--f-body);
 			font-size: 11px;
 			font-weight: 500;
 			letter-spacing: 0.28em;
 			text-transform: uppercase;
-			color: rgb(var(--c-red));
+			color: rgb(var(--c-cream) / 0.5);
 		}
-		.pdeck__title {
+		.pstack__title {
 			margin: 0;
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.8rem, 8vw, 2.8rem);
+			font-size: clamp(1.6rem, 7vw, 2.4rem);
 			line-height: 0.98;
 			letter-spacing: -0.01em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
-		.pdeck__desc {
+		.pstack__desc {
 			margin: 0;
 			max-width: 46ch;
 			font-family: var(--f-body);
 			font-size: 0.9rem;
 			font-weight: 300;
-			line-height: 1.6;
-			color: rgb(var(--c-cream) / 0.75);
+			line-height: 1.65;
+			color: rgb(var(--c-cream) / 0.72);
 		}
-		/* How far through the deck the scroll is. */
-		.pdeck__progress {
-			flex: none;
-			width: min(11rem, 40%);
-			height: 1px;
-			background: rgb(var(--c-cream) / 0.14);
-			overflow: hidden;
-		}
-		.pdeck__progress span {
-			display: block;
-			height: 100%;
-			background: rgb(var(--c-red));
-			transform-origin: left center;
-			transform: scaleX(var(--p, 0));
-		}
+		/* Tablet width: picture on the left, the copy on the right. */
 		@media (min-width: 700px) {
-			.pdeck__cards { max-width: 880px; }
-			.pdeck__copy { padding: 2rem 2.2rem 2.2rem; }
-			.pdeck__title { font-size: clamp(2rem, 4.4vw, 3.2rem); }
-			.pdeck__desc { font-size: 0.95rem; }
+			.pstack__card {
+				flex-direction: row;
+				align-items: stretch;
+			}
+			.pstack__media {
+				flex: 0 0 48%;
+				aspect-ratio: auto;
+				max-height: none;
+				min-height: clamp(260px, 42vh, 380px);
+			}
+			.pstack__copy {
+				flex: 1 1 auto;
+				justify-content: center;
+				padding: 2rem 2.2rem;
+			}
+			.pstack__title { font-size: clamp(1.8rem, 3.6vw, 2.6rem); }
+			.pstack__desc { font-size: 0.95rem; }
+			.pstack__media { min-height: clamp(240px, 38vh, 360px); }
 		}
+		/* The card being covered steps back into the deck — a touch smaller
+		   and up — and goes into the dark, scrubbed by the next card's
+		   approach. Compositor-driven (scroll-driven animations): Chrome /
+		   Android and Safari 26+. Elsewhere the cards simply stack. */
+		@supports (animation-timeline: view()) {
+			.pstack { timeline-scope: --pm1, --pm2, --pm3, --pm4; }
+			.pstack__card,
+			.pstack__dim {
+				animation-duration: 1ms;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
+				animation-timeline: var(--next);
+				animation-range: cover 12% cover 76%;
+			}
+			.pstack__card { animation-name: pstack-recede; }
+			.pstack__dim { animation-name: pstack-dark; }
+		}
+	}
+	@keyframes pstack-recede {
+		to { transform: translateY(-6px) scale(0.92); }
+	}
+	@keyframes pstack-dark {
+		to { opacity: 0.72; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -778,122 +796,27 @@ const total = String(steps.length).padStart(2, '0');
 
 	onReady(initShowcase);
 
+	// Phones/tablets: the process cards stick just under the pinned title —
+	// hand its height to the CSS. A ResizeObserver, not a scroll handler.
+	let _stackTopObserver: ResizeObserver | null = null;
+	function initProcessStackTop() {
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
+		const section = document.getElementById('showcase');
+		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
+		if (!section || !intro || !section.querySelector('.pstack')) return;
+		const set = () => section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+		set();
+		_stackTopObserver = new ResizeObserver(set);
+		_stackTopObserver.observe(intro);
+	}
+	document.addEventListener('astro:page-load', initProcessStackTop);
+
 	document.addEventListener('astro:before-swap', () => {
 		_railCleanup?.();
 		_railCleanup = null;
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
 	});
 </script>
 
-<script>
-	// Phones/tablets: the process deck. Scrolling deals each card up from
-	// below over the last; cards already dealt tilt back a touch, step up,
-	// shrink and dim, three deep. Eased toward the scroll position each
-	// frame (and only while it's moving) so the deal glides rather than
-	// tracking the finger's jitter. Transform/opacity only — no blur, which
-	// mobile Safari and Android can't keep at 60fps across a full card.
-	const PEEK = 22;          // px each card dealt over steps up
-	const SCALE_STEP = 0.06;  // shrink per card dealt over
-	const TILT = 2.5;         // deg, alternating left/right
-	const DIM = 0.32;         // darkening per card dealt over
-	const DEPTH = 3;          // cards kept visible behind the front one
-	const SMOOTH = 0.16;      // easing toward the scroll position
-	const RUNWAY = 120;       // stable-vh of scroll per card dealt
-
-	let _deckCleanup: (() => void) | null = null;
-
-	function initProcessDeck() {
-		_deckCleanup?.();
-		_deckCleanup = null;
-		const deck = document.querySelector<HTMLElement>('.pdeck');
-		const pin = deck?.querySelector<HTMLElement>('.pdeck__pin');
-		const box = deck?.querySelector<HTMLElement>('.pdeck__cards');
-		if (!deck || !pin || !box || getComputedStyle(deck).display === 'none') return;
-		const cards = Array.from(deck.querySelectorAll<HTMLElement>('.pdeck__card'));
-		const dims = cards.map((c) => c.querySelector<HTMLElement>('.pdeck__dim'));
-		const bar = deck.querySelector<HTMLElement>('.pdeck__progress');
-		const count = cards.length;
-		if (count < 2) return;
-		const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-		deck.style.height = `calc(var(--app-stable-vh, 1svh) * ${100 + (count - 1) * RUNWAY})`;
-
-		const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-		const glide = (t: number) => t * t * (3 - 2 * t);
-
-		// How far below its resting place a card waits: just past the bottom
-		// of the screen, in % of its own height.
-		let enter = 130;
-		const measureEnter = () => {
-			const h = box.offsetHeight || 1;
-			const below = window.innerHeight - box.getBoundingClientRect().top;
-			enter = (below / h) * 100 + 6;
-		};
-
-		const target = () => {
-			const span = deck.offsetHeight - pin.offsetHeight;
-			if (span <= 0) return 0;
-			return clamp(-deck.getBoundingClientRect().top / span, 0, 1) * (count - 1);
-		};
-
-		const paint = (progress: number) => {
-			for (let i = 0; i < count; i++) {
-				const card = cards[i];
-				const offset = progress - i;
-				if (offset < -1.0005 || offset > DEPTH) {
-					if (card.style.visibility !== 'hidden') card.style.visibility = 'hidden';
-					continue;
-				}
-				if (card.style.visibility === 'hidden') card.style.visibility = '';
-				const lean = i % 2 === 0 ? 1 : -1;
-				let transform: string;
-				let dim = 0;
-				if (offset < 0) {
-					// Coming up from below, settling straight as it lands.
-					const u = clamp(offset + 1, 0, 1);
-					const e = glide(u);
-					transform = `translate3d(0,${((1 - u) * enter).toFixed(2)}%,0) rotate(${((1 - e) * TILT * 1.4 * lean).toFixed(2)}deg)`;
-				} else {
-					const v = offset;
-					transform = `translate3d(0,${(-v * PEEK).toFixed(2)}px,0) rotate(${(v * TILT * lean).toFixed(2)}deg) scale(${(1 - v * SCALE_STEP).toFixed(4)})`;
-					dim = Math.min(0.85, v * DIM);
-				}
-				card.style.transform = transform;
-				const d = dims[i];
-				if (d) d.style.opacity = dim.toFixed(3);
-			}
-			bar?.style.setProperty('--p', (progress / (count - 1)).toFixed(4));
-		};
-
-		let shown = target();
-		let raf = 0;
-		let last = 0;
-		const step = (stamp: number) => {
-			const dt = Math.min(0.05, Math.max(0, (stamp - (last || stamp)) / 1000));
-			last = stamp;
-			const goal = target();
-			const pull = calm ? 1 : 1 - Math.pow(1 - SMOOTH, dt * 60);
-			shown += (goal - shown) * pull;
-			if (Math.abs(goal - shown) < 0.0004) shown = goal;
-			paint(shown);
-			raf = shown === goal ? 0 : requestAnimationFrame(step);
-		};
-		const wake = () => { if (!raf) { last = 0; raf = requestAnimationFrame(step); } };
-		const onResize = () => { measureEnter(); wake(); };
-
-		measureEnter();
-		paint(shown);
-		window.addEventListener('scroll', wake, { passive: true });
-		window.addEventListener('resize', onResize);
-		_deckCleanup = () => {
-			cancelAnimationFrame(raf);
-			window.removeEventListener('scroll', wake);
-			window.removeEventListener('resize', onResize);
-		};
-	}
-
-	document.addEventListener('astro:page-load', initProcessDeck);
-	document.addEventListener('astro:before-swap', () => {
-		_deckCleanup?.();
-		_deckCleanup = null;
-	});
-</script>
