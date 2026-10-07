@@ -461,7 +461,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, duration: 0.4, ease: 'power2.inOut' });
+        }).to(content, { opacity: 0, duration: 0.32, ease: 'power2.inOut' });
         return;
       }
 
@@ -481,14 +481,12 @@ function initOxygenMenu() {
           resolve();
         },
       })
-        // Same shape as before (topbar out, links reversed-stagger out,
-        // bottom out), just tightened to ~60% of the original durations —
-        // this timeline has to finish before navigate() fires (see the
-        // nav-link click handler below), so it was directly adding to how
-        // long "click a link" took to actually leave the page.
+        // Everything leaves upward, top line first — the links came in from
+        // below, so they carry on out the top of their masks instead of
+        // dropping back the way they came (which read as a rewind).
         .to('.ox-menu-topbar', { y: -15, opacity: 0, duration: 0.24, ease: 'power3.inOut' })
-        .to(links.reverse(), { y: 80, opacity: 0, duration: 0.3, stagger: 0.024, ease: 'power3.inOut' }, '-=0.15')
-        .to('.ox-menu-bottom', { y: 20, opacity: 0, duration: 0.21, ease: 'power3.inOut' }, '-=0.18');
+        .to(links, { y: '-100%', opacity: 0, duration: 0.32, stagger: 0.03, ease: 'power3.in' }, '-=0.15')
+        .to('.ox-menu-bottom', { y: -20, opacity: 0, duration: 0.21, ease: 'power3.inOut' }, '-=0.18');
     });
   }
 
@@ -554,7 +552,7 @@ function initOxygenMenu() {
       // Reduce motion: a plain fade, no blur.
       const out = reducedMotion()
         ? { opacity: 0, duration: 0.4, ease: 'none' }
-        : { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
+        : { opacity: 0, filter: 'blur(10px)', duration: 0.45, ease: 'power2.inOut' };
       // Touch: the chosen link's red roll only starts at the tap, and a
       // blur on the big menu text has to be re-rasterized every frame —
       // run together, Android dropped frames in the roll. Let the roll
@@ -566,7 +564,7 @@ function initOxygenMenu() {
       // featured project) only when a nav link was chosen.
       const aside = overlay.querySelector<HTMLElement>('aside');
       const panelOut = chosen ? aside : aside?.firstElementChild;
-      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.55, ease: 'power2.inOut', delay: lead + 0.12 });
+      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.45, ease: 'power2.inOut', delay: lead + 0.12 });
     }
 
     async function activate() {
@@ -574,13 +572,14 @@ function initOxygenMenu() {
       const href = link.getAttribute('href');
       dissolveOthers();
       // Hold on the chosen link while the rest dissolves around it and its
-      // text roll (OxygenMenu.astro, 0.34s) reads, then leave. Touch has no
-      // hover lead-in — the roll only starts at the tap — so it gets the
-      // full roll plus a beat; with a mouse it has already rolled on hover.
+      // text roll (OxygenMenu.astro, 0.34s) reads, then leave — short: the
+      // whole choose-to-cut runs about a second (it was ~1.5s, which read
+      // as waiting by the fifth time). Touch has no hover lead-in — the
+      // roll only starts at the tap — so it gets the roll first.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, (noHover ? 720 : 520) + TOUCH_ROLL_LEAD() * 1000));
+      await new Promise(r => setTimeout(r, (noHover ? 400 : 300) + TOUCH_ROLL_LEAD() * 1000));
       // The chosen link racks out of focus as the menu fades to black.
-      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
+      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.32, ease: 'power2.in' });
       await closeMenu(true, true);  // keep black overlay visible, fade out
       if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
