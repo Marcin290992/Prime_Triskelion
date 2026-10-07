@@ -120,9 +120,21 @@ body::after {
 /* Phones and tablets: stronger than desktop — at phone pixel density the
    same grain reads much finer and all but vanished. (It was off here once:
    it lifts the black a touch next to the pure-black bars iOS Safari paints
-   above/below the page, see .edge-tint in Layout.astro.) */
+   above/below the page, see .edge-tint in Layout.astro.)
+   Still, not moving: a full-screen layer over everything, re-composited at
+   every jump, made the menu and About stutter on 120Hz iPhones (15 Pro)
+   and older ones (12). Static and screen-sized here; desktop keeps it alive. */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  body::after { opacity: 0.09; }
+  body::after {
+    opacity: 0.09;
+    animation: none;
+    will-change: auto;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    height: 100lvh;
+  }
 }
 
 /* Mobile subpages: content below the hero stays hidden until the hero
