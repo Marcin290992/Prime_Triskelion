@@ -338,13 +338,19 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		});
 	}
 
-	// Desktop: the photo becomes a chroma card (mouse-driven lean, RGB-split
-	// zoom on hover). Touch keeps the plain photo — nothing to hover there.
+	// The photo as a chroma card. Desktop: it leans after the mouse and
+	// hovering it plays the RGB-split zoom. Phones/tablets: the zoom plays by
+	// itself once the photo reaches the middle of the screen, and goes back
+	// on scrolling up past it.
 	let _chroma: ChromaCardHandle | null = null;
+	let _chromaST: ScrollTrigger | null = null;
 	function initFaqPhoto() {
 		_chroma?.destroy();
 		_chroma = null;
-		if (!window.matchMedia('(min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine)').matches) return;
+		_chromaST?.kill();
+		_chromaST = null;
+		const desktop = window.matchMedia('(min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine)').matches;
+		if (!desktop && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const box = document.querySelector<HTMLElement>('#faq .faq__photo');
 		const img = box?.querySelector<HTMLImageElement>('img');
 		const canvas = box?.querySelector<HTMLCanvasElement>('.faq__chroma');
@@ -353,17 +359,30 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		img.loading = 'eager';
 		img.decode().then(() => {
 			if (!canvas.isConnected || _chroma) return;
-			_chroma = createChromaCard(box, canvas, img, {
+			const card = createChromaCard(box, canvas, img, {
 				zoomLevel: 0.15,
 				scaleIntensity: 0.12,
 				positionIntensity: 0.7,
+				pointer: desktop,
 			});
-			if (_chroma) requestAnimationFrame(() => box.classList.add('is-chroma'));
+			if (!card) return;
+			_chroma = card;
+			requestAnimationFrame(() => box.classList.add('is-chroma'));
+			if (!desktop) {
+				_chromaST = ScrollTrigger.create({
+					trigger: box,
+					start: 'center center',
+					onEnter: () => card.auto(true),
+					onLeaveBack: () => card.auto(false),
+				});
+			}
 		}).catch(() => {});
 	}
 	document.addEventListener('astro:before-swap', () => {
 		_chroma?.destroy();
 		_chroma = null;
+		_chromaST?.kill();
+		_chromaST = null;
 	});
 
 	onReady(() => {
