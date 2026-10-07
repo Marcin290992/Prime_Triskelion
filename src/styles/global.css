@@ -593,7 +593,10 @@ html body .hud-menu-btn::after {
    HeroSection.astro reads it. Desktop keeps its own sizes (already in
    order there). */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  :root { --hero-size: clamp(2.5rem, 9.5vw, 5rem); }
+  /* Flat 3.2rem up to ~540px, then grows with the width: a bigger phone
+     never gets smaller titles than a smaller one (a separate ≤420px value
+     used to make 430px phones drop from 51px to 41px). */
+  :root { --hero-size: clamp(3.2rem, 9.5vw, 5rem); }
   html body .sw-header__title,
   html body .svc__title-main,
   html body .showcase__title,
@@ -605,10 +608,22 @@ html body .hud-menu-btn::after {
   html body .am-who-l,
   html body .am-who-r,
   html body .cp-title,
-  html body .wos-hero__title {
+  html body .wos-hero__title,
+  html body .wos-pm__title,
+  html body .showcase-title,
+  html body .ac-label {
     font-size: calc(var(--hero-size) * 0.8) !important;
   }
+  /* Item names under a title (a project, a process step): one clear step
+     below it, the same everywhere — at 38px a project read as big as
+     "My Projects." itself. */
+  html body .proj-foot__name,
+  html body .pstack__title {
+    font-size: calc(var(--hero-size) * 0.55) !important;
+  }
 }
-@media (max-width: 420px) {
-  :root { --hero-size: clamp(3.2rem, 10vw, 4rem); }
+/* The work carousel's cards: the same step on tablets; a phone's card is
+   too narrow for it (a one-word name ran out of it), so it keeps its own. */
+@media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
+  html body .sw-m__title { font-size: calc(var(--hero-size) * 0.55) !important; }
 }
