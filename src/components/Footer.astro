@@ -139,15 +139,10 @@
     to   { transform: translateY(0); }
   }
 
-  /* Phones and tablets: no footer — the page ends on the CTA. */
+  /* Phones and tablets: the footer without the wordmark — that's for
+     desktop and laptop only. */
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    #site-footer { display: none; }
-  }
-
-  /* Phones and tablets: two lines, each the full width (kept in case the
-     footer comes back there). */
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    .footer-mark > span { flex-direction: column; gap: 0; font-size: 16cqi; }
+    .footer-mark { display: none; }
   }
 
   /* Mobile: single column stack */
