@@ -401,13 +401,17 @@ const projects = [
        cards only on scroll. Sized off the stable --app-stable-vh (set once
        in Layout.astro) so the URL bar can't resize it mid-scroll. */
     .proj-header {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
+      /* About two thirds of the screen, not all of it: the title keeps its
+         moment, and the first card already peeks in below — that invites
+         the scroll, so the "scroll" hint goes. */
+      height: 68svh;
+      height: calc(var(--app-stable-vh, 1svh) * 68);
       min-height: unset;
       justify-content: center;
       padding-top: 5rem;
-      padding-bottom: 5rem;
+      padding-bottom: 1.5rem;
     }
+    .proj-header__scroll { display: none; }
     /* Vertical, centred under the text: "scroll" label on top, a red
        hairline pulsing downward below it. In flow (not pinned to the
        screen bottom) so it travels with the centred title/lead block and
