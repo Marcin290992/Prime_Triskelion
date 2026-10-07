@@ -169,12 +169,10 @@
 		const count = testimonialsData.length;
 		const total = String(count).padStart(2, '0');
 
-		// Phones/tablets: words move and fade only — an animated blur per
-		// word is what touch Safari can't keep smooth.
-		const touch = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		// Same focus-in on every device; only reduced motion skips the blur.
 		const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const hidden = touch || calm ? { opacity: 0, y: 14 } : { opacity: 0, y: 14, filter: 'blur(10px)' };
-		const shown = touch || calm ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, filter: 'blur(0px)' };
+		const hidden = calm ? { opacity: 0, y: 14 } : { opacity: 0, y: 14, filter: 'blur(10px)' };
+		const shown = calm ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 		const words = (text: string) => {
 			textEl.textContent = '';
