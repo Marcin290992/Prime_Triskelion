@@ -1,35 +1,30 @@
 <!-- ═══════ TESTIMONIALS ═══════ -->
+<!-- One quote at a time, set large, changing by itself every few seconds
+     (initTestimonials) — the outgoing words drift up and out, the next
+     quote's words come into focus one after another. The red hairline at
+     the foot fills toward the next change. -->
 <section id="testimonials">
-
 	<div class="tst__inner">
+		<div class="tst__label">(Client Stories)</div>
 
-		<div class="tst__top">
-			<div class="tst__label">(Client Stories)</div>
-			<div class="tst__controls-wrap">
-				<div class="tst__controls">
-					<button type="button" class="tst__btn" data-dir="prev" aria-label="Previous testimonial">←</button>
-					<button type="button" class="tst__btn" data-dir="next" aria-label="Next testimonial">→</button>
-				</div>
-				<div class="tst__progress-track">
-					<div class="tst__progress-fill" id="tstProgress"></div>
-				</div>
-				<div class="tst__counter" id="tstCounter">01/03</div>
+		<blockquote class="tst__quote">
+			<span class="tst__mark" aria-hidden="true">“</span>
+			<p class="tst__text" id="tstText"></p>
+		</blockquote>
+
+		<div class="tst__author" id="tstAuthor">
+			<span class="tst__line" aria-hidden="true"></span>
+			<div>
+				<p class="tst__name" id="tstName"></p>
+				<p class="tst__role" id="tstRole"></p>
 			</div>
 		</div>
 
-		<div class="tst__content" id="tstContent">
-			<p class="tst__quote" id="tstText"></p>
-			<div class="tst__author">
-				<div class="tst__avatar" aria-hidden="true"></div>
-				<div class="tst__details">
-					<p class="tst__name" id="tstName"></p>
-					<p class="tst__role" id="tstRole"></p>
-				</div>
-			</div>
+		<div class="tst__foot" aria-hidden="true">
+			<div class="tst__progress"><span id="tstProgress"></span></div>
+			<span class="tst__count" id="tstCounter">01 / 03</span>
 		</div>
-
 	</div>
-
 </section>
 
 <style>
@@ -37,115 +32,109 @@
 		position: relative;
 		z-index: 44;
 		color: rgb(var(--c-cream));
+		background: rgb(var(--c-bg));
 	}
 	.tst__inner {
-		width: 100%;
-		max-width: 1100px;
+		display: flex;
+		flex-direction: column;
+		gap: clamp(1.75rem, 4vh, 3rem);
+		width: min(100%, 1100px);
 		margin: 0 auto;
 		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
 		box-sizing: border-box;
-		opacity: 0;
-		filter: blur(8px);
-		transform: translateY(14px);
-		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
-	}
-	.tst__inner.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
-
-	.tst__top {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		gap: 2rem;
-		margin-bottom: clamp(2.5rem, 5vw, 4rem);
 	}
 	.tst__label {
 		font-family: var(--f-body);
-		font-size: 0.8rem;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.62);
-		flex-shrink: 0;
-	}
-	.tst__controls-wrap {
-		display: flex;
-		align-items: center;
-		gap: 1.5rem;
-		flex: 1;
-		max-width: 320px;
-		margin-left: auto;
-	}
-	.tst__controls { display: flex; gap: 1rem; flex-shrink: 0; }
-	.tst__btn {
-		background: none;
-		border: none;
-		padding: 0;
-		color: rgb(var(--c-cream));
-		font-size: 1.2rem;
-		line-height: 1;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: opacity 0.25s ease;
-	}
-	.tst__btn:hover { opacity: 0.6; }
-	.tst__progress-track {
-		flex-grow: 1;
-		height: 2px;
-		border-radius: 2px;
-		background: rgba(255, 255, 255, 0.12);
-		overflow: hidden;
-	}
-	.tst__progress-fill { height: 100%; width: 0%; background: rgb(var(--c-cream)); }
-	.tst__counter {
-		font-family: var(--f-body);
-		font-size: 0.8rem;
-		letter-spacing: 0.05em;
-		color: rgb(var(--c-cream) / 0.62);
-		flex-shrink: 0;
-	}
-
-	.tst__content { transition: opacity 0.3s ease, transform 0.3s ease; }
-	.tst__quote {
-		font-family: var(--f-body);
+		font-size: 11px;
 		font-weight: 500;
-		font-size: clamp(1.8rem, 3.4vw, 3.4rem);
+		letter-spacing: 0.32em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.55);
+	}
+	.tst__quote {
+		position: relative;
+		margin: 0;
+	}
+	.tst__mark {
+		display: block;
+		font-family: var(--f-display);
+		font-weight: 700;
+		font-size: clamp(4rem, 9vw, 8rem);
+		line-height: 0.6;
+		color: rgb(var(--c-red));
+		margin-bottom: 0.15em;
+	}
+	.tst__text {
+		margin: 0;
+		font-family: var(--f-body);
+		font-weight: 300;
+		font-size: clamp(1.55rem, 4.2vw, 3.2rem);
 		line-height: 1.25;
 		letter-spacing: -0.01em;
-		color: rgb(var(--c-cream) / 0.92);
-		max-width: 62rem;
-		min-height: 3.5em;
-		margin: 0 0 2.5rem;
+		color: rgb(var(--c-cream));
+		max-width: 26ch;
+		/* Room for the longest quote so the author line doesn't jump. */
+		min-height: 3.75em;
 	}
-	.tst__author { display: flex; align-items: center; gap: 1rem; }
-	.tst__avatar { width: 3.2rem; height: 3.2rem; border-radius: 0; background: #333; flex-shrink: 0; }
-	.tst__details p { margin: 0; }
-	.tst__name { font-family: var(--f-body); font-size: 1rem; font-weight: 600; color: rgb(var(--c-cream)); }
-	.tst__role { font-family: var(--f-body); font-size: 0.85rem; color: rgb(var(--c-cream) / 0.62); }
-
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.tst__inner { padding: clamp(3rem, 8vw, 5rem) var(--site-gutter) clamp(3rem, 8vw, 5rem); }
-		.tst__top {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 1.2rem;
-			margin-bottom: 1.5rem;
-		}
-		.tst__controls-wrap { width: 100%; max-width: none; margin-left: 0; }
-		.tst__quote {
-			font-family: var(--f-body);
-			font-weight: 300;
-			font-size: clamp(0.95rem, 3.6vw, 1.05rem);
-			line-height: 1.6;
-			letter-spacing: normal;
-			color: rgb(var(--c-cream) / 0.82);
-			max-width: none;
-			min-height: 7.5rem;
-			margin: 0 0 1.6rem;
-		}
-		.tst__avatar { width: 2.6rem; height: 2.6rem; }
-		.tst__name { font-size: 0.9rem; }
-		.tst__role { font-size: 0.78rem; }
+	/* Each word animates on its own (see initTestimonials). */
+	.tst__text :global(.tw) { display: inline-block; white-space: pre; will-change: transform, opacity; }
+	.tst__author {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		transition: opacity 0.4s ease;
+	}
+	.tst__line {
+		width: 36px;
+		height: 1px;
+		background: rgb(var(--c-red));
+		flex: none;
+	}
+	.tst__name {
+		margin: 0;
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(1rem, 1.4vw, 1.25rem);
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: rgb(var(--c-cream));
+	}
+	.tst__role {
+		margin: 0.25rem 0 0;
+		font-family: var(--f-body);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.55);
+	}
+	.tst__foot {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-top: clamp(0.5rem, 2vh, 1.5rem);
+	}
+	.tst__progress {
+		flex: 1 1 auto;
+		max-width: 22rem;
+		height: 1px;
+		background: rgb(var(--c-cream) / 0.14);
+		overflow: hidden;
+	}
+	.tst__progress span {
+		display: block;
+		height: 100%;
+		background: rgb(var(--c-red));
+		transform-origin: left center;
+		transform: scaleX(0);
+	}
+	.tst__count {
+		font-family: var(--f-body);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.28em;
+		font-variant-numeric: tabular-nums;
+		color: rgb(var(--c-cream) / 0.6);
 	}
 </style>
 
@@ -153,98 +142,117 @@
 	import gsap from 'gsap';
 	import { onReady } from '../../utils/onReady';
 
-	// Placeholder content — swap for real client quotes/names/roles (and add
-	// real photos to .tst__avatar) once available.
+	// Placeholder content — swap for real client quotes/names/roles.
 	const testimonialsData = [
 		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
 		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
 		{ text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Placeholder testimonial text — swap for a real client quote.', name: 'Client Name', role: 'Role, Company' },
 	];
 
+	// Seconds each quote stays before the next one comes in.
 	const AUTOPLAY_DURATION = 6;
 
+	let _tstOff: (() => void) | null = null;
+
 	function initTestimonials() {
+		_tstOff?.();
+		_tstOff = null;
 		const section = document.getElementById('testimonials');
-		if (!section) return;
+		const textEl = section?.querySelector<HTMLElement>('#tstText');
+		const nameEl = section?.querySelector<HTMLElement>('#tstName');
+		const roleEl = section?.querySelector<HTMLElement>('#tstRole');
+		const author = section?.querySelector<HTMLElement>('#tstAuthor');
+		const bar = section?.querySelector<HTMLElement>('#tstProgress');
+		const counter = section?.querySelector<HTMLElement>('#tstCounter');
+		if (!section || !textEl || !nameEl || !roleEl || !author || !bar || !counter) return;
 
-		const counter = section.querySelector<HTMLElement>('#tstCounter');
-		const content = section.querySelector<HTMLElement>('#tstContent');
-		const textEl = section.querySelector<HTMLElement>('#tstText');
-		const nameEl = section.querySelector<HTMLElement>('#tstName');
-		const roleEl = section.querySelector<HTMLElement>('#tstRole');
-		const progressFill = section.querySelector<HTMLElement>('#tstProgress');
-		const btns = section.querySelectorAll<HTMLButtonElement>('.tst__btn');
-		if (!counter || !content || !textEl || !nameEl || !roleEl || !progressFill || !btns.length) return;
+		const count = testimonialsData.length;
+		const total = String(count).padStart(2, '0');
 
-		let index = 0;
-		let progressTween: ReturnType<typeof gsap.to> | null = null;
+		// Phones/tablets: words move and fade only — an animated blur per
+		// word is what touch Safari can't keep smooth.
+		const touch = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const hidden = touch || calm ? { opacity: 0, y: 14 } : { opacity: 0, y: 14, filter: 'blur(10px)' };
+		const shown = touch || calm ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, filter: 'blur(0px)' };
 
-		function render() {
-			const data = testimonialsData[index];
-			textEl!.textContent = data.text;
-			nameEl!.textContent = data.name;
-			roleEl!.textContent = data.role;
-			counter!.textContent = `${String(index + 1).padStart(2, '0')}/${String(testimonialsData.length).padStart(2, '0')}`;
-		}
-
-		function startProgress() {
-			progressTween?.kill();
-			gsap.set(progressFill, { width: '0%' });
-			progressTween = gsap.to(progressFill, {
-				width: '100%',
-				duration: AUTOPLAY_DURATION,
-				ease: 'none',
-				onComplete: () => goTo('next'),
+		const words = (text: string) => {
+			textEl.textContent = '';
+			return text.split(' ').map((w, i, all) => {
+				const s = document.createElement('span');
+				s.className = 'tw';
+				s.textContent = i < all.length - 1 ? `${w} ` : w;
+				textEl.appendChild(s);
+				return s;
 			});
-		}
+		};
 
-		function goTo(dir: 'next' | 'prev') {
-			progressTween?.kill();
-			content!.style.opacity = '0';
-			content!.style.transform = dir === 'next' ? 'translateX(-12px)' : 'translateX(12px)';
-			window.setTimeout(() => {
-				index = dir === 'next'
-					? (index + 1) % testimonialsData.length
-					: (index - 1 + testimonialsData.length) % testimonialsData.length;
-				render();
-				content!.style.transform = dir === 'next' ? 'translateX(12px)' : 'translateX(-12px)';
-				requestAnimationFrame(() => {
-					content!.style.opacity = '1';
-					content!.style.transform = 'translateX(0)';
-					startProgress();
-				});
-			}, 220);
-		}
-
-		btns.forEach(btn => {
-			btn.addEventListener('click', () => goTo(btn.dataset.dir === 'prev' ? 'prev' : 'next'));
+		let current = 0;
+		let swap: gsap.core.Timeline | null = null;
+		// The hairline fills over each quote's time; when it's full, the
+		// next quote comes in. Paused while the section is off screen.
+		const timer = gsap.fromTo(bar, { scaleX: 0 }, {
+			scaleX: 1,
+			duration: AUTOPLAY_DURATION,
+			ease: 'none',
+			paused: true,
+			onComplete: () => show((current + 1) % count),
 		});
 
-		render();
-		startProgress();
+		const reveal = (i: number) => {
+			const data = testimonialsData[i];
+			const incoming = words(data.text);
+			nameEl.textContent = data.name;
+			roleEl.textContent = data.role;
+			counter.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
+			gsap.set(incoming, hidden);
+			gsap.to(incoming, { ...shown, duration: calm ? 0.3 : 0.8, ease: 'power2.out', stagger: calm ? 0 : 0.035 });
+			gsap.to(author, { opacity: 1, duration: 0.5, delay: 0.3 });
+			timer.restart();
+			if (!visible) timer.pause();
+		};
 
-		document.addEventListener('astro:before-swap', () => {
-			progressTween?.kill();
-		}, { once: true });
+		const show = (i: number) => {
+			current = i;
+			const outgoing = Array.from(textEl.querySelectorAll<HTMLElement>('.tw'));
+			swap?.kill();
+			swap = gsap.timeline();
+			swap.to(outgoing, { opacity: 0, y: -12, duration: 0.3, ease: 'power2.in', stagger: 0.012 })
+				.to(author, { opacity: 0, duration: 0.25 }, 0)
+				.add(() => reveal(i));
+		};
 
-		// Desktop-only blur-up reveal on scroll — mobile gets instant
-		// visibility from the global mobile override (global.css), same
-		// convention as every other section's .xxx__header.
-		if (!window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-			const inner = section.querySelector<HTMLElement>('.tst__inner');
-			if (inner) {
-				const io = new IntersectionObserver((entries) => {
-					entries.forEach(entry => {
-						if (entry.isIntersecting) {
-							inner.classList.add('visible');
-							io.unobserve(entry.target);
-						}
-					});
-				}, { threshold: 0.15 });
-				io.observe(inner);
+		// Laid out but hidden until the section comes into view, so the
+		// first quote's entrance is seen.
+		gsap.set(words(testimonialsData[0].text), hidden);
+		nameEl.textContent = testimonialsData[0].name;
+		roleEl.textContent = testimonialsData[0].role;
+		gsap.set(author, { opacity: 0 });
+
+		let visible = false;
+		let started = false;
+		const io = new IntersectionObserver(([e]) => {
+			visible = e.isIntersecting;
+			if (visible && !started) {
+				started = true;
+				reveal(0);
+			} else if (started) {
+				visible ? timer.resume() : timer.pause();
 			}
-		}
+		}, { threshold: 0.35 });
+		io.observe(section);
+
+		_tstOff = () => {
+			io.disconnect();
+			swap?.kill();
+			timer.kill();
+		};
 	}
+
+	document.addEventListener('astro:before-swap', () => {
+		_tstOff?.();
+		_tstOff = null;
+	});
 
 	onReady(initTestimonials);
 </script>
