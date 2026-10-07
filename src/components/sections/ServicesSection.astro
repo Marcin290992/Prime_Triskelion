@@ -218,7 +218,7 @@ const services = [
 			top: 0;
 			z-index: 6;
 			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
-			padding: 4.75rem var(--site-gutter) 1.75rem;
+			padding: 4.75rem var(--site-gutter) 1.25rem;
 			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
 		}
 		.svc__title-main { font-size: clamp(2.4rem, min(10vw, 8vh), 5rem); }
@@ -245,7 +245,9 @@ const services = [
 			height: calc(100svh - var(--svc-head, 0px));
 			height: calc(var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px));
 			display: flex;
-			align-items: center;
+			/* Right under the pinned title — centred, the spare height all
+			   went between the title and the names. */
+			align-items: flex-start;
 			/* Bottom: clear of the fixed MENU button. */
 			padding: 0.5rem var(--site-gutter) 5.5rem;
 			box-sizing: border-box;
@@ -262,7 +264,7 @@ const services = [
 			padding: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 0.32em;
+			gap: 0.16em;
 		}
 		.svc-m__name {
 			font-family: var(--f-display);
@@ -270,7 +272,7 @@ const services = [
 			/* A clear step below the section title, letters and lines apart —
 			   at 70% of it with tight tracking the four ran together. */
 			font-size: calc(var(--hero-size) * 0.5);
-			line-height: 1.05;
+			line-height: 1;
 			letter-spacing: -0.005em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.2);
@@ -355,7 +357,7 @@ const services = [
 			   fits names, line and picture between the logo and the MENU. */
 			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
 			.svc-m__desc { font-size: 1.15rem; max-width: 44ch; }
-			.svc-m__media { max-height: 36vh; }
+			.svc-m__media { max-height: 42vh; }
 		}
 		/* Short phone screens (an iPhone with Safari's bars showing): names,
 		   line and picture scale down to fit under the pinned title and
@@ -378,6 +380,7 @@ const services = [
 				gap: clamp(1.5rem, 4vw, 3rem);
 				align-items: center;
 			}
+			.svc-m__pin { align-items: center; }
 			.svc-m__name { font-size: calc(var(--hero-size) * 0.5); }
 			.svc-m__desc { font-size: 1rem; }
 			.svc-m__media { max-height: 52vh; }
