@@ -793,24 +793,31 @@
 	import { createAxialBeam, type AxialBeamHandle } from '../../utils/axialBeam';
 
 	let _beam: AxialBeamHandle | null = null;
+	const aim = () => window.matchMedia('(orientation: portrait)').matches
+		? { originX: 0.15, angle: 168 }
+		: { originX: 0.2, angle: 145 };
 	function initBeam() {
 		_beam?.destroy();
 		_beam = null;
 		const canvas = document.getElementById('rays-canvas') as HTMLCanvasElement | null;
 		const hero = document.getElementById('hero');
 		if (!canvas || !hero) return;
+		// Warm silver (the cream of the type, not a cool lavender against the
+		// red), light haze so the black stays black, the shaft aimed onto the
+		// headline — from the upper left on a wide screen, more from above on
+		// a tall one (the same angle there would miss it off the right edge).
 		_beam = createAxialBeam(canvas, hero, {
-			colors: ['#3A3A55', '#9A9AC0', '#E2E2F5', '#FFFFFF'],
-			originX: 0.12,
+			colors: ['#2B2724', '#8C847C', '#E8E0D6', '#FFFFFF'],
+			...aim(),
 			originY: 1.6,
-			angle: 150,
 			tilt: 10,
 			spread: 16,
 			rays: 6,
 			reach: 1.4,
 			swing: 0.6,
 			flicker: 0.4,
-			haze: 0.9,
+			haze: 0.5,
+			intensity: 0.85,
 			speed: 2.25,
 			cursorWidth: 4,
 		});
@@ -821,5 +828,7 @@
 		_beam = null;
 	});
 	document.addEventListener('astro:page-load', initBeam);
+	// A tablet turned round: aim again for the new shape.
+	window.matchMedia('(orientation: portrait)').addEventListener('change', () => _beam?.update(aim()));
 </script>
 

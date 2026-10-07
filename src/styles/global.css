@@ -614,4 +614,16 @@ html body .hud-menu-btn::after {
   html body .ac-label {
     font-size: calc(var(--hero-size) * 0.8) !important;
   }
+  /* Item names under a title (a project, a process step): one clear step
+     below it, the same everywhere — at 38px a project read as big as
+     "My Projects." itself. */
+  html body .proj-foot__name,
+  html body .pstack__title {
+    font-size: calc(var(--hero-size) * 0.55) !important;
+  }
+}
+/* The work carousel's cards: the same step on tablets; a phone's card is
+   too narrow for it (a one-word name ran out of it), so it keeps its own. */
+@media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
+  html body .sw-m__title { font-size: calc(var(--hero-size) * 0.55) !important; }
 }

@@ -34,6 +34,9 @@ export interface AxialBeamOpts {
 }
 
 export interface AxialBeamHandle {
+	/** Change settings in place (e.g. aim on rotation) — the WebGL context
+	 *  can't be made again on the same canvas once released. */
+	update(opts: AxialBeamOpts): void;
 	destroy(): void;
 }
 
@@ -434,6 +437,10 @@ export function createAxialBeam(canvas: HTMLCanvasElement, section: HTMLElement,
 	start();
 
 	return {
+		update(next: AxialBeamOpts) {
+			Object.assign(s, next);
+			if (!raf) draw(1 / 60);
+		},
 		destroy() {
 			stop();
 			io.disconnect();
