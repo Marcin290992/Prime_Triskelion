@@ -455,7 +455,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     // A third of the current cell, never under ~1.5 CSS px.
     gl!.uniform1f(u.uFineCell, Math.max(1.5 * dpr, cell / 3));
     gl!.uniform1i(u.uMode, blurMode ? 1 : 0);
-    gl!.uniform1f(u.uBlur, 6.0);
+    gl!.uniform1f(u.uBlur, 3.5);
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 
     if (!ready) {
