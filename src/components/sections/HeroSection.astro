@@ -788,207 +788,38 @@
 </script>
 
 <script>
-(function () {
-	function initRays() {
+	// Hero light: volumetric shafts from above the top-left (utils/axialBeam).
+	// #rays-canvas keeps its id — the hero reveal fades it in.
+	import { createAxialBeam, type AxialBeamHandle } from '../../utils/axialBeam';
+
+	let _beam: AxialBeamHandle | null = null;
+	function initBeam() {
+		_beam?.destroy();
+		_beam = null;
 		const canvas = document.getElementById('rays-canvas') as HTMLCanvasElement | null;
-		if (!canvas) return;
-		const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
-		if (!gl) return;
-
-		const VERT = `attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
-		const highpOk = (gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT)?.precision ?? 0) > 0;
-		const FRAG = `
-			precision ${highpOk ? 'highp' : 'mediump'} float;
-			uniform float iTime; uniform vec2 iResolution; uniform vec2 rayPos; uniform vec2 rayDir;
-			uniform vec3 raysColor; uniform float raysSpeed; uniform float lightSpread; uniform float rayLength;
-			uniform float pulsating; uniform float fadeDistance; uniform float saturation;
-			uniform vec2 mousePos; uniform float mouseInfluence; uniform float noiseAmount; uniform float distortion;
-
-			float noise(vec2 st) { return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123); }
-
-			float rayStrength(vec2 src, vec2 refDir, vec2 coord, float sA, float sB, float spd) {
-				vec2  s2c = coord - src;
-				float ca  = dot(normalize(s2c), refDir);
-				float da  = ca + distortion * sin(iTime * 2.0 + length(s2c) * 0.01) * 0.2;
-				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread, 0.001));
-				float d   = length(s2c);
-				float md  = iResolution.x * rayLength;
-				float lf  = clamp((md - d) / md, 0.0, 1.0);
-				float ff  = clamp((iResolution.x * fadeDistance - d) / (iResolution.x * fadeDistance), 0.5, 1.0);
-				float pulse = pulsating > 0.5 ? (0.8 + 0.2 * sin(iTime * spd * 3.0)) : 1.0;
-				float bs  = clamp(
-					(0.45 + 0.15 * sin(da * sA + iTime * spd)) +
-					(0.3  + 0.2  * cos(-da * sB + iTime * spd)),
-					0.0, 1.0);
-				return bs * lf * ff * sf * pulse;
-			}
-
-			void main() {
-				vec2 coord = vec2(gl_FragCoord.x, iResolution.y - gl_FragCoord.y);
-				vec2 fd = rayDir;
-				if (mouseInfluence > 0.0) {
-					vec2 md = normalize(mousePos * iResolution.xy - rayPos);
-					fd = normalize(mix(rayDir, md, mouseInfluence));
-				}
-				vec4 r1 = vec4(1.0) * rayStrength(rayPos, fd, coord, 36.2214, 21.11349, 1.5 * raysSpeed);
-				vec4 r2 = vec4(1.0) * rayStrength(rayPos, fd, coord, 22.3991, 18.0234,  1.1 * raysSpeed);
-				vec4 fc = r1 * 0.5 + r2 * 0.4;
-
-				if (noiseAmount > 0.0) {
-					float n = noise(coord * 0.01 + iTime * 0.1);
-					fc.rgb *= (1.0 - noiseAmount + noiseAmount * n);
-				}
-
-				float br = 1.0 - (coord.y / iResolution.y);
-				fc.x *= 0.1 + br * 0.8; fc.y *= 0.3 + br * 0.6; fc.z *= 0.5 + br * 0.5;
-
-				if (saturation != 1.0) {
-					float g = dot(fc.rgb, vec3(0.299, 0.587, 0.114));
-					fc.rgb  = mix(vec3(g), fc.rgb, saturation);
-				}
-				fc.rgb *= raysColor;
-				gl_FragColor = fc;
-			}
-		`;
-
-		function compile(type: number, src: string) {
-			const s = gl!.createShader(type)!;
-			gl!.shaderSource(s, src);
-			gl!.compileShader(s);
-			return s;
-		}
-
-		const prog = gl.createProgram()!;
-		gl.attachShader(prog, compile(gl.VERTEX_SHADER, VERT));
-		gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FRAG));
-		gl.linkProgram(prog);
-		gl.useProgram(prog);
-
-		const buf = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-		const aPos = gl.getAttribLocation(prog, 'a_pos');
-		gl.enableVertexAttribArray(aPos);
-		gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
-		const U: Record<string, WebGLUniformLocation | null> = {};
-		uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
-
-		const isMobileDevice = window.matchMedia('(pointer: coarse)').matches;
-		const CFG = { color: new Float32Array([1.0, 1.0, 1.0]), speed: 1.0, spread: 0.5, length: 2.0, pulsating: 0.0, fadeDistance: 1.0, saturation: 1.0, mouseInfluence: isMobileDevice ? 0.0 : 0.12, noise: 0.0, distortion: 0.0 };
-		const TARGET_FRAME_MS = isMobileDevice ? 1000 / 24 : 0;
-
-		const mouse = { x: 0.5, y: 0.5 };
-		const smooth = { x: 0.5, y: 0.5 };
-		let rafId = 0;
-		let W = 0, H = 0;
-
-		function onMouseMove(e: MouseEvent) { const r = canvas!.getBoundingClientRect(); mouse.x = (e.clientX - r.left) / r.width; mouse.y = (e.clientY - r.top) / r.height; }
-		function onTouchMove(e: TouchEvent) { const t = e.touches[0]; const r = canvas!.getBoundingClientRect(); mouse.x = (t.clientX - r.left) / r.width; mouse.y = (t.clientY - r.top) / r.height; }
-
-		window.addEventListener('mousemove', onMouseMove as EventListener);
-		window.addEventListener('touchmove', onTouchMove as EventListener, { passive: true });
-
-		// Capped harder on touch devices — same reasoning as flameCanvas.ts's
-		// identical cap: a per-pixel fragment shader running continuously is
-		// a real, measurable contributor to Safari-only scroll jank at DPR 2
-		// on phones that report 2-3, and this canvas is the very first thing
-		// painted on the home page. Desktop keeps DPR 2.
-		const maxDpr = window.matchMedia('(pointer: coarse)').matches ? 1 : 2;
-		function resize() {
-			const dpr = Math.min(devicePixelRatio, maxDpr);
-			W = canvas!.offsetWidth * dpr; H = canvas!.offsetHeight * dpr;
-			canvas!.width = W; canvas!.height = H;
-			gl!.viewport(0, 0, W, H);
-		}
-		function onResize() {
-			// Na mobile URL bar chowając się zmienia tylko wysokość — ignorujemy height-only resize
-			// żeby uniknąć resetu WebGL context przy pierwszym scrollu
-			if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
-			resize();
-		}
-		window.addEventListener('resize', onResize, { passive: true });
-		resize();
-		// #hero's height comes from --app-stable-vh (Layout.astro), which on
-		// a back/forward (traverse) navigation gets a first, possibly-stale
-		// value synchronously and then a corrected one ~160ms later once the
-		// browser chrome (URL bar) has actually settled — see the
-		// isTraverseNav re-measure in Layout.astro's setLockedHeight
-		// listener. The resize() above already ran by then, against
-		// whichever value landed first, so the canvas's draw buffer can end
-		// up sized for the wrong height and stay that way — the width-only
-		// guard in onResize() never catches it since only the height was
-		// ever wrong. One more unconditional resize after that correction
-		// has had time to land fixes it up, regardless of whether this
-		// particular load actually needed it.
-		setTimeout(resize, 220);
-
-		let lastFrameTime = 0;
-		function loop(ts: number) {
-			if (TARGET_FRAME_MS > 0 && ts - lastFrameTime < TARGET_FRAME_MS) {
-				rafId = requestAnimationFrame(loop);
-				return;
-			}
-			lastFrameTime = ts;
-			const t = ts * 0.001;
-			smooth.x = smooth.x * 0.92 + mouse.x * 0.08;
-			smooth.y = smooth.y * 0.92 + mouse.y * 0.08;
-			gl!.uniform1f(U.iTime, t);
-			gl!.uniform2f(U.iResolution, W, H);
-			gl!.uniform2f(U.rayPos, W * 0.5, -H * 0.18);
-			gl!.uniform2f(U.rayDir, 0.0, 1.0);
-			gl!.uniform3fv(U.raysColor, CFG.color);
-			gl!.uniform1f(U.raysSpeed, CFG.speed);
-			gl!.uniform1f(U.lightSpread, CFG.spread);
-			gl!.uniform1f(U.rayLength, CFG.length);
-			gl!.uniform1f(U.pulsating, CFG.pulsating);
-			gl!.uniform1f(U.fadeDistance, CFG.fadeDistance);
-			gl!.uniform1f(U.saturation, CFG.saturation);
-			gl!.uniform2f(U.mousePos, smooth.x, smooth.y);
-			gl!.uniform1f(U.mouseInfluence, CFG.mouseInfluence);
-			gl!.uniform1f(U.noiseAmount, CFG.noise);
-			gl!.uniform1f(U.distortion, CFG.distortion);
-			gl!.drawArrays(gl!.TRIANGLES, 0, 6);
-			rafId = requestAnimationFrame(loop);
-		}
-
-		let isHeroVisible = true;
-		const heroSectionEl = document.getElementById('hero');
-		let heroIO: IntersectionObserver | null = null;
-
-		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
-		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
-
-		function onVisibilityChange() { document.hidden ? stopRaysAnimation() : startRaysAnimation(); }
-		document.addEventListener('visibilitychange', onVisibilityChange);
-
-		if (heroSectionEl) {
-			heroIO = new IntersectionObserver(([entry]) => {
-				isHeroVisible = entry.isIntersecting;
-				isHeroVisible ? startRaysAnimation() : stopRaysAnimation();
-			}, { threshold: 0 });
-			heroIO.observe(heroSectionEl);
-		}
-
-		rafId = requestAnimationFrame(loop);
-
-		document.addEventListener('astro:before-swap', () => {
-			cancelAnimationFrame(rafId);
-			heroIO?.disconnect();
-			window.removeEventListener('mousemove', onMouseMove as EventListener);
-			window.removeEventListener('touchmove', onTouchMove as EventListener);
-			window.removeEventListener('resize', onResize);
-			document.removeEventListener('visibilitychange', onVisibilityChange);
-			// Free the GPU context now rather than whenever the old canvas is
-			// garbage-collected — each visit made a new one, and after a few
-			// navigations Android Chrome ran short on GPU memory and every
-			// animation (the menu's included) started dropping frames.
-			gl.getExtension('WEBGL_lose_context')?.loseContext();
-		}, { once: true });
+		const hero = document.getElementById('hero');
+		if (!canvas || !hero) return;
+		_beam = createAxialBeam(canvas, hero, {
+			colors: ['#3A3A55', '#9A9AC0', '#E2E2F5', '#FFFFFF'],
+			originX: 0.12,
+			originY: 1.6,
+			angle: 150,
+			tilt: 10,
+			spread: 16,
+			rays: 6,
+			reach: 1.4,
+			swing: 0.6,
+			flicker: 0.4,
+			haze: 0.9,
+			speed: 2.25,
+			cursorWidth: 4,
+		});
 	}
-
-	document.addEventListener('astro:page-load', initRays);
-})();
+	// Free the GPU context on the way out (see the WebGL notes in flameCanvas).
+	document.addEventListener('astro:before-swap', () => {
+		_beam?.destroy();
+		_beam = null;
+	});
+	document.addEventListener('astro:page-load', initBeam);
 </script>
 
