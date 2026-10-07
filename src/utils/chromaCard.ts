@@ -18,14 +18,9 @@ export interface ChromaCardOpts {
 	scaleIntensity?: number;
 	positionIntensity?: number;
 	interactionDuration?: number;
-	/** Follow the mouse (off on touch: auto() drives it instead). */
-	pointer?: boolean;
 }
 
 export interface ChromaCardHandle {
-	/** Play the hover effect by itself (true) or take it back (false) — for
-	 *  touch, where there's no hover (FaqSection runs it on scroll). */
-	auto(on: boolean): void;
 	destroy(): void;
 }
 
@@ -132,7 +127,6 @@ export function createChromaCard(
 		scaleIntensity: 0.1,
 		positionIntensity: 0.5,
 		interactionDuration: 0.4,
-		pointer: true,
 		...opts,
 	};
 	const gl = canvas.getContext('webgl', { alpha: true, antialias: true, premultipliedAlpha: true });
@@ -250,23 +244,10 @@ export function createChromaCard(
 		gsap.to(st, { s: 1, x: 0, rx: 0, ry: 0, duration: 0.9, ease: 'power3.out', overwrite: 'auto' });
 		kick();
 	};
-	if (o.pointer) {
-		zone.addEventListener('pointermove', onMove);
-		zone.addEventListener('pointerleave', onLeave);
-	}
+	zone.addEventListener('pointermove', onMove);
+	zone.addEventListener('pointerleave', onLeave);
 
 	return {
-		auto(on: boolean) {
-			if (on === hovering) return;
-			setHover(on);
-			// A slow lean in and back, so the card feels picked up.
-			if (on) {
-				gsap.timeline()
-					.to(st, { ry: 0.16, rx: -0.08, x: 0.25, s: 1.04, duration: 1.1, ease: 'power2.out' })
-					.to(st, { ry: 0, rx: 0, x: 0, s: 1, duration: 1.6, ease: 'power2.inOut' });
-			}
-			kick();
-		},
 		destroy() {
 			cancelAnimationFrame(raf);
 			gsap.killTweensOf(st);
