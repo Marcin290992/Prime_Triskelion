@@ -489,6 +489,16 @@ document.addEventListener('astro:after-swap', () => {
 	})));
 });
 
+// A new page starts at the top — but ScrollTrigger may still hold the old
+// page's scroll in its cache, and its first refresh "restores" that: on
+// touch (native scroll, no Lenis) tapping the logo mid-page landed back in
+// the same spot. Forget it, so the refresh restores the real 0.
+document.addEventListener('astro:after-swap', () => {
+	if (traverseNext) return;
+	ScrollTrigger.clearScrollMemory();
+	ScrollTrigger.update();
+});
+
 document.addEventListener('astro:after-swap', () => {
 	mode = decide(traverseNext);
 	traverseNext = false;
