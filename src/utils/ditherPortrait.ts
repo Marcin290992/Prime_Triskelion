@@ -286,6 +286,11 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   // CPU pass. Cleared whenever the canvas size changes.
   const diffusedCache = new Map<number, Uint8Array>();
   let uploadedCell = 0;
+  // The photo scaled down once to about what the finest cells need — every
+  // diffusion pass used to resample the full-size original, the bulk of
+  // its cost.
+  let source: HTMLCanvasElement | null = null;
+  let warmTimer = 0;
 
   function layout(): boolean {
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
@@ -295,6 +300,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     canvas.height = h;
     diffusedCache.clear();
     uploadedCell = 0;
+    source = null;
     return true;
   }
 
@@ -304,13 +310,42 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     cover = ratio > 1 ? [1, 1 / ratio] : [ratio, 1];
   }
 
+  // Cell sizes the scrub passes through, coarse to fine (the order they're
+  // first needed in).
+  function cellRange(): number[] {
+    const from = Math.max(1, Math.round(startPixelSize * dpr));
+    const to = Math.max(1, Math.round(pixelSize * dpr));
+    const out: number[] = [];
+    for (let c = Math.max(from, to); c >= Math.min(from, to); c--) out.push(c);
+    return out;
+  }
+
+  function prepareSource(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
+    if (source) return source;
+    // Enough pixels that the finest cell grid still samples a smoothed
+    // picture: twice the cells across the image's displayed width.
+    const finest = Math.min(...cellRange());
+    const want = Math.ceil((canvas.width / finest / cover[0]) * 2);
+    if (want >= img.naturalWidth) return img;
+    const c = document.createElement('canvas');
+    c.width = want;
+    c.height = Math.max(1, Math.round(img.naturalHeight * (want / img.naturalWidth)));
+    const cctx = c.getContext('2d');
+    if (!cctx) return img;
+    cctx.imageSmoothingEnabled = true;
+    cctx.imageSmoothingQuality = 'high';
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+    source = c;
+    return c;
+  }
+
   function diffuse(cell: number): Uint8Array {
     const cols = Math.ceil(canvas.width / cell);
     const rows = Math.ceil(canvas.height / cell);
-    const img = image!;
+    const img = prepareSource(image!);
     const ctx = samplerCtx!;
-    const iw = img.naturalWidth;
-    const ih = img.naturalHeight;
+    const iw = img instanceof HTMLImageElement ? img.naturalWidth : img.width;
+    const ih = img instanceof HTMLImageElement ? img.naturalHeight : img.height;
     sampler.width = cols;
     sampler.height = rows;
     ctx.imageSmoothingEnabled = true;
@@ -431,6 +466,29 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     if (!raf && !destroyed) raf = requestAnimationFrame(render);
   }
 
+  // Every cell size the scrub will need, computed ahead of it — one per
+  // idle moment, coarse first — so the split of the title never waits on a
+  // diffusion pass mid-scroll (it hitched there on the biggest phones,
+  // with the most cells to dither).
+  function warm() {
+    clearTimeout(warmTimer);
+    if (destroyed || !image || !samplerCtx || diffusionBlocked) return;
+    const next = cellRange().find((c) => !diffusedCache.has(c));
+    if (next === undefined) return;
+    const idle = (window as any).requestIdleCallback as ((cb: () => void, o?: { timeout: number }) => number) | undefined;
+    const run = () => {
+      if (destroyed || !image) return;
+      layout();
+      updateCover();
+      if (!diffusedCache.has(next)) {
+        try { diffusedCache.set(next, diffuse(next)); } catch { diffusionBlocked = true; return; }
+      }
+      warmTimer = window.setTimeout(warm, 60);
+    };
+    if (idle) idle(run, { timeout: 400 });
+    else warmTimer = window.setTimeout(run, 30);
+  }
+
   const img = new Image();
   img.decoding = 'async';
   img.onload = () => {
@@ -452,6 +510,8 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     }
     image = img;
     schedule();
+    // After the first frame and the page's entrance have had their turn.
+    warmTimer = window.setTimeout(warm, 600);
   };
   img.src = opts.src;
 
@@ -463,6 +523,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     if (canvas.clientWidth === lastWidth && ready) return;
     lastWidth = canvas.clientWidth;
     schedule();
+    warmTimer = window.setTimeout(warm, 300);
   });
   ro.observe(canvas);
 
@@ -490,6 +551,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     destroy() {
       destroyed = true;
       cancelAnimationFrame(raf);
+      clearTimeout(warmTimer);
       ro.disconnect();
       img.onload = null;
       gl.deleteTexture(imageTex);
