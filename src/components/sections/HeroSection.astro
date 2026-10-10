@@ -1098,6 +1098,9 @@
 		function onResize() {
 			// Na mobile URL bar chowając się zmienia tylko wysokość — ignorujemy height-only resize
 			// żeby uniknąć resetu WebGL context przy pierwszym scrollu
+			// Nor while the tab is away (switchers fire passing sizes) — the
+			// return is checked once things settle (onVisibilityChange).
+			if (document.hidden) return;
 			if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
 			resize();
 		}
@@ -1153,7 +1156,12 @@
 		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
 		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
 
-		function onVisibilityChange() { document.hidden ? stopRaysAnimation() : startRaysAnimation(); }
+		function onVisibilityChange() {
+			if (document.hidden) { stopRaysAnimation(); return; }
+			startRaysAnimation();
+			// Back on the tab: re-size only if the settled width really changed.
+			setTimeout(() => { if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) !== W) resize(); }, 1000);
+		}
 		document.addEventListener('visibilitychange', onVisibilityChange);
 
 		if (heroSectionEl) {
