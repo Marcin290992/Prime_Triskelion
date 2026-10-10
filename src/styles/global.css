@@ -198,7 +198,7 @@ html:active-view-transition .nav-cta,
 html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
 html:active-view-transition .zoom-col,
-html:active-view-transition .top-blur {
+html:active-view-transition .gradual-blur__layer {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -630,4 +630,22 @@ html body .hud-menu-btn::after {
    too narrow for it (a one-word name ran out of it), so it keeps its own. */
 @media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
   html body .sw-m__title { font-size: calc(var(--hero-size) * 0.55) !important; }
+}
+
+/* ── Gradual blur bands (utils/gradualBlur.js) ──
+   Fixed bands along the top and bottom edges: stacked backdrop-blur layers,
+   each masked to a stretch of the band, so the blur builds up with no steps.
+   The layers carry their own mask and blur inline. */
+.gradual-blur {
+  position: fixed;
+  pointer-events: none;
+  isolation: isolate;
+}
+.gradual-blur__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .gradual-blur__layer { background: rgba(0, 0, 0, 0.3); opacity: 0.5 !important; }
 }
