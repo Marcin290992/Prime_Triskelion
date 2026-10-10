@@ -363,9 +363,9 @@ const navLinks = [
     transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
   }
     .ox-social:hover {
-    color: rgb(var(--c-red) / 0.9);
-    border-color: rgb(var(--c-red) / 0.45);
-    background: rgb(var(--c-red) / 0.06);
+    color: rgb(var(--c-cream) / 0.9);
+    border-color: rgb(var(--c-cream) / 0.45);
+    background: rgb(var(--c-cream) / 0.06);
   }
 
   /* ── Responsive ── */
@@ -553,12 +553,12 @@ const navLinks = [
 
   @media (hover: hover) {
     .hud-menu-btn:hover .hud-ico__line {
-      background: rgb(var(--c-red) / 0.9);
-      box-shadow: 0 0 6px rgb(var(--c-red) / 0.6);
+      background: rgb(var(--c-cream) / 0.9);
+      box-shadow: 0 0 6px rgb(var(--c-cream) / 0.6);
     }
     .hud-menu-btn:hover .hud-ico__line:nth-child(2) { width: 100% !important; }
     .hud-menu-btn:hover .hud-ico__line:nth-child(3) { width: 100% !important; }
-    .hud-menu-btn:hover::after { color: rgb(var(--c-red) / 0.9); }
+    .hud-menu-btn:hover::after { color: rgb(var(--c-cream) / 0.9); }
   }
 
 
@@ -589,12 +589,12 @@ const navLinks = [
     /* Hover lives on the icon only — no border/background change on the
        button chrome, that red frame was unnecessary. */
     .hud-icon-btn:hover {
-      color: rgb(var(--c-red) / 0.9);
+      color: rgb(var(--c-cream) / 0.9);
     }
     .hud-icon-btn:hover svg {
       /* fill/stroke inherit currentColor from above — keeps outline icons
          (phone, email) as outlines instead of solid-filling their shapes */
-      filter: drop-shadow(0 0 6px rgb(var(--c-red) / 0.5));
+      filter: drop-shadow(0 0 6px rgb(var(--c-cream) / 0.5));
     }
   }
 

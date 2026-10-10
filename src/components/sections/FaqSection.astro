@@ -360,6 +360,8 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 				positionIntensity: 0.7,
 				// It also leans toward the cursor moving over the questions.
 				zone: document.getElementById('faq') ?? undefined,
+				// Hovering the Contact button lights the photo up too.
+				hoverTrigger: document.querySelector<HTMLElement>('#faq .faq__cta') ?? undefined,
 			});
 			if (_chroma) requestAnimationFrame(() => box.classList.add('is-chroma'));
 		}).catch(() => {});

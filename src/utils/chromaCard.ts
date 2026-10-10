@@ -21,6 +21,9 @@ export interface ChromaCardOpts {
 	/** A wider area to follow the pointer in (e.g. the whole section): away
 	 *  from the card it only leans toward the pointer, gently. */
 	zone?: HTMLElement;
+	/** Another element (e.g. a button next to the card) whose hover also puts
+	 *  the card in its hover state, for as long as the mouse is on it. */
+	hoverTrigger?: HTMLElement;
 }
 
 export interface ChromaCardHandle {
@@ -219,6 +222,7 @@ export function createChromaCard(
 	const near = box.parentElement ?? box;
 	const zone = o.zone ?? near;
 	let hovering = false;
+	let forced = false; // the pointer is on o.hoverTrigger: hover stays on
 	let hoverTween: gsap.core.Tween | null = null;
 	const setHover = (on: boolean) => {
 		hovering = on;
@@ -235,7 +239,7 @@ export function createChromaCard(
 			const b = box.getBoundingClientRect();
 			const lx = Math.max(-1, Math.min(1, (e.clientX - (b.left + b.width / 2)) / (window.innerWidth * 0.55)));
 			const ly = Math.max(-1, Math.min(1, -(e.clientY - (b.top + b.height / 2)) / (window.innerHeight * 0.5)));
-			if (hovering) setHover(false);
+			if (hovering && !forced) setHover(false);
 			gsap.to(st, {
 				s: 1,
 				x: 0,
@@ -254,7 +258,7 @@ export function createChromaCard(
 		const b = box.getBoundingClientRect();
 		const over = e.clientX >= b.left && e.clientX <= b.right && e.clientY >= b.top && e.clientY <= b.bottom;
 		const d = o.interactionDuration;
-		if (over !== hovering) setHover(over);
+		if (!forced && over !== hovering) setHover(over);
 		gsap.to(st, {
 			s: 1 - my * o.scaleIntensity,
 			x: mx * o.positionIntensity,
@@ -266,12 +270,28 @@ export function createChromaCard(
 		kick();
 	};
 	const onLeave = () => {
-		if (hovering) setHover(false);
+		if (hovering && !forced) setHover(false);
 		gsap.to(st, { s: 1, x: 0, rx: 0, ry: 0, duration: 0.9, ease: 'power3.out', overwrite: 'auto' });
 		kick();
 	};
 	zone.addEventListener('pointermove', onMove);
 	zone.addEventListener('pointerleave', onLeave);
+
+	const trigger = o.hoverTrigger;
+	const onTriggerEnter = (e: PointerEvent) => {
+		if (e.pointerType !== 'mouse') return;
+		forced = true;
+		if (!hovering) setHover(true);
+		kick();
+	};
+	const onTriggerLeave = () => {
+		if (!forced) return;
+		forced = false;
+		if (hovering) setHover(false);
+		kick();
+	};
+	trigger?.addEventListener('pointerenter', onTriggerEnter);
+	trigger?.addEventListener('pointerleave', onTriggerLeave);
 
 	return {
 		destroy() {
@@ -280,6 +300,8 @@ export function createChromaCard(
 			ro.disconnect();
 			zone.removeEventListener('pointermove', onMove);
 			zone.removeEventListener('pointerleave', onLeave);
+			trigger?.removeEventListener('pointerenter', onTriggerEnter);
+			trigger?.removeEventListener('pointerleave', onTriggerLeave);
 			gl.getExtension('WEBGL_lose_context')?.loseContext();
 		},
 	};

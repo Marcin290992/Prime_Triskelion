@@ -301,9 +301,9 @@ main {
 }
 .h-hero-cta:hover {
   color: rgb(var(--c-cream) / 0.95);
-  border-color: rgb(var(--c-red) / 0.45);
-  background: rgb(var(--c-red) / 0.06);
-  box-shadow: inset 0 0 0 1px rgb(var(--c-red) / 0.12), 0 0 20px rgb(var(--c-red) / 0.15), 0 8px 24px rgb(var(--c-bg) / 0.25);
+  border-color: rgb(var(--c-cream) / 0.45);
+  background: rgb(var(--c-cream) / 0.06);
+  box-shadow: inset 0 0 0 1px rgb(var(--c-cream) / 0.12), 0 0 20px rgb(var(--c-cream) / 0.15), 0 8px 24px rgb(var(--c-bg) / 0.25);
 }
 .h-hero-cta:active { transform: scale(0.97); }
 

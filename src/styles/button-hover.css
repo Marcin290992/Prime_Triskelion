@@ -15,11 +15,6 @@
     .cp-back {
       --bh-ring: rgb(var(--c-cream) / 0.7);
     }
-    .h-hero-cta:not(.h-hero-cta--fixed),
-    .tst__btn,
-    .footer-social__link {
-      --bh-ring: rgb(var(--c-red) / 0.75);
-    }
     .tst__btn,
     .footer-social__link,
     .cp-back {
@@ -48,6 +43,19 @@
     .cp-back:hover {
       border-color: transparent !important;
     }
+    /* Fixed CTAs: the beam's sharp rim would sit beside the blurred ring,
+       so it fades out while hovered, and the label lifts to full
+       strength — blurring alone reads as "out of focus", not "active". */
+    .h-hero-cta--fixed .hud-spin-border {
+      transition: opacity 0.45s ease;
+    }
+    .h-hero-cta--fixed:hover .hud-spin-border {
+      opacity: 0;
+    }
+    .h-hero-cta--fixed:hover {
+      color: rgb(var(--c-cream)) !important;
+    }
+
     .h-hero-cta:hover::after,
     .tst__btn:hover::after,
     .footer-social__link:hover::after,
