@@ -483,9 +483,35 @@
 			});
 		}
 
+		// The rotation stops while the tab is in the background (timers keep
+		// firing there but animations don't run, so a change hung half-done
+		// and played out at once on the way back — the red word flashed). A
+		// change under way is finished first; back on the tab the word
+		// stays as it was for a full beat before the next one.
+		let running = false;
+		const stop = () => {
+			if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
+		};
+		const onVisibility = () => {
+			if (!running || !wordNode.isConnected) return;
+			if (document.hidden) {
+				stop();
+				gsap.getTweensOf(wordNode.querySelectorAll('span')).forEach((t) => t.progress(1));
+			} else if (_heroWordTimer === null) {
+				_heroWordTimer = window.setInterval(swapWord, 4200);
+			}
+		};
+		document.addEventListener('visibilitychange', onVisibility);
+		document.addEventListener('astro:before-swap', () => {
+			running = false;
+			document.removeEventListener('visibilitychange', onVisibility);
+		}, { once: true });
+
 		// First change right away, then the regular rhythm.
 		return () => {
 			if (!wordNode.isConnected) return; // page already left
+			running = true;
+			if (document.hidden) return onVisibility();
 			swapWord();
 			_heroWordTimer = window.setInterval(swapWord, 4200);
 		};

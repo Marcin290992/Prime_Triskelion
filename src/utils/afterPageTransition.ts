@@ -51,6 +51,23 @@ export function syncTickerToScroll(): void {
 guardEntrance();
 document.addEventListener('astro:after-swap', guardEntrance);
 
+// Back on the tab after a while in the background: with lag smoothing off
+// the whole time away arrived as one frame and every running animation
+// jumped to its end at once (a flash, a jolt). For the first moment back,
+// a long frame counts as a normal one, so things carry on where they were.
+let returnTimer: ReturnType<typeof setTimeout> | undefined;
+document.addEventListener('visibilitychange', () => {
+	if (document.hidden) {
+		gsap.ticker.lagSmoothing(100, 33);
+		clearTimeout(returnTimer);
+		return;
+	}
+	clearTimeout(returnTimer);
+	returnTimer = setTimeout(() => {
+		if (performance.now() >= entranceGuardUntil) gsap.ticker.lagSmoothing(0);
+	}, 600);
+});
+
 // Leaving through the menu: by the time navigate() runs the menu has
 // already faded its content out over its black overlay, so the old page is
 // plain black and cross-fading it into the new (black, title still hidden)
