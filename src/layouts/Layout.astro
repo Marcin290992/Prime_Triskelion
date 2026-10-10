@@ -80,7 +80,26 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 					setTimeout(setLockedHeight, 160);
 				}, { passive: true });
 
+				// Switching tabs (iOS Safari's tab overview, Android's switcher)
+				// fires resizes with a passing, shrunken viewport while the page
+				// is away or just coming back — re-locking on those resized the
+				// home hero (and its light) on the way back. Ignored while hidden
+				// and for a moment after returning; then one check with the
+				// settled size.
+				var tabSettle = 0;
+				document.addEventListener('visibilitychange', function () {
+					if (document.hidden) return;
+					tabSettle = Date.now() + 900;
+					setTimeout(function () {
+						var w = window.innerWidth || 0;
+						if (Math.abs(w - lockWidth) > 80) {
+							lockWidth = w;
+							setLockedHeight();
+						}
+					}, 950);
+				});
 				window.addEventListener('resize', function () {
+					if (document.hidden || Date.now() < tabSettle) return;
 					var w = window.innerWidth || 0;
 					if (Math.abs(w - lockWidth) > 80) {
 						lockWidth = w;
