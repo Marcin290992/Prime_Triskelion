@@ -718,9 +718,11 @@ function initOxygenMenu() {
       lineColor: '#ffffff',
       baseColor: '#525252',
       intensity: 1,
+      idleIntensity: 0.35,
       shineSize: 10,
-      shineFade: 40,
-      thickness: 1,
+      shineFade: 34,
+      thickness: 1.2,
+      glow: 1,
       speed: 0.35,
       proximity: 250,
     });
