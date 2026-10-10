@@ -576,7 +576,11 @@
 			// stuck visible no matter what state.barHidden says.
 			const NAME_AT = 3.0;
 			const ARMS_AT = NAME_AT + 1.2;
-			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0) {
+			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0, logo = true) {
+				if (!logo) {
+					tl.to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6 + delay);
+					return;
+				}
 				tl.to(logoText, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, NAME_AT)
 				  .to(logoText, { filter: 'blur(0px)', duration: 1.6, ease: 'power2.inOut' }, NAME_AT)
 				  .to(logoText, { scale: 1, duration: 1.8, ease: 'power2.out' }, NAME_AT)
@@ -684,6 +688,65 @@
 				return;
 			}
 
+			// ── Opening (first visit, full entrance): the logo itself, large in
+			// the middle of the black, comes into focus — the mark first, out of
+			// a soft blur and settling from a hair oversized, the name's letters
+			// just after, one by one, the same focus pull as the hero's claim —
+			// then it flies to its corner and the hero comes in under it as it
+			// lands. Plays on the real #h-title (fixed, persisted), so it lands
+			// as the logo. Returns when the hero should start.
+			function playIntro(): number {
+				const svg = document.getElementById('h-logo-svg');
+				const rows = Array.from(logoText!.querySelectorAll<HTMLElement>('.h-title__row'));
+				const letters: HTMLElement[] = [];
+				rows.forEach((row) => {
+					const text = row.textContent ?? '';
+					row.textContent = '';
+					for (const ch of text) {
+						const sp = document.createElement('span');
+						sp.textContent = ch;
+						sp.style.display = 'inline-block';
+						row.appendChild(sp);
+						letters.push(sp);
+					}
+				});
+				// The mark whole and at rest — it doesn't spin here, it focuses.
+				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
+				gsap.set(svg, { opacity: 0, filter: 'blur(16px)', scale: 1.08, transformOrigin: '50% 50%' });
+				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
+				gsap.set(letters, { opacity: 0, filter: 'blur(10px)' });
+				const r = title!.getBoundingClientRect();
+				const S = isMobileReveal ? 2.3 : 3.4;
+				gsap.set(title, {
+					opacity: 1,
+					x: window.innerWidth / 2 - (r.left + r.width / 2),
+					y: window.innerHeight / 2 - (r.top + r.height / 2),
+					scale: S,
+					transformOrigin: '50% 50%',
+				});
+				const START = 0.4;
+				const FLY = 2.2;
+				gsap.timeline({ delay: START })
+					.to(svg, { opacity: 1, duration: 1.1, ease: 'sine.inOut' }, 0)
+					.to(svg, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut' }, 0)
+					.to(svg, { scale: 1, duration: 2.0, ease: 'power2.out' }, 0)
+					.to(letters, { opacity: 1, duration: 0.8, ease: 'sine.inOut', stagger: 0.05 }, 0.45)
+					.to(letters, { filter: 'blur(0px)', duration: 1.2, ease: 'power2.inOut', stagger: 0.05 }, 0.45)
+					.to(title, { x: 0, y: 0, scale: 1, duration: 1.2, ease: 'power3.inOut', clearProps: 'transform' }, FLY)
+					// A touch of motion blur in flight, as if the camera follows it
+					// — gone by the time it lands.
+					.to(title, { filter: 'blur(2.5px)', duration: 0.5, ease: 'power2.in' }, FLY + 0.1)
+					.to(title, { filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', clearProps: 'filter' }, FLY + 0.6)
+					.add(() => {
+						// Back to plain text rows and no lingering filters (iOS
+						// Safari keeps re-rendering blur(0px)).
+						rows.forEach((row) => { row.textContent = row.textContent; });
+						gsap.set(svg, { clearProps: 'filter,transform,opacity' });
+					});
+				// The hero starts while the logo is on its way to the corner.
+				return START + FLY + 0.45;
+			}
+
 			const claimBlur = isMobileReveal ? 16 : 24;
 			gsap.set(title, { opacity: 1, filter: 'none', y: 0 }); // container always visible — children carry the reveal
 			if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
@@ -696,7 +759,11 @@
 			hero!.style.opacity = '1';
 			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
 
+			const intro = !chromeShown && !pastHero && !!title && !!logoText;
+			const heroAt = intro ? playIntro() : 0;
+
 			const tl = gsap.timeline({
+				delay: heroAt,
 				onComplete: () => {
 					// Tweens end on filter: blur(0px), which iOS Safari still
 					// treats as an active filter (re-rendered while scrolling).
@@ -736,12 +803,12 @@
 			// 3. Site chrome (first page of the visit only).
 			if (!chromeShown) {
 				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
-				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6);
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6, !intro);
 			}
 
 			// 4. Word rotation, once everything has landed — the logo mark
 			// included, when it's part of this intro.
-			const endAt = chromeShown ? 4.0 : ARMS_AT + 1.1;
+			const endAt = chromeShown || intro ? 4.0 : ARMS_AT + 1.1;
 			tl.add(startDynamicWord, endAt);
 
 			// Intro over — the CTA's glare sweep may start (global.css).
