@@ -688,66 +688,93 @@
 				return;
 			}
 
-			// ── Opening (first visit, full entrance): the logo itself, large in
-			// the middle of the black, comes into focus — the mark first, out of
-			// a soft blur and settling from a hair oversized, the name's letters
-			// just after, one by one, the same focus pull as the hero's claim —
-			// then it flies to its corner and the hero comes in under it as it
-			// lands. Plays on the real #h-title (fixed, persisted), so it lands
-			// as the logo. Returns when the hero should start.
+			// ── Opening (first visit, full entrance) ──
+			// A large logo in the middle of the black comes into focus — the
+			// mark out of a soft blur, settling from a hair oversized, the
+			// name's letters fading in one by one as each word focuses — then
+			// flies to the corner, shrinking onto the real logo, which takes
+			// over as it lands.
+			//
+			// The intro logo is its own element, drawn at its large size with a
+			// large font — not the small corner logo scaled up: blurred text in
+			// a scaled-up element is rasterised small and stretched, and when
+			// the blur ends the browser swaps to sharp text at full resolution,
+			// a visible snap (Chrome and Safari both). Shrinking a sharp large
+			// rendering in flight has nothing to snap.
+			// Returns when the hero should start.
 			function playIntro(): number {
-				const svg = document.getElementById('h-logo-svg');
-				const rows = Array.from(logoText!.querySelectorAll<HTMLElement>('.h-title__row'));
+				const real = title!;
+				// The real logo in its final state, hidden until the intro lands
+				// on it.
+				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
+				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
+				gsap.set(real, { opacity: 0 });
+				const target = real.getBoundingClientRect();
+				const realSvg = real.querySelector('svg')!;
+				const S = isMobileReveal ? 2.3 : 3.4;
+				const fontPx = parseFloat(getComputedStyle(real).fontSize) * S;
+				const markPx = realSvg.getBoundingClientRect().height * S;
+
+				// Same layout as Logo.astro's, in em, at S times the size.
+				const overlay = document.createElement('div');
+				overlay.setAttribute('aria-hidden', 'true');
+				overlay.style.cssText = 'position:fixed;inset:0;z-index:1003;display:flex;align-items:center;justify-content:center;pointer-events:none';
+				const logo = document.createElement('div');
+				logo.style.cssText = `display:flex;align-items:center;gap:0.55em;font-family:var(--f-display);font-weight:700;font-size:${fontPx}px;line-height:1;letter-spacing:0.06em;text-transform:uppercase;color:rgb(var(--c-cream));white-space:nowrap`;
+				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
+				overlay.appendChild(logo);
+				document.body.appendChild(overlay);
+
+				const mark = logo.querySelector('svg')!;
+				const words = Array.from(logo.querySelectorAll<HTMLElement>(':scope > div > div'));
 				const letters: HTMLElement[] = [];
-				rows.forEach((row) => {
-					const text = row.textContent ?? '';
-					row.textContent = '';
+				words.forEach((w) => {
+					const text = w.textContent ?? '';
+					w.textContent = '';
 					for (const ch of text) {
 						const sp = document.createElement('span');
 						sp.textContent = ch;
-						sp.style.display = 'inline-block';
-						row.appendChild(sp);
+						w.appendChild(sp);
 						letters.push(sp);
 					}
 				});
-				// The mark whole and at rest — it doesn't spin here, it focuses.
-				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
-				gsap.set(svg, { opacity: 0, filter: 'blur(16px)', scale: 1.08, transformOrigin: '50% 50%' });
-				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
-				// Letters only fade in, one by one; the focus pull is on each word
-				// as a whole — two filters instead of fifteen, which iOS Safari
-				// glitched on as the last ones settled.
+
+				gsap.set(mark, { opacity: 0, filter: 'blur(16px)', scale: 1.08, transformOrigin: '50% 50%' });
 				gsap.set(letters, { opacity: 0 });
-				gsap.set(rows, { filter: 'blur(10px)' });
-				const r = title!.getBoundingClientRect();
-				const S = isMobileReveal ? 2.3 : 3.4;
-				gsap.set(title, {
-					opacity: 1,
-					x: window.innerWidth / 2 - (r.left + r.width / 2),
-					y: window.innerHeight / 2 - (r.top + r.height / 2),
-					scale: S,
-					transformOrigin: '50% 50%',
-				});
+				gsap.set(words, { filter: 'blur(10px)' });
+
+				// Where it lands: centre and size of the real logo.
+				const from = logo.getBoundingClientRect();
+				const k = target.width / from.width;
+				const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
+				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
+
 				const START = 0.4;
-				// The name is sharp and still before the flight sets off.
 				const FLY = 2.35;
-				gsap.timeline({ delay: START })
-					.to(svg, { opacity: 1, duration: 1.1, ease: 'sine.inOut' }, 0)
-					.to(svg, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut' }, 0)
-					.to(svg, { scale: 1, duration: 2.0, ease: 'power2.out' }, 0)
+				const LAND = FLY + 1.2;
+				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
+				tl.to(mark, { opacity: 1, duration: 1.1, ease: 'sine.inOut' }, 0)
+					.to(mark, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut' }, 0)
+					.to(mark, { scale: 1, duration: 2.0, ease: 'power2.out' }, 0)
 					.to(letters, { opacity: 1, duration: 0.7, ease: 'sine.inOut', stagger: 0.045 }, 0.45)
-					.to(rows, { filter: 'blur(0px)', duration: 1.15, ease: 'power2.inOut', stagger: 0.15 }, 0.45)
-					.to(title, { x: 0, y: 0, scale: 1, duration: 1.2, ease: 'power3.inOut', clearProps: 'transform' }, FLY)
-					// A touch of motion blur in flight, as if the camera follows it
-					// — gone by the time it lands.
-					.to(title, { filter: 'blur(2.5px)', duration: 0.5, ease: 'power2.in' }, FLY + 0.1)
-					.to(title, { filter: 'blur(0px)', duration: 0.6, ease: 'power2.out', clearProps: 'filter' }, FLY + 0.6)
-					.add(() => {
-						// Back to plain text rows and no lingering filters (iOS
-						// Safari keeps re-rendering blur(0px)).
-						rows.forEach((row) => { row.textContent = row.textContent; row.style.filter = ''; });
-						gsap.set(svg, { clearProps: 'filter,transform,opacity' });
-					});
+					.to(words, { filter: 'blur(0px)', duration: 1.15, ease: 'power2.inOut', stagger: 0.15 }, 0.45)
+					// Flight: shrinks onto the real logo, a touch of motion blur on
+					// the way (the camera following it), gone before it lands.
+					.to(logo, { x: dx, y: dy, scale: k, duration: 1.2, ease: 'power3.inOut' }, FLY)
+					.to(logo, { filter: 'blur(2px)', duration: 0.45, ease: 'power2.in' }, FLY + 0.1)
+					.to(logo, { filter: 'blur(0px)', duration: 0.5, ease: 'power2.out' }, FLY + 0.55)
+					// Landed: the real logo takes over in the same spot.
+					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
+					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND);
+
+				// Leaving the page mid-intro: never leave the logo hidden.
+				document.addEventListener('astro:before-swap', () => {
+					if (!tl.isActive()) return;
+					tl.kill();
+					overlay.remove();
+					gsap.set(real, { opacity: 1 });
+				}, { once: true });
+
 				// The hero starts while the logo is on its way to the corner.
 				return START + FLY + 0.45;
 			}
