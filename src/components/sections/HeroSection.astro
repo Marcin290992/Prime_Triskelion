@@ -750,19 +750,23 @@
 				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
 
 				const START = 0.4;
-				const FLY = 2.35;
+				// The name takes its time (one letter after another, each word
+				// focusing slowly) and holds, sharp, for a beat before the flight.
+				const FLY = 3.1;
 				const LAND = FLY + 1.2;
 				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
 				tl.to(mark, { opacity: 1, duration: 1.1, ease: 'sine.inOut' }, 0)
 					.to(mark, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut' }, 0)
 					.to(mark, { scale: 1, duration: 2.0, ease: 'power2.out' }, 0)
-					.to(letters, { opacity: 1, duration: 0.7, ease: 'sine.inOut', stagger: 0.045 }, 0.45)
-					.to(words, { filter: 'blur(0px)', duration: 1.15, ease: 'power2.inOut', stagger: 0.15 }, 0.45)
+					.to(letters, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger: 0.08 }, 0.6)
+					.to(words, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut', stagger: 0.25 }, 0.6)
 					// Flight: shrinks onto the real logo, a touch of motion blur on
 					// the way (the camera following it), gone before it lands.
 					.to(logo, { x: dx, y: dy, scale: k, duration: 1.2, ease: 'power3.inOut' }, FLY)
-					.to(logo, { filter: 'blur(2px)', duration: 0.45, ease: 'power2.in' }, FLY + 0.1)
-					.to(logo, { filter: 'blur(0px)', duration: 0.5, ease: 'power2.out' }, FLY + 0.55)
+					// The blur is in the logo's own (shrinking) units — 7px here reads
+					// as a few pixels on screen mid-flight.
+					.to(logo, { filter: 'blur(7px)', duration: 0.45, ease: 'power2.in' }, FLY + 0.1)
+					.to(logo, { filter: 'blur(0px)', duration: 0.55, ease: 'power2.out' }, FLY + 0.55)
 					// Landed: the real logo takes over in the same spot.
 					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
 					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND);
