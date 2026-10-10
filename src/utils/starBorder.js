@@ -10,7 +10,9 @@
 // glow lives on the inside of the edge). Frames are drawn only while a comet
 // is running.
 //
-// Desktop only (mouse, wide screen) — phones and tablets keep what they have.
+// Everywhere: a mouse sets it off on entering the button, a finger on
+// touching it (from the point touched). On phones and tablets the buttons have
+// no turning beam (their CSS drops it there) — the comet is their only light.
 // No comet with reduced motion.
 
 const SELECTOR = '.h-hero-cta--fixed';
@@ -18,10 +20,13 @@ const THICKNESS = 1; // px
 const GLOW = 0.4; // 0..1
 const PULSE_TIME = 0.65; // s, how long a pulse lives
 const PULSE_COOLDOWN = 0.7; // s, between two pulses (a shaky mouse at the edge)
-const FRAME_MS = 1000 / 60;
+// A comet lives 0.65s; on touch screens its frames are capped a little lower.
+const FRAME_MS = 1000 / (window.matchMedia('(pointer: coarse)').matches ? 40 : 60);
 
 const TAU = Math.PI * 2;
-const desktop = window.matchMedia('(min-width: 1025px) and (hover: hover) and (pointer: fine)');
+// Only used to rebuild when the layout crosses the phone/desktop line (which
+// buttons exist and are shown differs).
+const layout = window.matchMedia('(min-width: 1025px)');
 const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -126,6 +131,7 @@ class StarBorder {
     this.point = { x: 0, y: 0 };
 
     this.onEnter = this.onEnter.bind(this);
+    this.onDown = this.onDown.bind(this);
     this.onFocus = this.onFocus.bind(this);
     this.frame = this.frame.bind(this);
 
@@ -137,6 +143,7 @@ class StarBorder {
     });
     this.io.observe(btn);
     btn.addEventListener('pointerenter', this.onEnter);
+    btn.addEventListener('pointerdown', this.onDown);
     btn.addEventListener('focus', this.onFocus);
     this.measure();
   }
@@ -183,6 +190,13 @@ class StarBorder {
 
   onEnter(event) {
     if (event.pointerType !== 'mouse') return;
+    const [x, y] = this.local(event);
+    this.pulse(project(this.shape(), x - THICKNESS / 2, y - THICKNESS / 2));
+  }
+
+  // A finger (or pen) has no hover: the comet leaves from where it touched.
+  onDown(event) {
+    if (event.pointerType === 'mouse') return;
     const [x, y] = this.local(event);
     this.pulse(project(this.shape(), x - THICKNESS / 2, y - THICKNESS / 2));
   }
@@ -308,6 +322,7 @@ class StarBorder {
     this.ro.disconnect();
     this.io.disconnect();
     this.btn.removeEventListener('pointerenter', this.onEnter);
+    this.btn.removeEventListener('pointerdown', this.onDown);
     this.btn.removeEventListener('focus', this.onFocus);
     this.canvas.remove();
   }
@@ -322,14 +337,16 @@ function destroyAll() {
 
 function init() {
   destroyAll();
-  if (!desktop.matches) return;
-  document.querySelectorAll(SELECTOR).forEach((btn) => instances.push(new StarBorder(btn)));
+  document.querySelectorAll(SELECTOR).forEach((btn) => {
+    // buttons that aren't shown at this size (display: none) get nothing
+    if (btn.getClientRects().length) instances.push(new StarBorder(btn));
+  });
 }
 
 // The page's buttons are new after every navigation.
 document.addEventListener('astro:before-swap', destroyAll);
 document.addEventListener('astro:page-load', init);
-desktop.addEventListener('change', init);
+layout.addEventListener('change', init);
 reduceQuery.addEventListener('change', () => instances.forEach((i) => i.wake()));
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
