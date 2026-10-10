@@ -701,16 +701,33 @@
 				};
 				setMask();
 				gsap.set(rays, { opacity: 0 });
-				gsap.timeline({
-					delay: 0.5,
+				// Back/forward settles the page under a veil and finishes every
+				// entrance started meanwhile — the light was simply on. It waits
+				// (paused) until the veil lifts, then comes down the same way.
+				const holdForRestore = mode === 'none' && document.documentElement.classList.contains('pt-restoring');
+				const lightTl = gsap.timeline({
+					paused: holdForRestore,
+					// Same light as the first entrance: rising with the text, as
+					// slow (2.6s up, a 3s sweep down).
+					delay: 0.1,
 					onComplete: () => {
 						if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; }
 						hero!.classList.add('pt-intro-done'); // CTA glare may start
 						startWord();
 					},
 				})
-					.to(rays, { opacity: 1, duration: 1.8, ease: 'sine.inOut' }, 0)
-					.to(sweep, { edge: 100, duration: 2.0, ease: 'power2.inOut', onUpdate: setMask }, 0);
+					.to(rays, { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 0)
+					.to(sweep, { edge: 100, duration: 3.0, ease: 'power2.inOut', onUpdate: setMask }, 0);
+				if (holdForRestore) {
+					const root = document.documentElement;
+					const mo = new MutationObserver(() => {
+						if (root.classList.contains('pt-restoring')) return;
+						mo.disconnect();
+						lightTl.play(0);
+					});
+					mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+					document.addEventListener('astro:before-swap', () => mo.disconnect(), { once: true });
+				}
 				return;
 			}
 
