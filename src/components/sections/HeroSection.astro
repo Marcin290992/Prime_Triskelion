@@ -729,6 +729,33 @@
 				overlay.appendChild(logo);
 				document.body.appendChild(overlay);
 
+				// No scrolling until the logo has landed: wheel, touch and
+				// scroll keys are swallowed at the window (before Lenis sees
+				// them), the page itself can't overflow, Lenis is held.
+				const SCROLL_KEYS = new Set([' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End']);
+				const block = (e: Event) => { e.preventDefault(); e.stopPropagation(); };
+				const blockKey = (e: KeyboardEvent) => { if (SCROLL_KEYS.has(e.key)) block(e); };
+				const root = document.documentElement;
+				const prevOverflow = root.style.overflow;
+				root.style.overflow = 'hidden';
+				window.addEventListener('wheel', block, { passive: false, capture: true });
+				window.addEventListener('touchmove', block, { passive: false, capture: true });
+				window.addEventListener('keydown', blockKey, { capture: true });
+				(window as any).__lenis?.stop?.();
+				let locked = true;
+				const unlock = () => {
+					if (!locked) return;
+					locked = false;
+					root.style.overflow = prevOverflow;
+					window.removeEventListener('wheel', block, { capture: true });
+					window.removeEventListener('touchmove', block, { capture: true });
+					window.removeEventListener('keydown', blockKey, { capture: true });
+					(window as any).__lenis?.start?.();
+				};
+				// Lenis may only be created after this (page-load order) — hold it
+				// too if it appears while locked.
+				requestAnimationFrame(() => { if (locked) (window as any).__lenis?.stop?.(); });
+
 				const mark = logo.querySelector('svg')!;
 				const words = Array.from(logo.querySelectorAll<HTMLElement>(':scope > div > div'));
 				// The hero claim's own focus pull, on the mark and each word as a
@@ -765,10 +792,15 @@
 					.to(logo, { filter: 'blur(0px)', duration: IT.flight * 0.46, ease: 'power2.out' }, FLY + IT.flight * 0.46)
 					// Landed: the real logo takes over in the same spot.
 					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
-					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND);
+					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND)
+					// Landed: the page scrolls again.
+					.add(unlock, LAND);
+				// Never stay locked (a stalled timeline, a hidden tab).
+				window.setTimeout(unlock, (START + LAND + 1.5) * 1000);
 
 				// Leaving the page mid-intro: never leave the logo hidden.
 				document.addEventListener('astro:before-swap', () => {
+					unlock();
 					if (!tl.isActive()) return;
 					tl.kill();
 					overlay.remove();

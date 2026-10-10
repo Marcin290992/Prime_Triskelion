@@ -18,6 +18,9 @@ export interface ChromaCardOpts {
 	scaleIntensity?: number;
 	positionIntensity?: number;
 	interactionDuration?: number;
+	/** A wider area to follow the pointer in (e.g. the whole section): away
+	 *  from the card it only leans toward the pointer, gently. */
+	zone?: HTMLElement;
 }
 
 export interface ChromaCardHandle {
@@ -213,7 +216,8 @@ export function createChromaCard(
 
 	// Pointer anywhere over the canvas area (the wrapper listens, since the
 	// canvas itself lets clicks through); hover = over the resting card.
-	const zone = box.parentElement ?? box;
+	const near = box.parentElement ?? box;
+	const zone = o.zone ?? near;
 	let hovering = false;
 	let hoverTween: gsap.core.Tween | null = null;
 	const setHover = (on: boolean) => {
@@ -222,6 +226,28 @@ export function createChromaCard(
 		hoverTween = gsap.to(st, { hover: on ? 1 : 0, duration: o.hoverDuration });
 	};
 	const onMove = (e: PointerEvent) => {
+		if (e.pointerType !== 'mouse') return;
+		const n = near.getBoundingClientRect();
+		const inNear = e.clientX >= n.left && e.clientX <= n.right && e.clientY >= n.top && e.clientY <= n.bottom;
+		if (!inNear) {
+			// Further away (across the questions): a lean toward the pointer
+			// only — no drift, no zoom — growing with the distance.
+			const b = box.getBoundingClientRect();
+			const lx = Math.max(-1, Math.min(1, (e.clientX - (b.left + b.width / 2)) / (window.innerWidth * 0.55)));
+			const ly = Math.max(-1, Math.min(1, -(e.clientY - (b.top + b.height / 2)) / (window.innerHeight * 0.5)));
+			if (hovering) setHover(false);
+			gsap.to(st, {
+				s: 1,
+				x: 0,
+				rx: -ly * (Math.PI / 3) * o.rotationIntensity * 0.8,
+				ry: lx * (Math.PI / 3) * o.rotationIntensity * 0.8,
+				duration: 0.9,
+				ease: 'power3.out',
+				overwrite: 'auto',
+			});
+			kick();
+			return;
+		}
 		const c = canvas.getBoundingClientRect();
 		const mx = Math.max(-1, Math.min(1, ((e.clientX - c.left) / c.width) * 2 - 1));
 		const my = Math.max(-1, Math.min(1, -((e.clientY - c.top) / c.height) * 2 + 1));

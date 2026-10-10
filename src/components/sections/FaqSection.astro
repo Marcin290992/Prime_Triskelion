@@ -10,7 +10,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 
 		<aside class="faq__sidebar">
 			<div class="faq__photo">
-				<Image src={marcinPhoto} alt="Martin" width={180} height={207} densities={[1, 2]} loading="lazy" />
+				<Image src={marcinPhoto} alt="Martin" width={240} height={288} densities={[1, 2]} loading="lazy" />
 				<!-- Desktop: the photo as a chroma card (initFaqPhoto). -->
 				<canvas class="faq__chroma" aria-hidden="true"></canvas>
 			</div>
@@ -101,7 +101,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
 		box-sizing: border-box;
 		display: grid;
-		grid-template-columns: 220px 1fr;
+		grid-template-columns: 240px 1fr;
 		grid-template-areas:
 			"sidebar header"
 			"sidebar list";
@@ -122,7 +122,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	}
 	.faq__sidebar.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
 	.faq__photo {
-		width: 180px;
+		width: 240px;
 		aspect-ratio: 1 / 1.2;
 		position: relative;
 		overflow: hidden;
@@ -243,7 +243,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 			top: 3.5rem;
 			padding-top: clamp(4rem, 9vh, 9rem);
 		}
-		.faq__photo { width: 150px; margin-bottom: 1.4rem; }
+		.faq__photo { width: 190px; margin-bottom: 1.4rem; }
 		.faq__contact-text { margin-bottom: 1.1rem; }
 	}
 
@@ -275,7 +275,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 			padding-top: clamp(2rem, 5vw, 3rem);
 			padding-bottom: clamp(2.5rem, 7vw, 3.5rem);
 		}
-		.faq__photo { width: clamp(120px, 32vw, 160px); margin-bottom: 1.4rem; }
+		.faq__photo { width: clamp(160px, 44vw, 220px); margin-bottom: 1.4rem; }
 		.faq__cta-wrap { max-width: 320px; }
 		.disc-header { padding: 0 0 clamp(2rem, 5vw, 3rem); }
 		.faq__content .disc-list { padding-bottom: 0; }
@@ -357,6 +357,8 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 				zoomLevel: 0.15,
 				scaleIntensity: 0.12,
 				positionIntensity: 0.7,
+				// It also leans toward the cursor moving over the questions.
+				zone: document.getElementById('faq') ?? undefined,
 			});
 			if (_chroma) requestAnimationFrame(() => box.classList.add('is-chroma'));
 		}).catch(() => {});
