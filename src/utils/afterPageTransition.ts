@@ -245,7 +245,7 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
-		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not([data-leave-keep])'
+		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain):not([data-leave-keep])'
 	);
 	// Its own content (the title on it) still fades with the page.
 	const keptContent = document.querySelectorAll<HTMLElement>('[data-leave-keep] > *');

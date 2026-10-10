@@ -88,6 +88,7 @@ function ensure() {
   // back each time.
   if (!layer || !layer.isConnected) {
     layer = document.createElement('div');
+    layer.className = 'film-grain'; // kept out of the "hide the page" rules (menu open, page leaving)
     layer.setAttribute('aria-hidden', 'true');
     layer.style.cssText =
       `position:fixed;top:-${OVERSCAN}px;left:-${OVERSCAN}px;right:-${OVERSCAN}px;` +
