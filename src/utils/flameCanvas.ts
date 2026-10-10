@@ -6,6 +6,14 @@
 export interface FlameCanvasOptions {
 	/** Overall opacity of the canvas element (CSS opacity, not shader alpha). */
 	opacity?: number;
+	/** 'full' (default): the glowing-ember flame (Home, Contact). 'calm':
+	 *  the same, slower and dimmer — a smoulder, for the pages after. */
+	variant?: 'full' | 'calm';
+	/** Hover-and-hold on the flame itself (desktop, mouse): a small label
+	 *  follows the cursor over the flame's side of the section, and holding
+	 *  the button down makes it burn hotter and faster. `zoneLeft` is where
+	 *  the flame's side starts, as a fraction of the section's width. */
+	burn?: { zoneLeft: number; label?: string; heldLabel?: string };
 }
 
 export function initFlameCanvas(
@@ -25,7 +33,7 @@ export function initFlameCanvas(
 		uniform int uDir; uniform float uPowA; uniform float uPowB;
 		uniform float uRedGain; uniform float uGreenGain; uniform float uBlueGain;
 		uniform float uGreenPow; uniform float uBluePow; uniform float uAlpha;
-		uniform vec2 uPointer; uniform float uCursorActive; uniform float uCursorIntensity;
+		uniform vec2 uPointer; uniform float uCursorActive; uniform float uCursorIntensity; uniform float uWarp;
 
 		const float TAU = 6.2831853;
 		const float PI = 3.14159265;
@@ -60,7 +68,7 @@ export function initFlameCanvas(
 			float cursorDist = length(nrm - uPointer);
 			float cursorInfluence = smoothstep(0.5, 0.0, cursorDist) * uCursorActive * uCursorIntensity;
 
-			float localAmp = uAmp + cursorInfluence * 3.0;
+			float localAmp = uAmp + cursorInfluence * 3.0 * uWarp; // uWarp < 1 while the flamethrower's held: thick, not crooked
 			float localPowA = uPowA - cursorInfluence * 4.0;
 			float localPowB = uPowB - cursorInfluence * 1.5;
 
@@ -114,20 +122,25 @@ export function initFlameCanvas(
 	gl.enableVertexAttribArray(aPos);
 	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-	const uNames = ['uTime','uRes','uSpeed','uCenter','uAmp','uFreq','uInnerFreq','uPull','uDir','uPowA','uPowB','uRedGain','uGreenGain','uBlueGain','uGreenPow','uBluePow','uAlpha','uPointer','uCursorActive','uCursorIntensity'];
+	const uNames = ['uTime','uRes','uSpeed','uCenter','uAmp','uFreq','uInnerFreq','uPull','uDir','uPowA','uPowB','uRedGain','uGreenGain','uBlueGain','uGreenPow','uBluePow','uAlpha','uPointer','uCursorActive','uCursorIntensity','uWarp'];
 	const U: Record<string, WebGLUniformLocation | null> = {};
 	uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
 
 	if (options.opacity !== undefined) canvas.style.opacity = String(options.opacity);
 
-	// Stock "fire-like" preset from the original component's docs, direction
-	// 2 (up) since these sections are tall. speed/freq nudged down from the
-	// defaults (0.4/0.6) — slower motion, fewer tongues — powA/powB left
-	// untouched since softening those is what caused the ring artifact.
+	// Started as the stock "fire-like" preset from the original component's
+	// docs, direction 2 (up) since these sections are tall. Then tuned
+	// towards embers rather than a bonfire: slower, and the colour pushed
+	// from orange to a deep red (less green gain, and green only at the
+	// hottest core), so it reads as a glow of heat in the brand's red.
+	// powA/powB are left untouched — softening those is what caused the
+	// ring artifact.
+	const calm = options.variant === 'calm';
 	const CFG = {
-		speed: 0.26, center: 1.0, amp: 10, freq: 0.4, innerFreq: 2.5, pull: 1.0,
+		speed: calm ? 0.12 : 0.18, center: 1.0, amp: 10, freq: 0.4, innerFreq: 2.5, pull: 1.0,
 		dir: 2, powA: 30, powB: 10,
-		redGain: 3.0, greenGain: 0.8, blueGain: 0.0, greenPow: 2.0, bluePow: 1.0,
+		redGain: calm ? 2.2 : 2.7, greenGain: calm ? 0.28 : 0.45, blueGain: 0.0,
+		greenPow: calm ? 3.2 : 2.8, bluePow: 1.0,
 		alpha: 1.0,
 		cursorIntensity: 0.6,
 	};
@@ -155,9 +168,87 @@ export function initFlameCanvas(
 		cursorActive = 1;
 	}
 	function onPointerLeave() { cursorActive = 0; }
+
+	// ── Hover-and-hold: "Hold to burn" ──
+	// A label by the cursor over the flame's side of the section, and while
+	// the button is held `heat` rises 0 → 1 (fast) and falls back (slowly):
+	// a flamethrower — the whole flame runs several times faster and burns
+	// hotter and brighter, and at the cursor it blows out into a thick jet
+	// (the shader's own cursor influence, turned right up).
+	const burn = cursorEnabled ? options.burn : undefined;
+	const baseOpacity = parseFloat(getComputedStyle(canvas).opacity) || 0.5;
+	let opacityOverridden = false;
+	let heat = 0;
+	let holding = false;
+	let inZone = false;
+	let hint: HTMLDivElement | null = null;
+	let hintText = '';
+	let hintX = 0, hintY = 0, hintTX = 0, hintTY = 0;
+	const hintNew = { v: true };
+	function zoneAt(e: PointerEvent) {
+		if (!burn) return false;
+		const r = section.getBoundingClientRect();
+		const el = e.target as Element | null;
+		return (e.clientX - r.left) / r.width >= burn.zoneLeft && !el?.closest('a, button, input, textarea, select');
+	}
+	function makeHint() {
+		hint = document.createElement('div');
+		hint.setAttribute('aria-hidden', 'true');
+		hint.style.cssText =
+			'position:fixed;left:0;top:0;z-index:9200;pointer-events:none;opacity:0;' +
+			'transition:opacity .25s ease;will-change:transform;' +
+			'font:400 10px/1 var(--f-body);letter-spacing:.38em;text-transform:uppercase;white-space:nowrap;' +
+			'color:rgb(var(--c-cream)/.9);padding:.6rem .6rem .6rem .95rem;' +
+			'background:rgb(var(--c-bg)/.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);' +
+			'border:1px solid rgb(var(--c-cream)/.16);';
+		document.body.appendChild(hint);
+	}
+	function onBurnMove(e: PointerEvent) {
+		if (e.pointerType !== 'mouse') return;
+		inZone = zoneAt(e);
+		hintTX = e.clientX + 18;
+		hintTY = e.clientY + 20;
+		if (inZone && !hint) makeHint();
+	}
+	function onBurnDown(e: PointerEvent) {
+		if (e.pointerType !== 'mouse' || e.button !== 0 || !zoneAt(e)) return;
+		holding = true;
+		e.preventDefault(); // no text selection while holding
+	}
+	function onBurnUp() { holding = false; }
+	function onBurnLeave() { inZone = false; holding = false; }
+	function updateBurn(dt: number) {
+		if (!burn) return;
+		heat += ((holding ? 1 : 0) - heat) * (1 - Math.exp(-dt * (holding ? 5 : 1.8)));
+		// The canvas is dim on purpose (CSS opacity); a flamethrower isn't.
+		if (heat > 0.004) {
+			canvas.style.opacity = (baseOpacity + (0.95 - baseOpacity) * heat).toFixed(3);
+			opacityOverridden = true;
+		} else if (opacityOverridden) {
+			canvas.style.opacity = '';
+			opacityOverridden = false;
+		}
+		if (!hint) return;
+		if (hintNew.v && inZone) { hintX = hintTX; hintY = hintTY; hintNew.v = false; }
+		if (!inZone) hintNew.v = true;
+		hintX += (hintTX - hintX) * 0.28;
+		hintY += (hintTY - hintY) * 0.28;
+		hint.style.transform = `translate3d(${hintX.toFixed(1)}px, ${hintY.toFixed(1)}px, 0)`;
+		hint.style.opacity = inZone ? '1' : '0';
+		const text = holding ? (burn.heldLabel ?? 'Burning') : (burn.label ?? 'Hold to burn');
+		if (text !== hintText) { hintText = text; hint.textContent = text; }
+	}
+
 	if (cursorEnabled) {
 		section.addEventListener('pointermove', onPointerMove);
 		section.addEventListener('pointerleave', onPointerLeave);
+		if (burn) {
+			section.addEventListener('pointermove', onBurnMove);
+			section.addEventListener('pointerdown', onBurnDown);
+			section.addEventListener('pointerleave', onBurnLeave);
+			window.addEventListener('pointerup', onBurnUp);
+			window.addEventListener('pointercancel', onBurnUp);
+		}
 	}
 
 	// Capped harder on touch devices: this is a per-pixel fragment shader
@@ -201,8 +292,9 @@ export function initFlameCanvas(
 
 	let lastFrameTime = 0;
 	function render(t: number) {
-		smoothPointer.x += (pointer.x - smoothPointer.x) * 0.08;
-		smoothPointer.y += (pointer.y - smoothPointer.y) * 0.08;
+		const follow = 0.08 - 0.05 * heat;
+		smoothPointer.x += (pointer.x - smoothPointer.x) * follow;
+		smoothPointer.y += (pointer.y - smoothPointer.y) * follow;
 		smoothCursorActive += (cursorActive - smoothCursorActive) * 0.08;
 
 		gl!.uniform1f(U.uTime, t);
@@ -216,15 +308,19 @@ export function initFlameCanvas(
 		gl!.uniform1i(U.uDir, CFG.dir);
 		gl!.uniform1f(U.uPowA, CFG.powA);
 		gl!.uniform1f(U.uPowB, CFG.powB);
-		gl!.uniform1f(U.uRedGain, CFG.redGain);
-		gl!.uniform1f(U.uGreenGain, CFG.greenGain);
+		gl!.uniform1f(U.uRedGain, CFG.redGain * (1 + 1.1 * heat));
+		gl!.uniform1f(U.uGreenGain, CFG.greenGain * (1 + 0.9 * heat));
 		gl!.uniform1f(U.uBlueGain, CFG.blueGain);
-		gl!.uniform1f(U.uGreenPow, CFG.greenPow);
+		gl!.uniform1f(U.uGreenPow, CFG.greenPow * (1 - 0.3 * heat)); // hotter core: yellow comes through
 		gl!.uniform1f(U.uBluePow, CFG.bluePow);
 		gl!.uniform1f(U.uAlpha, CFG.alpha);
 		gl!.uniform2f(U.uPointer, smoothPointer.x, smoothPointer.y);
 		gl!.uniform1f(U.uCursorActive, smoothCursorActive);
-		gl!.uniform1f(U.uCursorIntensity, CFG.cursorIntensity);
+		gl!.uniform1f(U.uCursorIntensity, CFG.cursorIntensity + 4.0 * heat);
+		// How much the cursor bends the tongues: all of it at rest (as
+		// designed), almost none under the flamethrower — the jet gets thick
+		// and bright from the cursor, but doesn't swing about with the mouse.
+		gl!.uniform1f(U.uWarp, 1 - 0.85 * heat);
 
 		gl!.drawArrays(gl!.TRIANGLES, 0, 6);
 	}
@@ -243,8 +339,10 @@ export function initFlameCanvas(
 		}
 		lastFrameTime = ts;
 		if (prevFrameTs === null) prevFrameTs = ts;
-		elapsedTime += (ts - prevFrameTs) * 0.001;
+		const dtSec = (ts - prevFrameTs) * 0.001;
+		elapsedTime += dtSec * (1 + 18 * heat);
 		prevFrameTs = ts;
+		updateBurn(Math.min(dtSec, 0.05));
 		render(elapsedTime);
 		drawn = true;
 		rafId = requestAnimationFrame(loop);
@@ -262,6 +360,7 @@ export function initFlameCanvas(
 	let isSectionVisible = true;
 	const sectionIO = new IntersectionObserver(([entry]) => {
 		isSectionVisible = entry.isIntersecting;
+		if (!isSectionVisible) { inZone = false; holding = false; }
 		if (isSectionVisible && !document.hidden) {
 			if (!rafId) rafId = requestAnimationFrame(loop);
 		} else if (rafId) {
@@ -291,6 +390,15 @@ export function initFlameCanvas(
 		if (cursorEnabled) {
 			section.removeEventListener('pointermove', onPointerMove);
 			section.removeEventListener('pointerleave', onPointerLeave);
+			if (burn) {
+				section.removeEventListener('pointermove', onBurnMove);
+				section.removeEventListener('pointerdown', onBurnDown);
+				section.removeEventListener('pointerleave', onBurnLeave);
+				window.removeEventListener('pointerup', onBurnUp);
+				window.removeEventListener('pointercancel', onBurnUp);
+				hint?.remove();
+				canvas.style.opacity = '';
+			}
 		}
 		// Free the GPU context now rather than whenever the old canvas is
 		// garbage-collected — this flame is on every page (the CTA), so each
