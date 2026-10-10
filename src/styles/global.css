@@ -152,7 +152,7 @@ body::after { display: none !important; }
    unstyled-flash guard in utils/afterPageTransition.ts): hide the page
    content, keep the menu, logo and edge strips — same set as
    html.ox-menu-covered in OxygenMenu.astro. */
-html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint) {
+html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain) {
   visibility: hidden;
 }
 
