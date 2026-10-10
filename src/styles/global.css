@@ -117,6 +117,10 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   body::after { animation: none; }
 }
+/* The film grain is now drawn by utils/filmGrain.js (a generated, seeded
+   tile and random jumps at 24 fps). This CSS version is switched off here;
+   delete this rule (and the import in Layout.astro) to bring it back. */
+body::after { display: none !important; }
 /* Phones and tablets: no grain at all — pure, deep black. (It lifted the
    black next to the pure-black bars iOS Safari paints above/below the
    page, and the full-screen layer over everything cost the menu and About
