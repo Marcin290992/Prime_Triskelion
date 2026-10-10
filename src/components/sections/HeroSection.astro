@@ -688,6 +688,10 @@
 				return;
 			}
 
+			// Intro timings: a quick focus, a short hold, and on the logo's
+			// landing the claim comes into focus; the light follows last.
+			const IT = { start: 0.3, focus: [0.7, 1.1, 1.3], stagger: 0.15, fly: 1.55, flight: 0.9 };
+
 			// ── Opening (first visit, full entrance) ──
 			// A large logo in the middle of the black comes into focus — the
 			// mark out of a soft blur, settling from a hair oversized, the
@@ -742,23 +746,23 @@
 				const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
 				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
 
-				const START = 0.4;
+				const START = IT.start;
 				// Same timings as the claim; the flight sets off just as the last
 				// word comes sharp — no long hold in the middle.
-				const stagger = 0.3;
-				const FLY = 2.4;
-				const LAND = FLY + 1.2;
+				const stagger = IT.stagger;
+				const FLY = IT.fly;
+				const LAND = FLY + IT.flight;
 				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
-				tl.to(parts, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, 0)
-					.to(parts, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, 0)
-					.to(parts, { scale: 1, duration: 2.1, ease: 'power2.out', stagger }, 0)
+				tl.to(parts, { opacity: 1, duration: IT.focus[0], ease: 'sine.inOut', stagger }, 0)
+					.to(parts, { filter: 'blur(0px)', duration: IT.focus[1], ease: 'power2.inOut', stagger }, 0)
+					.to(parts, { scale: 1, duration: IT.focus[2], ease: 'power2.out', stagger }, 0)
 					// Flight: shrinks onto the real logo, a touch of motion blur on
 					// the way (the camera following it), gone before it lands.
-					.to(logo, { x: dx, y: dy, scale: k, duration: 1.2, ease: 'power3.inOut' }, FLY)
+					.to(logo, { x: dx, y: dy, scale: k, duration: IT.flight, ease: 'power3.inOut' }, FLY)
 					// The blur is in the logo's own (shrinking) units — 7px here reads
 					// as a few pixels on screen mid-flight.
-					.to(logo, { filter: 'blur(7px)', duration: 0.45, ease: 'power2.in' }, FLY + 0.1)
-					.to(logo, { filter: 'blur(0px)', duration: 0.55, ease: 'power2.out' }, FLY + 0.55)
+					.to(logo, { filter: 'blur(7px)', duration: IT.flight * 0.38, ease: 'power2.in' }, FLY + IT.flight * 0.08)
+					.to(logo, { filter: 'blur(0px)', duration: IT.flight * 0.46, ease: 'power2.out' }, FLY + IT.flight * 0.46)
 					// Landed: the real logo takes over in the same spot.
 					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
 					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND);
@@ -772,7 +776,9 @@
 				}, { once: true });
 
 				// The hero starts while the logo is on its way to the corner.
-				return START + FLY + 0.45;
+				// The hero starts a beat before the landing, so the claim arrives
+				// with it.
+				return START + FLY + IT.flight - 0.2;
 			}
 
 			const claimBlur = isMobileReveal ? 16 : 24;
@@ -809,28 +815,36 @@
 
 			// 1. The claim — focus pull, white line first, the red one 0.3s
 			// after (on a first visit, while the logo is still landing).
-			const stagger = 0.3;
-			const claimAt = 0.3;
-			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, claimAt)
-			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, claimAt)
-			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
+			// After the logo's own slow intro the rest keeps the same language
+			// but a quicker pace — readable and clickable soon after it lands.
+			// After the logo intro: the claim on its landing, then the rest, the
+			// light slow and last. Otherwise (no intro) the earlier pacing.
+			const hit = intro;
+			const HT = hit
+				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: 1.1, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
+				: { claimAt: 0.2, stagger: 0.2, claim: [0.8, 1.3, 1.5], supportAt: 0.7, supportStep: 0.12, support: [0.7, 1.0], ready: 1.6, light: 0.9, lightIn: [1.8, 1.9], loc: 1.3, menu: 0 };
+			const stagger = HT.stagger;
+			const claimAt = HT.claimAt;
+			tl.to(claimLines, { opacity: 1, duration: HT.claim[0], ease: 'sine.inOut', stagger }, claimAt)
+			  .to(claimLines, { filter: 'blur(0px)', duration: HT.claim[1], ease: 'power2.inOut', stagger }, claimAt)
+			  .to(claimLines, { scale: 1, duration: HT.claim[2], ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
 
 			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
-				const at = 1.3 + i * 0.2;
-				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
-				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
+				const at = HT.supportAt + i * HT.supportStep;
+				tl.to(el, { opacity: 1, duration: HT.support[0], ease: 'sine.inOut' }, at)
+				  .to(el, { filter: 'blur(0px)', y: 0, duration: HT.support[1], ease: 'power2.inOut' }, at);
 			});
 			// Text has landed — anything waiting on it can go.
 			tl.add(() => {
 				(window as any).__ptHeroTextReady = true;
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-			}, 2.4);
+			}, HT.ready);
 
 			// 3. The light, last: it rises and sweeps down the frame from above
 			// (a soft-edged mask whose edge travels from above the top to below
 			// the bottom) once the claim is sharp.
-			const LIGHT_AT = 2.3;
+			const LIGHT_AT = HT.light;
 			if (!pastHero) {
 				const rays = document.getElementById('rays-canvas');
 				const sweep = { edge: -40 };
@@ -842,10 +856,10 @@
 				};
 				setMask();
 				gsap.set(rays, { opacity: 0 });
-				tl.to(rays, { opacity: 1, duration: 1.8, ease: 'sine.inOut' }, LIGHT_AT)
+				tl.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'sine.inOut' }, LIGHT_AT)
 				  .to(sweep, {
 					edge: 100,
-					duration: 2.0,
+					duration: HT.lightIn[1],
 					ease: 'power2.inOut',
 					onUpdate: setMask,
 					onComplete: () => { if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; } },
@@ -854,13 +868,15 @@
 
 			// 4. Site chrome (first page of the visit only).
 			if (!chromeShown) {
-				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
-				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6, !intro);
+				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, intro ? HT.loc : 2.6);
+				// MENU with the button and the lines (after the logo intro), not
+				// seconds later.
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, intro ? HT.menu : 1.6, !intro);
 			}
 
 			// 5. Word rotation, once everything has landed — the light included
 			// (and the corner logo's arms, when they're part of this entrance).
-			const endAt = chromeShown || intro ? LIGHT_AT + 2.2 : Math.max(ARMS_AT + 1.1, LIGHT_AT + 2.2);
+			const endAt = hit ? 3.6 : chromeShown || intro ? LIGHT_AT + 2.2 : Math.max(ARMS_AT + 1.1, LIGHT_AT + 2.2);
 			tl.add(startDynamicWord, endAt);
 
 			// Intro over — the CTA's glare sweep may start (global.css).
