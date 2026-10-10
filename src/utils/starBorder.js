@@ -1,21 +1,35 @@
 // Border comet — plain JavaScript, no dependencies.
 //
-// The hover of the main CTA buttons (the `.h-hero-cta--fixed` family): from
-// the point of the border the cursor came in at, two comets run round the
-// outline, one each way, and meet on the far side, with a brief flash of the
-// whole outline as they leave. At rest the buttons keep their own look (the
-// slowly turning beam, CSS) — this only draws while a comet is running.
+// The hover of the buttons: from the point of the border the cursor came in
+// at (or a finger touched), two comets run round the outline, one each way,
+// and meet on the far side, with a brief flash of the whole outline as they
+// leave. It only draws while a comet is running.
+//
+//  - Main CTAs (`.h-hero-cta--fixed`): on every device — a mouse sets it off
+//    by entering the button, a finger by touching it. On desktop they keep
+//    their turning beam at rest; on phones and tablets the beam is dropped
+//    (CSS), so the comet is their only light.
+//  - The other bordered buttons (arrows, icon buttons, contact controls …):
+//    only on touch screens, by touching them — a desktop mouse has its own
+//    hover on those. The MENU button is left alone.
 //
 // One 2D canvas per button, inside it (the button clips its children, so the
-// glow lives on the inside of the edge). Frames are drawn only while a comet
-// is running.
-//
-// Everywhere: a mouse sets it off on entering the button, a finger on
-// touching it (from the point touched). On phones and tablets the buttons have
-// no turning beam (their CSS drops it there) — the comet is their only light.
+// glow lives on the inside of the edge), made the first time it's used.
 // No comet with reduced motion.
 
-const SELECTOR = '.h-hero-cta--fixed';
+const CTA = '.h-hero-cta--fixed';
+// Bordered buttons a finger can set a comet off on (everything but the MENU
+// button, which has its own light).
+const TOUCH_BUTTONS = [
+  CTA,
+  '.tst__btn',
+  '.footer-social__link',
+  '.ox-social',
+  '.hud-icon-btn:not(.hud-menu-btn)',
+  '.cp-back',
+  '.cp-next',
+  '.cp-chip > span',
+].join(', ');
 const THICKNESS = 1; // px
 const GLOW = 0.4; // 0..1
 const PULSE_TIME = 0.65; // s, how long a pulse lives
@@ -24,9 +38,6 @@ const PULSE_COOLDOWN = 0.7; // s, between two pulses (a shaky mouse at the edge)
 const FRAME_MS = 1000 / (window.matchMedia('(pointer: coarse)').matches ? 40 : 60);
 
 const TAU = Math.PI * 2;
-// Only used to rebuild when the layout crosses the phone/desktop line (which
-// buttons exist and are shown differs).
-const layout = window.matchMedia('(min-width: 1025px)');
 const reduceQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
@@ -111,6 +122,8 @@ class StarBorder {
     this.canvas = document.createElement('canvas');
     this.canvas.setAttribute('aria-hidden', 'true');
     this.canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1;';
+    // the canvas is positioned against the button
+    if (getComputedStyle(btn).position === 'static') btn.style.position = 'relative';
     btn.appendChild(this.canvas);
     this.ctx = this.canvas.getContext('2d');
 
@@ -130,9 +143,6 @@ class StarBorder {
     this.drawn = 0;
     this.point = { x: 0, y: 0 };
 
-    this.onEnter = this.onEnter.bind(this);
-    this.onDown = this.onDown.bind(this);
-    this.onFocus = this.onFocus.bind(this);
     this.frame = this.frame.bind(this);
 
     this.ro = new ResizeObserver(() => this.measure());
@@ -142,9 +152,6 @@ class StarBorder {
       if (this.visible) this.wake();
     });
     this.io.observe(btn);
-    btn.addEventListener('pointerenter', this.onEnter);
-    btn.addEventListener('pointerdown', this.onDown);
-    btn.addEventListener('focus', this.onFocus);
     this.measure();
   }
 
@@ -321,32 +328,54 @@ class StarBorder {
     if (this.raf) cancelAnimationFrame(this.raf);
     this.ro.disconnect();
     this.io.disconnect();
-    this.btn.removeEventListener('pointerenter', this.onEnter);
-    this.btn.removeEventListener('pointerdown', this.onDown);
-    this.btn.removeEventListener('focus', this.onFocus);
     this.canvas.remove();
   }
 }
 
+// Buttons get their canvas the first time they're used, found by delegation
+// from the document (so buttons that appear later — the contact steps, say —
+// work too).
 let instances = [];
+let byButton = new WeakMap();
+
+function forButton(btn) {
+  let inst = byButton.get(btn);
+  if (!inst) {
+    inst = new StarBorder(btn);
+    byButton.set(btn, inst);
+    instances.push(inst);
+  }
+  return inst;
+}
 
 function destroyAll() {
   instances.forEach((i) => i.destroy());
   instances = [];
+  byButton = new WeakMap(); // a button that outlives the page starts afresh
 }
 
-function init() {
-  destroyAll();
-  document.querySelectorAll(SELECTOR).forEach((btn) => {
-    // buttons that aren't shown at this size (display: none) get nothing
-    if (btn.getClientRects().length) instances.push(new StarBorder(btn));
-  });
-}
+// A mouse entering a main CTA.
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const btn = e.target.closest?.(CTA);
+  if (!btn || (e.relatedTarget && btn.contains(e.relatedTarget))) return;
+  forButton(btn).onEnter(e);
+});
+
+// A finger (or pen) touching any of the buttons.
+document.addEventListener('pointerdown', (e) => {
+  if (e.pointerType === 'mouse') return;
+  const btn = e.target.closest?.(TOUCH_BUTTONS);
+  if (!btn || btn.closest('.hud-menu-btn')) return;
+  forButton(btn).onDown(e);
+});
+
+// Keyboard focus on a main CTA.
+document.addEventListener('focusin', (e) => {
+  const btn = e.target.closest?.(CTA);
+  if (btn) forButton(btn).onFocus();
+});
 
 // The page's buttons are new after every navigation.
 document.addEventListener('astro:before-swap', destroyAll);
-document.addEventListener('astro:page-load', init);
-layout.addEventListener('change', init);
 reduceQuery.addEventListener('change', () => instances.forEach((i) => i.wake()));
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-else init();
