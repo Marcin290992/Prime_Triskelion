@@ -37,7 +37,9 @@
     border-top: 1px solid rgba(255,255,255,0.06);
     background: rgb(var(--c-bg));
     padding: clamp(2.5rem, 4vw, 3.5rem) 0;
-    padding-bottom: 6rem;
+    /* The wordmark rests above the bottom blur band when the page ends (the
+       band is at most 7rem, gradualBlur.js). */
+    padding-bottom: 8rem;
   }
 
   .footer-inner {
