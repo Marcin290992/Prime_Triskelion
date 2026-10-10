@@ -86,12 +86,16 @@
 		z-index: 1002;
 		pointer-events: none;
 		opacity: 0;
+		/* Blurs in on scroll (and out again): ends on blur(0px), not
+		   filter:none, so nothing re-rasterises when it settles. */
+		filter: blur(8px);
 		transform: translateY(-8px);
-		transition: opacity 0.4s ease, transform 0.4s ease;
+		transition: opacity 0.45s ease, filter 0.6s ease, transform 0.5s ease;
 	}
 	.hero-nav-cta-wrap.hero-nav-cta--visible {
 		pointer-events: all;
 		opacity: 1;
+		filter: blur(0px);
 		transform: translateY(0);
 	}
 	/* Button appearance/sizing is the shared .nav-cta + .h-hero-cta--fixed
