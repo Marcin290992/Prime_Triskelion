@@ -576,7 +576,11 @@
 			// stuck visible no matter what state.barHidden says.
 			const NAME_AT = 3.0;
 			const ARMS_AT = NAME_AT + 1.2;
-			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0) {
+			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0, logo = true) {
+				if (!logo) {
+					tl.to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6 + delay);
+					return;
+				}
 				tl.to(logoText, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, NAME_AT)
 				  .to(logoText, { filter: 'blur(0px)', duration: 1.6, ease: 'power2.inOut' }, NAME_AT)
 				  .to(logoText, { scale: 1, duration: 1.8, ease: 'power2.out' }, NAME_AT)
@@ -684,6 +688,93 @@
 				return;
 			}
 
+			// ── Opening (first visit, full entrance) ──
+			// A large logo in the middle of the black comes into focus — the
+			// mark out of a soft blur, settling from a hair oversized, the
+			// name's words after it, each the hero claim's own focus pull — then
+			// flies to the corner, shrinking onto the real logo, which takes
+			// over as it lands.
+			//
+			// The intro logo is its own element, drawn at its large size with a
+			// large font — not the small corner logo scaled up: blurred text in
+			// a scaled-up element is rasterised small and stretched, and when
+			// the blur ends the browser swaps to sharp text at full resolution,
+			// a visible snap (Chrome and Safari both). Shrinking a sharp large
+			// rendering in flight has nothing to snap.
+			// Returns when the hero should start.
+			function playIntro(): number {
+				const real = title!;
+				// The real logo in its final state, hidden until the intro lands
+				// on it.
+				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
+				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
+				gsap.set(real, { opacity: 0 });
+				const target = real.getBoundingClientRect();
+				const realSvg = real.querySelector('svg')!;
+				const S = isMobileReveal ? 2.3 : 3.4;
+				const fontPx = parseFloat(getComputedStyle(real).fontSize) * S;
+				const markPx = realSvg.getBoundingClientRect().height * S;
+
+				// Same layout as Logo.astro's, in em, at S times the size.
+				const overlay = document.createElement('div');
+				overlay.setAttribute('aria-hidden', 'true');
+				overlay.style.cssText = 'position:fixed;inset:0;z-index:1003;display:flex;align-items:center;justify-content:center;pointer-events:none';
+				const logo = document.createElement('div');
+				logo.style.cssText = `display:flex;align-items:center;gap:0.55em;font-family:var(--f-display);font-weight:700;font-size:${fontPx}px;line-height:1;letter-spacing:0.06em;text-transform:uppercase;color:rgb(var(--c-cream));white-space:nowrap`;
+				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
+				overlay.appendChild(logo);
+				document.body.appendChild(overlay);
+
+				const mark = logo.querySelector('svg')!;
+				const words = Array.from(logo.querySelectorAll<HTMLElement>(':scope > div > div'));
+				// The hero claim's own focus pull, on the mark and each word as a
+				// whole: out of a deep blur, settling from a hair oversized, one
+				// after another.
+				const parts = [mark, ...words];
+				const blur = isMobileReveal ? 16 : 24;
+				gsap.set(parts, { opacity: 0, filter: `blur(${blur}px)`, scale: 1.04 });
+				gsap.set(mark, { transformOrigin: '50% 50%' });
+				gsap.set(words, { transformOrigin: '0% 50%' });
+
+				// Where it lands: centre and size of the real logo.
+				const from = logo.getBoundingClientRect();
+				const k = target.width / from.width;
+				const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
+				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
+
+				const START = 0.4;
+				// Same timings as the claim; the flight sets off just as the last
+				// word comes sharp — no long hold in the middle.
+				const stagger = 0.3;
+				const FLY = 2.4;
+				const LAND = FLY + 1.2;
+				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
+				tl.to(parts, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, 0)
+					.to(parts, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, 0)
+					.to(parts, { scale: 1, duration: 2.1, ease: 'power2.out', stagger }, 0)
+					// Flight: shrinks onto the real logo, a touch of motion blur on
+					// the way (the camera following it), gone before it lands.
+					.to(logo, { x: dx, y: dy, scale: k, duration: 1.2, ease: 'power3.inOut' }, FLY)
+					// The blur is in the logo's own (shrinking) units — 7px here reads
+					// as a few pixels on screen mid-flight.
+					.to(logo, { filter: 'blur(7px)', duration: 0.45, ease: 'power2.in' }, FLY + 0.1)
+					.to(logo, { filter: 'blur(0px)', duration: 0.55, ease: 'power2.out' }, FLY + 0.55)
+					// Landed: the real logo takes over in the same spot.
+					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
+					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND);
+
+				// Leaving the page mid-intro: never leave the logo hidden.
+				document.addEventListener('astro:before-swap', () => {
+					if (!tl.isActive()) return;
+					tl.kill();
+					overlay.remove();
+					gsap.set(real, { opacity: 1 });
+				}, { once: true });
+
+				// The hero starts while the logo is on its way to the corner.
+				return START + FLY + 0.45;
+			}
+
 			const claimBlur = isMobileReveal ? 16 : 24;
 			gsap.set(title, { opacity: 1, filter: 'none', y: 0 }); // container always visible — children carry the reveal
 			if (isMobileReveal) gsap.set([cta, bottom], { opacity: 1, filter: 'none', y: 0 });
@@ -696,7 +787,11 @@
 			hero!.style.opacity = '1';
 			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
 
+			const intro = !chromeShown && !pastHero && !!title && !!logoText;
+			const heroAt = intro ? playIntro() : 0;
+
 			const tl = gsap.timeline({
+				delay: heroAt,
 				onComplete: () => {
 					// Tweens end on filter: blur(0px), which iOS Safari still
 					// treats as an active filter (re-rendered while scrolling).
@@ -708,22 +803,21 @@
 			// starts once everything has landed (4).
 			const startDynamicWord = initHeroDynamicWord();
 
-			// 0. Black for a breath, then the light from above starts to rise —
-			// it reveals the composition rather than decorating it afterwards.
-			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.0, ease: 'sine.inOut' }, 0.3);
+			// Same order as a return to Home: the text comes out of the black
+			// first, and the light comes down over it last — the finale, not
+			// something racing the logo's landing.
 
-			// 1. The claim, as if caught by the light (it's about half up) —
-			// focus pull, white line first, the red one 0.3s after.
+			// 1. The claim — focus pull, white line first, the red one 0.3s
+			// after (on a first visit, while the logo is still landing).
 			const stagger = 0.3;
-			const claimAt = 0.9;
+			const claimAt = 0.3;
 			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, claimAt)
 			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, claimAt)
 			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
 
-			// 2. Supporting lines, one after another once the light is full and
-			// the claim is finding focus.
+			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
-				const at = 2.0 + i * 0.22;
+				const at = 1.3 + i * 0.2;
 				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
 				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
 			});
@@ -731,17 +825,42 @@
 			tl.add(() => {
 				(window as any).__ptHeroTextReady = true;
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-			}, 2.9);
+			}, 2.4);
 
-			// 3. Site chrome (first page of the visit only).
-			if (!chromeShown) {
-				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
-				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6);
+			// 3. The light, last: it rises and sweeps down the frame from above
+			// (a soft-edged mask whose edge travels from above the top to below
+			// the bottom) once the claim is sharp.
+			const LIGHT_AT = 2.3;
+			if (!pastHero) {
+				const rays = document.getElementById('rays-canvas');
+				const sweep = { edge: -40 };
+				const setMask = () => {
+					if (!rays) return;
+					const m = `linear-gradient(to bottom, #000 ${sweep.edge}%, transparent ${sweep.edge + 40}%)`;
+					rays.style.maskImage = m;
+					(rays.style as any).webkitMaskImage = m;
+				};
+				setMask();
+				gsap.set(rays, { opacity: 0 });
+				tl.to(rays, { opacity: 1, duration: 1.8, ease: 'sine.inOut' }, LIGHT_AT)
+				  .to(sweep, {
+					edge: 100,
+					duration: 2.0,
+					ease: 'power2.inOut',
+					onUpdate: setMask,
+					onComplete: () => { if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; } },
+				}, LIGHT_AT);
 			}
 
-			// 4. Word rotation, once everything has landed — the logo mark
-			// included, when it's part of this intro.
-			const endAt = chromeShown ? 4.0 : ARMS_AT + 1.1;
+			// 4. Site chrome (first page of the visit only).
+			if (!chromeShown) {
+				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6, !intro);
+			}
+
+			// 5. Word rotation, once everything has landed — the light included
+			// (and the corner logo's arms, when they're part of this entrance).
+			const endAt = chromeShown || intro ? LIGHT_AT + 2.2 : Math.max(ARMS_AT + 1.1, LIGHT_AT + 2.2);
 			tl.add(startDynamicWord, endAt);
 
 			// Intro over — the CTA's glare sweep may start (global.css).
