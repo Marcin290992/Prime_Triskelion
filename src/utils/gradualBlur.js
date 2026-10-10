@@ -30,8 +30,13 @@ const DIRECTIONS = { top: 'to top', bottom: 'to bottom', left: 'to left', right:
 
 const DEFAULTS = {
   position: 'bottom', // which edge: 'top' | 'bottom' | 'left' | 'right'
-  height: '7rem', // how far the band reaches in from the edge
-  strength: 2, // overall blur strength
+  // How far the band reaches in from the edge — one height for the whole
+  // site, a little more than the logo reaches (its bottom sits 43-77px from
+  // the top) and no more than the page content that stands near an edge
+  // allows: the Projects names (from 88px up), the Winds of Sinai gallery
+  // label (128px) and frame (153px), the footer wordmark (8rem).
+  height: 'clamp(5.5rem, 6vw, 7rem)',
+  strength: 3, // overall blur strength
   divCount: 5, // number of stacked layers (more = smoother, costlier)
   curve: 'bezier', // how the blur builds up: see CURVES
   exponential: true, // blur grows exponentially towards the edge
