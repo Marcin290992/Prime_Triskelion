@@ -714,7 +714,11 @@
 				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
 				gsap.set(svg, { opacity: 0, filter: 'blur(16px)', scale: 1.08, transformOrigin: '50% 50%' });
 				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
-				gsap.set(letters, { opacity: 0, filter: 'blur(10px)' });
+				// Letters only fade in, one by one; the focus pull is on each word
+				// as a whole — two filters instead of fifteen, which iOS Safari
+				// glitched on as the last ones settled.
+				gsap.set(letters, { opacity: 0 });
+				gsap.set(rows, { filter: 'blur(10px)' });
 				const r = title!.getBoundingClientRect();
 				const S = isMobileReveal ? 2.3 : 3.4;
 				gsap.set(title, {
@@ -725,13 +729,14 @@
 					transformOrigin: '50% 50%',
 				});
 				const START = 0.4;
-				const FLY = 2.2;
+				// The name is sharp and still before the flight sets off.
+				const FLY = 2.35;
 				gsap.timeline({ delay: START })
 					.to(svg, { opacity: 1, duration: 1.1, ease: 'sine.inOut' }, 0)
 					.to(svg, { filter: 'blur(0px)', duration: 1.7, ease: 'power2.inOut' }, 0)
 					.to(svg, { scale: 1, duration: 2.0, ease: 'power2.out' }, 0)
-					.to(letters, { opacity: 1, duration: 0.8, ease: 'sine.inOut', stagger: 0.05 }, 0.45)
-					.to(letters, { filter: 'blur(0px)', duration: 1.2, ease: 'power2.inOut', stagger: 0.05 }, 0.45)
+					.to(letters, { opacity: 1, duration: 0.7, ease: 'sine.inOut', stagger: 0.045 }, 0.45)
+					.to(rows, { filter: 'blur(0px)', duration: 1.15, ease: 'power2.inOut', stagger: 0.15 }, 0.45)
 					.to(title, { x: 0, y: 0, scale: 1, duration: 1.2, ease: 'power3.inOut', clearProps: 'transform' }, FLY)
 					// A touch of motion blur in flight, as if the camera follows it
 					// — gone by the time it lands.
@@ -740,7 +745,7 @@
 					.add(() => {
 						// Back to plain text rows and no lingering filters (iOS
 						// Safari keeps re-rendering blur(0px)).
-						rows.forEach((row) => { row.textContent = row.textContent; });
+						rows.forEach((row) => { row.textContent = row.textContent; row.style.filter = ''; });
 						gsap.set(svg, { clearProps: 'filter,transform,opacity' });
 					});
 				// The hero starts while the logo is on its way to the corner.
