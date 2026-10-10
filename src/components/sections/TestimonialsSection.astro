@@ -2,7 +2,8 @@
 <!-- One quote at a time, set large, changing by itself every few seconds
      (initTestimonials) — the outgoing words drift up and out, the next
      quote's words come into focus one after another. The red hairline at
-     the foot fills toward the next change. -->
+     the foot fills toward the next change; the arrows step back and forth
+     by hand. -->
 <section id="testimonials">
 	<div class="tst__inner">
 		<div class="tst__label">(Client Stories)</div>
@@ -20,9 +21,13 @@
 			</div>
 		</div>
 
-		<div class="tst__foot" aria-hidden="true">
-			<div class="tst__progress"><span id="tstProgress"></span></div>
-			<span class="tst__count" id="tstCounter">01 / 03</span>
+		<div class="tst__foot">
+			<div class="tst__nav">
+				<button type="button" class="tst__btn" id="tstPrev" aria-label="Previous story"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+				<button type="button" class="tst__btn" id="tstNext" aria-label="Next story"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+			</div>
+			<div class="tst__progress" aria-hidden="true"><span id="tstProgress"></span></div>
+			<span class="tst__count" id="tstCounter" aria-hidden="true">01 / 03</span>
 		</div>
 	</div>
 </section>
@@ -114,6 +119,31 @@
 		gap: 1rem;
 		margin-top: clamp(0.5rem, 2vh, 1.5rem);
 	}
+	/* Prev/next — square hairline buttons like the footer's icons. */
+	.tst__nav { display: flex; gap: 0.5rem; flex: none; }
+	.tst__btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 44px;
+		height: 44px;
+		border: 1px solid rgb(var(--c-cream) / 0.16) !important;
+		color: rgb(var(--c-cream) / 0.7);
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		transition: color 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+	}
+	.tst__btn svg { transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+	@media (hover: hover) {
+		.tst__btn:hover {
+			color: rgb(var(--c-cream));
+			border-color: rgb(var(--c-red) / 0.5) !important;
+			background-color: rgb(var(--c-red) / 0.06);
+		}
+		#tstPrev:hover svg { transform: translateX(-3px); }
+		#tstNext:hover svg { transform: translateX(3px); }
+	}
+	.tst__btn:focus:not(:focus-visible) { outline: none; }
 	.tst__progress {
 		flex: 1 1 auto;
 		max-width: 22rem;
@@ -164,6 +194,8 @@
 		const author = section?.querySelector<HTMLElement>('#tstAuthor');
 		const bar = section?.querySelector<HTMLElement>('#tstProgress');
 		const counter = section?.querySelector<HTMLElement>('#tstCounter');
+		const prevBtn = section?.querySelector<HTMLButtonElement>('#tstPrev');
+		const nextBtn = section?.querySelector<HTMLButtonElement>('#tstNext');
 		if (!section || !textEl || !nameEl || !roleEl || !author || !bar || !counter) return;
 
 		const count = testimonialsData.length;
@@ -187,6 +219,8 @@
 
 		let current = 0;
 		let swap: gsap.core.Timeline | null = null;
+		// While a quote is changing (out and back in), the arrows wait.
+		let busy = false;
 		// The hairline fills over each quote's time; when it's full, the
 		// next quote comes in. Paused while the section is off screen.
 		const timer = gsap.fromTo(bar, { scaleX: 0 }, {
@@ -204,13 +238,14 @@
 			roleEl.textContent = data.role;
 			counter.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
 			gsap.set(incoming, hidden);
-			gsap.to(incoming, { ...shown, duration: calm ? 0.3 : 0.8, ease: 'power2.out', stagger: calm ? 0 : 0.035 });
+			gsap.to(incoming, { ...shown, duration: calm ? 0.3 : 0.8, ease: 'power2.out', stagger: calm ? 0 : 0.035, onComplete: () => { busy = false; } });
 			gsap.to(author, { opacity: 1, duration: 0.5, delay: 0.3 });
 			timer.restart();
 			if (!visible) timer.pause();
 		};
 
 		const show = (i: number) => {
+			busy = true;
 			current = i;
 			const outgoing = Array.from(textEl.querySelectorAll<HTMLElement>('.tw'));
 			swap?.kill();
@@ -240,7 +275,20 @@
 		}, { threshold: 0.35 });
 		io.observe(section);
 
+		// By hand: step back or forward; the timer starts over on the new one.
+		const step = (dir: number) => {
+			if (busy) return;
+			if (!started) { started = true; }
+			show((current + dir + count) % count);
+		};
+		const onPrev = () => step(-1);
+		const onNext = () => step(1);
+		prevBtn?.addEventListener('click', onPrev);
+		nextBtn?.addEventListener('click', onNext);
+
 		_tstOff = () => {
+			prevBtn?.removeEventListener('click', onPrev);
+			nextBtn?.removeEventListener('click', onNext);
 			io.disconnect();
 			swap?.kill();
 			timer.kill();
