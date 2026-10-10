@@ -75,61 +75,11 @@ body {
   overflow-x: clip;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  /* Sized to the LARGE viewport (URL bar hidden), not inset:0 — inset:0
-     tracks the current viewport, and mobile browsers don't always resize
-     fixed layers in step with the bar hiding, which left the bottom strip
-     without this grain: a visibly darker band under the menu, exactly the
-     bar's height. Overshooting while the bar is shown is harmless.
-     120px of overscan on every side: the layer jumps around inside it
-     (pt-grain), so its edges never show. */
-  top: -120px;
-  left: -120px;
-  right: -120px;
-  height: calc(100vh + 240px);
-  height: calc(100lvh + 240px);
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0.075;
-  /* Living film grain: the noise jumps to a new offset ten times a
-     second. Moves the whole layer (transform — composited, nothing
-     repainted), not the texture inside it. */
-  animation: pt-grain 1s steps(1, end) infinite;
-  will-change: transform;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-}
-@keyframes pt-grain {
-  0%   { transform: translate3d(0, 0, 0); }
-  10%  { transform: translate3d(-60px, -90px, 0); }
-  20%  { transform: translate3d(30px, -40px, 0); }
-  30%  { transform: translate3d(-90px, 60px, 0); }
-  40%  { transform: translate3d(70px, 20px, 0); }
-  50%  { transform: translate3d(-20px, 90px, 0); }
-  60%  { transform: translate3d(90px, -70px, 0); }
-  70%  { transform: translate3d(-40px, 30px, 0); }
-  80%  { transform: translate3d(50px, 80px, 0); }
-  90%  { transform: translate3d(-80px, -20px, 0); }
-  100% { transform: translate3d(10px, 50px, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  body::after { animation: none; }
-}
-/* The film grain is now drawn by utils/filmGrain.js (a generated, seeded
-   tile and random jumps at 24 fps). This CSS version is switched off here;
-   delete this rule (and the import in Layout.astro) to bring it back. */
-body::after { display: none !important; }
-/* Phones and tablets: no grain at all — pure, deep black. (It lifted the
-   black next to the pure-black bars iOS Safari paints above/below the
-   page, and the full-screen layer over everything cost the menu and About
-   frames on 120Hz and older iPhones.) The Projects page's own per-card
-   grain goes too. Desktop keeps its moving grain. */
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  body::after,
-  html body .proj-section::after { display: none; }
-}
+/* Film grain: one layer for the whole site, drawn by utils/filmGrain.js —
+   desktop only; phones and tablets keep pure, deep black (a grain lifted the
+   black next to the solid-black bars iOS Safari paints, and a full-screen
+   layer over everything cost the menu and About frames on 120Hz and older
+   iPhones). */
 
 /* Mobile subpages: content below the hero stays hidden until the hero
    title has blurred in, then fades in (revealAfterHero in
