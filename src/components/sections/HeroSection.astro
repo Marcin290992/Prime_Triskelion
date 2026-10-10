@@ -879,7 +879,7 @@
 			// light slow and last. Otherwise (no intro) the earlier pacing.
 			const hit = intro;
 			const HT = hit
-				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: 1.1, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
+				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: -0.38, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
 				: { claimAt: 0.2, stagger: 0.2, claim: [0.8, 1.3, 1.5], supportAt: 0.7, supportStep: 0.12, support: [0.7, 1.0], ready: 1.6, light: 0.9, lightIn: [1.8, 1.9], loc: 1.3, menu: 0 };
 			const stagger = HT.stagger;
 			const claimAt = HT.claimAt;
@@ -914,14 +914,18 @@
 				};
 				setMask();
 				gsap.set(rays, { opacity: 0 });
-				tl.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'sine.inOut' }, LIGHT_AT)
+				// The light may start before the hero's own timeline (during the
+				// logo's flight): then it runs on a timeline of its own.
+				const lt = LIGHT_AT < 0 ? gsap.timeline({ delay: Math.max(0, heroAt + LIGHT_AT) }) : tl;
+				const lAt = LIGHT_AT < 0 ? 0 : LIGHT_AT;
+				lt.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'sine.inOut' }, lAt)
 				  .to(sweep, {
 					edge: 100,
 					duration: HT.lightIn[1],
 					ease: 'power2.inOut',
 					onUpdate: setMask,
 					onComplete: () => { if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; } },
-				}, LIGHT_AT);
+				}, lAt);
 			}
 
 			// 4. Site chrome (first page of the visit only).
