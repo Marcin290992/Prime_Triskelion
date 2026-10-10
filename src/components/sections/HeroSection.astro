@@ -679,6 +679,7 @@
 					// Restored below the hero (nothing to watch) or reduce
 					// motion: light just on.
 					gsap.set('#rays-canvas', { opacity: 1 });
+					((window as any).__ptRays ??= { reveal: 1 }).reveal = 1;
 					hero!.classList.add('pt-intro-done');
 					gsap.delayedCall(1.0, startWord);
 					return;
@@ -690,16 +691,10 @@
 					opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out', stagger: 0.08,
 				});
 				const rays = document.getElementById('rays-canvas');
-				// Top-down sweep: a soft-edged mask whose edge travels from
-				// above the frame to below it, while the light also fades up.
-				const sweep = { edge: -40 };
-				const setMask = () => {
-					if (!rays) return;
-					const m = `linear-gradient(to bottom, #000 ${sweep.edge}%, transparent ${sweep.edge + 40}%)`;
-					rays.style.maskImage = m;
-					(rays.style as any).webkitMaskImage = m;
-				};
-				setMask();
+				// The light grows out of its source above the frame (ray
+				// length from 0 to full) while it also warms up.
+				const rr = ((window as any).__ptRays ??= { reveal: 1 });
+				rr.reveal = 0;
 				gsap.set(rays, { opacity: 0 });
 				// Back/forward settles the page under a veil and finishes every
 				// entrance started meanwhile — the light was simply on. It waits
@@ -709,21 +704,20 @@
 					paused: holdForRestore,
 					// Same light as the first entrance: rising with the text, as
 					// slow (2.6s up, a 3s sweep down).
-					delay: 0.1,
+					delay: 1.1, // text is sharp by then: a beat of darkness, then the light
 					onComplete: () => {
-						if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; }
 						hero!.classList.add('pt-intro-done'); // CTA glare may start
 						startWord();
 					},
 				})
-					.to(rays, { opacity: 1, duration: 2.6, ease: 'sine.inOut' }, 0)
-					.to(sweep, { edge: 100, duration: 3.0, ease: 'power2.inOut', onUpdate: setMask }, 0);
+					.to(rays, { opacity: 1, duration: 2.6, ease: 'power2.out' }, 0)
+					.to(rr, { reveal: 1, duration: 3.0, ease: 'power2.out' }, 0);
 				if (holdForRestore) {
 					const root = document.documentElement;
 					const mo = new MutationObserver(() => {
 						if (root.classList.contains('pt-restoring')) return;
 						mo.disconnect();
-						lightTl.play(0);
+						gsap.delayedCall(0.45, () => lightTl.play(0)); // play(0) skips the timeline delay: a short beat after the veil lifts
 					});
 					mo.observe(root, { attributes: true, attributeFilter: ['class'] });
 					document.addEventListener('astro:before-swap', () => mo.disconnect(), { once: true });
@@ -866,7 +860,7 @@
 			gsap.set(claimLines, { opacity: 0, filter: `blur(${claimBlur}px)`, scale: 1.04 });
 			gsap.set(support, { opacity: 0, filter: 'blur(10px)', y: 12 });
 			hero!.style.opacity = '1';
-			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
+			if (pastHero) { gsap.set('#rays-canvas', { opacity: 1 }); ((window as any).__ptRays ??= { reveal: 1 }).reveal = 1; }
 
 			const intro = !chromeShown && !pastHero && !!title && !!logoText;
 			const heroAt = intro ? playIntro() : 0;
@@ -896,8 +890,8 @@
 			// light slow and last. Otherwise (no intro) the earlier pacing.
 			const hit = intro;
 			const HT = hit
-				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: -0.38, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
-				: { claimAt: 0.2, stagger: 0.2, claim: [0.8, 1.3, 1.5], supportAt: 0.7, supportStep: 0.12, support: [0.7, 1.0], ready: 1.6, light: 0.9, lightIn: [1.8, 1.9], loc: 1.3, menu: 0 };
+				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: 1.3, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
+				: { claimAt: 0.2, stagger: 0.2, claim: [0.8, 1.3, 1.5], supportAt: 0.7, supportStep: 0.12, support: [0.7, 1.0], ready: 1.6, light: 1.8, lightIn: [1.8, 1.9], loc: 1.3, menu: 0 };
 			const stagger = HT.stagger;
 			const claimAt = HT.claimAt;
 			tl.to(claimLines, { opacity: 1, duration: HT.claim[0], ease: 'sine.inOut', stagger }, claimAt)
@@ -916,32 +910,23 @@
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
 			}, HT.ready);
 
-			// 3. The light, last: it rises and sweeps down the frame from above
-			// (a soft-edged mask whose edge travels from above the top to below
-			// the bottom) once the claim is sharp.
+			// 3. The light, last: it grows out of its source above the frame
+			// (the rays extend from 0 to full length) once the claim is sharp.
 			const LIGHT_AT = HT.light;
 			if (!pastHero) {
 				const rays = document.getElementById('rays-canvas');
-				const sweep = { edge: -40 };
-				const setMask = () => {
-					if (!rays) return;
-					const m = `linear-gradient(to bottom, #000 ${sweep.edge}%, transparent ${sweep.edge + 40}%)`;
-					rays.style.maskImage = m;
-					(rays.style as any).webkitMaskImage = m;
-				};
-				setMask();
+				const rr = ((window as any).__ptRays ??= { reveal: 1 });
+				rr.reveal = 0;
 				gsap.set(rays, { opacity: 0 });
 				// The light may start before the hero's own timeline (during the
 				// logo's flight): then it runs on a timeline of its own.
 				const lt = LIGHT_AT < 0 ? gsap.timeline({ delay: Math.max(0, heroAt + LIGHT_AT) }) : tl;
 				const lAt = LIGHT_AT < 0 ? 0 : LIGHT_AT;
-				lt.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'sine.inOut' }, lAt)
-				  .to(sweep, {
-					edge: 100,
+				lt.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'power2.out' }, lAt)
+				  .to(rr, {
+					reveal: 1,
 					duration: HT.lightIn[1],
-					ease: 'power2.inOut',
-					onUpdate: setMask,
-					onComplete: () => { if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; } },
+					ease: 'power2.out',
 				}, lAt);
 			}
 
@@ -1015,7 +1000,7 @@
 			precision ${highpOk ? 'highp' : 'mediump'} float;
 			uniform float iTime; uniform vec2 iResolution; uniform vec2 rayPos; uniform vec2 rayDir;
 			uniform vec3 raysColor; uniform float raysSpeed; uniform float lightSpread; uniform float rayLength;
-			uniform float pulsating; uniform float fadeDistance; uniform float saturation;
+			uniform float reveal; uniform float pulsating; uniform float fadeDistance; uniform float saturation;
 			uniform vec2 mousePos; uniform float mouseInfluence; uniform float noiseAmount; uniform float distortion;
 
 			float noise(vec2 st) { return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123); }
@@ -1024,9 +1009,9 @@
 				vec2  s2c = coord - src;
 				float ca  = dot(normalize(s2c), refDir);
 				float da  = ca + distortion * sin(iTime * 2.0 + length(s2c) * 0.01) * 0.2;
-				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread, 0.001));
+				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread * (0.7 + 0.3 * reveal), 0.001)); // the cone opens as the light grows
 				float d   = length(s2c);
-				float md  = iResolution.x * rayLength;
+				float md  = max(iResolution.x * rayLength * reveal, 1.0); // rays reach out from the source
 				float lf  = clamp((md - d) / md, 0.0, 1.0);
 				float ff  = clamp((iResolution.x * fadeDistance - d) / (iResolution.x * fadeDistance), 0.5, 1.0);
 				float pulse = pulsating > 0.5 ? (0.8 + 0.2 * sin(iTime * spd * 3.0)) : 1.0;
@@ -1085,7 +1070,7 @@
 		gl.enableVertexAttribArray(aPos);
 		gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
+		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','reveal','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
 		const U: Record<string, WebGLUniformLocation | null> = {};
 		uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
 
@@ -1159,6 +1144,7 @@
 			gl!.uniform1f(U.raysSpeed, CFG.speed);
 			gl!.uniform1f(U.lightSpread, CFG.spread);
 			gl!.uniform1f(U.rayLength, CFG.length);
+				gl!.uniform1f(U.reveal, ((window as any).__ptRays?.reveal ?? 1));
 			gl!.uniform1f(U.pulsating, CFG.pulsating);
 			gl!.uniform1f(U.fadeDistance, CFG.fadeDistance);
 			gl!.uniform1f(U.saturation, CFG.saturation);
