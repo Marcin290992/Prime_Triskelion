@@ -422,6 +422,10 @@ const steps = [
 			   earlier edges stay in view. */
 			position: sticky;
 			top: calc(var(--pstack-top, 10rem) + var(--i) * 14px);
+			/* All the cards as tall as the tallest (--pstack-card-h, measured):
+			   with their own heights, the ones behind poked out under the one in
+			   front at different depths — and the card-step scale made it worse. */
+			min-height: var(--pstack-card-h, 0px);
 			transform-origin: 50% 0;
 			display: flex;
 			flex-direction: column;
@@ -832,16 +836,21 @@ const steps = [
 		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
 		if (!section || !intro || !section.querySelector('.pstack')) return;
 		const stack = section.querySelector<HTMLElement>('.pstack')!;
-		const card = stack.querySelector<HTMLElement>('.pstack__card');
+		const cards = Array.from(stack.querySelectorAll<HTMLElement>('.pstack__card'));
 		const set = () => {
 			section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+			// Every card as tall as the tallest: measure their own heights
+			// (the minimum off), then give them all that one.
+			section.style.setProperty('--pstack-card-h', '0px');
+			const tallest = Math.max(0, ...cards.map((c) => c.offsetHeight));
+			section.style.setProperty('--pstack-card-h', `${tallest}px`);
 			const pad = parseFloat(getComputedStyle(stack).paddingBottom) || 0;
-			if (card) section.style.setProperty('--pstack-lead', `${card.offsetHeight + pad}px`);
+			if (cards[0]) section.style.setProperty('--pstack-lead', `${cards[0].offsetHeight + pad}px`);
 		};
 		set();
 		_stackTopObserver = new ResizeObserver(set);
 		_stackTopObserver.observe(intro);
-		if (card) _stackTopObserver.observe(card);
+		cards.forEach((c) => _stackTopObserver!.observe(c));
 	}
 	document.addEventListener('astro:page-load', initProcessStackTop);
 
