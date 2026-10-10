@@ -106,7 +106,6 @@ const projects = [
             </div>
             <div class="proj-foot__right">
               <span class="proj-foot__year">{p.year}</span>
-              <span class="proj-foot__arrow">→</span>
             </div>
           </div>
 
@@ -187,7 +186,7 @@ const projects = [
     font-size: 10px;
     letter-spacing: 0.45em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.2);
+    color: rgb(var(--c-cream) / 0.45);
   }
   @keyframes scrollPulse {
     0%, 100% { opacity: 0.5; transform: scaleX(1); }
@@ -346,6 +345,8 @@ const projects = [
     color: rgb(var(--c-cream) / 0.7);
   }
 
+  /* In a row (laptop and mobile layouts below) the tags are told apart by
+     a dot; stacked in a column (big screens) they don't need one. */
   .proj-foot__right {
     display: flex;
     flex-direction: column;
@@ -359,14 +360,22 @@ const projects = [
     letter-spacing: 0.2em;
     color: rgb(var(--c-cream) / 0.65);
   }
-  .proj-foot__arrow {
-    font-size: 2.2rem;
-    color: rgb(var(--c-red) / 0.7);
-    transition: color 0.3s ease, transform 0.3s ease;
-  }
-  .proj-inner:hover .proj-foot__arrow {
-    color: rgb(var(--c-cream));
-    transform: translate(5px, -5px);
+
+  /* Desktop: the frame leans in a touch under the cursor and its edge
+     lights up; the title comes to full strength. (The enter/leave focus
+     pull is scroll-driven, in the script below.) */
+  @media (hover: hover) and (pointer: fine) {
+    .proj-img-wrap {
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s ease;
+    }
+    .proj-foot__name { transition: color 0.5s ease; }
+    .proj-foot__tag, .proj-foot__year { transition: color 0.5s ease; }
+    .proj-inner:hover .proj-img-wrap {
+      transform: scale(1.025);
+      box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.16);
+    }
+    .proj-inner:hover .proj-foot__tag,
+    .proj-inner:hover .proj-foot__year { color: rgb(var(--c-cream) / 0.95); }
   }
 
   /* â•â• MOBILE / TABLET â•â• */
@@ -387,6 +396,7 @@ const projects = [
       justify-content: center;
       gap: 0.3rem 1rem;
     }
+    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 1rem; opacity: 0.6; }
     .proj-foot__right {
       flex-direction: row;
       align-items: center;
@@ -540,6 +550,7 @@ const projects = [
       grid-row: 1 / 3;
       align-self: center;
     }
+    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 0.55rem; opacity: 0.6; }
     .proj-foot__name { color: rgb(var(--c-cream) / 0.95); }
     .proj-foot__year { color: rgb(var(--c-cream) / 0.62); }
     .proj-foot__tag  { color: rgb(var(--c-cream) / 0.62); }
@@ -587,14 +598,27 @@ const projects = [
     ).map(sec => ({
       sec,
       bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
+      foot:    sec.querySelector<HTMLElement>('.proj-foot'),
+      img:     sec.querySelector<HTMLElement>('.proj-img-wrap img'),
       speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
     }));
 
     let raf = 0;
+    // As a card's window opens (and closes again) its title block comes out
+    // of a blur and its photo settles from a hair oversized — scroll-driven,
+    // so it follows the wheel exactly. Only the small text block is filtered
+    // (never the big photo), the photo gets a transform.
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const FOOT_BLUR = 8;      // px, at fully hidden
+    const IMG_SETTLE = 0.08;  // scale above 1, at fully hidden
+    const smooth = (a: number, b: number, x: number) => {
+      const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+      return t * t * (3 - 2 * t);
+    };
 
     function render() {
       const vh = window.innerHeight;
-      for (const { sec, bgText, speed } of panels) {
+      for (const { sec, bgText, foot, img, speed } of panels) {
         const rect = sec.getBoundingClientRect();
 
         if (rect.top > vh || rect.bottom < 0) continue;
@@ -602,6 +626,18 @@ const projects = [
         if (bgText) {
           bgText.style.transform =
             `translate(calc(-50% + ${rect.top * speed * 0.12}px), -50%)`;
+        }
+
+        if (!reduce) {
+          // How much of the screen this card's window covers: 0 → 1 as it
+          // opens, 1 → 0 as the next one closes it.
+          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
+          if (foot) {
+            const t = smooth(0.4, 0.92, f);
+            foot.style.opacity = t.toFixed(3);
+            foot.style.filter = `blur(${((1 - t) * FOOT_BLUR).toFixed(2)}px)`;
+          }
+          if (img) img.style.transform = `scale(${(1 + (1 - smooth(0, 1, f)) * IMG_SETTLE).toFixed(4)})`;
         }
       }
       raf = requestAnimationFrame(render);
