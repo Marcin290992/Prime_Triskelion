@@ -100,6 +100,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     <div class="wos-stack">
 
       <section class="wos-sec">
+        <span class="wos-sec__idx" aria-hidden="true">01</span>
         <div class="wos-inner">
           <h2 class="wos-sec__title">The<br/><em>challenge.</em></h2>
           <p class="wos-sec__body">A travel brand with deep roots in Sinai's landscape and culture needed an identity that could compete globally — premium, evocative, and trusted — without losing its authentic desert soul.</p>
@@ -107,6 +108,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
       </section>
 
       <section class="wos-sec wos-sec--mid">
+        <span class="wos-sec__idx" aria-hidden="true">02</span>
         <div class="wos-inner">
           <h2 class="wos-sec__title">How we<br/><em>approached it.</em></h2>
           <p class="wos-sec__body">I started with a brand sprint — mood boards, competitor mapping, and tone-of-voice workshops. The visual language was built around sand, silence, and scale: muted earth palettes, wide-body type, and considered negative space.</p>
@@ -114,6 +116,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
       </section>
 
       <section class="wos-sec">
+        <span class="wos-sec__idx" aria-hidden="true">03</span>
         <div class="wos-inner">
           <h2 class="wos-sec__title">What we<br/><em>delivered.</em></h2>
           <ul class="wos-deliverables">
@@ -245,14 +248,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
               </div>
             </div>
 
-            <div class="scr-slide">
+            <div class="scr-slide scr-slide--device">
               <div class="scr-slide__meta">
                 <span class="showcase-desc">Mobile — homepage</span>
               </div>
               <div class="device-ph scr-device-single"></div>
             </div>
 
-            <div class="scr-slide">
+            <div class="scr-slide scr-slide--device">
               <div class="scr-slide__meta">
                 <span class="showcase-desc">Mobile — experiences</span>
               </div>
@@ -646,6 +649,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
       gap: clamp(2.5rem, 6vw, 4rem);
     }
     .wos-hero__title { font-size: clamp(3rem, 14vw, 5.5rem); }
+    /* Tighter tracking so "Case study · 2025 · Branding & Web" fits one
+       line on a phone instead of wrapping with a dot left dangling. */
+    .wos-hero__top { flex-wrap: nowrap; gap: 0.5rem; white-space: nowrap; }
+    .wos-hero__top .wos-label { font-size: 11px; letter-spacing: 0.2em; }
     .wos-hero__desc { max-width: 100%; }
     .wos-hero__btns { flex-direction: column; gap: 0.75rem; }
   }
@@ -689,11 +696,31 @@ import CtaSection from '../components/sections/CtaSection.astro';
     top: 0;
     height: 100vh;
     display: grid;
-    place-content: center;
+    /* Centred vertically, but stretched across: the text block starts on
+       the same left edge as the hero, the frames and the stats (it used to
+       shrink to its content and centre, ~320px in). */
+    align-content: center;
+    justify-content: stretch;
     background: rgb(var(--c-bg));
     overflow: hidden;
   }
   .wos-sec--mid { border-top: 1px solid rgb(var(--c-red) / 0.12); }
+  /* The step number, huge and barely there, in the right half the text
+     leaves empty (same idea as the project cards' giant background word). */
+  .wos-sec__idx {
+    position: absolute;
+    right: var(--site-gutter);
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(10rem, 26vw, 32rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: rgb(var(--c-cream) / 0.05);
+    pointer-events: none;
+    user-select: none;
+  }
   .wos-sec__title {
     font-family: var(--f-display);
     font-weight: 700;
@@ -772,11 +799,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
      BROWSER FRAME
   ───────────────────────────────────────── */
   .browser-frame {
-    background: #111114;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #131318;
+    border: 1px solid rgba(255,255,255,0.17);
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     width: 100%;
   }
   .browser-frame__bar {
@@ -824,7 +851,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
   .browser-frame__screen {
     aspect-ratio: 16 / 10;
-    background: linear-gradient(160deg, #141418 0%, #0e0e12 100%);
+    background: linear-gradient(160deg, #1a1a20 0%, #121217 100%);
     display: grid;
     place-content: center;
     position: relative;
@@ -835,10 +862,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
   .browser-frame__ph {
     font-family: var(--f-body);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.4em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.5);
+    color: rgb(var(--c-cream) / 0.62);
     position: relative;
     z-index: 1;
   }
@@ -1094,8 +1121,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
   .device-ph {
     width: min(calc(100% - var(--site-gutter) * 2), 860px);
     aspect-ratio: 16 / 9;
-    background: linear-gradient(160deg, #141418 0%, #0e0e12 100%);
-    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(160deg, #1a1a20 0%, #121217 100%);
+    border: 1px solid rgba(255,255,255,0.15);
     border-radius: 8px;
     position: relative;
     overflow: hidden;
@@ -1108,6 +1135,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
     display: block;
     position: relative;
     z-index: 1;
+  }
+  /* A phone screen is a portrait shape (the desktop gallery's is too). */
+  .showcase-devices .device-ph {
+    width: min(66%, 300px);
+    aspect-ratio: 9 / 19;
+    border-radius: 28px;
   }
   .device-ph::before {
     content: '';
@@ -1156,6 +1189,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
     flex-shrink: 0;
   }
 
+  /* Desktop: the four figures spread over the whole row, not bunched at
+     the left with the right two thirds empty. */
+  @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+    .showcase-stats { justify-content: space-between; gap: 0; }
+  }
+
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Stats */
     .showcase-stat__sep { display: none; }
@@ -1198,21 +1237,32 @@ import CtaSection from '../components/sections/CtaSection.astro';
     justify-content: center;
     align-items: center;
     /* Top clears the fixed .top-blur band (104px) so the slide label stays sharp. */
-    padding: clamp(7.5rem, 14vh, 9rem) var(--site-gutter) clamp(4rem, 7vh, 6rem);
+    padding: clamp(7.5rem, 14vh, 9rem) var(--site-gutter) clamp(9rem, 17vh, 11rem);
     box-sizing: border-box;
     gap: 1.2rem;
   }
+  /* The label is as wide as the frame under it and centred with it, so it
+     starts on the frame's left edge (it used to sit at the slide's edge,
+     far left of a narrower frame). 20rem = what the slide keeps free
+     around the frame: the label above, the progress line below. */
   .scr-slide__meta {
     display: flex;
     align-items: baseline;
     gap: 1.2rem;
-    align-self: flex-start;
-    width: min(calc(100vw - var(--site-gutter) * 2), 1400px);
+    align-self: center;
+    width: min(
+      calc(100vw - var(--site-gutter) * 2),
+      calc((100vh - 20rem - 34px) * 16 / 9),
+      1400px
+    );
+  }
+  .scr-slide--device .scr-slide__meta {
+    width: min(calc(100vw - var(--site-gutter) * 2), calc((100vh - 20rem) * 9 / 19), 520px);
   }
   .browser-frame--scr {
     width: min(
       calc(100vw - var(--site-gutter) * 2),
-      calc((100vh - 17rem - 34px) * 16 / 9),
+      calc((100vh - 20rem - 34px) * 16 / 9),
       1400px
     );
     border-radius: 12px;
@@ -1231,14 +1281,16 @@ import CtaSection from '../components/sections/CtaSection.astro';
     aspect-ratio: 16 / 9;
   }
   .scr-device-single {
-    height: calc(100vh - 17rem);
+    height: calc(100vh - 20rem);
     width: auto;
     max-width: min(calc(100vw - var(--site-gutter) * 2), 520px);
     aspect-ratio: 9 / 19;
   }
   .scr-progress {
     position: absolute;
-    bottom: clamp(1.5rem, 3vh, 2.2rem);
+    /* Above the fixed bottom-left badge and the MENU button, not through
+       them (it ran at 1.5-2.2rem from the bottom, across the badge's text). */
+    bottom: clamp(6.5rem, 13vh, 8rem);
     left: var(--site-gutter);
     right: var(--site-gutter);
     height: 1px;
@@ -1248,7 +1300,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
     height: 100%;
     width: 100%;
     background: rgb(var(--c-red) / 0.65);
-    transform: scaleX(0.25);
+    transform: scaleX(0);
     transform-origin: left;
   }
 
@@ -1368,7 +1420,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
       },
     });
     tl.to(track,   { x: () => -dist(), ease: 'none' });
-    if (fill)    tl.to(fill,    { scaleX: 1,    ease: 'none'      }, '<');
+    // From empty (not from 1/4) so the line tracks the scroll exactly.
+    if (fill)    tl.fromTo(fill, { scaleX: 0 }, { scaleX: 1, ease: 'none' }, '<');
   }
 
   function initPage() {
