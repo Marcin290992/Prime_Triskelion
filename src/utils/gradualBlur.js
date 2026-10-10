@@ -14,6 +14,10 @@
 // blur, and it scales with the filtered area and the layer count. The layers
 // are few (DIV_COUNT) and the bands short on purpose.
 
+// Kill switch: set to false and the two page bands are simply not mounted
+// (nothing else needs to change). The page then has no top/bottom blur.
+const ENABLED = true;
+
 const CURVES = {
   linear: (p) => p,
   bezier: (p) => p * p * (3 - 2 * p),
@@ -91,6 +95,7 @@ export function createGradualBlur(options = {}) {
 // The page's two bands. The <body> is replaced on every navigation, so they
 // are put back each time (right after the swap, before the new page paints).
 export function mountGradualBlur() {
+  if (!ENABLED) return;
   const body = document.body;
   if (!body || body.querySelector(':scope > .gradual-blur')) return;
   body.prepend(createGradualBlur({ position: 'bottom' }));
