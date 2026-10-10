@@ -28,7 +28,7 @@
   <!-- The finale: the name across the full width. Each letter rises out of
        its word's mask as the page bottom arrives (scroll-driven, CSS only). -->
   <p class="footer-mark" aria-label="Prime Triskelion">
-    <span aria-hidden="true"><span class="fm-word"><span class="fm-l" style="--i:0">P</span><span class="fm-l" style="--i:1">R</span><span class="fm-l" style="--i:2">I</span><span class="fm-l" style="--i:3">M</span><span class="fm-l" style="--i:4">E</span></span><span class="fm-word"><span class="fm-l" style="--i:5">T</span><span class="fm-l" style="--i:6">R</span><span class="fm-l" style="--i:7">I</span><span class="fm-l" style="--i:8">S</span><span class="fm-l" style="--i:9">K</span><span class="fm-l" style="--i:10">E</span><span class="fm-l" style="--i:11">L</span><span class="fm-l" style="--i:12">I</span><span class="fm-l" style="--i:13">O</span><span class="fm-l" style="--i:14">N</span></span></span>
+    <span aria-hidden="true"><span class="fm-word fm-word--mark"><span class="fm-l fm-mark" style="--i:0"><svg viewBox="128 152 744 644" aria-hidden="true"><defs><linearGradient id="fm-mark-fill" gradientUnits="userSpaceOnUse" x1="0" y1="152" x2="0" y2="796"><stop offset="0.25" stop-color="rgb(242 237 232)"/><stop offset="1" stop-color="rgb(242 237 232)" stop-opacity="0.18"/></linearGradient><polygon id="fm-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs><clipPath id="fm-mark-clip"><use href="#fm-arm"/><use href="#fm-arm" transform="rotate(120 500 577.259)"/><use href="#fm-arm" transform="rotate(240 500 577.259)"/></clipPath><rect x="128" y="152" width="744" height="644" fill="url(#fm-mark-fill)" clip-path="url(#fm-mark-clip)"/></svg></span></span><span class="fm-word"><span class="fm-l" style="--i:1">P</span><span class="fm-l" style="--i:2">R</span><span class="fm-l" style="--i:3">I</span><span class="fm-l" style="--i:4">M</span><span class="fm-l" style="--i:5">E</span></span><span class="fm-word"><span class="fm-l" style="--i:6">T</span><span class="fm-l" style="--i:7">R</span><span class="fm-l" style="--i:8">I</span><span class="fm-l" style="--i:9">S</span><span class="fm-l" style="--i:10">K</span><span class="fm-l" style="--i:11">E</span><span class="fm-l" style="--i:12">L</span><span class="fm-l" style="--i:13">I</span><span class="fm-l" style="--i:14">O</span><span class="fm-l" style="--i:15">N</span></span></span>
   </p>
 </footer>
 
@@ -106,8 +106,9 @@
   }
   .footer-mark > span {
     display: flex;
+    align-items: flex-end;
     gap: 0.22em;
-    font-size: 10.4cqi;
+    font-size: 9.06cqi;
   }
   .fm-word {
     display: inline-flex;
@@ -116,6 +117,12 @@
     /* The last letter's tracking would leave a gap at the right edge. */
     margin-right: -0.06em;
   }
+  /* The triskelion ahead of the name, the logo's own mark — taller than
+     the letters, standing on their baseline, in their cream-to-black
+     gradient (one gradient over the whole mark, not one per arm). */
+  .fm-word--mark { margin-right: 0; padding-top: 0.42em; }
+  .fm-mark { display: inline-flex; align-items: flex-end; height: calc(1lh + 0.36em); }
+  .fm-mark svg { display: block; height: 1.02em; width: auto; position: relative; top: 0.095em; }
   .fm-l {
     display: inline-block;
     /* Cream that sinks into the black toward the bottom. */
@@ -134,16 +141,16 @@
       }
     }
   }
+  /* Phones: the same one line; at this size the letters run a hair wider
+     relative to the column, so a touch smaller to keep the gutter. */
+  @media (max-width: 699px) {
+    .footer-mark > span { font-size: 8.78cqi; }
+  }
   @keyframes fm-rise {
     from { transform: translateY(105%); }
     to   { transform: translateY(0); }
   }
 
-  /* Phones and tablets: the footer without the wordmark — that's for
-     desktop and laptop only. */
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    .footer-mark { display: none; }
-  }
 
   /* Mobile: single column stack */
   @media (max-width: 540px) {
