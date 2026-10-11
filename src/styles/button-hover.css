@@ -2,6 +2,9 @@
    On hover the button's own border fades and a blurred copy of it (an
    ::after ring) comes in, for as long as the cursor stays on the button.
    Nothing else about a button's hover changes, and nothing at rest does.
+   On the main CTAs (.h-hero-cta--fixed) it comes as the border comets meet
+   (utils/starBorder.js adds .is-lit then) rather than the moment the cursor
+   enters; everywhere else it is plain :hover.
    Desktop only (mouse, wide screen, no reduced motion); the MENU button is
    not included. The one !important is a cascade-layer one: it beats the
    buttons' own border-color on hover whatever the order of the stylesheets
@@ -37,7 +40,8 @@
     /* .h-hero-cta clips its children: its ring sits just inside the edge */
     .h-hero-cta::after { inset: 0; }
 
-    .h-hero-cta:hover,
+    .h-hero-cta:not(.h-hero-cta--fixed):hover,
+    .h-hero-cta--fixed.is-lit,
     .tst__btn:hover,
     .footer-social__link:hover,
     .cp-back:hover {
@@ -49,19 +53,34 @@
     .h-hero-cta--fixed .hud-spin-border {
       transition: opacity 0.45s ease;
     }
-    .h-hero-cta--fixed:hover .hud-spin-border {
+    .h-hero-cta--fixed.is-lit .hud-spin-border {
       opacity: 0;
     }
-    .h-hero-cta--fixed:hover {
+    .h-hero-cta--fixed.is-lit {
       color: rgb(var(--c-cream)) !important;
     }
 
-    .h-hero-cta:hover::after,
+    .h-hero-cta:not(.h-hero-cta--fixed):hover::after,
+    .h-hero-cta--fixed.is-lit::after,
     .tst__btn:hover::after,
     .footer-social__link:hover::after,
     .cp-back:hover::after {
       opacity: 1;
       filter: blur(1.6px);
     }
+
+    /* The button's glare — the diagonal sweep it makes every few seconds
+       (global.css, cta-glare) — also goes across once as the ring lights: the
+       finish of the hover. A keyframes of its own, so it starts afresh (the
+       periodic one carries on from wherever it is) — same stripe, same length
+       (22% of 5s). */
+    .h-hero-cta--fixed.is-lit::before {
+      animation: cta-glare-once 1.1s ease-in-out 0s 1 both !important;
+    }
   }
+}
+
+@keyframes cta-glare-once {
+  from { transform: translateX(-160%); }
+  to   { transform: translateX(160%); }
 }
