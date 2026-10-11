@@ -353,6 +353,28 @@ const projects = [
 		}
 	}
 
+	/* Desktop: the whole card answers to the cursor, not only its small link —
+	   the same as the cards on the Projects page. The frame leans in a touch
+	   and its edge lights, the description comes to full strength and the
+	   Explore link does what it does under the cursor (shifts, underline draws
+	   in). The frame (not the <img>, which the parallax moves) is what scales. */
+	@media (hover: hover) and (pointer: fine) {
+		.img-box {
+			transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s ease;
+		}
+		.card-info p { transition: color 0.5s ease; }
+		.slide-card:hover .img-box {
+			transform: scale(1.02);
+			border-color: rgba(255,255,255,0.2);
+		}
+		.slide-card:hover .card-info p { color: rgb(var(--c-cream) / 0.95); }
+		.slide-card:hover .link-btn.no-border {
+			color: rgb(var(--c-cream));
+			transform: translateX(5px);
+		}
+		.slide-card:hover .link-btn.no-border::after { transform: scaleX(1); }
+	}
+
 	/* Curtain */
 	.slide-curtain {
 		width: 100vw;
