@@ -3,7 +3,9 @@
 // The hover of the buttons: from the point of the border the cursor came in
 // at (or a finger touched), two comets run round the outline, one each way,
 // and meet on the far side, with a brief flash of the whole outline as they
-// leave. It only draws while a comet is running.
+// leave. It only draws while a comet is running. On the main CTAs the border's
+// own hover (the blurred, glowing ring — CSS, `.is-lit`) arrives as the
+// comets meet, instead of at the first touch of the cursor.
 //
 //  - Main CTAs (`.h-hero-cta--fixed`): on every device — a mouse sets it off
 //    by entering the button, a finger by touching it. On desktop they keep
@@ -34,6 +36,7 @@ const THICKNESS = 1; // px
 const GLOW = 0.4; // 0..1
 const PULSE_TIME = 0.65; // s, how long a pulse lives
 const PULSE_COOLDOWN = 0.7; // s, between two pulses (a shaky mouse at the edge)
+const LIT_AFTER = 0.5; // s from a pulse's start: the comets have just met, the ring lights
 // A comet lives 0.65s; on touch screens its frames are capped a little lower.
 const FRAME_MS = 1000 / (window.matchMedia('(pointer: coarse)').matches ? 40 : 60);
 
@@ -136,6 +139,9 @@ class StarBorder {
     this.flash = 0;
     this.pulses = [];
     this.lastPulse = -10;
+    this.hovered = false;
+    this.focused = false;
+    this.litAt = 0; // wall-clock s the ring is due to light at (0: not waiting)
     this.visible = true;
     this.destroyed = false;
     this.raf = 0;
@@ -182,23 +188,46 @@ class StarBorder {
   }
 
   // A pulse from a point on the outline: two waves, one each way round.
+  // Returns whether one was started (not with reduced motion, nor within the
+  // cooldown of the last).
   pulse(origin) {
-    if (reduceQuery.matches) return;
+    if (reduceQuery.matches) return false;
     // wall-clock time: no frames run while a button is idle, so a frame
     // counter would stand still and block every pulse after the first
     const now = performance.now() / 1000;
-    if (now - this.lastPulse < PULSE_COOLDOWN) return;
+    if (now - this.lastPulse < PULSE_COOLDOWN) return false;
     this.lastPulse = now;
     this.pulses.push({ origin, age: 0 });
     if (this.pulses.length > 3) this.pulses.shift();
     this.flash = 1;
+    this.litAt = now + LIT_AFTER;
     this.wake();
+    return true;
+  }
+
+  // The border's hover look (CSS, `.is-lit`) — held for as long as the cursor
+  // (or keyboard focus) stays on the button.
+  light() {
+    this.litAt = 0;
+    this.btn.classList.add('is-lit');
+  }
+
+  unlight() {
+    this.litAt = 0;
+    this.btn.classList.remove('is-lit');
   }
 
   onEnter(event) {
     if (event.pointerType !== 'mouse') return;
+    this.hovered = true;
     const [x, y] = this.local(event);
-    this.pulse(project(this.shape(), x - THICKNESS / 2, y - THICKNESS / 2));
+    // no comets (cooldown, reduced motion): the ring comes at once
+    if (!this.pulse(project(this.shape(), x - THICKNESS / 2, y - THICKNESS / 2))) this.light();
+  }
+
+  onLeave() {
+    this.hovered = false;
+    if (!this.focused) this.unlight();
   }
 
   // A finger (or pen) has no hover: the comet leaves from where it touched.
@@ -209,7 +238,13 @@ class StarBorder {
   }
 
   onFocus() {
-    if (this.btn.matches(':focus-visible')) this.pulse(this.phase);
+    this.focused = true;
+    if (this.btn.matches(':focus-visible') && !this.pulse(this.phase)) this.light();
+  }
+
+  onBlur() {
+    this.focused = false;
+    if (!this.hovered) this.unlight();
   }
 
   // A comet tail behind `head`, `length` px long, fading to nothing.
@@ -310,9 +345,15 @@ class StarBorder {
       if (this.pulses[i].age >= PULSE_TIME) this.pulses.splice(i, 1);
     }
 
+    // the comets have met: the ring lights, if the cursor is still on the button
+    if (this.litAt && performance.now() / 1000 >= this.litAt) {
+      if (this.hovered || this.focused) this.light();
+      else this.litAt = 0;
+    }
+
     this.draw();
 
-    const busy = this.flash > 0.01 || this.pulses.length > 0;
+    const busy = this.flash > 0.01 || this.pulses.length > 0 || this.litAt > 0;
     if (busy) this.raf = requestAnimationFrame(this.frame);
     else this.last = 0;
   }
@@ -370,10 +411,23 @@ document.addEventListener('pointerdown', (e) => {
   forButton(btn).onDown(e);
 });
 
+// The cursor leaving a main CTA (the ring goes out with it).
+document.addEventListener('pointerout', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  const btn = e.target.closest?.(CTA);
+  if (!btn || (e.relatedTarget && btn.contains(e.relatedTarget))) return;
+  byButton.get(btn)?.onLeave();
+});
+
 // Keyboard focus on a main CTA.
 document.addEventListener('focusin', (e) => {
   const btn = e.target.closest?.(CTA);
   if (btn) forButton(btn).onFocus();
+});
+
+document.addEventListener('focusout', (e) => {
+  const btn = e.target.closest?.(CTA);
+  if (btn) byButton.get(btn)?.onBlur();
 });
 
 // The page's buttons are new after every navigation.
