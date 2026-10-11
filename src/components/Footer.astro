@@ -41,18 +41,20 @@
     padding-bottom: 8rem;
   }
 
-  /* Every screen: the footer is a screen of its own — once the page ends,
-     the section above is gone; the icons sit low under open space, the
-     name rests clear above the fixed bottom HUD (location, menu, clock).
-     The stable vh, so the phone toolbar doesn't make it jump. */
-  #site-footer {
-    min-height: calc(var(--app-stable-vh) * 100);
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding-top: clamp(6rem, 14vh, 10rem);
-    padding-bottom: clamp(14rem, 31vh, 26rem);
+  /* Desktop: the footer is a screen of its own — once the page ends, the
+     section above is gone; the icons sit low under open space, the name
+     rests clear above the fixed bottom HUD (location, menu, clock). Phones
+     and tablets keep the compact footer above. */
+  @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+    #site-footer {
+      min-height: calc(var(--app-stable-vh) * 100);
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding-top: clamp(6rem, 14vh, 10rem);
+      padding-bottom: clamp(14rem, 31vh, 26rem);
+    }
   }
   .footer-inner {
     width: 100%;
@@ -153,7 +155,7 @@
 
   /* Mobile: single column stack */
   @media (max-width: 540px) {
-    #site-footer { padding-bottom: clamp(9.5rem, 23vh, 13rem); }
+    #site-footer { padding-bottom: clamp(5.5rem, 13vh, 7rem); }
     .footer-inner { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
     .footer-right { align-items: flex-start; }
   }
