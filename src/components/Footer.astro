@@ -41,8 +41,21 @@
     padding-bottom: 8rem;
   }
 
+  /* Every screen: the footer is a screen of its own — once the page ends,
+     the section above is gone; the icons sit low under open space, the
+     name rests clear above the fixed bottom HUD (location, menu, clock).
+     The stable vh, so the phone toolbar doesn't make it jump. */
+  #site-footer {
+    min-height: calc(var(--app-stable-vh) * 100);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding-top: clamp(6rem, 14vh, 10rem);
+    padding-bottom: clamp(9rem, 17vh, 12rem);
+  }
   .footer-inner {
-    width: min(100%, var(--site-max-width));
+    width: 100%;
     margin-inline: auto;
     padding-inline: var(--site-gutter);
     box-sizing: border-box;
@@ -90,7 +103,7 @@
 
   /* -- Wordmark -- */
   .footer-mark {
-    width: min(100%, var(--site-max-width));
+    width: 100%;
     margin: clamp(2.5rem, 6vw, 5rem) auto 0;
     padding-inline: var(--site-gutter);
     box-sizing: border-box;
