@@ -177,7 +177,12 @@ const steps = [
 	   sticky element. */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.showcase__intro {
-			padding-top: clamp(5.5rem, 7vh, 7rem);
+			/* The title always starts just below the top blur band, on any
+			   screen: the band's height (utils/gradualBlur.js — keep the two
+			   in step) plus a little. It used to follow the screen's height
+			   (7vh), while the band follows its width, so on wide screens the
+			   top of the title fell into the blur. */
+			padding-top: calc(clamp(5.5rem, 6vw, 7rem) + 0.5rem);
 			/* More breathing room below the title before the rail starts —
 			   the base (mobile-first) rule only has 0.7rem here. */
 			padding-bottom: clamp(2rem, 4vh, 3.5rem);

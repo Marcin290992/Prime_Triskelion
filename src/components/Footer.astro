@@ -25,10 +25,9 @@
 
   </div>
 
-  <!-- The finale: the name across the full width. Each letter rises out of
-       its word's mask as the page bottom arrives (scroll-driven, CSS only). -->
+  <!-- The finale: the name across the full width. -->
   <p class="footer-mark" aria-label="Prime Triskelion">
-    <span aria-hidden="true"><span class="fm-word fm-word--mark"><span class="fm-l fm-mark" style="--i:0"><svg viewBox="128 152 744 644" aria-hidden="true"><defs><linearGradient id="fm-mark-fill" gradientUnits="userSpaceOnUse" x1="0" y1="152" x2="0" y2="796"><stop offset="0.25" stop-color="rgb(242 237 232)"/><stop offset="1" stop-color="rgb(242 237 232)" stop-opacity="0.18"/></linearGradient><polygon id="fm-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs><clipPath id="fm-mark-clip"><use href="#fm-arm"/><use href="#fm-arm" transform="rotate(120 500 577.259)"/><use href="#fm-arm" transform="rotate(240 500 577.259)"/></clipPath><rect x="128" y="152" width="744" height="644" fill="url(#fm-mark-fill)" clip-path="url(#fm-mark-clip)"/></svg></span></span><span class="fm-word"><span class="fm-l" style="--i:1">P</span><span class="fm-l" style="--i:2">R</span><span class="fm-l" style="--i:3">I</span><span class="fm-l" style="--i:4">M</span><span class="fm-l" style="--i:5">E</span></span><span class="fm-word"><span class="fm-l" style="--i:6">T</span><span class="fm-l" style="--i:7">R</span><span class="fm-l" style="--i:8">I</span><span class="fm-l" style="--i:9">S</span><span class="fm-l" style="--i:10">K</span><span class="fm-l" style="--i:11">E</span><span class="fm-l" style="--i:12">L</span><span class="fm-l" style="--i:13">I</span><span class="fm-l" style="--i:14">O</span><span class="fm-l" style="--i:15">N</span></span></span>
+    <span aria-hidden="true"><span class="fm-word fm-word--mark"><span class="fm-l fm-mark"><svg viewBox="128 152 744 644" aria-hidden="true"><defs><linearGradient id="fm-mark-fill" gradientUnits="userSpaceOnUse" x1="0" y1="152" x2="0" y2="796"><stop offset="0.25" stop-color="rgb(242 237 232)"/><stop offset="1" stop-color="rgb(242 237 232)" stop-opacity="0.18"/></linearGradient><polygon id="fm-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs><clipPath id="fm-mark-clip"><use href="#fm-arm"/><use href="#fm-arm" transform="rotate(120 500 577.259)"/><use href="#fm-arm" transform="rotate(240 500 577.259)"/></clipPath><rect x="128" y="152" width="744" height="644" fill="url(#fm-mark-fill)" clip-path="url(#fm-mark-clip)"/></svg></span></span><span class="fm-word"><span class="fm-l">P</span><span class="fm-l">R</span><span class="fm-l">I</span><span class="fm-l">M</span><span class="fm-l">E</span></span><span class="fm-word"><span class="fm-l">T</span><span class="fm-l">R</span><span class="fm-l">I</span><span class="fm-l">S</span><span class="fm-l">K</span><span class="fm-l">E</span><span class="fm-l">L</span><span class="fm-l">I</span><span class="fm-l">O</span><span class="fm-l">N</span></span></span>
   </p>
 </footer>
 
@@ -114,7 +113,6 @@
   }
   .fm-word {
     display: inline-flex;
-    overflow: hidden;
     padding-top: 0.06em;
     /* The last letter's tracking would leave a gap at the right edge. */
     margin-right: -0.06em;
@@ -133,24 +131,10 @@
     -webkit-background-clip: text;
     background-clip: text;
   }
-  @supports (animation-timeline: view()) {
-    @media (prefers-reduced-motion: no-preference) {
-      #site-footer { view-timeline: --ftr block; }
-      .fm-l {
-        animation: fm-rise linear both;
-        animation-timeline: --ftr;
-        animation-range: entry calc(var(--i) * 2.5%) entry calc(55% + var(--i) * 2.5%);
-      }
-    }
-  }
   /* Phones: the same one line; at this size the letters run a hair wider
      relative to the column, so a touch smaller to keep the gutter. */
   @media (max-width: 699px) {
     .footer-mark > span { font-size: 8.78cqi; }
-  }
-  @keyframes fm-rise {
-    from { transform: translateY(105%); }
-    to   { transform: translateY(0); }
   }
 
 
