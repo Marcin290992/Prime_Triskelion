@@ -251,7 +251,9 @@ import CtaSection from '../../components/sections/CtaSection.astro';
   /* â”€â”€ Sticky badge â”€â”€ */
   .svc-sticky {
     position: sticky;
-    top: clamp(5rem, 10vh, 7rem);
+    /* Held just under the top blur band (its height in gradualBlur.js),
+       never in it, whatever the screen's height. */
+    top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem);
     height: fit-content;
   }
   .svc-badge {
@@ -437,7 +439,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       gap: clamp(1.5rem, 4vw, 3rem);
       align-items: start;
     }
-    .svc-sticky { position: sticky; top: clamp(5rem, 10vh, 6.5rem); }
+    .svc-sticky { position: sticky; top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem); }
     .svc-badge { min-height: 240px; }
     .svc-badge__bgnum { font-size: clamp(7rem, 13vw, 10rem); }
     .svc-badge__name { font-size: clamp(1.6rem, 3.2vw, 2.4rem); }

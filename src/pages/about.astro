@@ -95,7 +95,9 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     line-height: 0.9;
     margin: 0;
     position: sticky;
-    top: 2rem;
+    /* Held just under the top blur band (its height in gradualBlur.js),
+       not in it — and clear of the logo above it. */
+    top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem);
   }
   .ac-body-col {
     padding-top: 0.5rem;

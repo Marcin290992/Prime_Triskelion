@@ -23,8 +23,11 @@ const OPTS = {
   brightness: 0.35,
   trailLength: 50,
   inertia: 0.5,
-  fadeDelayMs: 1000,
-  fadeDurationMs: 1500,
+  // Materialise / dematerialise: time constants of the ease toward fully
+  // shown or gone (about 3x this to settle), as the cursor comes over the
+  // footer or leaves it — by moving or by the page scrolling under it.
+  fadeInMs: 320,
+  fadeOutMs: 520,
   maxDpr: 0.5, // render scale relative to CSS px
   pixelBudget: 1.3e6, // device pixels at most; scaled down beyond
 };
@@ -187,12 +190,15 @@ function mountGhostCursor() {
   const trail = new Float32Array(N * 2);
   let head = 0;
   const mouse = [0.5, 0.5]; // what's drawn
-  const target = [0.5, 0.5]; // where the pointer is
+  const target = [0.5, 0.5]; // where the pointer is, over the footer
   const vel = [0, 0];
-  let pointerActive = false;
+  // The pointer in the window, kept between moves: scrolling carries the
+  // footer under a still cursor and fires no pointer event at all.
+  const pointer = { x: 0, y: 0, known: false };
+  let inside = false;
   let visible = false;
   let opacity = 0;
-  let lastMove = performance.now();
+  let last = performance.now();
   let raf = 0;
   let validSize = false;
   const start = performance.now();
@@ -220,25 +226,27 @@ function mountGhostCursor() {
   function frame(now) {
     raf = 0;
     if (!validSize) return;
+    const dt = Math.min(100, now - last);
+    last = now;
 
-    if (pointerActive) {
+    if (inside) {
       vel[0] = target[0] - mouse[0];
       vel[1] = target[1] - mouse[1];
       mouse[0] = target[0];
       mouse[1] = target[1];
-      opacity = 1;
     } else {
+      // Gone out: the smoke drifts on a little the way it was going.
       vel[0] *= OPTS.inertia;
       vel[1] *= OPTS.inertia;
       if (vel[0] * vel[0] + vel[1] * vel[1] > 1e-6) {
         mouse[0] += vel[0];
         mouse[1] += vel[1];
       }
-      const dt = now - lastMove;
-      if (dt > OPTS.fadeDelayMs) {
-        opacity = Math.max(0, 1 - (dt - OPTS.fadeDelayMs) / OPTS.fadeDurationMs);
-      }
     }
+    // Ease toward shown / gone. The shader scales the smoke's reach with
+    // this too, so it gathers out of the cursor's point and draws back in.
+    const tau = inside ? OPTS.fadeInMs : OPTS.fadeOutMs;
+    opacity += ((inside ? 1 : 0) - opacity) * (1 - Math.exp(-dt / tau));
 
     head = (head + 1) % N;
     ring[head * 2] = mouse[0];
@@ -256,42 +264,68 @@ function mountGhostCursor() {
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
-    // Keeps going while the cursor is in and the footer on screen; once
-    // it's out and the smoke has faded, the loop stops until it comes back.
-    if (!visible || (!pointerActive && opacity <= 0.001)) return;
+    // Keeps going while the cursor is over the footer; once it's out and
+    // the smoke has gone, the loop stops until it comes back.
+    if (!visible || (!inside && opacity < 0.002)) {
+      if (!inside) {
+        opacity = 0;
+        gl.clear(gl.COLOR_BUFFER_BIT);
+      }
+      return;
+    }
     raf = requestAnimationFrame(frame);
   }
 
   function ensureLoop() {
-    if (!raf && visible) raf = requestAnimationFrame(frame);
+    if (!raf && visible) {
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
+  }
+
+  // Is the cursor over the footer, and where — from the last known pointer
+  // and the footer's box right now (after a move, or a scroll under it).
+  function update() {
+    if (!visible) return;
+    const rect = host.getBoundingClientRect();
+    const was = inside;
+    inside =
+      pointer.known &&
+      pointer.x >= rect.left && pointer.x <= rect.right &&
+      pointer.y >= rect.top && pointer.y <= rect.bottom;
+    if (inside) {
+      target[0] = (pointer.x - rect.left) / Math.max(1, rect.width);
+      target[1] = 1 - (pointer.y - rect.top) / Math.max(1, rect.height);
+      if (!was && opacity < 0.02) {
+        // Arriving fresh: start the trail here, not at the old spot.
+        mouse[0] = target[0];
+        mouse[1] = target[1];
+        vel[0] = vel[1] = 0;
+        for (let i = 0; i < N; i++) {
+          ring[i * 2] = target[0];
+          ring[i * 2 + 1] = target[1];
+        }
+      }
+    }
+    if (inside || was) ensureLoop();
   }
 
   function onMove(e) {
-    const rect = host.getBoundingClientRect();
-    target[0] = Math.min(1, Math.max(0, (e.clientX - rect.left) / Math.max(1, rect.width)));
-    target[1] = Math.min(1, Math.max(0, 1 - (e.clientY - rect.top) / Math.max(1, rect.height)));
-    if (!pointerActive && opacity <= 0.001) {
-      // Coming back after a full fade: start from here, not from the old spot.
-      mouse[0] = target[0];
-      mouse[1] = target[1];
-      ring.fill(0);
-      for (let i = 0; i < N; i++) {
-        ring[i * 2] = target[0];
-        ring[i * 2 + 1] = target[1];
-      }
-    }
-    pointerActive = true;
-    lastMove = performance.now();
-    ensureLoop();
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.known = true;
+    update();
   }
-  function onLeave() {
-    pointerActive = false;
-    lastMove = performance.now();
-    ensureLoop();
+  function onOut(e) {
+    // Left the window altogether.
+    if (e.relatedTarget) return;
+    pointer.known = false;
+    update();
   }
 
-  host.addEventListener('pointermove', onMove, { passive: true });
-  host.addEventListener('pointerleave', onLeave, { passive: true });
+  window.addEventListener('pointermove', onMove, { passive: true });
+  window.addEventListener('scroll', update, { passive: true });
+  document.addEventListener('pointerout', onOut, { passive: true });
 
   const ro = new ResizeObserver(() => {
     resize();
@@ -301,14 +335,15 @@ function mountGhostCursor() {
 
   const io = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
-    if (!visible) {
-      // Scrolled away with the cursor still "in": let it fade from here.
-      pointerActive = false;
+    if (visible) {
+      update();
+    } else {
+      // Off screen: nothing to see, so no fade — just stop clean.
+      inside = false;
       opacity = 0;
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
     }
-    ensureLoop();
   });
   io.observe(host);
 
@@ -317,8 +352,9 @@ function mountGhostCursor() {
   function cleanup() {
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
-    host.removeEventListener('pointermove', onMove);
-    host.removeEventListener('pointerleave', onLeave);
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('scroll', update);
+    document.removeEventListener('pointerout', onOut);
     ro.disconnect();
     io.disconnect();
     // Free the GPU context now (see the note in HeroSection's initRays).
