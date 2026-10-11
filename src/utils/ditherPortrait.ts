@@ -11,10 +11,6 @@
 
 export interface DitherPortraitOpts {
   src: string;
-  // 'dither' (default): the photo starts as coarse two-tone dither and
-  // develops in. 'blur': it starts heavily out of focus and sharpens; the
-  // lens is then a sharp patch in the blur (depth of field).
-  mode?: 'dither' | 'blur';
   ink: [number, number, number];   // 0..1 rgb
   paper: [number, number, number]; // 0..1 rgb
   // object-position of the <img> it replaces, 0..1 (0.5 = center)
@@ -86,8 +82,6 @@ uniform float uSinkRadius;
 uniform vec3 uLens; // x, y (device px, top-down), amount
 uniform float uLensRadius;
 uniform float uFineCell;
-uniform int uMode;      // 0 dither, 1 blur
-uniform float uBlur;    // blur mode: mip level at the start of the reveal
 
 in vec2 vUv;
 out vec4 fragColor;
@@ -103,36 +97,8 @@ vec2 imageUv(vec2 uv) {
   return uv * uCover + uOffset;
 }
 
-// Blur mode: a cheap, smooth out-of-focus sample — eight taps on a ring
-// at a coarse mip of the photo plus the centre, all at that level.
-vec3 soft(vec2 uv, float lod) {
-  if (lod < 0.05) return texture(tImage, uv).rgb;
-  vec2 texel = exp2(lod) / vec2(textureSize(tImage, 0));
-  vec3 acc = textureLod(tImage, uv, lod).rgb * 2.0;
-  for (int i = 0; i < 8; i++) {
-    float a = float(i) * 0.785398;
-    acc += textureLod(tImage, uv + vec2(cos(a), sin(a)) * texel * 1.2, lod).rgb;
-  }
-  return acc / 10.0;
-}
-
 void main() {
   vec2 px = vec2(gl_FragCoord.x, uResolution.y - gl_FragCoord.y);
-
-  if (uMode == 1) {
-    vec2 q = (vUv * vec2(1.0, -1.0) + vec2(0.0, 1.0) - uSinkFocus) * vec2(uResolution.x / uResolution.y, 1.0);
-    float radius = mix(1.4, uSinkRadius, uSink);
-    float vign = 1.0 - smoothstep(radius, radius + 0.3, length(q));
-    float lens = (1.0 - smoothstep(uLensRadius * 0.45, uLensRadius, distance(px, uLens.xy))) * uLens.z;
-    // Out of focus at the start, sharp as it develops; the edges soften
-    // again as it sinks; the lens pulls its patch back into focus.
-    float lod = uBlur * (1.0 - uDevelop) + (1.0 - vign) * uSink * 3.5;
-    lod *= 1.0 - lens;
-    vec3 c = soft(imageUv(vUv), lod);
-    c *= mix(1.0, 0.3 * vign, uSink);
-    fragColor = vec4(c, 1.0);
-    return;
-  }
   vec2 cell = floor(px / uCell);
   vec2 center = (cell + 0.5) * uCell;
   vec2 cellUv = vec2(center.x / uResolution.x, 1.0 - center.y / uResolution.y);
@@ -241,7 +207,6 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const sinkFocusY = opts.sinkFocusY ?? 0.45;
   const sinkRadius = opts.sinkRadius ?? 0.25;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const blurMode = opts.mode === 'blur';
 
   let program: WebGLProgram;
   try {
@@ -263,7 +228,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   const names = [
     'tImage', 'tDiffused', 'uDiffused', 'uResolution', 'uCover', 'uOffset', 'uCell',
     'uInk', 'uPaper', 'uMatte', 'uKey', 'uContrast', 'uBrightness', 'uDevelop',
-    'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius', 'uFineCell', 'uMode', 'uBlur',
+    'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius', 'uFineCell',
   ] as const;
   const u = {} as Record<(typeof names)[number], WebGLUniformLocation | null>;
   for (const n of names) u[n] = gl.getUniformLocation(program, n);
@@ -321,6 +286,11 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   // CPU pass. Cleared whenever the canvas size changes.
   const diffusedCache = new Map<number, Uint8Array>();
   let uploadedCell = 0;
+  // The photo scaled down once to about what the finest cells need — every
+  // diffusion pass used to resample the full-size original, the bulk of
+  // its cost.
+  let source: HTMLCanvasElement | null = null;
+  let warmTimer = 0;
 
   function layout(): boolean {
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
@@ -330,6 +300,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     canvas.height = h;
     diffusedCache.clear();
     uploadedCell = 0;
+    source = null;
     return true;
   }
 
@@ -339,13 +310,42 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     cover = ratio > 1 ? [1, 1 / ratio] : [ratio, 1];
   }
 
+  // Cell sizes the scrub passes through, coarse to fine (the order they're
+  // first needed in).
+  function cellRange(): number[] {
+    const from = Math.max(1, Math.round(startPixelSize * dpr));
+    const to = Math.max(1, Math.round(pixelSize * dpr));
+    const out: number[] = [];
+    for (let c = Math.max(from, to); c >= Math.min(from, to); c--) out.push(c);
+    return out;
+  }
+
+  function prepareSource(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
+    if (source) return source;
+    // Enough pixels that the finest cell grid still samples a smoothed
+    // picture: twice the cells across the image's displayed width.
+    const finest = Math.min(...cellRange());
+    const want = Math.ceil((canvas.width / finest / cover[0]) * 2);
+    if (want >= img.naturalWidth) return img;
+    const c = document.createElement('canvas');
+    c.width = want;
+    c.height = Math.max(1, Math.round(img.naturalHeight * (want / img.naturalWidth)));
+    const cctx = c.getContext('2d');
+    if (!cctx) return img;
+    cctx.imageSmoothingEnabled = true;
+    cctx.imageSmoothingQuality = 'high';
+    cctx.drawImage(img, 0, 0, c.width, c.height);
+    source = c;
+    return c;
+  }
+
   function diffuse(cell: number): Uint8Array {
     const cols = Math.ceil(canvas.width / cell);
     const rows = Math.ceil(canvas.height / cell);
-    const img = image!;
+    const img = prepareSource(image!);
     const ctx = samplerCtx!;
-    const iw = img.naturalWidth;
-    const ih = img.naturalHeight;
+    const iw = img instanceof HTMLImageElement ? img.naturalWidth : img.width;
+    const ih = img instanceof HTMLImageElement ? img.naturalHeight : img.height;
     sampler.width = cols;
     sampler.height = rows;
     ctx.imageSmoothingEnabled = true;
@@ -405,7 +405,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     const cell = Math.max(1, Math.round((startPixelSize + (pixelSize - startPixelSize) * shrink) * dpr));
 
     let useDiffused = 0;
-    if (samplerCtx && !diffusionBlocked && !blurMode) {
+    if (samplerCtx && !diffusionBlocked) {
       try {
         if (cell !== uploadedCell) {
           let data = diffusedCache.get(cell);
@@ -454,8 +454,6 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     gl!.uniform1f(u.uLensRadius, LENS_RADIUS * dpr);
     // A third of the current cell, never under ~1.5 CSS px.
     gl!.uniform1f(u.uFineCell, Math.max(1.5 * dpr, cell / 3));
-    gl!.uniform1i(u.uMode, blurMode ? 1 : 0);
-    gl!.uniform1f(u.uBlur, 3.5);
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
 
     if (!ready) {
@@ -466,6 +464,29 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
 
   function schedule() {
     if (!raf && !destroyed) raf = requestAnimationFrame(render);
+  }
+
+  // Every cell size the scrub will need, computed ahead of it — one per
+  // idle moment, coarse first — so the split of the title never waits on a
+  // diffusion pass mid-scroll (it hitched there on the biggest phones,
+  // with the most cells to dither).
+  function warm() {
+    clearTimeout(warmTimer);
+    if (destroyed || !image || !samplerCtx || diffusionBlocked) return;
+    const next = cellRange().find((c) => !diffusedCache.has(c));
+    if (next === undefined) return;
+    const idle = (window as any).requestIdleCallback as ((cb: () => void, o?: { timeout: number }) => number) | undefined;
+    const run = () => {
+      if (destroyed || !image) return;
+      layout();
+      updateCover();
+      if (!diffusedCache.has(next)) {
+        try { diffusedCache.set(next, diffuse(next)); } catch { diffusionBlocked = true; return; }
+      }
+      warmTimer = window.setTimeout(warm, 60);
+    };
+    if (idle) idle(run, { timeout: 400 });
+    else warmTimer = window.setTimeout(run, 30);
   }
 
   const img = new Image();
@@ -489,6 +510,8 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     }
     image = img;
     schedule();
+    // After the first frame and the page's entrance have had their turn.
+    warmTimer = window.setTimeout(warm, 600);
   };
   img.src = opts.src;
 
@@ -500,6 +523,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     if (canvas.clientWidth === lastWidth && ready) return;
     lastWidth = canvas.clientWidth;
     schedule();
+    warmTimer = window.setTimeout(warm, 300);
   });
   ro.observe(canvas);
 
@@ -527,6 +551,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     destroy() {
       destroyed = true;
       cancelAnimationFrame(raf);
+      clearTimeout(warmTimer);
       ro.disconnect();
       img.onload = null;
       gl.deleteTexture(imageTex);

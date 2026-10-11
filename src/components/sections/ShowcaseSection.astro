@@ -177,7 +177,12 @@ const steps = [
 	   sticky element. */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.showcase__intro {
-			padding-top: clamp(5.5rem, 7vh, 7rem);
+			/* The title always starts just below the top blur band, on any
+			   screen: the band's height (utils/gradualBlur.js — keep the two
+			   in step) plus a little. It used to follow the screen's height
+			   (7vh), while the band follows its width, so on wide screens the
+			   top of the title fell into the blur. */
+			padding-top: calc(clamp(5.5rem, 6vw, 7rem) + 0.5rem);
 			/* More breathing room below the title before the rail starts —
 			   the base (mobile-first) rule only has 0.7rem here. */
 			padding-bottom: clamp(2rem, 4vh, 3.5rem);
@@ -309,7 +314,7 @@ const steps = [
 		}
 		.process-desc__tag {
 			font-family: var(--f-body);
-			font-size: 9px;
+			font-size: 10px;
 			font-weight: 300;
 			letter-spacing: 0.42em;
 			text-transform: uppercase;
@@ -422,6 +427,10 @@ const steps = [
 			   earlier edges stay in view. */
 			position: sticky;
 			top: calc(var(--pstack-top, 10rem) + var(--i) * 14px);
+			/* All the cards as tall as the tallest (--pstack-card-h, measured):
+			   with their own heights, the ones behind poked out under the one in
+			   front at different depths — and the card-step scale made it worse. */
+			min-height: var(--pstack-card-h, 0px);
 			transform-origin: 50% 0;
 			display: flex;
 			flex-direction: column;
@@ -679,6 +688,8 @@ const steps = [
 			// approach, this window's width no longer has to stay under 1.0
 			// — see the asymmetric rise/fall right below, the rise always
 			// lands exactly on 1 at raw 0 regardless of how wide it is.
+			const TEXT_BLUR = 8;       // px, at fully transparent
+			const IMAGE_SETTLE = 0.04; // scale above 1, at fully transparent
 			const IMAGE_LEAD = 0.35;
 			const IMAGE_LEAD_ENTRANCE = 1.2;
 			// How gently the last pair settles into its final centered
@@ -720,15 +731,22 @@ const steps = [
 				const y = -rawPos * reach;
 				const opacity = Math.max(0, Math.min(1, 1.35 - Math.abs(rawPos) * 1.35));
 
+				// Numbers and descriptions come out of a blur as they arrive and
+				// go back into it as they leave, off the same curve as their
+				// opacity (nothing extra to work out). They're small; the big image
+				// tiles get no blur — filtering them every scroll frame is what janks.
+				const blur = `blur(${((1 - opacity) * TEXT_BLUR).toFixed(2)}px)`;
 				const numEl = numEls[i];
 				const descEl = descEls[i];
 				if (numEl) {
 					numEl.style.transform = `translateY(calc(-50% + ${y.toFixed(1)}px))`;
 					numEl.style.opacity = String(opacity);
+					numEl.style.filter = blur;
 				}
 				if (descEl) {
 					descEl.style.transform = `translateY(calc(-50% + ${(-y).toFixed(1)}px))`;
 					descEl.style.opacity = String(opacity);
+					descEl.style.filter = blur;
 				}
 				// The "active" pair (driving the number's highlight color)
 				// is whichever one is currently most visible, not just
@@ -755,7 +773,12 @@ const steps = [
 					? Math.max(0, Math.min(1, (rawPos + riseWindow) / riseWindow))
 					: Math.max(0, Math.min(1, 1.35 - rawPos * 1.35));
 				const imgEl = imgEls[i];
-				if (imgEl) imgEl.style.opacity = String(imgOpacity);
+				if (imgEl) {
+					imgEl.style.opacity = String(imgOpacity);
+					// Settles from a hair oversized as it fades in (a transform,
+					// cheap on the compositor), instead of a blur.
+					imgEl.style.transform = `scale(${(1 + (1 - imgOpacity) * IMAGE_SETTLE).toFixed(4)})`;
+				}
 				bestImgOpacity = Math.max(bestImgOpacity, imgOpacity);
 			}
 
@@ -818,16 +841,21 @@ const steps = [
 		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
 		if (!section || !intro || !section.querySelector('.pstack')) return;
 		const stack = section.querySelector<HTMLElement>('.pstack')!;
-		const card = stack.querySelector<HTMLElement>('.pstack__card');
+		const cards = Array.from(stack.querySelectorAll<HTMLElement>('.pstack__card'));
 		const set = () => {
 			section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+			// Every card as tall as the tallest: measure their own heights
+			// (the minimum off), then give them all that one.
+			section.style.setProperty('--pstack-card-h', '0px');
+			const tallest = Math.max(0, ...cards.map((c) => c.offsetHeight));
+			section.style.setProperty('--pstack-card-h', `${tallest}px`);
 			const pad = parseFloat(getComputedStyle(stack).paddingBottom) || 0;
-			if (card) section.style.setProperty('--pstack-lead', `${card.offsetHeight + pad}px`);
+			if (cards[0]) section.style.setProperty('--pstack-lead', `${cards[0].offsetHeight + pad}px`);
 		};
 		set();
 		_stackTopObserver = new ResizeObserver(set);
 		_stackTopObserver.observe(intro);
-		if (card) _stackTopObserver.observe(card);
+		cards.forEach((c) => _stackTopObserver!.observe(c));
 	}
 	document.addEventListener('astro:page-load', initProcessStackTop);
 

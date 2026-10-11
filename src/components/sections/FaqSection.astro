@@ -10,7 +10,9 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 
 		<aside class="faq__sidebar">
 			<div class="faq__photo">
-				<Image src={marcinPhoto} alt="Martin" width={180} height={207} loading="lazy" />
+				<Image src={marcinPhoto} alt="Martin" width={240} height={288} densities={[1, 2]} loading="lazy" />
+				<!-- Desktop: the photo as a chroma card (initFaqPhoto). -->
+				<canvas class="faq__chroma" aria-hidden="true"></canvas>
 			</div>
 			<p class="faq__contact-text">Got more questions?<br>Let's talk.</p>
 			<div class="h-hero-cta-wrap faq__cta-wrap">
@@ -99,7 +101,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
 		box-sizing: border-box;
 		display: grid;
-		grid-template-columns: 220px 1fr;
+		grid-template-columns: 240px 1fr;
 		grid-template-areas:
 			"sidebar header"
 			"sidebar list";
@@ -120,14 +122,31 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	}
 	.faq__sidebar.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
 	.faq__photo {
-		width: 180px;
+		width: 240px;
 		aspect-ratio: 1 / 1.2;
+		position: relative;
 		overflow: hidden;
 		border-radius: 0;
 		margin-bottom: 1.8rem;
 		background: #1a1a1a;
 	}
 	.faq__photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	/* Chroma card: 1.5× the photo box (PAD in chromaCard.ts), centred, so
+	   the card can lean and drift without being cut off. Shown once its
+	   first frame is drawn; the plain photo stays until then. */
+	.faq__chroma {
+		position: absolute;
+		left: -25%;
+		top: -25%;
+		width: 150%;
+		height: 150%;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.4s ease;
+	}
+	.faq__photo.is-chroma { overflow: visible; background: none; }
+	.faq__photo.is-chroma img { visibility: hidden; }
+	.faq__photo.is-chroma .faq__chroma { opacity: 1; }
 	.faq__contact-text {
 		font-family: var(--f-body);
 		font-size: clamp(0.85rem, 1.1vw, 0.95rem);
@@ -159,7 +178,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	.disc-header__title {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(3.5rem, 8vw, 11rem);
+		font-size: clamp(3.5rem, 8vw, 8.5rem);
 		letter-spacing: 0.02em;
 		text-transform: uppercase;
 		line-height: 0.9;
@@ -224,7 +243,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 			top: 3.5rem;
 			padding-top: clamp(4rem, 9vh, 9rem);
 		}
-		.faq__photo { width: 150px; margin-bottom: 1.4rem; }
+		.faq__photo { width: 190px; margin-bottom: 1.4rem; }
 		.faq__contact-text { margin-bottom: 1.1rem; }
 	}
 
@@ -256,7 +275,8 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 			padding-top: clamp(2rem, 5vw, 3rem);
 			padding-bottom: clamp(2.5rem, 7vw, 3.5rem);
 		}
-		.faq__photo { width: clamp(120px, 32vw, 160px); margin-bottom: 1.4rem; }
+		/* A small portrait beside the note, like an avatar — not a feature image. */
+		.faq__photo { width: clamp(56px, 14vw, 120px); margin-bottom: 1.1rem; }
 		.faq__cta-wrap { max-width: 320px; }
 		.disc-header { padding: 0 0 clamp(2rem, 5vw, 3rem); }
 		.faq__content .disc-list { padding-bottom: 0; }
@@ -281,6 +301,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
+	import { createChromaCard, type ChromaCardHandle } from '../../utils/chromaCard';
 	gsap.registerPlugin(ScrollTrigger);
 
 	function initFaq() {
@@ -318,5 +339,40 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		});
 	}
 
-	onReady(initFaq);
+	// Desktop: the photo becomes a chroma card (mouse-driven lean, RGB-split
+	// zoom on hover). Touch keeps the plain photo — nothing to hover there.
+	let _chroma: ChromaCardHandle | null = null;
+	function initFaqPhoto() {
+		_chroma?.destroy();
+		_chroma = null;
+		if (!window.matchMedia('(min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine)').matches) return;
+		const box = document.querySelector<HTMLElement>('#faq .faq__photo');
+		const img = box?.querySelector<HTMLImageElement>('img');
+		const canvas = box?.querySelector<HTMLCanvasElement>('.faq__chroma');
+		if (!box || !img || !canvas) return;
+		// The photo is lazy: start loading it now, build the card once it's in.
+		img.loading = 'eager';
+		img.decode().then(() => {
+			if (!canvas.isConnected || _chroma) return;
+			_chroma = createChromaCard(box, canvas, img, {
+				zoomLevel: 0.15,
+				scaleIntensity: 0.12,
+				positionIntensity: 0.7,
+				// It also leans toward the cursor moving over the questions.
+				zone: document.getElementById('faq') ?? undefined,
+				// Hovering the Contact button lights the photo up too.
+				hoverTrigger: document.querySelector<HTMLElement>('#faq .faq__cta') ?? undefined,
+			});
+			if (_chroma) requestAnimationFrame(() => box.classList.add('is-chroma'));
+		}).catch(() => {});
+	}
+	document.addEventListener('astro:before-swap', () => {
+		_chroma?.destroy();
+		_chroma = null;
+	});
+
+	onReady(() => {
+		initFaq();
+		initFaqPhoto();
+	});
 </script>

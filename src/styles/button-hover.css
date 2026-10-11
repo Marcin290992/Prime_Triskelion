@@ -1,0 +1,86 @@
+/* Desktop button hover: the border goes out of focus.
+   On hover the button's own border fades and a blurred copy of it (an
+   ::after ring) comes in, for as long as the cursor stays on the button.
+   Nothing else about a button's hover changes, and nothing at rest does.
+   On the main CTAs (.h-hero-cta--fixed) it comes as the border comets meet
+   (utils/starBorder.js adds .is-lit then) rather than the moment the cursor
+   enters; everywhere else it is plain :hover.
+   Desktop only (mouse, wide screen, no reduced motion); the MENU button is
+   not included. The one !important is a cascade-layer one: it beats the
+   buttons' own border-color on hover whatever the order of the stylesheets
+   (which changes after a page swap). Their own transitions already cover
+   border-color, so none are overridden. */
+@layer btn-hover {
+  @media (min-width: 1025px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .h-hero-cta,
+    .tst__btn,
+    .footer-social__link,
+    .cp-back {
+      --bh-ring: rgb(var(--c-cream) / 0.7);
+    }
+    .tst__btn,
+    .footer-social__link,
+    .cp-back {
+      position: relative;
+    }
+
+    .h-hero-cta::after,
+    .tst__btn::after,
+    .footer-social__link::after,
+    .cp-back::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border: 1px solid var(--bh-ring);
+      pointer-events: none;
+      opacity: 0;
+      filter: blur(0px);
+      transition: opacity 0.45s ease, filter 0.45s ease;
+    }
+    /* .h-hero-cta clips its children: its ring sits just inside the edge */
+    .h-hero-cta::after { inset: 0; }
+
+    .h-hero-cta:not(.h-hero-cta--fixed):hover,
+    .h-hero-cta--fixed.is-lit,
+    .tst__btn:hover,
+    .footer-social__link:hover,
+    .cp-back:hover {
+      border-color: transparent !important;
+    }
+    /* Fixed CTAs: the beam's sharp rim would sit beside the blurred ring,
+       so it fades out while hovered, and the label lifts to full
+       strength — blurring alone reads as "out of focus", not "active". */
+    .h-hero-cta--fixed .hud-spin-border {
+      transition: opacity 0.45s ease;
+    }
+    .h-hero-cta--fixed.is-lit .hud-spin-border {
+      opacity: 0;
+    }
+    .h-hero-cta--fixed.is-lit {
+      color: rgb(var(--c-cream)) !important;
+    }
+
+    .h-hero-cta:not(.h-hero-cta--fixed):hover::after,
+    .h-hero-cta--fixed.is-lit::after,
+    .tst__btn:hover::after,
+    .footer-social__link:hover::after,
+    .cp-back:hover::after {
+      opacity: 1;
+      filter: blur(1.6px);
+    }
+
+    /* The button's glare — the diagonal sweep it makes every few seconds
+       (global.css, cta-glare) — also goes across once as the ring lights: the
+       finish of the hover. A keyframes of its own, so it starts afresh (the
+       periodic one carries on from wherever it is) — same stripe, same length
+       (22% of 5s). */
+    .h-hero-cta--fixed.is-lit::before {
+      animation: cta-glare-once 1.1s ease-in-out 0s 1 both !important;
+    }
+  }
+}
+
+@keyframes cta-glare-once {
+  from { transform: translateX(-160%); }
+  to   { transform: translateX(160%); }
+}

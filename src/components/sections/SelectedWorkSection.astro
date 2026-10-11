@@ -36,7 +36,7 @@ const projects = [
 
 				<div class="slide slide-intro">
 					<h2>What we've<br><em>created.</em></h2>
-					<a href="/projects" class="link-btn">View All Projects +</a>
+					<a href="/projects" class="link-btn no-border">View All Projects</a>
 				</div>
 
 				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
@@ -48,7 +48,7 @@ const projects = [
 							<a href="/winds-of-sinai" class="card-title-link"><h3>Winds Of Sinai</h3></a>
 							<p>Luxury travel brand identity &amp; digital presence</p>
 						</div>
-						<a href="/winds-of-sinai" class="link-btn no-border">Explore &#8594;</a>
+						<a href="/winds-of-sinai" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -61,7 +61,7 @@ const projects = [
 							<a href="/work/unfallfix24" class="card-title-link"><h3>UnfallFix24</h3></a>
 							<p>Accident reporting &amp; claims management platform</p>
 						</div>
-						<a href="/work/unfallfix24" class="link-btn no-border">Explore &#8594;</a>
+						<a href="/work/unfallfix24" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -74,7 +74,7 @@ const projects = [
 							<a href="/work/mousa-export" class="card-title-link"><h3>Mousa Export</h3></a>
 							<p>International export logistics platform</p>
 						</div>
-						<a href="/work/mousa-export" class="link-btn no-border">Explore &#8594;</a>
+						<a href="/work/mousa-export" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -87,7 +87,7 @@ const projects = [
 							<a href="#" class="card-title-link"><h3>Steak Club</h3></a>
 							<p>Premium steakhouse brand with booking system</p>
 						</div>
-						<a href="#" class="link-btn no-border">Explore &#8594;</a>
+						<a href="#" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -100,7 +100,7 @@ const projects = [
 							<a href="#" class="card-title-link"><h3>Josh Jabs</h3></a>
 							<p>Personal brand &amp; portfolio for a musician</p>
 						</div>
-						<a href="#" class="link-btn no-border">Explore &#8594;</a>
+						<a href="#" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -113,7 +113,7 @@ const projects = [
 							<a href="#" class="card-title-link"><h3>Umzugsservice</h3></a>
 							<p>Moving service with SEO &amp; lead generation</p>
 						</div>
-						<a href="#" class="link-btn no-border">Explore &#8594;</a>
+						<a href="#" class="link-btn no-border">Explore</a>
 					</div>
 				</div>
 
@@ -152,7 +152,6 @@ const projects = [
 								<p class="sw-m__desc">{p.desc}</p>
 								<span class="sw-m__tags">{p.tags.join(' · ')}</span>
 							</div>
-							{p.href && <span class="sw-m__arrow" aria-hidden="true">→</span>}
 						</div>
 					</Tag>
 				);
@@ -194,7 +193,7 @@ const projects = [
 	.sw-header__title {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(3.5rem, 8vw, 11rem);
+		font-size: clamp(3.5rem, 8vw, 8.5rem);
 		letter-spacing: -0.02em;
 		text-transform: uppercase;
 		line-height: 0.9;
@@ -231,7 +230,7 @@ const projects = [
 	.slide-intro h2 {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(3.5rem, 8vw, 11rem);
+		font-size: clamp(3.5rem, 8vw, 8.5rem);
 		line-height: 0.9;
 		letter-spacing: -0.02em;
 		text-transform: uppercase;
@@ -339,19 +338,41 @@ const projects = [
 		left: 0;
 		width: 100%;
 		height: 1px;
-		background: rgb(var(--c-red));
+		background: rgb(var(--c-cream));
 		transform: scaleX(0);
 		transform-origin: left;
 		transition: transform 0.4s cubic-bezier(0.25,1,0.5,1);
 	}
 	@media (hover: hover) {
 		.link-btn.no-border:hover {
-			color: rgb(var(--c-red));
+			color: rgb(var(--c-cream));
 			transform: translateX(5px);
 		}
 		.link-btn.no-border:hover::after {
 			transform: scaleX(1);
 		}
+	}
+
+	/* Desktop: the whole card answers to the cursor, not only its small link —
+	   the same as the cards on the Projects page. The frame leans in a touch
+	   and its edge lights, the description comes to full strength and the
+	   Explore link does what it does under the cursor (shifts, underline draws
+	   in). The frame (not the <img>, which the parallax moves) is what scales. */
+	@media (hover: hover) and (pointer: fine) {
+		.img-box {
+			transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s ease;
+		}
+		.card-info p { transition: color 0.5s ease; }
+		.slide-card:hover .img-box {
+			transform: scale(1.02);
+			border-color: rgba(255,255,255,0.2);
+		}
+		.slide-card:hover .card-info p { color: rgb(var(--c-cream) / 0.95); }
+		.slide-card:hover .link-btn.no-border {
+			color: rgb(var(--c-cream));
+			transform: translateX(5px);
+		}
+		.slide-card:hover .link-btn.no-border::after { transform: scaleX(1); }
 	}
 
 	/* Curtain */
@@ -396,7 +417,8 @@ const projects = [
 	.final-title {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: 11vw;
+		/* Capped by height too, so it never outgrows the hero on a tall screen. */
+		font-size: min(11vw, 13.5vh);
 		line-height: 0.85;
 		letter-spacing: -0.04em;
 		text-transform: uppercase;
@@ -534,16 +556,11 @@ const projects = [
 		}
 		.sw-m__tags {
 			font-family: var(--f-body);
-			font-size: 9px;
+			font-size: 10px;
 			font-weight: 500;
 			letter-spacing: 0.32em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.55);
-		}
-		.sw-m__arrow {
-			flex: none;
-			font-size: 1.1rem;
-			color: rgb(var(--c-red));
 		}
 		/* Where in the row you are. */
 		.sw-m__foot {

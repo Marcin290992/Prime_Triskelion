@@ -53,6 +53,22 @@ if (!(window as any).__oxMenuBtnDelegated) {
   });
 }
 
+// The logo (#h-title persists across pages, like the menu button): with the
+// menu open it leaves through the menu's own exit (leaveToHomeFromMenu()
+// below). Capture phase, so this runs before Astro's router sees the click.
+if (!(window as any).__oxLogoDelegated) {
+  (window as any).__oxLogoDelegated = true;
+  document.addEventListener('click', (e) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const logo = (e.target as Element | null)?.closest('#h-title');
+    if (!logo) return;
+    if ((window as any).__oxygenMenuLogo?.(logo.getAttribute('href') ?? '/')) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, true);
+}
+
 // Generation-independent safety net against "both hamburger AND contact
 // button visible/unclickable at once" on mobile. The scroll-swap itself is
 // now a single class (.hud-scroll-hidden on #ox-hud-mobile — see
@@ -461,7 +477,7 @@ function initOxygenMenu() {
             unlockBodyScroll();
             resolve();
           },
-        }).to(content, { opacity: 0, duration: 0.4, ease: 'power2.inOut' });
+        }).to(content, { opacity: 0, duration: 0.32, ease: 'power2.inOut' });
         return;
       }
 
@@ -481,14 +497,12 @@ function initOxygenMenu() {
           resolve();
         },
       })
-        // Same shape as before (topbar out, links reversed-stagger out,
-        // bottom out), just tightened to ~60% of the original durations —
-        // this timeline has to finish before navigate() fires (see the
-        // nav-link click handler below), so it was directly adding to how
-        // long "click a link" took to actually leave the page.
+        // Everything leaves upward, top line first — the links came in from
+        // below, so they carry on out the top of their masks instead of
+        // dropping back the way they came (which read as a rewind).
         .to('.ox-menu-topbar', { y: -15, opacity: 0, duration: 0.24, ease: 'power3.inOut' })
-        .to(links.reverse(), { y: 80, opacity: 0, duration: 0.3, stagger: 0.024, ease: 'power3.inOut' }, '-=0.15')
-        .to('.ox-menu-bottom', { y: 20, opacity: 0, duration: 0.21, ease: 'power3.inOut' }, '-=0.18');
+        .to(links, { y: '-100%', opacity: 0, duration: 0.32, stagger: 0.03, ease: 'power3.in' }, '-=0.15')
+        .to('.ox-menu-bottom', { y: -20, opacity: 0, duration: 0.21, ease: 'power3.inOut' }, '-=0.18');
     });
   }
 
@@ -523,6 +537,60 @@ function initOxygenMenu() {
   // Seconds the dissolve waits on touch so the chosen link's roll plays alone.
   const TOUCH_ROLL_LEAD = () => (window.matchMedia('(hover: none)').matches && !reducedMotion() ? 0.3 : 0);
 
+  // Cinematic exit: everything but the chosen link racks out of focus and
+  // dissolves, all together (a stepped, one-after-another dissolve read
+  // as stutter); the chosen link is left alone on black for a beat, then
+  // goes out of focus itself as the menu fades (the reverse of the new
+  // page's title focusing in after the cut).
+  // Blur only on single lines of text (each <li> — its own overflow:hidden
+  // would clip a blur on anything inside it) and the thin top/bottom
+  // bars; the right panel just fades, a filter on that block steps on
+  // touch Safari.
+  // `chosen`: the menu item that stays (none: they all go). `wholePanel`:
+  // the right panel goes with everything else, featured project included —
+  // otherwise only its info block does. `lead`: seconds to wait first.
+  function dissolveMenu(chosen: HTMLElement | null, wholePanel: boolean, lead: number) {
+    const overlay = document.getElementById('ox-menu-overlay');
+    if (!overlay) return;
+    const others = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'))
+      .filter((el) => el !== chosen);
+    // Reduce motion: a plain fade, no blur.
+    const out = reducedMotion()
+      ? { opacity: 0, duration: 0.4, ease: 'none' }
+      : { opacity: 0, filter: 'blur(10px)', duration: 0.45, ease: 'power2.inOut' };
+    gsap.to(others, { ...out, delay: lead });
+    gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: lead + 0.12 });
+    const aside = overlay.querySelector<HTMLElement>('aside');
+    const panelOut = wholePanel ? aside : aside?.firstElementChild;
+    if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.45, ease: 'power2.inOut', delay: lead + 0.12 });
+  }
+
+  // The logo while the menu is open: it still goes Home, but by the same
+  // exit as choosing a link — the whole menu dissolves, fades to black, and
+  // only then the cut — instead of the page jumping to the hero out of the
+  // middle of the menu. Returns true when it took the click (the menu was
+  // open); a tap while the menu is still opening is remembered, and the exit
+  // starts once it has finished opening (running the two timelines on top of
+  // each other would fight over the same elements). Closed menu: false, the
+  // logo is a plain link.
+  let leavingViaLogo = false;
+  function leaveToHomeFromMenu(href: string): boolean {
+    if (!state.isMenuOpen) return false;
+    if (leavingViaLogo) return true;
+    leavingViaLogo = true;
+    void (async () => {
+      while (state.menuAnimating) await new Promise((r) => setTimeout(r, 40));
+      dissolveMenu(null, true, 0);
+      await new Promise((r) => setTimeout(r, 300));
+      await closeMenu(true, true); // keep the black overlay up while it fades out
+      cutNextTransition();
+      await navigate(href); // the View Transition starts from black
+      leavingViaLogo = false;
+    })();
+    return true;
+  }
+  (window as any).__oxygenMenuLogo = leaveToHomeFromMenu;
+
   function bindMenuNavLink(link: HTMLAnchorElement, activeClass: string) {
     // Mobile: touchstart gives immediate visual feedback before click fires
     let releaseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -536,51 +604,24 @@ function initOxygenMenu() {
     // gesture) instead of running the whole sequence a second time.
     let handledByTouch = false;
 
-    // Cinematic exit: everything but the chosen link racks out of focus and
-    // dissolves, all together (a stepped, one-after-another dissolve read
-    // as stutter); the chosen link is left alone on black for a beat, then
-    // goes out of focus itself as the menu fades (the reverse of the new
-    // page's title focusing in after the cut).
-    // Blur only on single lines of text (each <li> — its own overflow:hidden
-    // would clip a blur on anything inside it) and the thin top/bottom
-    // bars; the right panel just fades, a filter on that block steps on
-    // touch Safari.
-    function dissolveOthers() {
-      const overlay = document.getElementById('ox-menu-overlay');
-      if (!overlay) return;
-      const chosen = link.closest<HTMLElement>('.ox-menu-item');
-      const others = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'))
-        .filter((el) => el !== chosen);
-      // Reduce motion: a plain fade, no blur.
-      const out = reducedMotion()
-        ? { opacity: 0, duration: 0.4, ease: 'none' }
-        : { opacity: 0, filter: 'blur(10px)', duration: 0.55, ease: 'power2.inOut' };
-      // Touch: the chosen link's red roll only starts at the tap, and a
-      // blur on the big menu text has to be re-rasterized every frame —
-      // run together, Android dropped frames in the roll. Let the roll
-      // (0.34s) play on its own first. A mouse has rolled it on hover.
-      const lead = TOUCH_ROLL_LEAD();
-      gsap.to(others, { ...out, delay: lead });
-      gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: lead + 0.12 });
-      // Right panel: its info block always goes; the whole panel (with the
-      // featured project) only when a nav link was chosen.
-      const aside = overlay.querySelector<HTMLElement>('aside');
-      const panelOut = chosen ? aside : aside?.firstElementChild;
-      if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.55, ease: 'power2.inOut', delay: lead + 0.12 });
-    }
-
     async function activate() {
       link.classList.add(activeClass);
       const href = link.getAttribute('href');
-      dissolveOthers();
+      const chosen = link.closest<HTMLElement>('.ox-menu-item');
+      // Touch: the chosen link's red roll only starts at the tap, and a blur
+      // on the big menu text has to be re-rasterized every frame — run
+      // together, Android dropped frames in the roll. Let the roll (0.34s)
+      // play on its own first. A mouse has rolled it on hover.
+      dissolveMenu(chosen, !!chosen, TOUCH_ROLL_LEAD());
       // Hold on the chosen link while the rest dissolves around it and its
-      // text roll (OxygenMenu.astro, 0.34s) reads, then leave. Touch has no
-      // hover lead-in — the roll only starts at the tap — so it gets the
-      // full roll plus a beat; with a mouse it has already rolled on hover.
+      // text roll (OxygenMenu.astro, 0.34s) reads, then leave — short: the
+      // whole choose-to-cut runs about a second (it was ~1.5s, which read
+      // as waiting by the fifth time). Touch has no hover lead-in — the
+      // roll only starts at the tap — so it gets the roll first.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, (noHover ? 720 : 520) + TOUCH_ROLL_LEAD() * 1000));
+      await new Promise(r => setTimeout(r, (noHover ? 400 : 300) + TOUCH_ROLL_LEAD() * 1000));
       // The chosen link racks out of focus as the menu fades to black.
-      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.4, ease: 'power2.in' });
+      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.32, ease: 'power2.in' });
       await closeMenu(true, true);  // keep black overlay visible, fade out
       if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
     }
@@ -719,9 +760,11 @@ function initOxygenMenu() {
       lineColor: '#ffffff',
       baseColor: '#525252',
       intensity: 1,
+      idleIntensity: 0.35,
       shineSize: 10,
-      shineFade: 40,
-      thickness: 1,
+      shineFade: 34,
+      thickness: 1.2,
+      glow: 1,
       speed: 0.35,
       proximity: 250,
     });

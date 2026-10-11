@@ -75,55 +75,11 @@ body {
   overflow-x: clip;
 }
 
-body::after {
-  content: '';
-  position: fixed;
-  /* Sized to the LARGE viewport (URL bar hidden), not inset:0 — inset:0
-     tracks the current viewport, and mobile browsers don't always resize
-     fixed layers in step with the bar hiding, which left the bottom strip
-     without this grain: a visibly darker band under the menu, exactly the
-     bar's height. Overshooting while the bar is shown is harmless.
-     120px of overscan on every side: the layer jumps around inside it
-     (pt-grain), so its edges never show. */
-  top: -120px;
-  left: -120px;
-  right: -120px;
-  height: calc(100vh + 240px);
-  height: calc(100lvh + 240px);
-  z-index: 9999;
-  pointer-events: none;
-  opacity: 0.075;
-  /* Living film grain: the noise jumps to a new offset ten times a
-     second. Moves the whole layer (transform — composited, nothing
-     repainted), not the texture inside it. */
-  animation: pt-grain 1s steps(1, end) infinite;
-  will-change: transform;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 200px 200px;
-}
-@keyframes pt-grain {
-  0%   { transform: translate3d(0, 0, 0); }
-  10%  { transform: translate3d(-60px, -90px, 0); }
-  20%  { transform: translate3d(30px, -40px, 0); }
-  30%  { transform: translate3d(-90px, 60px, 0); }
-  40%  { transform: translate3d(70px, 20px, 0); }
-  50%  { transform: translate3d(-20px, 90px, 0); }
-  60%  { transform: translate3d(90px, -70px, 0); }
-  70%  { transform: translate3d(-40px, 30px, 0); }
-  80%  { transform: translate3d(50px, 80px, 0); }
-  90%  { transform: translate3d(-80px, -20px, 0); }
-  100% { transform: translate3d(10px, 50px, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  body::after { animation: none; }
-}
-/* Phones and tablets: stronger than desktop — at phone pixel density the
-   same grain reads much finer and all but vanished. (It was off here once:
-   it lifts the black a touch next to the pure-black bars iOS Safari paints
-   above/below the page, see .edge-tint in Layout.astro.) */
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  body::after { opacity: 0.09; }
-}
+/* Film grain: one layer for the whole site, drawn by utils/filmGrain.js —
+   desktop only; phones and tablets keep pure, deep black (a grain lifted the
+   black next to the solid-black bars iOS Safari paints, and a full-screen
+   layer over everything cost the menu and About frames on 120Hz and older
+   iPhones). */
 
 /* Mobile subpages: content below the hero stays hidden until the hero
    title has blurred in, then fades in (revealAfterHero in
@@ -146,7 +102,7 @@ body::after {
    unstyled-flash guard in utils/afterPageTransition.ts): hide the page
    content, keep the menu, logo and edge strips — same set as
    html.ox-menu-covered in OxygenMenu.astro. */
-html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint) {
+html.pt-styles-wait body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain) {
   visibility: hidden;
 }
 
@@ -192,7 +148,7 @@ html:active-view-transition .nav-cta,
 html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
 html:active-view-transition .zoom-col,
-html:active-view-transition .top-blur {
+html:active-view-transition .gradual-blur__layer {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -299,9 +255,9 @@ main {
 }
 .h-hero-cta:hover {
   color: rgb(var(--c-cream) / 0.95);
-  border-color: rgb(var(--c-red) / 0.45);
-  background: rgb(var(--c-red) / 0.06);
-  box-shadow: inset 0 0 0 1px rgb(var(--c-red) / 0.12), 0 0 20px rgb(var(--c-red) / 0.15), 0 8px 24px rgb(var(--c-bg) / 0.25);
+  border-color: rgb(var(--c-cream) / 0.45);
+  background: rgb(var(--c-cream) / 0.06);
+  box-shadow: inset 0 0 0 1px rgb(var(--c-cream) / 0.12), 0 0 20px rgb(var(--c-cream) / 0.15), 0 8px 24px rgb(var(--c-bg) / 0.25);
 }
 .h-hero-cta:active { transform: scale(0.97); }
 
@@ -496,7 +452,6 @@ html body.oxygen-menu-open #hero-nav-cta-wrap {
   .faq__sidebar,
   .disc-header,
   .disc-item,
-  .tst__inner,
   .cta-title,
   .cta-email,
   .cta-copy-btn,
@@ -592,7 +547,10 @@ html body .hud-menu-btn::after {
    HeroSection.astro reads it. Desktop keeps its own sizes (already in
    order there). */
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-  :root { --hero-size: clamp(2.5rem, 9.5vw, 5rem); }
+  /* Flat 3.2rem up to ~540px, then grows with the width: a bigger phone
+     never gets smaller titles than a smaller one (a separate ≤420px value
+     used to make 430px phones drop from 51px to 41px). */
+  :root { --hero-size: clamp(3.2rem, 9.5vw, 5rem); }
   html body .sw-header__title,
   html body .svc__title-main,
   html body .showcase__title,
@@ -604,10 +562,40 @@ html body .hud-menu-btn::after {
   html body .am-who-l,
   html body .am-who-r,
   html body .cp-title,
-  html body .wos-hero__title {
+  html body .wos-hero__title,
+  html body .wos-pm__title,
+  html body .showcase-title,
+  html body .ac-label {
     font-size: calc(var(--hero-size) * 0.8) !important;
   }
+  /* Item names under a title (a project, a process step): one clear step
+     below it, the same everywhere — at 38px a project read as big as
+     "My Projects." itself. */
+  html body .proj-foot__name,
+  html body .pstack__title {
+    font-size: calc(var(--hero-size) * 0.55) !important;
+  }
 }
-@media (max-width: 420px) {
-  :root { --hero-size: clamp(3.2rem, 10vw, 4rem); }
+/* The work carousel's cards: the same step on tablets; a phone's card is
+   too narrow for it (a one-word name ran out of it), so it keeps its own. */
+@media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
+  html body .sw-m__title { font-size: calc(var(--hero-size) * 0.55) !important; }
+}
+
+/* ── Gradual blur bands (utils/gradualBlur.js) ──
+   Fixed bands along the top and bottom edges: stacked backdrop-blur layers,
+   each masked to a stretch of the band, so the blur builds up with no steps.
+   The layers carry their own mask and blur inline. */
+.gradual-blur {
+  position: fixed;
+  pointer-events: none;
+  isolation: isolate;
+}
+.gradual-blur__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .gradual-blur__layer { background: rgba(0, 0, 0, 0.3); opacity: 0.5 !important; }
 }

@@ -51,6 +51,23 @@ export function syncTickerToScroll(): void {
 guardEntrance();
 document.addEventListener('astro:after-swap', guardEntrance);
 
+// Back on the tab after a while in the background: with lag smoothing off
+// the whole time away arrived as one frame and every running animation
+// jumped to its end at once (a flash, a jolt). For the first moment back,
+// a long frame counts as a normal one, so things carry on where they were.
+let returnTimer: ReturnType<typeof setTimeout> | undefined;
+document.addEventListener('visibilitychange', () => {
+	if (document.hidden) {
+		gsap.ticker.lagSmoothing(100, 33);
+		clearTimeout(returnTimer);
+		return;
+	}
+	clearTimeout(returnTimer);
+	returnTimer = setTimeout(() => {
+		if (performance.now() >= entranceGuardUntil) gsap.ticker.lagSmoothing(0);
+	}, 600);
+});
+
 // Leaving through the menu: by the time navigate() runs the menu has
 // already faded its content out over its black overlay, so the old page is
 // plain black and cross-fading it into the new (black, title still hidden)
@@ -228,7 +245,7 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
-		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not([data-leave-keep])'
+		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain):not([data-leave-keep])'
 	);
 	// Its own content (the title on it) still fades with the page.
 	const keptContent = document.querySelectorAll<HTMLElement>('[data-leave-keep] > *');
@@ -487,6 +504,16 @@ document.addEventListener('astro:after-swap', () => {
 	Promise.all([pending, settled]).then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
 		gsap.to(v, { t: 0, duration: blur ? 0.8 : 0.3, ease: 'power2.out', onUpdate: paint, onComplete: () => veil.remove() });
 	})));
+});
+
+// A new page starts at the top — but ScrollTrigger may still hold the old
+// page's scroll in its cache, and its first refresh "restores" that: on
+// touch (native scroll, no Lenis) tapping the logo mid-page landed back in
+// the same spot. Forget it, so the refresh restores the real 0.
+document.addEventListener('astro:after-swap', () => {
+	if (traverseNext) return;
+	ScrollTrigger.clearScrollMemory();
+	ScrollTrigger.update();
 });
 
 document.addEventListener('astro:after-swap', () => {

@@ -52,7 +52,6 @@ const navLinks = [
          oversized box (which would shift the grid-centered content layout
          if this were the thing sized h-full/grid-rows-[...] below). -->
     <div class="ox-menu-bg-fill" aria-hidden="true"></div>
-    <div class="ox-overlay-grain absolute inset-0 pointer-events-none opacity-[0.04]"></div>
 
     <!-- Content -->
     <div class="relative z-10 h-full grid grid-rows-[auto_1fr_auto] px-8 desk:px-16 py-10 desk:py-14 ox-menu-content">
@@ -240,11 +239,6 @@ const navLinks = [
   }
   .ox-panel-email:hover { color: rgba(255,255,255,1); }
 
-  /* ── Overlay ambient effects ── */
-  .ox-overlay-grain {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-    background-size: 128px;
-  }
   /* ── Top bar ── clears the fixed logo (#h-title, top+height both scale
      with vw and can outgrow this grid's own padding-top on wide screens),
      so push it down a bit further instead of letting it sit right under /
@@ -363,9 +357,9 @@ const navLinks = [
     transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
   }
     .ox-social:hover {
-    color: rgb(var(--c-red) / 0.9);
-    border-color: rgb(var(--c-red) / 0.45);
-    background: rgb(var(--c-red) / 0.06);
+    color: rgb(var(--c-cream) / 0.9);
+    border-color: rgb(var(--c-cream) / 0.45);
+    background: rgb(var(--c-cream) / 0.06);
   }
 
   /* ── Responsive ── */
@@ -553,12 +547,12 @@ const navLinks = [
 
   @media (hover: hover) {
     .hud-menu-btn:hover .hud-ico__line {
-      background: rgb(var(--c-red) / 0.9);
-      box-shadow: 0 0 6px rgb(var(--c-red) / 0.6);
+      background: rgb(var(--c-cream) / 0.9);
+      box-shadow: 0 0 6px rgb(var(--c-cream) / 0.6);
     }
     .hud-menu-btn:hover .hud-ico__line:nth-child(2) { width: 100% !important; }
     .hud-menu-btn:hover .hud-ico__line:nth-child(3) { width: 100% !important; }
-    .hud-menu-btn:hover::after { color: rgb(var(--c-red) / 0.9); }
+    .hud-menu-btn:hover::after { color: rgb(var(--c-cream) / 0.9); }
   }
 
 
@@ -589,12 +583,12 @@ const navLinks = [
     /* Hover lives on the icon only — no border/background change on the
        button chrome, that red frame was unnecessary. */
     .hud-icon-btn:hover {
-      color: rgb(var(--c-red) / 0.9);
+      color: rgb(var(--c-cream) / 0.9);
     }
     .hud-icon-btn:hover svg {
       /* fill/stroke inherit currentColor from above — keeps outline icons
          (phone, email) as outlines instead of solid-filling their shapes */
-      filter: drop-shadow(0 0 6px rgb(var(--c-red) / 0.5));
+      filter: drop-shadow(0 0 6px rgb(var(--c-cream) / 0.5));
     }
   }
 
@@ -740,19 +734,13 @@ const navLinks = [
   .oxygen-menu-open {
     overscroll-behavior: none;
   }
-  /* Off everywhere — deep black menu, same as the page behind it. On
-     mobile it lifted the #000 to a visible grey next to iOS Safari's
-     solid-black bars; on desktop it stacked on the global grain
-     (body::after in global.css), so the menu read ~60% brighter than
-     the pages. The global grain alone keeps desktop's texture. */
-  .ox-overlay-grain { display: none; }
 
   /* Set by oxygenMenu.ts once the menu overlay has fully faded in — see
      setPageCovered() there. Everything except the menu itself and the logo
      (z-index 1002, meant to stay visible above the menu) is hidden, so the
      strips iOS Safari won't let the fixed overlay cover show <html>'s black
      background instead of page content. */
-  html.ox-menu-covered body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint) {
+  html.ox-menu-covered body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain) {
     visibility: hidden;
   }
 

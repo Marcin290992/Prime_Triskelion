@@ -28,7 +28,7 @@
 					<span class="hero-bottom__sep" aria-hidden="true">•</span>
 					<span class="hero-bottom__stat"><strong>7.5M+</strong><em>USERS REACHED</em></span>
 					<span class="hero-bottom__sep" aria-hidden="true">•</span>
-					<span class="hero-bottom__stat"><strong>100</strong><em>PAGESPEED SCORE</em></span>
+					<span class="hero-bottom__stat"><strong>0</strong><em>TEMPLATES</em></span>
 				</div>
 			</div>
 		</div>
@@ -86,12 +86,16 @@
 		z-index: 1002;
 		pointer-events: none;
 		opacity: 0;
+		/* Blurs in on scroll (and out again): ends on blur(0px), not
+		   filter:none, so nothing re-rasterises when it settles. */
+		filter: blur(8px);
 		transform: translateY(-8px);
-		transition: opacity 0.4s ease, transform 0.4s ease;
+		transition: opacity 0.45s ease, filter 0.6s ease, transform 0.5s ease;
 	}
 	.hero-nav-cta-wrap.hero-nav-cta--visible {
 		pointer-events: all;
 		opacity: 1;
+		filter: blur(0px);
 		transform: translateY(0);
 	}
 	/* Button appearance/sizing is the shared .nav-cta + .h-hero-cta--fixed
@@ -359,7 +363,7 @@
 			border: 1px solid rgb(var(--c-cream) / 0.18);
 		}
 		.hero-bottom__stat strong { margin-right: 0; font-size: 1.98rem; line-height: 1; letter-spacing: -0.02em; }
-		.hero-bottom__stat em { font-size: 0.56rem; letter-spacing: 0.11em; color: rgb(var(--c-cream) / 0.72); text-align: center; }
+		.hero-bottom__stat em { font-size: 0.62rem; letter-spacing: 0.11em; color: rgb(var(--c-cream) / 0.72); text-align: center; }
 	}
 
 	@media (max-width: 640px) {
@@ -369,17 +373,17 @@
 		.hero-center { padding-bottom: max(0.3rem, env(safe-area-inset-bottom)); }
 		.hero-inline-stats { margin-top: 0.8rem; }
 		.hero-bottom__stat strong { font-size: 1.65rem; }
-		.hero-bottom__stat em { font-size: 0.51rem; }
+		.hero-bottom__stat em { font-size: 0.6rem; }
 	}
 
 	@media (max-width: 420px) {
-		.hero-kicker { font-size: 0.56rem; letter-spacing: 0.1em; margin-top: 0; }
+		.hero-kicker { font-size: 0.6rem; letter-spacing: 0.1em; margin-top: 0; }
 		.h-hero-claim { font-size: var(--hero-size) !important; margin-top: 0 !important; }
 		.hero-center { padding-bottom: max(0.25rem, env(safe-area-inset-bottom)); }
 		.hero-cta-row { max-width: 300px; }
 		.hero-inline-stats { margin-top: 0.65rem; }
 		.hero-bottom__stat strong { font-size: 1.42rem; }
-		.hero-bottom__stat em { font-size: 0.47rem; }
+		.hero-bottom__stat em { font-size: 0.58rem; }
 	}
 
 	@media (max-width: 900px) and (max-height: 760px) {
@@ -483,9 +487,35 @@
 			});
 		}
 
+		// The rotation stops while the tab is in the background (timers keep
+		// firing there but animations don't run, so a change hung half-done
+		// and played out at once on the way back — the red word flashed). A
+		// change under way is finished first; back on the tab the word
+		// stays as it was for a full beat before the next one.
+		let running = false;
+		const stop = () => {
+			if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
+		};
+		const onVisibility = () => {
+			if (!running || !wordNode.isConnected) return;
+			if (document.hidden) {
+				stop();
+				gsap.getTweensOf(wordNode.querySelectorAll('span')).forEach((t) => t.progress(1));
+			} else if (_heroWordTimer === null) {
+				_heroWordTimer = window.setInterval(swapWord, 4200);
+			}
+		};
+		document.addEventListener('visibilitychange', onVisibility);
+		document.addEventListener('astro:before-swap', () => {
+			running = false;
+			document.removeEventListener('visibilitychange', onVisibility);
+		}, { once: true });
+
 		// First change right away, then the regular rhythm.
 		return () => {
 			if (!wordNode.isConnected) return; // page already left
+			running = true;
+			if (document.hidden) return onVisibility();
 			swapWord();
 			_heroWordTimer = window.setInterval(swapWord, 4200);
 		};
@@ -576,7 +606,11 @@
 			// stuck visible no matter what state.barHidden says.
 			const NAME_AT = 3.0;
 			const ARMS_AT = NAME_AT + 1.2;
-			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0) {
+			function revealChrome(tl: gsap.core.Timeline, menuDuration: number, delay = 0, logo = true) {
+				if (!logo) {
+					tl.to(hudMenu, { opacity: 1, y: 0, duration: menuDuration, ease: 'power3.out', clearProps: 'opacity' }, 1.6 + delay);
+					return;
+				}
 				tl.to(logoText, { opacity: 1, duration: 1.0, ease: 'sine.inOut' }, NAME_AT)
 				  .to(logoText, { filter: 'blur(0px)', duration: 1.6, ease: 'power2.inOut' }, NAME_AT)
 				  .to(logoText, { scale: 1, duration: 1.8, ease: 'power2.out' }, NAME_AT)
@@ -649,6 +683,7 @@
 					// Restored below the hero (nothing to watch) or reduce
 					// motion: light just on.
 					gsap.set('#rays-canvas', { opacity: 1 });
+					((window as any).__ptRays ??= { reveal: 1 }).reveal = 1;
 					hero!.classList.add('pt-intro-done');
 					gsap.delayedCall(1.0, startWord);
 					return;
@@ -660,28 +695,163 @@
 					opacity: 1, filter: 'blur(0px)', duration: 0.8, ease: 'power2.out', stagger: 0.08,
 				});
 				const rays = document.getElementById('rays-canvas');
-				// Top-down sweep: a soft-edged mask whose edge travels from
-				// above the frame to below it, while the light also fades up.
-				const sweep = { edge: -40 };
-				const setMask = () => {
-					if (!rays) return;
-					const m = `linear-gradient(to bottom, #000 ${sweep.edge}%, transparent ${sweep.edge + 40}%)`;
-					rays.style.maskImage = m;
-					(rays.style as any).webkitMaskImage = m;
-				};
-				setMask();
+				// The light grows out of its source above the frame (ray
+				// length from 0 to full) while it also warms up.
+				const rr = ((window as any).__ptRays ??= { reveal: 1 });
+				rr.reveal = 0;
 				gsap.set(rays, { opacity: 0 });
-				gsap.timeline({
-					delay: 0.5,
+				// Back/forward settles the page under a veil and finishes every
+				// entrance started meanwhile — the light was simply on. It waits
+				// (paused) until the veil lifts, then comes down the same way.
+				const holdForRestore = mode === 'none' && document.documentElement.classList.contains('pt-restoring');
+				const lightTl = gsap.timeline({
+					paused: holdForRestore,
+					// Same light as the first entrance: rising with the text, as
+					// slow (2.6s up, a 3s sweep down).
+					delay: 1.1, // text is sharp by then: a beat of darkness, then the light
 					onComplete: () => {
-						if (rays) { rays.style.maskImage = ''; (rays.style as any).webkitMaskImage = ''; }
 						hero!.classList.add('pt-intro-done'); // CTA glare may start
 						startWord();
 					},
 				})
-					.to(rays, { opacity: 1, duration: 1.8, ease: 'sine.inOut' }, 0)
-					.to(sweep, { edge: 100, duration: 2.0, ease: 'power2.inOut', onUpdate: setMask }, 0);
+					.to(rays, { opacity: 1, duration: 2.6, ease: 'power2.out' }, 0)
+					.to(rr, { reveal: 1, duration: 3.0, ease: 'power2.out' }, 0);
+				if (holdForRestore) {
+					const root = document.documentElement;
+					const mo = new MutationObserver(() => {
+						if (root.classList.contains('pt-restoring')) return;
+						mo.disconnect();
+						gsap.delayedCall(0.45, () => lightTl.play(0)); // play(0) skips the timeline delay: a short beat after the veil lifts
+					});
+					mo.observe(root, { attributes: true, attributeFilter: ['class'] });
+					document.addEventListener('astro:before-swap', () => mo.disconnect(), { once: true });
+				}
 				return;
+			}
+
+			// Intro timings: a quick focus, a short hold, and on the logo's
+			// landing the claim comes into focus; the light follows last.
+			const IT = { start: 0.3, focus: [0.7, 1.1, 1.3], stagger: 0.15, fly: 1.55, flight: 0.9 };
+
+			// ── Opening (first visit, full entrance) ──
+			// A large logo in the middle of the black comes into focus — the
+			// mark out of a soft blur, settling from a hair oversized, the
+			// name's words after it, each the hero claim's own focus pull — then
+			// flies to the corner, shrinking onto the real logo, which takes
+			// over as it lands.
+			//
+			// The intro logo is its own element, drawn at its large size with a
+			// large font — not the small corner logo scaled up: blurred text in
+			// a scaled-up element is rasterised small and stretched, and when
+			// the blur ends the browser swaps to sharp text at full resolution,
+			// a visible snap (Chrome and Safari both). Shrinking a sharp large
+			// rendering in flight has nothing to snap.
+			// Returns when the hero should start.
+			function playIntro(): number {
+				const real = title!;
+				// The real logo in its final state, hidden until the intro lands
+				// on it.
+				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
+				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
+				gsap.set(real, { opacity: 0 });
+				const target = real.getBoundingClientRect();
+				const realSvg = real.querySelector('svg')!;
+				const S = isMobileReveal ? 2.3 : 3.4;
+				const fontPx = parseFloat(getComputedStyle(real).fontSize) * S;
+				const markPx = realSvg.getBoundingClientRect().height * S;
+
+				// Same layout as Logo.astro's, in em, at S times the size.
+				const overlay = document.createElement('div');
+				overlay.setAttribute('aria-hidden', 'true');
+				overlay.style.cssText = 'position:fixed;inset:0;z-index:1003;display:flex;align-items:center;justify-content:center;pointer-events:none';
+				const logo = document.createElement('div');
+				logo.style.cssText = `display:flex;align-items:center;gap:0.55em;font-family:var(--f-display);font-weight:700;font-size:${fontPx}px;line-height:1;letter-spacing:0.06em;text-transform:uppercase;color:rgb(var(--c-cream));white-space:nowrap`;
+				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
+				overlay.appendChild(logo);
+				document.body.appendChild(overlay);
+
+				// No scrolling until the logo has landed: wheel, touch and
+				// scroll keys are swallowed at the window (before Lenis sees
+				// them), the page itself can't overflow, Lenis is held.
+				const SCROLL_KEYS = new Set([' ', 'PageDown', 'PageUp', 'ArrowDown', 'ArrowUp', 'Home', 'End']);
+				const block = (e: Event) => { e.preventDefault(); e.stopPropagation(); };
+				const blockKey = (e: KeyboardEvent) => { if (SCROLL_KEYS.has(e.key)) block(e); };
+				const root = document.documentElement;
+				const prevOverflow = root.style.overflow;
+				root.style.overflow = 'hidden';
+				window.addEventListener('wheel', block, { passive: false, capture: true });
+				window.addEventListener('touchmove', block, { passive: false, capture: true });
+				window.addEventListener('keydown', blockKey, { capture: true });
+				(window as any).__lenis?.stop?.();
+				let locked = true;
+				const unlock = () => {
+					if (!locked) return;
+					locked = false;
+					root.style.overflow = prevOverflow;
+					window.removeEventListener('wheel', block, { capture: true });
+					window.removeEventListener('touchmove', block, { capture: true });
+					window.removeEventListener('keydown', blockKey, { capture: true });
+					(window as any).__lenis?.start?.();
+				};
+				// Lenis may only be created after this (page-load order) — hold it
+				// too if it appears while locked.
+				requestAnimationFrame(() => { if (locked) (window as any).__lenis?.stop?.(); });
+
+				const mark = logo.querySelector('svg')!;
+				const words = Array.from(logo.querySelectorAll<HTMLElement>(':scope > div > div'));
+				// The hero claim's own focus pull, on the mark and each word as a
+				// whole: out of a deep blur, settling from a hair oversized, one
+				// after another.
+				const parts = [mark, ...words];
+				const blur = isMobileReveal ? 16 : 24;
+				gsap.set(parts, { opacity: 0, filter: `blur(${blur}px)`, scale: 1.04 });
+				gsap.set(mark, { transformOrigin: '50% 50%' });
+				gsap.set(words, { transformOrigin: '0% 50%' });
+
+				// Where it lands: centre and size of the real logo.
+				const from = logo.getBoundingClientRect();
+				const k = target.width / from.width;
+				const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
+				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
+
+				const START = IT.start;
+				// Same timings as the claim; the flight sets off just as the last
+				// word comes sharp — no long hold in the middle.
+				const stagger = IT.stagger;
+				const FLY = IT.fly;
+				const LAND = FLY + IT.flight;
+				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
+				tl.to(parts, { opacity: 1, duration: IT.focus[0], ease: 'sine.inOut', stagger }, 0)
+					.to(parts, { filter: 'blur(0px)', duration: IT.focus[1], ease: 'power2.inOut', stagger }, 0)
+					.to(parts, { scale: 1, duration: IT.focus[2], ease: 'power2.out', stagger }, 0)
+					// Flight: shrinks onto the real logo, a touch of motion blur on
+					// the way (the camera following it), gone before it lands.
+					.to(logo, { x: dx, y: dy, scale: k, duration: IT.flight, ease: 'power3.inOut' }, FLY)
+					// The blur is in the logo's own (shrinking) units — 7px here reads
+					// as a few pixels on screen mid-flight.
+					.to(logo, { filter: 'blur(7px)', duration: IT.flight * 0.38, ease: 'power2.in' }, FLY + IT.flight * 0.08)
+					.to(logo, { filter: 'blur(0px)', duration: IT.flight * 0.46, ease: 'power2.out' }, FLY + IT.flight * 0.46)
+					// Landed: the real logo takes over in the same spot.
+					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
+					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND)
+					// Landed: the page scrolls again.
+					.add(unlock, LAND);
+				// Never stay locked (a stalled timeline, a hidden tab).
+				window.setTimeout(unlock, (START + LAND + 1.5) * 1000);
+
+				// Leaving the page mid-intro: never leave the logo hidden.
+				document.addEventListener('astro:before-swap', () => {
+					unlock();
+					if (!tl.isActive()) return;
+					tl.kill();
+					overlay.remove();
+					gsap.set(real, { opacity: 1 });
+				}, { once: true });
+
+				// The hero starts while the logo is on its way to the corner.
+				// The hero starts a beat before the landing, so the claim arrives
+				// with it.
+				return START + FLY + IT.flight - 0.2;
 			}
 
 			const claimBlur = isMobileReveal ? 16 : 24;
@@ -694,9 +864,13 @@
 			gsap.set(claimLines, { opacity: 0, filter: `blur(${claimBlur}px)`, scale: 1.04 });
 			gsap.set(support, { opacity: 0, filter: 'blur(10px)', y: 12 });
 			hero!.style.opacity = '1';
-			if (pastHero) gsap.set('#rays-canvas', { opacity: 1 });
+			if (pastHero) { gsap.set('#rays-canvas', { opacity: 1 }); ((window as any).__ptRays ??= { reveal: 1 }).reveal = 1; }
+
+			const intro = !chromeShown && !pastHero && !!title && !!logoText;
+			const heroAt = intro ? playIntro() : 0;
 
 			const tl = gsap.timeline({
+				delay: heroAt,
 				onComplete: () => {
 					// Tweens end on filter: blur(0px), which iOS Safari still
 					// treats as an active filter (re-rendered while scrolling).
@@ -708,40 +882,69 @@
 			// starts once everything has landed (4).
 			const startDynamicWord = initHeroDynamicWord();
 
-			// 0. Black for a breath, then the light from above starts to rise —
-			// it reveals the composition rather than decorating it afterwards.
-			if (!pastHero) tl.to('#rays-canvas', { opacity: 1, duration: 2.0, ease: 'sine.inOut' }, 0.3);
+			// Same order as a return to Home: the text comes out of the black
+			// first, and the light comes down over it last — the finale, not
+			// something racing the logo's landing.
 
-			// 1. The claim, as if caught by the light (it's about half up) —
-			// focus pull, white line first, the red one 0.3s after.
-			const stagger = 0.3;
-			const claimAt = 0.9;
-			tl.to(claimLines, { opacity: 1, duration: 1.0, ease: 'sine.inOut', stagger }, claimAt)
-			  .to(claimLines, { filter: 'blur(0px)', duration: 1.9, ease: 'power2.inOut', stagger }, claimAt)
-			  .to(claimLines, { scale: 1, duration: 2.1, ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
+			// 1. The claim — focus pull, white line first, the red one 0.3s
+			// after (on a first visit, while the logo is still landing).
+			// After the logo's own slow intro the rest keeps the same language
+			// but a quicker pace — readable and clickable soon after it lands.
+			// After the logo intro: the claim on its landing, then the rest, the
+			// light slow and last. Otherwise (no intro) the earlier pacing.
+			const hit = intro;
+			const HT = hit
+				? { claimAt: 0, stagger: 0.12, claim: [0.6, 1.0, 1.2], supportAt: 0.35, supportStep: 0.08, support: [0.6, 0.8], ready: 1.0, light: 1.3, lightIn: [2.6, 3.0], loc: 0.6, menu: -0.9 }
+				: { claimAt: 0.2, stagger: 0.2, claim: [0.8, 1.3, 1.5], supportAt: 0.7, supportStep: 0.12, support: [0.7, 1.0], ready: 1.6, light: 1.8, lightIn: [1.8, 1.9], loc: 1.3, menu: 0 };
+			const stagger = HT.stagger;
+			const claimAt = HT.claimAt;
+			tl.to(claimLines, { opacity: 1, duration: HT.claim[0], ease: 'sine.inOut', stagger }, claimAt)
+			  .to(claimLines, { filter: 'blur(0px)', duration: HT.claim[1], ease: 'power2.inOut', stagger }, claimAt)
+			  .to(claimLines, { scale: 1, duration: HT.claim[2], ease: 'power2.out', stagger, clearProps: 'scale' }, claimAt);
 
-			// 2. Supporting lines, one after another once the light is full and
-			// the claim is finding focus.
+			// 2. Supporting lines, one after another as the claim finds focus.
 			support.forEach((el, i) => {
-				const at = 2.0 + i * 0.22;
-				tl.to(el, { opacity: 1, duration: 0.8, ease: 'sine.inOut' }, at)
-				  .to(el, { filter: 'blur(0px)', y: 0, duration: 1.2, ease: 'power2.inOut' }, at);
+				const at = HT.supportAt + i * HT.supportStep;
+				tl.to(el, { opacity: 1, duration: HT.support[0], ease: 'sine.inOut' }, at)
+				  .to(el, { filter: 'blur(0px)', y: 0, duration: HT.support[1], ease: 'power2.inOut' }, at);
 			});
 			// Text has landed — anything waiting on it can go.
 			tl.add(() => {
 				(window as any).__ptHeroTextReady = true;
 				window.dispatchEvent(new CustomEvent('pt:hero-text-ready'));
-			}, 2.9);
+			}, HT.ready);
 
-			// 3. Site chrome (first page of the visit only).
-			if (!chromeShown) {
-				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, 2.6);
-				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, 1.6);
+			// 3. The light, last: it grows out of its source above the frame
+			// (the rays extend from 0 to full length) once the claim is sharp.
+			const LIGHT_AT = HT.light;
+			if (!pastHero) {
+				const rays = document.getElementById('rays-canvas');
+				const rr = ((window as any).__ptRays ??= { reveal: 1 });
+				rr.reveal = 0;
+				gsap.set(rays, { opacity: 0 });
+				// The light may start before the hero's own timeline (during the
+				// logo's flight): then it runs on a timeline of its own.
+				const lt = LIGHT_AT < 0 ? gsap.timeline({ delay: Math.max(0, heroAt + LIGHT_AT) }) : tl;
+				const lAt = LIGHT_AT < 0 ? 0 : LIGHT_AT;
+				lt.to(rays, { opacity: 1, duration: HT.lightIn[0], ease: 'power2.out' }, lAt)
+				  .to(rr, {
+					reveal: 1,
+					duration: HT.lightIn[1],
+					ease: 'power2.out',
+				}, lAt);
 			}
 
-			// 4. Word rotation, once everything has landed — the logo mark
-			// included, when it's part of this intro.
-			const endAt = chromeShown ? 4.0 : ARMS_AT + 1.1;
+			// 4. Site chrome (first page of the visit only).
+			if (!chromeShown) {
+				if (hudLoc) tl.to(hudLoc, { opacity: 1, x: 0, duration: 0.75, ease: 'power3.out' }, intro ? HT.loc : 2.6);
+				// MENU with the button and the lines (after the logo intro), not
+				// seconds later.
+				revealChrome(tl, isMobileReveal ? 0.5 : 0.6, intro ? HT.menu : 1.6, !intro);
+			}
+
+			// 5. Word rotation, once everything has landed — the light included
+			// (and the corner logo's arms, when they're part of this entrance).
+			const endAt = hit ? 3.6 : chromeShown || intro ? LIGHT_AT + 2.2 : Math.max(ARMS_AT + 1.1, LIGHT_AT + 2.2);
 			tl.add(startDynamicWord, endAt);
 
 			// Intro over — the CTA's glare sweep may start (global.css).
@@ -801,7 +1004,7 @@
 			precision ${highpOk ? 'highp' : 'mediump'} float;
 			uniform float iTime; uniform vec2 iResolution; uniform vec2 rayPos; uniform vec2 rayDir;
 			uniform vec3 raysColor; uniform float raysSpeed; uniform float lightSpread; uniform float rayLength;
-			uniform float pulsating; uniform float fadeDistance; uniform float saturation;
+			uniform float reveal; uniform float pulsating; uniform float fadeDistance; uniform float saturation;
 			uniform vec2 mousePos; uniform float mouseInfluence; uniform float noiseAmount; uniform float distortion;
 
 			float noise(vec2 st) { return fract(sin(dot(st, vec2(12.9898, 78.233))) * 43758.5453123); }
@@ -810,9 +1013,9 @@
 				vec2  s2c = coord - src;
 				float ca  = dot(normalize(s2c), refDir);
 				float da  = ca + distortion * sin(iTime * 2.0 + length(s2c) * 0.01) * 0.2;
-				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread, 0.001));
+				float sf  = pow(max(da, 0.0), 1.0 / max(lightSpread * (0.7 + 0.3 * reveal), 0.001)); // the cone opens as the light grows
 				float d   = length(s2c);
-				float md  = iResolution.x * rayLength;
+				float md  = max(iResolution.x * rayLength * reveal, 1.0); // rays reach out from the source
 				float lf  = clamp((md - d) / md, 0.0, 1.0);
 				float ff  = clamp((iResolution.x * fadeDistance - d) / (iResolution.x * fadeDistance), 0.5, 1.0);
 				float pulse = pulsating > 0.5 ? (0.8 + 0.2 * sin(iTime * spd * 3.0)) : 1.0;
@@ -871,7 +1074,7 @@
 		gl.enableVertexAttribArray(aPos);
 		gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
+		const uNames = ['iTime','iResolution','rayPos','rayDir','raysColor','raysSpeed','lightSpread','rayLength','reveal','pulsating','fadeDistance','saturation','mousePos','mouseInfluence','noiseAmount','distortion'];
 		const U: Record<string, WebGLUniformLocation | null> = {};
 		uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
 
@@ -905,6 +1108,9 @@
 		function onResize() {
 			// Na mobile URL bar chowając się zmienia tylko wysokość — ignorujemy height-only resize
 			// żeby uniknąć resetu WebGL context przy pierwszym scrollu
+			// Nor while the tab is away (switchers fire passing sizes) — the
+			// return is checked once things settle (onVisibilityChange).
+			if (document.hidden) return;
 			if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) === W) return;
 			resize();
 		}
@@ -942,6 +1148,7 @@
 			gl!.uniform1f(U.raysSpeed, CFG.speed);
 			gl!.uniform1f(U.lightSpread, CFG.spread);
 			gl!.uniform1f(U.rayLength, CFG.length);
+				gl!.uniform1f(U.reveal, ((window as any).__ptRays?.reveal ?? 1));
 			gl!.uniform1f(U.pulsating, CFG.pulsating);
 			gl!.uniform1f(U.fadeDistance, CFG.fadeDistance);
 			gl!.uniform1f(U.saturation, CFG.saturation);
@@ -960,7 +1167,12 @@
 		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
 		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
 
-		function onVisibilityChange() { document.hidden ? stopRaysAnimation() : startRaysAnimation(); }
+		function onVisibilityChange() {
+			if (document.hidden) { stopRaysAnimation(); return; }
+			startRaysAnimation();
+			// Back on the tab: re-size only if the settled width really changed.
+			setTimeout(() => { if (canvas!.offsetWidth * Math.min(devicePixelRatio, maxDpr) !== W) resize(); }, 1000);
+		}
 		document.addEventListener('visibilitychange', onVisibilityChange);
 
 		if (heroSectionEl) {

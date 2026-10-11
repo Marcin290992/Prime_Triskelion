@@ -42,6 +42,11 @@
 			linear-gradient(to right, transparent 0%, transparent 58%, black 74%, black 100%);
 		-webkit-mask-composite: source-in;
 	}
+	/* The calmer variant (every page but Home) sits dimmer on desktop; on
+	   touch it's already a faint glow (below). */
+	@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+		#cta-flame-canvas[data-flame="calm"] { opacity: 0.3; }
+	}
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		/* Title runs full-width on mobile/tablet, so there's no clear column
 		   for the flame to sit beside without crossing the text. Instead of
@@ -64,7 +69,7 @@
 	}
 	.cta-title {
 		font-family: var(--f-display);
-		font-size: clamp(3rem, 12vw, 16rem);
+		font-size: clamp(3rem, 8vw, 8.5rem);
 		line-height: 0.88;
 		letter-spacing: -0.03em;
 		text-transform: uppercase;
@@ -99,7 +104,7 @@
 	@media (min-width: 1025px) and (hover: hover) and (max-height: 960px), (min-width: 1025px) and (pointer: fine) and (max-height: 960px) {
 		#contact-cta { padding: clamp(4rem, 8vw, 8rem) 0 clamp(3.5rem, 6vw, 6rem); }
 		.cta-title {
-			font-size: clamp(3rem, 8vw, 9rem);
+			font-size: clamp(3rem, 8vw, 8.5rem);
 			margin: 0 0 clamp(1.75rem, 3vw, 3rem);
 		}
 	}
@@ -144,7 +149,14 @@
 		const canvas = document.getElementById('cta-flame-canvas') as HTMLCanvasElement | null;
 		const section = document.getElementById('contact-cta');
 		if (!canvas || !section) return;
-		initFlameCanvas(canvas, section);
+		// Full ember glow on Home (the page with the hero); a calmer smoulder
+		// on every page after it.
+		const variant = document.getElementById('hero') ? 'full' : 'calm';
+		canvas.dataset.flame = variant;
+		// Home only: hover the flame (it sits in the right ~40%, the canvas mask
+		// fades it in from 58%) for "Hold to burn", hold to stoke it. A reward
+		// for the curious on the main page, not a gimmick repeated on every one.
+		initFlameCanvas(canvas, section, variant === 'full' ? { variant, burn: { zoneLeft: 0.62 } } : { variant });
 	}
 
 	document.addEventListener('astro:page-load', initCtaFlame);
