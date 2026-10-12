@@ -27,6 +27,9 @@ const OPTS = {
   rayColor1: [1, 1, 1],
   rayColor2: [1, 1, 1],
   intensity: 1,
+  // Phones and tablets: the hero is short and narrow, so the corner light
+  // fills much more of it — dimmer there to sit like the home hero's.
+  intensityCompact: 0.6,
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
@@ -48,6 +51,9 @@ const OPTS = {
   inAt: 0.6,
   inOpacity: 2.6,
   inReveal: 3.0,
+  // Phones and tablets: later and slower, easing in instead of jumping up
+  // in the first moment (power2.out does most of its change at once).
+  inCompact: { at: 1.0, opacity: 3.2, reveal: 3.6, ease: 'sine.inOut' },
 };
 
 const VERT = `
@@ -223,7 +229,6 @@ function mountSideRays(host) {
   gl.uniform1f(u.iSpeed, OPTS.speed);
   gl.uniform3f(u.iRayColor1, ...OPTS.rayColor1);
   gl.uniform3f(u.iRayColor2, ...OPTS.rayColor2);
-  gl.uniform1f(u.iIntensity, OPTS.intensity);
   gl.uniform1f(u.iSpread, OPTS.spread);
   gl.uniform1f(u.iFlipX, flipX);
   gl.uniform1f(u.iFlipY, flipY);
@@ -236,6 +241,8 @@ function mountSideRays(host) {
   // centred title). Phones and tablets aim the same on every page.
   const ownAim = (host.dataset.sideRays || '').split(',').map(Number);
   const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
+  const setIntensity = () => gl.uniform1f(u.iIntensity, compact.matches ? OPTS.intensityCompact : OPTS.intensity);
+  setIntensity();
   const setAim = () => gl.uniform2f(u.iAim, ...(
     compact.matches ? OPTS.aimCompact
       : ownAim.length === 2 && ownAim.every(Number.isFinite) ? ownAim : OPTS.aim));
@@ -276,6 +283,7 @@ function mountSideRays(host) {
     gl.viewport(0, 0, w, h);
     gl.uniform2f(u.iResolution, w, h);
     setAim();
+    setIntensity();
     if (still) draw(0);
   }
 
@@ -301,8 +309,15 @@ function mountSideRays(host) {
       return;
     }
     tweens = [
-      gsap.to(canvas, { opacity: 1, duration: OPTS.inOpacity, delay: OPTS.inAt, ease: 'power2.out' }),
-      gsap.to(intro, { reveal: 1, duration: OPTS.inReveal, delay: OPTS.inAt, ease: 'power2.out' }),
+      ...(() => {
+        const c = compact.matches
+          ? OPTS.inCompact
+          : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power2.out' };
+        return [
+          gsap.to(canvas, { opacity: 1, duration: c.opacity, delay: c.at, ease: c.ease }),
+          gsap.to(intro, { reveal: 1, duration: c.reveal, delay: c.at, ease: c.ease }),
+        ];
+      })(),
     ];
   });
 
