@@ -1167,6 +1167,21 @@
 		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
 		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
 
+		// Lit only while the hero is really in view (same as the subpages'
+		// light, sideRays.js): once most of it has been scrolled past, the
+		// light fades out and stops rendering; back up, it fades in again.
+		const RAYS_ACTIVE_RATIO = 0.35;
+		let raysStopTimer: ReturnType<typeof setTimeout> | undefined;
+		function setRaysActive(on: boolean) {
+			if (on === isHeroVisible) return;
+			isHeroVisible = on;
+			clearTimeout(raysStopTimer);
+			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 0.5s ease';
+			canvas!.style.filter = on ? '' : 'opacity(0)';
+			if (on) startRaysAnimation();
+			else raysStopTimer = setTimeout(stopRaysAnimation, 550);
+		}
+
 		function onVisibilityChange() {
 			if (document.hidden) { stopRaysAnimation(); return; }
 			startRaysAnimation();
@@ -1177,9 +1192,8 @@
 
 		if (heroSectionEl) {
 			heroIO = new IntersectionObserver(([entry]) => {
-				isHeroVisible = entry.isIntersecting;
-				isHeroVisible ? startRaysAnimation() : stopRaysAnimation();
-			}, { threshold: 0 });
+				setRaysActive(entry.isIntersecting && entry.intersectionRatio >= RAYS_ACTIVE_RATIO);
+			}, { threshold: [0, RAYS_ACTIVE_RATIO] });
 			heroIO.observe(heroSectionEl);
 		}
 
@@ -1187,6 +1201,7 @@
 
 		document.addEventListener('astro:before-swap', () => {
 			cancelAnimationFrame(rafId);
+			clearTimeout(raysStopTimer);
 			heroIO?.disconnect();
 			window.removeEventListener('mousemove', onMouseMove as EventListener);
 			window.removeEventListener('touchmove', onTouchMove as EventListener);

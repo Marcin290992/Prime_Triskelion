@@ -169,11 +169,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       background: rgb(var(--c-bg));
       pointer-events: none;
     }
-    /* Its light (sideRays.js canvas) — held out with .rays-off, see the
-       reveal ScrollTrigger. A filter, so it doesn't fight the canvas's own
-       opacity (its entrance). */
-    .am-veil :global(.side-rays) { transition: filter 1.6s ease; }
-    .am-veil.rays-off :global(.side-rays) { filter: opacity(0); transition: filter 0.2s ease; }
     .am-hero {
       position: absolute;
       inset: 0;
@@ -453,7 +448,8 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
         // The light in the veil (sideRays.js): on the way down it goes with
         // the veil. On the way back it would come up with the veil as soon
         // as the scroll turned — it stays out until the words have joined
-        // again, then fades back in (CSS, .rays-off).
+        // again, then fades back in. .rays-off also stops it rendering
+        // while the portrait is up (sideRays.js watches the class).
         if (self.progress >= 0.33) veil.classList.add('rays-off');
         else if (self.progress <= 0.01) veil.classList.remove('rays-off');
       },

@@ -48,6 +48,11 @@ const OPTS = {
   aimCompact: [0.25, 0.55],
   aimFocus: 2.2,
   maxDpr: 1, // soft light, nothing gained above this
+  // Off once less than this share of the hero is on screen (its lower part
+  // fades out anyway); faded out / back in over these (ms).
+  activeRatio: 0.35,
+  dimMs: 500,
+  relightMs: 1600,
   // Entrance, as the home hero's light: right after the hero's text has
   // come in (title 0.8s, lead done at ~0.85s — titleIn/supportIn's short
   // entrance) the rays grow out of their source to full length (reveal)
@@ -263,6 +268,20 @@ function mountSideRays(host) {
   const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   let raf = 0;
   let visible = false;
+  // Lit only while the hero is really in view: once most of it has been
+  // scrolled past (or the host says so — About's veil, .rays-off) the light
+  // fades out and stops rendering; coming back fades it in again. Nobody
+  // sees it out there, and it was the one thing still drawing every frame.
+  let active = true;
+  let stopAt = 0; // while fading out: keep drawing until then (ms)
+  const setActive = (on) => {
+    if (on === active) return;
+    active = on;
+    canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
+    canvas.style.filter = on ? '' : 'opacity(0)';
+    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
+    ensureLoop();
+  };
 
   const intro = { reveal: 0 };
   let tweens = [];
@@ -276,12 +295,13 @@ function mountSideRays(host) {
   function loop(now) {
     raf = 0;
     if (!visible || document.hidden) return;
+    if (!active && now > stopAt) return;
     draw(now);
     raf = requestAnimationFrame(loop);
   }
   function ensureLoop() {
     if (still) { draw(0); return; }
-    if (!raf && visible && !document.hidden) raf = requestAnimationFrame(loop);
+    if (!raf && visible && !document.hidden && (active || performance.now() < stopAt)) raf = requestAnimationFrame(loop);
   }
 
   function resize() {
@@ -300,11 +320,17 @@ function mountSideRays(host) {
 
   const ro = new ResizeObserver(() => { resize(); ensureLoop(); });
   ro.observe(host);
+  let ratio = 1;
+  const update = () => setActive(visible && ratio >= OPTS.activeRatio && !host.classList.contains('rays-off'));
   const io = new IntersectionObserver(([entry]) => {
     visible = entry.isIntersecting;
+    ratio = entry.intersectionRatio;
+    update();
     ensureLoop();
-  });
+  }, { threshold: [0, OPTS.activeRatio] });
   io.observe(host);
+  const mo = new MutationObserver(update);
+  mo.observe(host, { attributes: true, attributeFilter: ['class'] });
   const onVisibility = () => ensureLoop();
   document.addEventListener('visibilitychange', onVisibility);
   resize();
@@ -338,6 +364,7 @@ function mountSideRays(host) {
     raf = 0;
     ro.disconnect();
     io.disconnect();
+    mo.disconnect();
     document.removeEventListener('visibilitychange', onVisibility);
     gl.getExtension('WEBGL_lose_context')?.loseContext();
     unmount();
