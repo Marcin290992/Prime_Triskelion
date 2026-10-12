@@ -665,6 +665,14 @@ const navLinks = [
 
   /* Active → X */
   .hud-menu-btn.active .hud-ico__line              { width: var(--ox-menu-icon-width) !important; background: rgb(var(--c-red) / 0.9); }
+  /* Hovering the open menu's X: it lights up in its own red, brighter —
+     not the cream glow the hamburger's lines get. */
+  @media (hover: hover) {
+    .hud-menu-btn.active:hover .hud-ico__line {
+      background: rgb(var(--c-red));
+      box-shadow: 0 0 6px rgb(var(--c-red) / 0.95), 0 0 16px rgb(var(--c-red) / 0.6), 0 0 28px rgb(var(--c-red) / 0.3);
+    }
+  }
   .hud-menu-btn.active .hud-ico__line:nth-child(1) { transform: rotate(45deg);  top: var(--ox-menu-line-2-top); }
   .hud-menu-btn.active .hud-ico__line:nth-child(2) { opacity: 0; transform: scaleX(0); }
   .hud-menu-btn.active .hud-ico__line:nth-child(3) { transform: rotate(-45deg); top: var(--ox-menu-line-2-top); }
