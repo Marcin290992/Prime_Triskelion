@@ -1,6 +1,40 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
+
+// One entry per service. `visual` is the card's picture (an import or a
+// URL) — empty for now, the card shows its placeholder frame until set.
+const SERVICES = [
+  {
+    id: 'websites',
+    name: 'Websites',
+    title: 'High-performance websites built to convert and scale.',
+    items: ['Landing pages', 'Custom multi-page sites', 'CMS integration', 'SEO & performance optimization', 'Responsive across all devices', 'API & third-party integrations'],
+    visual: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1400&q=80&auto=format&fit=crop', // TEMP: Unsplash preview
+  },
+  {
+    id: 'branding',
+    name: 'Branding',
+    title: 'Brand strategy, identity, and guidelines. The fundamentals of your image.',
+    items: ['Naming & positioning', 'Logo & visual identity', 'Brand guidelines', 'Typography system', 'Print & digital collateral', 'Art direction'],
+    visual: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=1400&q=80&auto=format&fit=crop', // TEMP: Unsplash preview
+  },
+  {
+    id: 'motion',
+    name: 'Motion',
+    title: 'Animations and motion systems that bring interfaces to life.',
+    items: ['Web animations & microinteractions', 'GSAP & Lottie integration', 'Scroll-based storytelling', 'Video editing & compositing', 'Transition systems', 'Interactive 3D elements'],
+    visual: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1400&q=80&auto=format&fit=crop', // TEMP: Unsplash preview
+  },
+  {
+    id: 'strategy',
+    name: 'Strategy',
+    title: 'Creative direction and strategy built around your goals.',
+    items: ['Brand strategy workshops', 'Competitor & market analysis', 'Content & UX strategy', 'Creative brief development', 'Go-to-market planning', 'KPI frameworks'],
+    visual: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1400&q=80&auto=format&fit=crop', // TEMP: Unsplash preview
+  },
+];
+const num = (i: number) => String(i + 1).padStart(2, '0');
 ---
 
 <Layout
@@ -21,120 +55,41 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       </div>
     </header>
 
-    <div class="svc-rows" data-after-hero>
-
-      <div class="svc-row" id="websites">
-        <div class="svc-sticky">
-          <div class="svc-badge">
-            <span class="svc-badge__bgnum" aria-hidden="true">01</span>
-            <span class="svc-badge__name">Websites</span>
+    <!-- Desktop: the cards on the left are stacked sticky panels — each
+         next one slides up over the last — while the copy on the right
+         scrolls normally beside them. Phones and tablets: the wrappers
+         dissolve (display: contents) and each card sits above its own
+         copy, a plain stack. -->
+    <div class="svc-split" data-after-hero>
+      <div class="svc-deck">
+        {SERVICES.map((s, i) => (
+          <div class="svc-card" data-svc-card style={`order: ${i * 2}`}>
+            <div class="svc-card__inner">
+              <div class="svc-card__frame">
+                {s.visual
+                  ? <Fragment><img class="svc-card__visual" src={s.visual} alt="" loading="lazy" decoding="async" /><span class="svc-card__scrim" aria-hidden="true"></span></Fragment>
+                  : <span class="svc-card__ghost" aria-hidden="true">{num(i)}</span>}
+                <span class="svc-card__name" aria-hidden="true">{s.name}</span>
+              </div>
+              <div class="svc-card__shade" aria-hidden="true"></div>
+            </div>
           </div>
-        </div>
-        <div class="svc-content">
-          <h2 class="svc-content__title">High-performance websites built to convert and scale.</h2>
-          <ul class="svc-list">
-            <li>Landing pages</li>
-            <li>Custom multi-page sites</li>
-            <li>CMS integration</li>
-            <li>SEO & performance optimization</li>
-            <li>Responsive across all devices</li>
-            <li>API & third-party integrations</li>
-          </ul>
-          <div class="h-hero-cta-wrap svc-cta-wrap">
-            <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-            <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-            <a href="/contact" class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary">
-              <span class="hud-spin-border"></span>
-              <span class="h-hero-cta__text">Start a project</span>
-            </a>
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div class="svc-row" id="branding">
-        <div class="svc-sticky">
-          <div class="svc-badge">
-            <span class="svc-badge__bgnum" aria-hidden="true">02</span>
-            <span class="svc-badge__name">Branding</span>
-          </div>
-        </div>
-        <div class="svc-content">
-          <h2 class="svc-content__title">Brand strategy, identity, and guidelines. The fundamentals of your image.</h2>
-          <ul class="svc-list">
-            <li>Naming & positioning</li>
-            <li>Logo & visual identity</li>
-            <li>Brand guidelines</li>
-            <li>Typography system</li>
-            <li>Print & digital collateral</li>
-            <li>Art direction</li>
-          </ul>
-          <div class="h-hero-cta-wrap svc-cta-wrap">
-            <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-            <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-            <a href="/contact" class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary">
-              <span class="hud-spin-border"></span>
-              <span class="h-hero-cta__text">Start a project</span>
-            </a>
-          </div>
-        </div>
+      <div class="svc-texts">
+        {SERVICES.map((s, i) => (
+          <section class="svc-text" id={s.id} data-svc-text style={`order: ${i * 2 + 1}`}>
+            <div class="svc-text__body">
+              <p class="svc-text__label">{s.name}</p>
+              <h2 class="svc-content__title">{s.title}</h2>
+              <ul class="svc-list">
+                {s.items.map((item) => <li>{item}</li>)}
+              </ul>
+            </div>
+          </section>
+        ))}
       </div>
-
-      <div class="svc-row" id="motion">
-        <div class="svc-sticky">
-          <div class="svc-badge">
-            <span class="svc-badge__bgnum" aria-hidden="true">03</span>
-            <span class="svc-badge__name">Motion</span>
-          </div>
-        </div>
-        <div class="svc-content">
-          <h2 class="svc-content__title">Animations and motion systems that bring interfaces to life.</h2>
-          <ul class="svc-list">
-            <li>Web animations & microinteractions</li>
-            <li>GSAP & Lottie integration</li>
-            <li>Scroll-based storytelling</li>
-            <li>Video editing & compositing</li>
-            <li>Transition systems</li>
-            <li>Interactive 3D elements</li>
-          </ul>
-          <div class="h-hero-cta-wrap svc-cta-wrap">
-            <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-            <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-            <a href="/contact" class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary">
-              <span class="hud-spin-border"></span>
-              <span class="h-hero-cta__text">Start a project</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div class="svc-row" id="strategy">
-        <div class="svc-sticky">
-          <div class="svc-badge">
-            <span class="svc-badge__bgnum" aria-hidden="true">04</span>
-            <span class="svc-badge__name">Strategy</span>
-          </div>
-        </div>
-        <div class="svc-content">
-          <h2 class="svc-content__title">Creative direction and strategy built around your goals.</h2>
-          <ul class="svc-list">
-            <li>Brand strategy workshops</li>
-            <li>Competitor & market analysis</li>
-            <li>Content & UX strategy</li>
-            <li>Creative brief development</li>
-            <li>Go-to-market planning</li>
-            <li>KPI frameworks</li>
-          </ul>
-          <div class="h-hero-cta-wrap svc-cta-wrap">
-            <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-            <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-            <a href="/contact" class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary">
-              <span class="hud-spin-border"></span>
-              <span class="h-hero-cta__text">Start a project</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
     </div>
 
   </main>
@@ -234,132 +189,172 @@ import CtaSection from '../../components/sections/CtaSection.astro';
     .svc-hero__lead { margin-bottom: 0; }
   }
 
-  /* â”€â”€ Sticky rows â”€â”€ */
-  .svc-rows {
-    padding: 0 var(--site-gutter) clamp(6rem, 12vh, 10rem);
-    box-sizing: border-box;
+  /* ── Services: deck + copy ── */
+  .svc-split {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
   }
-  .svc-row {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: clamp(8rem, 16vw, 20rem);
-    min-height: 100vh;
-    padding: clamp(4rem, 7vw, 6rem) 0;
-    align-items: start;
+  .svc-deck,
+  .svc-texts { width: 50%; }
+
+  /* A card: a panel the height of the screen, held at the top; the next
+     one comes up over it. Each card's flow height is set (JS) to its copy's
+     height, so card and copy change together however long the copy runs. */
+  .svc-card {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: calc(var(--app-stable-vh, 1vh) * 100);
+    overflow: hidden;
+    background: rgb(var(--c-bg));
+    border-top: 1px solid rgb(var(--c-cream) / 0.08);
+    border-right: 1px solid rgb(var(--c-cream) / 0.06);
+  }
+  .svc-card:first-child { border-top-color: transparent; }
+  /* Alternate depth so a card arriving over the last one reads as a new
+     layer even on black. */
+  .svc-card:nth-child(even) { background: rgb(12 12 14); }
+  .svc-card__inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Clear of the logo / top blur band and the bottom HUD. */
+    padding: clamp(6.5rem, 13vh, 9rem) clamp(2rem, 4vw, 4.5rem) clamp(7rem, 14vh, 9.5rem);
+    transform-origin: 50% 0%;
+    will-change: transform;
+  }
+  /* Darkens the card as the next one covers it (JS). */
+  .svc-card__shade {
+    position: absolute;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
   }
 
-  /* â”€â”€ Sticky badge â”€â”€ */
-  .svc-sticky {
-    position: sticky;
-    /* Held just under the top blur band (its height in gradualBlur.js),
-       never in it, whatever the screen's height. */
-    top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem);
-    height: fit-content;
-  }
-  .svc-badge {
+  /* The picture frame — the placeholder until a visual is set: the same
+     dark gradient as the site's cards, the service's number big and
+     faint, its name in the corner. */
+  .svc-card__frame {
     position: relative;
-    background: linear-gradient(180deg, rgb(20 20 24 / 0.96) 0%, rgb(13 13 17 / 0.99) 100%);
-    border: 1px solid rgba(255,255,255,0.1);
+    /* 4:3, as wide as fits both the column and the screen's height (less
+       the padding above) — never stretched on a short laptop screen. */
+    width: min(100%, 720px, calc((var(--app-stable-vh, 1vh) * 100 - 17rem) * 4 / 3));
+    aspect-ratio: 4 / 3;
     overflow: hidden;
-    padding: clamp(1.4rem, 2.5vw, 2rem);
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-height: 320px;
-    justify-content: flex-end;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: linear-gradient(180deg, rgb(20 20 24 / 0.96) 0%, rgb(13 13 17 / 0.99) 100%);
   }
-  .svc-badge__bgnum {
+  .svc-card__visual {
     position: absolute;
-    right: -0.05em;
-    bottom: -0.1em;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* Over a picture: darker toward the bottom and the top corner, so the
+     name stays readable on any photo. */
+  .svc-card__scrim {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to top, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.15) 42%, transparent 60%),
+      linear-gradient(to bottom, rgb(0 0 0 / 0.4) 0%, transparent 22%);
+    pointer-events: none;
+  }
+  .svc-card__ghost {
+    position: absolute;
+    right: -0.04em;
+    bottom: -0.16em;
     font-family: var(--f-display);
     font-weight: 700;
-    font-size: clamp(10rem, 16vw, 16rem);
-    color: rgba(255,255,255,0.07);
+    font-size: clamp(9rem, 17vw, 18rem);
     line-height: 1;
+    color: rgb(var(--c-cream) / 0.06);
     pointer-events: none;
     user-select: none;
   }
-  .svc-badge__name {
+  .svc-card__name {
+    position: absolute;
+    left: clamp(1.6rem, 2.6vw, 2.4rem);
+    bottom: clamp(1.4rem, 2.2vw, 2rem);
     font-family: var(--f-display);
     font-weight: 600;
-    font-size: clamp(2rem, 3.2vw, 3.2rem);
-    text-transform: uppercase;
-    letter-spacing: 0.02em;
-    color: rgb(var(--c-cream));
+    font-size: clamp(1.8rem, 3vw, 3rem);
     line-height: 1;
-    position: relative;
-    z-index: 1;
-    padding-top: 0.9rem;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    margin-top: 0.2rem;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream));
   }
 
-  /* â”€â”€ Content â”€â”€ */
-  .svc-content {
+  /* ── Copy ── */
+  .svc-text {
+    min-height: 100vh;
+    min-height: calc(var(--app-stable-vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding-top: clamp(0.5rem, 1vw, 1rem);
+    justify-content: center;
+    box-sizing: border-box;
+    padding: clamp(6.5rem, 13vh, 9rem) var(--site-gutter) clamp(7rem, 14vh, 9.5rem) clamp(3rem, 6vw, 7rem);
+    border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
+  }
+  .svc-text:last-child { border-bottom: 0; }
+  .svc-text__body { max-width: 620px; }
+  .svc-text__label {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin: 0 0 1.4rem;
+    font-family: var(--f-body);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.55);
   }
   .svc-content__title {
     font-family: var(--f-display);
     font-weight: 600;
-    font-size: clamp(2rem, 3.8vw, 4.5rem);
+    font-size: clamp(1.8rem, 2.7vw, 3.2rem);
     letter-spacing: -0.01em;
     text-transform: uppercase;
     line-height: 1.05;
     color: rgb(var(--c-cream));
-    max-width: 22ch;
+    max-width: 20ch;
     margin-bottom: 2rem;
   }
   .svc-list {
     list-style: none;
     width: 100%;
-    margin-bottom: 2.5rem;
+    margin: 0;
     border-top: 1px solid rgb(var(--c-cream) / 0.07);
   }
   .svc-list li {
     font-family: var(--f-body);
-    font-size: clamp(0.9rem, 1.2vw, 1.05rem);
+    font-size: clamp(0.9rem, 1.1vw, 1.05rem);
     font-weight: 300;
     color: rgb(var(--c-cream) / 0.82);
-    padding: clamp(0.85rem, 1.3vw, 1.1rem) 0;
+    padding: clamp(0.8rem, 1.2vw, 1.05rem) 0;
     display: flex;
     align-items: center;
     gap: 1rem;
     letter-spacing: 0.025em;
     border-bottom: 1px solid rgb(var(--c-cream) / 0.07);
-    transition: color 0.28s ease;
-    position: relative;
   }
+  /* The site's list dash (same as About's .am-item): solid red, on its own
+     layer so every one renders the same crisp 1px whatever row it's on. */
   .svc-list li::before {
     content: '';
     display: block;
     width: 18px;
     height: 1px;
-    background: rgb(var(--c-red) / 0.45);
+    background: rgb(var(--c-red));
     flex-shrink: 0;
-    transition: width 0.28s ease, background 0.28s ease;
+    transform: translateZ(0);
   }
-  .svc-list li::after {
-    content: '→';
-    position: absolute;
-    right: 0;
-    font-size: 0.8rem;
-    color: rgb(var(--c-red) / 0);
-    transform: translateX(-6px);
-    transition: color 0.28s ease, transform 0.28s cubic-bezier(0.16,1,0.3,1);
-    pointer-events: none;
-  }
-  @media (hover: hover) {
-    .svc-list li:hover { color: rgb(var(--c-cream) / 0.9); }
-    .svc-list li:hover::before { width: 26px; background: rgb(var(--c-cream)); }
-    .svc-list li:hover::after { color: rgb(var(--c-cream) / 0.7); transform: translateX(0); }
-  }
-  .svc-cta-wrap { max-width: 260px; }
 
   /* â”€â”€ Mobile â”€â”€ */
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
@@ -406,49 +401,49 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       0%, 100% { opacity: 0.5; transform: scaleY(0.6); }
       50%       { opacity: 1;   transform: scaleY(1); }
     }
-    .svc-row {
-      grid-template-columns: 1fr;
-      min-height: auto;
-      gap: 2.4rem;
-      padding: clamp(2.5rem, 6vw, 4rem) 0;
+    /* Plain stack: the deck and copy wrappers dissolve and each card sits
+       above its own copy (order set inline) — same card, same type as
+       desktop, nothing sticky. */
+    .svc-split {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 0 var(--site-gutter) clamp(4rem, 10vw, 6rem);
+      box-sizing: border-box;
     }
-    .svc-sticky { position: relative; top: auto; }
-    .svc-badge {
-      min-height: 200px;
-      padding: clamp(1.2rem, 4vw, 1.6rem);
+    .svc-deck, .svc-texts { display: contents; }
+    .svc-card {
+      position: relative;
+      height: auto;
+      border: 0;
+      background: none;
+      overflow: visible;
+      margin-top: clamp(2.5rem, 8vw, 4rem);
     }
-    .svc-badge__bgnum {
-      font-size: clamp(7rem, 30vw, 10rem);
+    .svc-card:nth-child(even) { background: none; }
+    .svc-card__inner { position: relative; padding: 0; will-change: auto; }
+    .svc-card__shade { display: none; }
+    .svc-card__frame { width: 100%; aspect-ratio: 4 / 5; }
+    .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
+    .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
+    .svc-text {
+      min-height: 0;
+      padding: clamp(1.6rem, 5vw, 2.4rem) 0 0;
+      border-bottom: 0;
     }
-    .svc-badge__name {
-      font-size: clamp(1.6rem, 6vw, 2.4rem);
-    }
+    .svc-text__body { max-width: none; }
     .svc-content__title {
       max-width: none;
-      font-size: clamp(1.8rem, 6.5vw, 3rem);
+      font-size: clamp(1.6rem, 6.2vw, 2.6rem);
+      margin-bottom: 1.5rem;
     }
-    .svc-cta-wrap { max-width: 100%; width: 100%; }
   }
 
-  /* Tablet width: the service's card on the left (sticky while its list
-     scrolls past), the copy, list and button on the right — not one
-     full-width stack. */
+  /* Tablet: the same stack, the card in a wider frame. */
   @media (max-width: 1024px) and (min-width: 700px), (hover: none) and (pointer: coarse) and (min-width: 700px) {
-    .svc-row {
-      grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-      gap: clamp(1.5rem, 4vw, 3rem);
-      align-items: start;
-    }
-    .svc-sticky { position: sticky; top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem); }
-    .svc-badge { min-height: 240px; }
-    .svc-badge__bgnum { font-size: clamp(7rem, 13vw, 10rem); }
-    .svc-badge__name { font-size: clamp(1.6rem, 3.2vw, 2.4rem); }
-    .svc-content__title { font-size: clamp(1.7rem, 3.6vw, 2.6rem); }
-  }
-
-  @media (max-width: 480px) {
-    .svc-badge { min-height: 170px; }
-    .svc-badge__bgnum { font-size: clamp(6rem, 28vw, 8rem); }
+    .svc-card__frame { aspect-ratio: 16 / 10; }
+    .svc-card__ghost { font-size: clamp(10rem, 24vw, 16rem); }
+    .svc-text__body { max-width: 680px; }
+    .svc-content__title { font-size: clamp(1.9rem, 4vw, 2.8rem); }
   }
 </style>
 
@@ -457,7 +452,7 @@ import CtaSection from '../../components/sections/CtaSection.astro';
   import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
   import { trackLeaving } from '../../utils/leavingPage';
 
-  let _rowObserver: IntersectionObserver | null = null;
+  let _cleanup: (() => void) | null = null;
 
   function initServicesPage() {
     const titleWords = document.querySelectorAll<HTMLElement>('.svc-title__word');
@@ -481,31 +476,72 @@ import CtaSection from '../../components/sections/CtaSection.astro';
       revealAfterHero();
     });
 
+    // Phones and tablets: the plain stack, nothing more to set up.
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
-    _rowObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-svc-card]'));
+    const texts = Array.from(document.querySelectorAll<HTMLElement>('[data-svc-text]'));
+    if (!cards.length || cards.length !== texts.length) return;
+    const inners = cards.map((c) => c.querySelector<HTMLElement>('.svc-card__inner'));
+    const shades = cards.map((c) => c.querySelector<HTMLElement>('.svc-card__shade'));
+
+    // Each card takes up as much scroll as its copy: the card is a screen
+    // tall, so the rest goes in its bottom margin — the next card then
+    // arrives exactly as the next copy does, however long a copy runs.
+    const sync = () => {
+      cards.forEach((card, i) => {
+        card.style.marginBottom = `${Math.max(0, texts[i].offsetHeight - card.offsetHeight)}px`;
+      });
+      depth();
+    };
+
+    // Depth: as the next card comes up, the one under it eases back a touch
+    // and darkens.
+    const depth = () => {
+      for (let i = 0; i < cards.length - 1; i++) {
+        const h = cards[i].offsetHeight || 1;
+        const top = cards[i + 1].getBoundingClientRect().top;
+        const p = Math.min(1, Math.max(0, 1 - top / h));
+        if (inners[i]) inners[i]!.style.transform = p ? `scale(${(1 - 0.06 * p).toFixed(4)})` : '';
+        if (shades[i]) shades[i]!.style.opacity = (0.6 * p).toFixed(3);
+      }
+    };
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { raf = 0; depth(); });
+    };
+
+    const ro = new ResizeObserver(sync);
+    texts.forEach((t) => ro.observe(t));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    sync();
+
+    // The copy comes in as it reaches the screen, as before.
+    const reveal = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        const targets = entry.target.querySelectorAll<HTMLElement>(
-          '.svc-content__title, .svc-list li, .svc-cta-wrap'
-        );
+        const targets = entry.target.querySelectorAll<HTMLElement>('.svc-text__label, .svc-content__title, .svc-list li');
         gsap.to(targets, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 0.58, ease: 'power3.out', stagger: 0.07 });
-        _rowObserver?.unobserve(entry.target);
+        reveal.unobserve(entry.target);
       });
     }, { threshold: 0.12 });
-
-    document.querySelectorAll<HTMLElement>('.svc-row').forEach(row => {
-      const targets = row.querySelectorAll<HTMLElement>(
-        '.svc-content__title, .svc-list li, .svc-cta-wrap'
-      );
-      gsap.set(targets, { opacity: 0, filter: 'blur(8px)', y: 14 });
-      _rowObserver!.observe(row);
+    texts.forEach((t) => {
+      gsap.set(t.querySelectorAll('.svc-text__label, .svc-content__title, .svc-list li'), { opacity: 0, filter: 'blur(8px)', y: 14 });
+      reveal.observe(t);
     });
+
+    _cleanup = () => {
+      if (raf) cancelAnimationFrame(raf);
+      ro.disconnect();
+      reveal.disconnect();
+      window.removeEventListener('scroll', onScroll);
+    };
   }
 
   document.addEventListener('astro:before-swap', () => {
-    _rowObserver?.disconnect();
-    _rowObserver = null;
+    _cleanup?.();
+    _cleanup = null;
   });
 
   document.addEventListener('astro:page-load', () => {

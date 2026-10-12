@@ -139,6 +139,11 @@ function mountSideRays(host) {
     zIndex: '-1',
     opacity: '0',
   });
+  // Faded out toward the hero's bottom edge, like the home hero's bottom
+  // fade — the light dies into the page's black instead of ending on a line.
+  const fade = 'linear-gradient(to bottom, #000 0%, #000 45%, rgb(0 0 0 / 0.55) 72%, transparent 100%)';
+  canvas.style.maskImage = fade;
+  canvas.style.setProperty('-webkit-mask-image', fade);
   const gl = canvas.getContext('webgl', {
     alpha: true,
     premultipliedAlpha: false,
