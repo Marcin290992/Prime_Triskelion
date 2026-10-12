@@ -25,7 +25,7 @@ const OPTS = {
   // Warm silver from the site's cream, a cooler silver for the second set.
   rayColor1: [242 / 255, 237 / 255, 232 / 255],
   rayColor2: [222 / 255, 228 / 255, 236 / 255],
-  intensity: 1.8,
+  intensity: 1,
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
