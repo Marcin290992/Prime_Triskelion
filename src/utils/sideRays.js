@@ -52,9 +52,10 @@ const OPTS = {
   inAt: 0.85,
   inOpacity: 2.6,
   inReveal: 3.0,
-  // Phones and tablets: same start, slower and easing in instead of jumping
-  // up in the first moment (power2.out does most of its change at once).
-  inCompact: { at: 0.85, opacity: 3.2, reveal: 3.6, ease: 'sine.inOut' },
+  // Phones and tablets: same start, then a sunrise — the light creeps up
+  // from nothing (slow start, power1.in) and keeps growing for seconds,
+  // never jumping in (power2.out did most of its change at once).
+  inCompact: { at: 0.85, opacity: 5.5, reveal: 6, ease: 'power1.inOut' },
 };
 
 const VERT = `
@@ -82,7 +83,7 @@ uniform float iReveal; // 0..1: how far the rays reach from their source
 uniform float iLinear; // 1: faint light kept as is (phones, tablets)
 
 float rayStrength(vec2 raySource, vec2 rayRefDirection, vec2 coord, float seedA, float seedB, float speed) {
-  float reach = max(length(iResolution) * 2.4 * iReveal, 1.0);
+  float reach = max(length(iResolution) * 6.0 * iReveal, 1.0);
   vec2 sourceToCoord = coord - raySource;
   float cosAngle = dot(normalize(sourceToCoord), rayRefDirection);
   return clamp(
@@ -92,7 +93,7 @@ float rayStrength(vec2 raySource, vec2 rayRefDirection, vec2 coord, float seedA,
     clamp((iResolution.x - length(sourceToCoord)) / iResolution.x, 0.5, 1.0) *
     // Grow out of the source: a soft front that travels outward as reveal
     // goes to 1 (at 1 it's well past the far corner — no effect).
-    (1.0 - smoothstep(reach * 0.6, reach, length(sourceToCoord)));
+    (1.0 - smoothstep(reach * 0.25, reach, length(sourceToCoord)));
 }
 
 void main() {
