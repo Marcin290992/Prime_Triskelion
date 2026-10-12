@@ -224,12 +224,13 @@ function mountSideRays(host) {
   gl.uniform1f(u.iBlend, OPTS.blend);
   gl.uniform1f(u.iFalloff, OPTS.falloff);
   gl.uniform1f(u.iOpacity, OPTS.opacity);
-  // A hero can aim elsewhere: data-side-rays="0.5,0.5" (About's centred title).
+  // A hero can aim elsewhere on desktop: data-side-rays="0.5,0.5" (About's
+  // centred title). Phones and tablets aim the same on every page.
   const ownAim = (host.dataset.sideRays || '').split(',').map(Number);
   const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
   const setAim = () => gl.uniform2f(u.iAim, ...(
-    ownAim.length === 2 && ownAim.every(Number.isFinite) ? ownAim
-      : compact.matches ? OPTS.aimCompact : OPTS.aim));
+    compact.matches ? OPTS.aimCompact
+      : ownAim.length === 2 && ownAim.every(Number.isFinite) ? ownAim : OPTS.aim));
   setAim();
   gl.uniform1f(u.iAimFocus, OPTS.aimFocus);
 
