@@ -153,10 +153,12 @@
 		// on every page after it.
 		const variant = document.getElementById('hero') ? 'full' : 'calm';
 		canvas.dataset.flame = variant;
-		// Home only: hover the flame (it sits in the right ~40%, the canvas mask
-		// fades it in from 58%) for "Hold to burn", hold to stoke it. A reward
-		// for the curious on the main page, not a gimmick repeated on every one.
-		initFlameCanvas(canvas, section, variant === 'full' ? { variant, burn: { zoneLeft: 0.62 } } : { variant });
+		// Home only: the flame starts as a faint smoulder; hover it (it sits in
+		// the right ~40%, the canvas mask fades it in from 58%) for "Hold to
+		// ignite" — a good hold lights it, and it stays lit. A reward for the
+		// curious on the main page, not a gimmick repeated on every one.
+		// (Touch has no hover: there it's the usual faint glow.)
+		initFlameCanvas(canvas, section, variant === 'full' ? { variant, burn: { zoneLeft: 0.62, ember: 0.3 } } : { variant });
 	}
 
 	document.addEventListener('astro:page-load', initCtaFlame);

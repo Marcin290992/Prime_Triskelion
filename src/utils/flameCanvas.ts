@@ -13,7 +13,10 @@ export interface FlameCanvasOptions {
 	 *  follows the cursor over the flame's side of the section, and holding
 	 *  the button down makes it burn hotter and faster. `zoneLeft` is where
 	 *  the flame's side starts, as a fraction of the section's width. */
-	burn?: { zoneLeft: number; label?: string; heldLabel?: string };
+	burn?: { zoneLeft: number; label?: string; heldLabel?: string;
+		/** Starts as a smoulder (this share of the canvas's opacity, slower);
+		 *  the first good hold ignites it and it stays lit for the page view. */
+		ember?: number; igniteLabel?: string };
 }
 
 export function initFlameCanvas(
@@ -179,6 +182,14 @@ export function initFlameCanvas(
 	const baseOpacity = parseFloat(getComputedStyle(canvas).opacity) || 0.5;
 	let opacityOverridden = false;
 	let heat = 0;
+	// Ember mode: `lit` 0 → 1 once a hold has properly caught (heat past
+	// IGNITE_AT), and stays — the flame then burns as it normally does.
+	const ember = burn?.ember;
+	const IGNITE_AT = 0.55;
+	let lit = ember !== undefined ? 0 : 1;
+	let litTarget = lit;
+	const restOpacity = () => baseOpacity * (ember === undefined ? 1 : ember + (1 - ember) * lit);
+	if (ember !== undefined) canvas.style.opacity = restOpacity().toFixed(3);
 	let holding = false;
 	let inZone = false;
 	let hint: HTMLDivElement | null = null;
@@ -220,9 +231,12 @@ export function initFlameCanvas(
 	function updateBurn(dt: number) {
 		if (!burn) return;
 		heat += ((holding ? 1 : 0) - heat) * (1 - Math.exp(-dt * (holding ? 5 : 1.8)));
+		if (holding && heat > IGNITE_AT) litTarget = 1;
+		lit += (litTarget - lit) * (1 - Math.exp(-dt * 1.2));
 		// The canvas is dim on purpose (CSS opacity); a flamethrower isn't.
-		if (heat > 0.004) {
-			canvas.style.opacity = (baseOpacity + (0.95 - baseOpacity) * heat).toFixed(3);
+		const rest = restOpacity();
+		if (heat > 0.004 || ember !== undefined) {
+			canvas.style.opacity = (rest + (0.95 - rest) * heat).toFixed(3);
 			opacityOverridden = true;
 		} else if (opacityOverridden) {
 			canvas.style.opacity = '';
@@ -235,7 +249,9 @@ export function initFlameCanvas(
 		hintY += (hintTY - hintY) * 0.28;
 		hint.style.transform = `translate3d(${hintX.toFixed(1)}px, ${hintY.toFixed(1)}px, 0)`;
 		hint.style.opacity = inZone ? '1' : '0';
-		const text = holding ? (burn.heldLabel ?? 'Burning') : (burn.label ?? 'Hold to burn');
+		const text = holding ? (burn.heldLabel ?? 'Burning')
+			: litTarget < 1 ? (burn.igniteLabel ?? 'Hold to ignite')
+			: (burn.label ?? 'Hold to burn');
 		if (text !== hintText) { hintText = text; hint.textContent = text; }
 	}
 
@@ -340,7 +356,8 @@ export function initFlameCanvas(
 		lastFrameTime = ts;
 		if (prevFrameTs === null) prevFrameTs = ts;
 		const dtSec = (ts - prevFrameTs) * 0.001;
-		elapsedTime += dtSec * (1 + 18 * heat);
+		// An ember (not yet lit) moves at half pace.
+		elapsedTime += dtSec * (1 + 18 * heat) * (0.5 + 0.5 * lit);
 		prevFrameTs = ts;
 		updateBurn(Math.min(dtSec, 0.05));
 		render(elapsedTime);
