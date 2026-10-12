@@ -108,8 +108,11 @@
     position: absolute;
     top: 9%;
     left: 50%;
-    transform: translate(-50%, calc(28px - 28px * var(--zoom)));
-    opacity: var(--zoom);
+    transform: translateX(-50%);
+    /* Hidden until the full image has pulled back (end of the zoom), then
+       focuses in like every title on the site (script below). */
+    opacity: 0;
+    filter: blur(18px);
     text-align: center;
     font-family: var(--f-display);
     font-weight: 700;
@@ -121,7 +124,7 @@
     margin: 0;
     white-space: nowrap;
     z-index: 1;
-    will-change: transform, opacity;
+    will-change: opacity, filter;
   }
   #sc-title em { font-style: normal; color: rgb(var(--c-red)); }
 
@@ -479,12 +482,39 @@
 
     apply(0);
 
+    // The title: once the main image has pulled back (zoom done), it focuses
+    // in out of a blur, the site's title entrance (afterPageTransition's
+    // titleIn: rises out of the black soft, then sharpens, settling from a
+    // hair oversized). Scrolling back above that point sends it back out.
+    const title = document.getElementById('sc-title');
+    const TITLE_AT = 0.22;
+    let titleShown = false;
+    let titleTl: gsap.core.Timeline | null = null;
+    const setTitle = (show: boolean) => {
+      if (!title || show === titleShown) return;
+      titleShown = show;
+      titleTl?.kill();
+      titleTl = show
+        ? gsap.timeline()
+            .to(title, { opacity: 1, duration: 0.9, ease: 'sine.inOut' }, 0)
+            .to(title, { filter: 'blur(0px)', duration: 1.5, ease: 'power2.inOut' }, 0)
+            .fromTo(title, { scale: 1.04 }, { scale: 1, duration: 1.7, ease: 'power2.out' }, 0)
+        : gsap.timeline()
+            .to(title, { opacity: 0, filter: 'blur(18px)', duration: 0.5, ease: 'power2.in' }, 0);
+    };
+    if (title) gsap.set(title, { xPercent: -50, x: 0, transformOrigin: '50% 50%' });
+
     _st = ScrollTrigger.create({
       trigger: root,
       start: 'top top',
       end: 'bottom bottom',
       scrub: 0.6,
-      onUpdate: (self) => apply(self.progress),
+      onUpdate: (self) => {
+        apply(self.progress);
+        setTitle(self.progress >= TITLE_AT);
+      },
+      // Landing mid-section (back/forward, reload): show it if past the point.
+      onRefresh: (self) => setTitle(self.progress >= TITLE_AT),
     });
   }
 
