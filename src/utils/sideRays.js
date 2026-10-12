@@ -14,6 +14,7 @@
 // To remove it for good: delete this file, its import in Layout.astro and
 // the data-side-rays attributes. Nothing else references it.
 
+import gsap from 'gsap';
 import { afterPageTransition, subpageMode } from './afterPageTransition';
 
 // Kill switch: set to false and nothing is mounted.
@@ -40,9 +41,12 @@ const OPTS = {
   aimCompact: [0.25, 0.55],
   aimFocus: 2.2,
   maxDpr: 1, // soft light, nothing gained above this
-  // Lights up after the title has started to focus in.
-  inDelayMs: 500,
-  inMs: 2400,
+  // Entrance, as the home hero's light: once the title has found focus the
+  // rays grow out of their source to full length (reveal) while the light
+  // fades up (opacity) — seconds.
+  inAt: 0.6,
+  inOpacity: 2.6,
+  inReveal: 3.0,
 };
 
 const VERT = `
@@ -66,15 +70,20 @@ uniform float iFalloff;
 uniform float iOpacity;
 uniform vec2 iAim;
 uniform float iAimFocus;
+uniform float iReveal; // 0..1: how far the rays reach from their source
 
 float rayStrength(vec2 raySource, vec2 rayRefDirection, vec2 coord, float seedA, float seedB, float speed) {
+  float reach = max(length(iResolution) * 2.4 * iReveal, 1.0);
   vec2 sourceToCoord = coord - raySource;
   float cosAngle = dot(normalize(sourceToCoord), rayRefDirection);
   return clamp(
     (0.45 + 0.15 * sin(cosAngle * seedA + iTime * speed)) +
     (0.3 + 0.2 * cos(-cosAngle * seedB + iTime * speed)),
     0.0, 1.0) *
-    clamp((iResolution.x - length(sourceToCoord)) / iResolution.x, 0.5, 1.0);
+    clamp((iResolution.x - length(sourceToCoord)) / iResolution.x, 0.5, 1.0) *
+    // Grow out of the source: a soft front that travels outward as reveal
+    // goes to 1 (at 1 it's well past the far corner — no effect).
+    (1.0 - smoothstep(reach * 0.6, reach, length(sourceToCoord)));
 }
 
 void main() {
@@ -91,7 +100,8 @@ void main() {
   vec2 rel = coord - rayPos;
   vec2 tiltedCoord = vec2(rel.x * cs - rel.y * sn, rel.x * sn + rel.y * cs) + rayPos;
 
-  float halfSpread = iSpread * 0.275;
+  // The cone opens as the light grows, as on the home hero.
+  float halfSpread = iSpread * 0.275 * (0.7 + 0.3 * iReveal);
   vec2 rayRefDir1 = normalize(vec2(cos(0.785398 + halfSpread), sin(0.785398 + halfSpread)));
   vec2 rayRefDir2 = normalize(vec2(cos(0.785398 - halfSpread), sin(0.785398 - halfSpread)));
 
@@ -197,7 +207,7 @@ function mountSideRays(host) {
   for (const name of [
     'iTime', 'iResolution', 'iSpeed', 'iRayColor1', 'iRayColor2', 'iIntensity', 'iSpread',
     'iFlipX', 'iFlipY', 'iTilt', 'iSaturation', 'iBlend', 'iFalloff', 'iOpacity',
-    'iAim', 'iAimFocus',
+    'iAim', 'iAimFocus', 'iReveal',
   ]) {
     u[name] = gl.getUniformLocation(prog, name);
   }
@@ -227,8 +237,12 @@ function mountSideRays(host) {
   let raf = 0;
   let visible = false;
 
+  const intro = { reveal: 0 };
+  let tweens = [];
+
   function draw(now) {
     gl.uniform1f(u.iTime, now / 1000);
+    gl.uniform1f(u.iReveal, intro.reveal);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
@@ -267,18 +281,24 @@ function mountSideRays(host) {
   document.addEventListener('visibilitychange', onVisibility);
   resize();
 
-  // Lit after the title: a slow fade once the page's entrance has begun;
-  // back/forward lands on the finished page, so it's simply there.
+  // Lit after the title, the way the home hero's light comes in: the rays
+  // reach out from their source while the light fades up. Back/forward
+  // lands on the finished page, so it's simply there.
   afterPageTransition(() => {
     if (subpageMode() === 'none' || still) {
+      intro.reveal = 1;
       canvas.style.opacity = '1';
+      if (still) draw(0);
       return;
     }
-    canvas.style.transition = `opacity ${OPTS.inMs}ms cubic-bezier(0.33, 0, 0.2, 1) ${OPTS.inDelayMs}ms`;
-    requestAnimationFrame(() => { canvas.style.opacity = '1'; });
+    tweens = [
+      gsap.to(canvas, { opacity: 1, duration: OPTS.inOpacity, delay: OPTS.inAt, ease: 'power2.out' }),
+      gsap.to(intro, { reveal: 1, duration: OPTS.inReveal, delay: OPTS.inAt, ease: 'power2.out' }),
+    ];
   });
 
   return () => {
+    tweens.forEach((t) => t.kill());
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     ro.disconnect();
