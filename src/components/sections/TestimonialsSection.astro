@@ -81,6 +81,13 @@
 		/* Room for the longest quote so the author line doesn't jump. */
 		min-height: 3.75em;
 	}
+	/* Laptops (Air, 15" at 125–150% scaling): the vw sizes run too big for
+	   the short viewport, so cap the quote and mark by height as well. */
+	@media (min-width: 1024px) and (max-width: 1700px), (min-width: 1024px) and (max-height: 950px) {
+		.tst__inner { width: min(100%, 980px); gap: clamp(1.25rem, 3vh, 2.25rem); }
+		.tst__mark { font-size: clamp(3.5rem, min(6vw, 10vh), 6rem); }
+		.tst__text { font-size: clamp(1.5rem, min(2.9vw, 4.6vh), 2.6rem); }
+	}
 	/* Each word animates on its own (see initTestimonials). */
 	.tst__text :global(.tw) { display: inline-block; white-space: pre; will-change: transform, opacity; }
 	.tst__author {
