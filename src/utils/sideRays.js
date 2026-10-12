@@ -45,15 +45,16 @@ const OPTS = {
   aimCompact: [0.25, 0.55],
   aimFocus: 2.2,
   maxDpr: 1, // soft light, nothing gained above this
-  // Entrance, as the home hero's light: once the title has found focus the
-  // rays grow out of their source to full length (reveal) while the light
-  // fades up (opacity) — seconds.
-  inAt: 0.6,
+  // Entrance, as the home hero's light: right after the hero's text has
+  // come in (title 0.8s, lead done at ~0.85s — titleIn/supportIn's short
+  // entrance) the rays grow out of their source to full length (reveal)
+  // while the light fades up (opacity) — seconds.
+  inAt: 0.85,
   inOpacity: 2.6,
   inReveal: 3.0,
-  // Phones and tablets: later and slower, easing in instead of jumping up
-  // in the first moment (power2.out does most of its change at once).
-  inCompact: { at: 0.12, opacity: 0.96, reveal: 1.08, ease: 'sine.inOut' },
+  // Phones and tablets: same start, slower and easing in instead of jumping
+  // up in the first moment (power2.out does most of its change at once).
+  inCompact: { at: 0.85, opacity: 3.2, reveal: 3.6, ease: 'sine.inOut' },
 };
 
 const VERT = `
