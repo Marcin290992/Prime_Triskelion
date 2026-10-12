@@ -181,6 +181,10 @@ const services = [
 		display: flex;
 		justify-content: center;
 	}
+	/* Touch: the link's text line is 18px tall — tap 44px. */
+	@media (pointer: coarse) {
+		.svc__btn::before { content: ''; position: absolute; inset: -13px 0; }
+	}
 	.svc__btn {
 		display: inline-flex;
 		align-items: center;
@@ -190,10 +194,11 @@ const services = [
 		font-weight: 300;
 		letter-spacing: 0.38em;
 		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.5);
+		color: rgb(var(--c-cream) / 0.7);
 		text-decoration: none;
 		cursor: pointer;
 		transition: color 0.3s ease;
+		position: relative;
 	}
 	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
 	.svc__btn__line {

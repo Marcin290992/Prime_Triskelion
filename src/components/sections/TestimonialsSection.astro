@@ -54,7 +54,7 @@
 		font-weight: 500;
 		letter-spacing: 0.32em;
 		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.55);
+		color: rgb(var(--c-cream) / 0.7);
 	}
 	.tst__quote {
 		position: relative;
@@ -118,7 +118,7 @@
 		font-weight: 500;
 		letter-spacing: 0.28em;
 		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.55);
+		color: rgb(var(--c-cream) / 0.7);
 	}
 	.tst__foot {
 		display: flex;
@@ -171,7 +171,7 @@
 		font-weight: 500;
 		letter-spacing: 0.28em;
 		font-variant-numeric: tabular-nums;
-		color: rgb(var(--c-cream) / 0.6);
+		color: rgb(var(--c-cream) / 0.72);
 	}
 </style>
 
@@ -293,9 +293,34 @@
 		prevBtn?.addEventListener('click', onPrev);
 		nextBtn?.addEventListener('click', onNext);
 
+		// A finger: swipe anywhere across the section, not only on the
+		// arrows — left for the next story, right for the previous. Only a
+		// clearly sideways move counts, so a vertical scroll that starts
+		// here just scrolls (passive listeners; nothing is blocked).
+		let sx = 0, sy = 0, tracking = false;
+		const onTouchStart = (e: TouchEvent) => {
+			if (e.touches.length !== 1) { tracking = false; return; }
+			tracking = true;
+			sx = e.touches[0].clientX;
+			sy = e.touches[0].clientY;
+		};
+		const onTouchEnd = (e: TouchEvent) => {
+			if (!tracking) return;
+			tracking = false;
+			const t = e.changedTouches[0];
+			const dx = t.clientX - sx;
+			const dy = t.clientY - sy;
+			if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+			step(dx < 0 ? 1 : -1);
+		};
+		section.addEventListener('touchstart', onTouchStart, { passive: true });
+		section.addEventListener('touchend', onTouchEnd, { passive: true });
+
 		_tstOff = () => {
 			prevBtn?.removeEventListener('click', onPrev);
 			nextBtn?.removeEventListener('click', onNext);
+			section.removeEventListener('touchstart', onTouchStart);
+			section.removeEventListener('touchend', onTouchEnd);
 			io.disconnect();
 			swap?.kill();
 			timer.kill();

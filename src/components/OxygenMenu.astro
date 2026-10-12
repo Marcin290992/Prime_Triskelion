@@ -343,6 +343,15 @@ const navLinks = [
   /* text-wrap inherits height from base text for proper clipping */
   .ox-link-text-wrap { vertical-align: bottom; }
 
+  /* Touch: the MENU chip is 35px tall on small phones — tap 45px. */
+  @media (pointer: coarse) {
+    .hud-icon-btn.hud-menu-btn::before { content: ''; position: absolute; inset: -5px 0; }
+  }
+  /* Touch: a 44px tap around the 30px icon (see Footer.astro). */
+  @media (pointer: coarse) {
+    .ox-social { position: relative; }
+    .ox-social::before { content: ''; position: absolute; inset: -7px; }
+  }
   .ox-social {
     display: flex;
     align-items: center;

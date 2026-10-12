@@ -80,6 +80,12 @@
     color: rgb(var(--c-cream) / 0.6);
     transition: color 0.25s ease, border-color 0.25s ease, background 0.25s ease;
   }
+  /* Touch: the icons look 30px but take a 44px tap (the minimum a finger
+     needs) — an invisible ring around each, nothing visible changes. */
+  @media (pointer: coarse) {
+    .footer-social__link { position: relative; }
+    .footer-social__link::before { content: ''; position: absolute; inset: -7px; }
+  }
   .footer-social__link:hover {
     color: rgb(var(--c-cream) / 0.9);
     border-color: rgb(var(--c-cream) / 0.45);
@@ -99,7 +105,7 @@
     font-weight: 400;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.62);
+    color: rgb(var(--c-cream) / 0.72);
     margin-top: 0.4rem;
   }
 

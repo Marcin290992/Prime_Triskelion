@@ -40,6 +40,10 @@
 	.h-title__row--right {
 		justify-content: flex-start;
 	}
+	/* Touch: a 44px-tall tap around the 26px logo — invisible. */
+	@media (pointer: coarse) {
+		#h-title::before { content: ''; position: absolute; inset: -10px -6px; }
+	}
 	#h-title {
 		position: fixed;
 		top: clamp(1rem, 1.3vw, 1.8rem);
