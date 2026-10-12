@@ -58,7 +58,7 @@ const OPTS = {
   // Phones and tablets: same start, then a sunrise — the light creeps up
   // from nothing (slow start, power1.in) and keeps growing for seconds,
   // never jumping in (power2.out did most of its change at once).
-  inCompact: { at: 0.85, opacity: 5.5, reveal: 6, ease: 'power1.inOut' },
+  inCompact: { at: 0.1, opacity: 5.5, reveal: 6, ease: 'power1.inOut' },
 };
 
 const VERT = `
