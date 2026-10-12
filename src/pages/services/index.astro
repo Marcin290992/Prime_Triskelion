@@ -75,6 +75,9 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
             </div>
           </div>
         ))}
+        <!-- The last card's extra scroll (see sync in the script): as a
+             margin it would end the card's sticking early. -->
+        <div class="svc-deck__tail" aria-hidden="true"></div>
       </div>
 
       <div class="svc-texts">
@@ -291,26 +294,39 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
   }
 
   /* ── Copy ── */
+  /* Each service holds: its copy section is taller than the screen and the
+     copy sticks inside it, so card and copy stand together, aligned, for
+     the extra scroll (--svc-hold) before the next card comes up over this
+     one. The card's flow height follows the section's (script), so both
+     still change together. */
   .svc-text {
+    --svc-hold: 50;
+    min-height: calc(100vh + var(--svc-hold) * 1vh);
+    min-height: calc(var(--app-stable-vh, 1vh) * (100 + var(--svc-hold)));
+    box-sizing: border-box;
+    padding: 0 var(--site-gutter) 0 clamp(3rem, 6vw, 7rem);
+    border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
+  }
+  .svc-text:last-child { border-bottom: 0; }
+  .svc-text__body {
+    position: sticky;
+    top: 0;
     min-height: 100vh;
     min-height: calc(var(--app-stable-vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
     justify-content: center;
     box-sizing: border-box;
+    max-width: 620px;
     /* Top: just clear of the top blur band (its height in gradualBlur.js);
        bottom: clear of the MENU button / HUD. Type and spacing below are
        height-led too, so a whole service fits between them on a short
        laptop screen (A15 at 125–150%) as on a tall monitor. */
     padding:
       calc(clamp(5.5rem, 6vw, 7rem) + clamp(0.75rem, 3vh, 2.5rem))
-      var(--site-gutter)
-      calc(6rem + 2vh)
-      clamp(3rem, 6vw, 7rem);
-    border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
+      0
+      calc(6rem + 2vh);
   }
-  .svc-text:last-child { border-bottom: 0; }
-  .svc-text__body { max-width: 620px; }
   .svc-text__label {
     display: flex;
     align-items: center;
@@ -419,6 +435,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       box-sizing: border-box;
     }
     .svc-deck, .svc-texts { display: contents; }
+    .svc-deck__tail { display: none; }
     .svc-card {
       position: relative;
       height: auto;
@@ -438,7 +455,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       padding: clamp(1.6rem, 5vw, 2.4rem) 0 0;
       border-bottom: 0;
     }
-    .svc-text__body { max-width: none; }
+    .svc-text__body { position: static; min-height: 0; display: block; padding: 0; max-width: none; }
     .svc-content__title {
       max-width: none;
       font-size: clamp(1.6rem, 6.2vw, 2.6rem);
@@ -498,9 +515,16 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     // Each card takes up as much scroll as its copy: the card is a screen
     // tall, so the rest goes in its bottom margin — the next card then
     // arrives exactly as the next copy does, however long a copy runs.
+    // The last card's share goes into a spacer after it instead: a sticky
+    // element's own bottom margin shortens how long it sticks, so the last
+    // card left before its copy did.
+    const tail = document.querySelector<HTMLElement>('.svc-deck__tail');
     const sync = () => {
       cards.forEach((card, i) => {
-        card.style.marginBottom = `${Math.max(0, texts[i].offsetHeight - card.offsetHeight)}px`;
+        const extra = `${Math.max(0, texts[i].offsetHeight - card.offsetHeight)}px`;
+        const last = i === cards.length - 1 && tail;
+        card.style.marginBottom = last ? '' : extra;
+        if (last) tail.style.height = extra;
       });
       depth();
     };
