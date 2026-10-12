@@ -21,8 +21,9 @@
 
 const CTA = '.h-hero-cta--fixed';
 // What a mouse sets the comets (and then the lit ring) off on: the main
-// CTAs, and the Contact page's options, which should answer like them.
-const MOUSE_BUTTONS = [CTA, '.cp-chip > span'].join(', ');
+// CTAs, and the Contact page's options and Back / Next, which should answer
+// like them.
+const MOUSE_BUTTONS = [CTA, '.cp-chip > span', '.cp-back', '.cp-next'].join(', ');
 // Bordered buttons a finger can set a comet off on (everything but the MENU
 // button, which has its own light).
 const TOUCH_BUTTONS = [

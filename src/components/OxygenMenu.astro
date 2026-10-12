@@ -542,17 +542,21 @@ const navLinks = [
     letter-spacing: 0.32em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.8);
-    transition: color 0.3s ease;
+    transition: color 0.3s ease, text-shadow 0.45s ease;
   }
 
   @media (hover: hover) {
     .hud-menu-btn:hover .hud-ico__line {
-      background: rgb(var(--c-cream) / 0.9);
-      box-shadow: 0 0 6px rgb(var(--c-cream) / 0.6);
+      background: rgb(var(--c-cream));
+      box-shadow: 0 0 6px rgb(var(--c-cream) / 0.85), 0 0 16px rgb(var(--c-cream) / 0.45);
     }
     .hud-menu-btn:hover .hud-ico__line:nth-child(2) { width: 100% !important; }
     .hud-menu-btn:hover .hud-ico__line:nth-child(3) { width: 100% !important; }
-    .hud-menu-btn:hover::after { color: rgb(var(--c-cream) / 0.9); }
+    /* The label lights up like the comet buttons' (button-hover.css). */
+    .hud-menu-btn:hover::after {
+      color: rgb(var(--c-cream));
+      text-shadow: 0 0 6px rgb(var(--c-cream) / 0.85), 0 0 16px rgb(var(--c-cream) / 0.5), 0 0 32px rgb(var(--c-cream) / 0.25);
+    }
   }
 
 

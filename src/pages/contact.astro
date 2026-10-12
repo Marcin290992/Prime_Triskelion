@@ -143,9 +143,9 @@ const EMAIL = CONTACT_EMAIL;
 
         <!-- BACK | 1 / 5 | NEXT — only inside a path -->
         <div class="cp-controls" id="cp-controls">
-          <button class="cp-back" type="button" id="cp-back">Back</button>
+          <button class="cp-back" type="button" id="cp-back"><span class="hud-spin-border" aria-hidden="true"></span>Back</button>
           <span class="cp-count" id="cp-count" aria-live="polite">1 / 5</span>
-          <button class="cp-next" type="submit" id="cp-next"><span class="cp-beam" aria-hidden="true"></span><span class="cp-next__label" id="cp-next-label">Next</span></button>
+          <button class="cp-next" type="submit" id="cp-next"><span class="hud-spin-border" aria-hidden="true"></span><span class="cp-next__label" id="cp-next-label">Next</span></button>
         </div>
       </form>
     </section>
@@ -403,7 +403,13 @@ const EMAIL = CONTACT_EMAIL;
     letter-spacing: 0.22em;
     text-transform: uppercase;
   }
-  .cp-back {
+  /* Back and Next: the same button, dressed like the main "Start a
+     project" CTA — hairline border with the turning white beam
+     (.hud-spin-border) on desktop; comets and the out-of-focus ring on
+     hover (starBorder.js, button-hover.css). */
+  .cp-back,
+  .cp-next {
+    position: relative;
     cursor: pointer;
     border: 1px solid rgb(var(--c-cream) / 0.18);
     border-radius: 0;
@@ -412,7 +418,13 @@ const EMAIL = CONTACT_EMAIL;
     transition: color 0.3s ease, border-color 0.3s ease;
   }
   @media (hover: hover) {
-    .cp-back:hover { color: rgb(var(--c-cream)); border-color: rgb(var(--c-cream) / 0.4); }
+    .cp-back:hover,
+    .cp-next:hover { color: rgb(var(--c-cream)); border-color: rgb(var(--c-cream) / 0.4); }
+  }
+  /* Phones and tablets: no beam, as on the main CTA there. */
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+    .cp-back .hud-spin-border,
+    .cp-next .hud-spin-border { display: none; }
   }
   .cp-count {
     border: 1px solid rgb(var(--c-cream) / 0.08);
@@ -422,60 +434,7 @@ const EMAIL = CONTACT_EMAIL;
     font-variant-numeric: tabular-nums;
     user-select: none;
   }
-  /* Same as the site's CTAs (.h-hero-cta--fixed): no hover change — a
-     white beam runs round the border and a glare sweeps across. */
-  .cp-next {
-    position: relative;
-    cursor: pointer;
-    overflow: hidden;
-    isolation: isolate;
-    border: 1px solid rgb(var(--c-cream) / 0.18);
-    border-radius: 0;
-    background: rgb(var(--c-cream) / 0.02);
-    color: rgb(var(--c-cream) / 0.8);
-    box-shadow: inset 0 1px 0 rgb(var(--c-cream) / 0.04), 0 8px 24px rgb(var(--c-bg) / 0.25);
-    transition: color 0.3s ease, transform 0.15s ease;
-  }
-  .cp-next:active { transform: scale(0.97); }
-  .cp-next::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    pointer-events: none;
-    background: linear-gradient(-35deg, transparent 25%, rgba(242, 237, 232, 0.13) 50%, transparent 75%);
-    transform: translateX(-160%);
-    animation: cp-glare 5s ease-in-out 2.5s infinite;
-  }
-  @keyframes cp-glare {
-    0% { transform: translateX(-160%); }
-    22%, 100% { transform: translateX(160%); }
-  }
-  .cp-beam {
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    z-index: 1;
-    pointer-events: none;
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    transition: opacity 0.3s ease;
-  }
-  .cp-beam::before {
-    content: '';
-    position: absolute;
-    inset: -200%;
-    background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255, 255, 255, 0.12) 30deg, rgba(255, 255, 255, 0.55) 60deg, rgba(255, 255, 255, 0.12) 90deg, transparent 130deg, transparent 360deg);
-    animation: cp-beam-spin 4s linear infinite;
-  }
-  @keyframes cp-beam-spin { to { transform: rotate(360deg); } }
-  .cp-next__label { position: relative; z-index: 3; white-space: nowrap; }
-  /* Dims until the step's required fields are filled (still clickable, so a
-     press explains what's missing). */
-  .cp-next.is-waiting { color: rgb(var(--c-cream) / 0.5); }
-  .cp-next.is-waiting .cp-beam { opacity: 0.35; }
+  .cp-next__label { white-space: nowrap; }
   .cp-next:disabled { opacity: 0.55; cursor: progress; }
 
   /* ── Copy + sent ───────────────────────────────────────────────────── */
@@ -544,8 +503,6 @@ const EMAIL = CONTACT_EMAIL;
     .cp-controls > * { flex: 1 1 0; min-width: 0; padding: 0 0.6rem; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cp-next::before,
-    .cp-beam::before,
     .cp-dot { animation: none; }
     #contact-flame-canvas { transition: none; }
   }
@@ -644,9 +601,10 @@ const EMAIL = CONTACT_EMAIL;
         .to([from, controls], { autoAlpha: 0, y: -30 * dir, filter: 'blur(8px)', duration: 0.28 * D, ease: 'power2.in' })
         .add(() => {
           from.classList.remove('is-active');
-          // An option clicked while lit (starBorder.js's hover ring) is hidden
-          // before the cursor can leave it, so it would come back still lit.
-          [from, to].forEach((s) => s.querySelectorAll('.is-lit').forEach((el) => el.classList.remove('is-lit')));
+          // A button clicked while lit (starBorder.js's hover ring) — an option,
+          // Back or Next — is hidden before the cursor can leave it, so it
+          // would come back still lit.
+          [from, to, controls].forEach((s) => s.querySelectorAll('.is-lit').forEach((el) => { if (!el.matches(':hover')) el.classList.remove('is-lit'); }));
           // Not clearProps:'all' — that also kills this timeline while `from`
           // is still one of its tween targets.
           gsap.set(from, { clearProps: 'opacity,visibility,transform,filter' });

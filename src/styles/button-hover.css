@@ -16,12 +16,14 @@
     .tst__btn,
     .footer-social__link,
     .cp-back,
+    .cp-next,
     .cp-chip > span {
       --bh-ring: rgb(var(--c-cream) / 0.7);
     }
     .tst__btn,
     .footer-social__link,
     .cp-back,
+    .cp-next,
     .cp-chip > span {
       position: relative;
     }
@@ -30,6 +32,7 @@
     .tst__btn::after,
     .footer-social__link::after,
     .cp-back::after,
+    .cp-next::after,
     .cp-chip > span::after {
       content: '';
       position: absolute;
@@ -46,30 +49,58 @@
     .h-hero-cta:not(.h-hero-cta--fixed):hover,
     .h-hero-cta--fixed.is-lit,
     .tst__btn:hover,
-    .footer-social__link:hover,
-    .cp-back:hover {
+    .footer-social__link:hover {
       border-color: transparent !important;
     }
     /* Fixed CTAs: the beam's sharp rim would sit beside the blurred ring,
        so it fades out while hovered, and the label lifts to full
        strength — blurring alone reads as "out of focus", not "active". */
-    .h-hero-cta--fixed .hud-spin-border {
+    .h-hero-cta--fixed .hud-spin-border,
+    .cp-back .hud-spin-border,
+    .cp-next .hud-spin-border {
       transition: opacity 0.45s ease;
     }
-    .h-hero-cta--fixed.is-lit .hud-spin-border {
+    .h-hero-cta--fixed.is-lit .hud-spin-border,
+    .cp-back.is-lit .hud-spin-border,
+    .cp-next.is-lit .hud-spin-border {
       opacity: 0;
     }
     .h-hero-cta--fixed.is-lit {
       color: rgb(var(--c-cream)) !important;
     }
-    /* Contact's options: the same as the main CTAs — comets on entering
+    /* Every comet button (main CTAs, Contact's options, Back / Next): the
+       label lights up with the ring — full cream and a soft glow, eased in
+       and out with it. */
+    /* Their own transitions plus the glow. !important because a layered
+       rule loses to the buttons' own (unlayered) transition otherwise. */
+    .h-hero-cta--fixed {
+      transition: color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease,
+        transform 0.15s ease, text-shadow 0.45s ease !important;
+    }
+    .cp-chip > span,
+    .cp-back,
+    .cp-next {
+      transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease,
+        text-shadow 0.45s ease !important;
+    }
+    .h-hero-cta--fixed.is-lit,
+    .cp-chip > span.is-lit,
+    .cp-back.is-lit,
+    .cp-next.is-lit {
+      text-shadow: 0 0 6px rgb(var(--c-cream) / 0.85), 0 0 16px rgb(var(--c-cream) / 0.5), 0 0 32px rgb(var(--c-cream) / 0.25);
+    }
+    /* Contact's options and Back / Next: the same as the main CTAs — comets on entering
        (utils/starBorder.js), then the out-of-focus ring and full-strength
        label once they meet (.is-lit). */
-    .cp-chip > span.is-lit {
+    .cp-chip > span.is-lit,
+    .cp-back.is-lit,
+    .cp-next.is-lit {
       border-color: transparent !important;
       color: rgb(var(--c-cream)) !important;
     }
-    .cp-chip > span.is-lit::after {
+    .cp-chip > span.is-lit::after,
+    .cp-back.is-lit::after,
+    .cp-next.is-lit::after {
       opacity: 1;
       filter: blur(1.6px);
     }
@@ -77,8 +108,7 @@
     .h-hero-cta:not(.h-hero-cta--fixed):hover::after,
     .h-hero-cta--fixed.is-lit::after,
     .tst__btn:hover::after,
-    .footer-social__link:hover::after,
-    .cp-back:hover::after {
+    .footer-social__link:hover::after {
       opacity: 1;
       filter: blur(1.6px);
     }
