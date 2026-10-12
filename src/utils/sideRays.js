@@ -22,9 +22,10 @@ const ENABLED = true;
 
 const OPTS = {
   speed: 2.5,
-  // Warm silver from the site's cream, a cooler silver for the second set.
-  rayColor1: [242 / 255, 237 / 255, 232 / 255],
-  rayColor2: [222 / 255, 228 / 255, 236 / 255],
+  // White, toned like the home hero's light (the shader cools it toward
+  // the bottom the same way — see the tone step in main()).
+  rayColor1: [1, 1, 1],
+  rayColor2: [1, 1, 1],
   intensity: 1,
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
@@ -118,6 +119,13 @@ void main() {
   vec2 aimDir = normalize(iAim * iResolution - rayPos);
   float along = max(dot(normalize(coord - rayPos), aimDir), 0.0);
   color.rgb *= mix(0.25, 1.15, pow(along, iAimFocus * 8.0));
+
+  // Same tone as the home hero's rays: near-white at the top, cooling to a
+  // blue-silver lower down (red falls off fastest, blue least).
+  float br = 1.0 - coord.y / iResolution.y;
+  color.r *= 0.1 + br * 0.8;
+  color.g *= 0.3 + br * 0.6;
+  color.b *= 0.5 + br * 0.5;
 
   float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
   color.rgb = mix(vec3(gray), color.rgb, iSaturation);
