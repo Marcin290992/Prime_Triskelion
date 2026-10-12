@@ -15,19 +15,22 @@
     .h-hero-cta,
     .tst__btn,
     .footer-social__link,
-    .cp-back {
+    .cp-back,
+    .cp-chip > span {
       --bh-ring: rgb(var(--c-cream) / 0.7);
     }
     .tst__btn,
     .footer-social__link,
-    .cp-back {
+    .cp-back,
+    .cp-chip > span {
       position: relative;
     }
 
     .h-hero-cta::after,
     .tst__btn::after,
     .footer-social__link::after,
-    .cp-back::after {
+    .cp-back::after,
+    .cp-chip > span::after {
       content: '';
       position: absolute;
       inset: -1px;
@@ -58,6 +61,17 @@
     }
     .h-hero-cta--fixed.is-lit {
       color: rgb(var(--c-cream)) !important;
+    }
+    /* Contact's options: the same as the main CTAs — comets on entering
+       (utils/starBorder.js), then the out-of-focus ring and full-strength
+       label once they meet (.is-lit). */
+    .cp-chip > span.is-lit {
+      border-color: transparent !important;
+      color: rgb(var(--c-cream)) !important;
+    }
+    .cp-chip > span.is-lit::after {
+      opacity: 1;
+      filter: blur(1.6px);
     }
 
     .h-hero-cta:not(.h-hero-cta--fixed):hover::after,

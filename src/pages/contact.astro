@@ -644,6 +644,9 @@ const EMAIL = CONTACT_EMAIL;
         .to([from, controls], { autoAlpha: 0, y: -30 * dir, filter: 'blur(8px)', duration: 0.28 * D, ease: 'power2.in' })
         .add(() => {
           from.classList.remove('is-active');
+          // An option clicked while lit (starBorder.js's hover ring) is hidden
+          // before the cursor can leave it, so it would come back still lit.
+          [from, to].forEach((s) => s.querySelectorAll('.is-lit').forEach((el) => el.classList.remove('is-lit')));
           // Not clearProps:'all' — that also kills this timeline while `from`
           // is still one of its tween targets.
           gsap.set(from, { clearProps: 'opacity,visibility,transform,filter' });
@@ -673,6 +676,9 @@ const EMAIL = CONTACT_EMAIL;
       index = nextIndex;
       const to = currentId();
       if (to === 'copy') void copyEmail(false);
+      // Back on the options: all clear again — a still-checked option read
+      // as stuck in its hover. (Clicking one sets the path afresh.)
+      if (to === 'intent') form!.querySelectorAll<HTMLInputElement>('input[name="intent"]').forEach((r) => { r.checked = false; });
       show(from, to, dir);
     }
 

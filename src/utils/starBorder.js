@@ -20,6 +20,9 @@
 // No comet with reduced motion.
 
 const CTA = '.h-hero-cta--fixed';
+// What a mouse sets the comets (and then the lit ring) off on: the main
+// CTAs, and the Contact page's options, which should answer like them.
+const MOUSE_BUTTONS = [CTA, '.cp-chip > span'].join(', ');
 // Bordered buttons a finger can set a comet off on (everything but the MENU
 // button, which has its own light).
 const TOUCH_BUTTONS = [
@@ -347,7 +350,9 @@ class StarBorder {
 
     // the comets have met: the ring lights, if the cursor is still on the button
     if (this.litAt && performance.now() / 1000 >= this.litAt) {
-      if (this.hovered || this.focused) this.light();
+      // Not on a button hidden meanwhile (a Contact option clicked before
+      // the comets met: its step is gone, the cursor never left it).
+      if ((this.hovered || this.focused) && this.btn.offsetParent) this.light();
       else this.litAt = 0;
     }
 
@@ -395,10 +400,10 @@ function destroyAll() {
   byButton = new WeakMap(); // a button that outlives the page starts afresh
 }
 
-// A mouse entering a main CTA.
+// A mouse entering a main CTA (or a Contact option).
 document.addEventListener('pointerover', (e) => {
   if (e.pointerType !== 'mouse') return;
-  const btn = e.target.closest?.(CTA);
+  const btn = e.target.closest?.(MOUSE_BUTTONS);
   if (!btn || (e.relatedTarget && btn.contains(e.relatedTarget))) return;
   forButton(btn).onEnter(e);
 });
@@ -414,7 +419,7 @@ document.addEventListener('pointerdown', (e) => {
 // The cursor leaving a main CTA (the ring goes out with it).
 document.addEventListener('pointerout', (e) => {
   if (e.pointerType !== 'mouse') return;
-  const btn = e.target.closest?.(CTA);
+  const btn = e.target.closest?.(MOUSE_BUTTONS);
   if (!btn || (e.relatedTarget && btn.contains(e.relatedTarget))) return;
   byButton.get(btn)?.onLeave();
 });
