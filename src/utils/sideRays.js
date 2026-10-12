@@ -29,7 +29,7 @@ const OPTS = {
   intensity: 1,
   // Phones and tablets: the hero is short and narrow, so the corner light
   // fills much more of it — dimmer there to sit like the home hero's.
-  intensityCompact: 0.6,
+  intensityCompact: 1,
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
@@ -78,6 +78,7 @@ uniform float iOpacity;
 uniform vec2 iAim;
 uniform float iAimFocus;
 uniform float iReveal; // 0..1: how far the rays reach from their source
+uniform float iLinear; // 1: faint light kept as is (phones, tablets)
 
 float rayStrength(vec2 raySource, vec2 rayRefDirection, vec2 coord, float seedA, float seedB, float speed) {
   float reach = max(length(iResolution) * 2.4 * iReveal, 1.0);
@@ -137,7 +138,13 @@ void main() {
   color.rgb = mix(vec3(gray), color.rgb, iSaturation);
 
   color.a = max(color.r, max(color.g, color.b)) * iOpacity;
-  gl_FragColor = color;
+  // Premultiplied output. Desktop: rgb x alpha — the look it was tuned
+  // with, where faint light falls away fast. Phones and tablets: rgb as is,
+  // so the faint part of the shaft survives — squared it all but vanished
+  // on a wide tablet hero and on AMOLED screens.
+  vec3 c = clamp(color.rgb, 0.0, 1.0);
+  float a = clamp(color.a, 0.0, 1.0);
+  gl_FragColor = vec4(c * mix(a, iOpacity, iLinear), a);
 }`;
 
 const FLIP = {
@@ -170,7 +177,7 @@ function mountSideRays(host) {
   canvas.style.setProperty('-webkit-mask-image', fade);
   const gl = canvas.getContext('webgl', {
     alpha: true,
-    premultipliedAlpha: false,
+    premultipliedAlpha: true,
     antialias: false,
     depth: false,
     stencil: false,
@@ -221,7 +228,7 @@ function mountSideRays(host) {
   for (const name of [
     'iTime', 'iResolution', 'iSpeed', 'iRayColor1', 'iRayColor2', 'iIntensity', 'iSpread',
     'iFlipX', 'iFlipY', 'iTilt', 'iSaturation', 'iBlend', 'iFalloff', 'iOpacity',
-    'iAim', 'iAimFocus', 'iReveal',
+    'iAim', 'iAimFocus', 'iReveal', 'iLinear',
   ]) {
     u[name] = gl.getUniformLocation(prog, name);
   }
@@ -241,7 +248,10 @@ function mountSideRays(host) {
   // centred title). Phones and tablets aim the same on every page.
   const ownAim = (host.dataset.sideRays || '').split(',').map(Number);
   const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
-  const setIntensity = () => gl.uniform1f(u.iIntensity, compact.matches ? OPTS.intensityCompact : OPTS.intensity);
+  const setIntensity = () => {
+    gl.uniform1f(u.iIntensity, compact.matches ? OPTS.intensityCompact : OPTS.intensity);
+    gl.uniform1f(u.iLinear, compact.matches ? 1 : 0);
+  };
   setIntensity();
   const setAim = () => gl.uniform2f(u.iAim, ...(
     compact.matches ? OPTS.aimCompact
