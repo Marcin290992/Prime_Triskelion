@@ -224,7 +224,9 @@ const steps = [
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.process-rail {
 			display: block;
-			height: 460vh;
+			/* 100vh + the pairs' scroll incl. their holds — see HOLD_VH in
+			   the script (keep the two in step). */
+			height: 689.5vh;
 		}
 		/* The one sticky element for the whole section — see the long
 		   comment above .showcase__intro's desktop rule for why this
@@ -596,6 +598,29 @@ const steps = [
 	// starts rising while it finishes.
 	const LEAD_IN = 0.075;
 	const TRAIL_OUT = 0.06;
+	// The fractions above are of the rail's original scroll (BASE_VH, a
+	// 460vh rail). Each pair now also HOLDS at center, numbers and copy
+	// standing still for HOLD_VH of scroll — the same pause as the Services
+	// page's cards — eased into and out of over HOLD_EASE (in crossing-
+	// window units). The rail grows by exactly that much, so the motion
+	// between holds keeps its old pace.
+	const BASE_VH = 360;
+	const HOLD_VH = 36;
+	const HOLD_EASE = 0.25;
+	const WINDOW_VH = WINDOW * BASE_VH;
+	const STEP_VH = (1 - LEAD_IN - TRAIL_OUT) * BASE_VH / STEPS + HOLD_VH + HOLD_EASE * WINDOW_VH;
+	// = LEAD_IN * BASE_VH + STEPS * STEP_VH + TRAIL_OUT * BASE_VH = 589.5;
+	// the rail's CSS height is 100vh plus this (689.5vh) — set there, not
+	// from here, so the sections below lay out right from the first paint.
+	const HOLD_HALF = HOLD_VH / 2 / WINDOW_VH;
+	// raw → raw with a flat stretch around 0 (the hold), entered and left
+	// with a smooth bend instead of a dead stop.
+	function holdAtCenter(raw: number): number {
+		const a = Math.abs(raw);
+		if (a <= HOLD_HALF) return 0;
+		const d = a - HOLD_HALF;
+		return Math.sign(raw) * (d < HOLD_EASE ? (d * d) / (2 * HOLD_EASE) : d - HOLD_EASE / 2);
+	}
 
 	function initShowcase() {
 		const section = document.getElementById('showcase');
@@ -655,13 +680,14 @@ const steps = [
 			const railRect = rail!.getBoundingClientRect();
 			const totalScrollable = Math.max(1, railRect.height - window.innerHeight);
 			const scrolled = Math.max(0, Math.min(totalScrollable, -railRect.top));
-			const progress = scrolled / totalScrollable;
+			// Scroll in vh of the screen — the pairs' timing is set in vh.
+			const scrolledVh = scrolled / Math.max(1, window.innerHeight) * 100;
 
 			// Shrink the title early in the scroll so the rail gets more
 			// headroom once the first pair starts arriving — on short/wide
 			// (32"/24") monitors the full-size title alone leaves too
 			// little vertical room for the rail underneath it.
-			const shrinkT = Math.max(0, Math.min(1, progress / SHRINK_END));
+			const shrinkT = Math.max(0, Math.min(1, scrolledVh / (SHRINK_END * BASE_VH)));
 			const titleScale = 1 - shrinkT * (1 - TITLE_MIN_SCALE);
 			sectionEl.style.setProperty('--title-scale', String(titleScale));
 
@@ -717,10 +743,9 @@ const steps = [
 			// the title alone (and finishes shrinking) before the first
 			// pair starts sliding in. TRAIL_OUT mirrors that at the tail
 			// end, before the sticky pin releases.
-			const span = 1 - LEAD_IN - TRAIL_OUT;
 			for (let i = 0; i < STEPS; i++) {
-				const center = LEAD_IN + (i + 0.5) * (span / STEPS);
-				const raw = (progress - center) / WINDOW;
+				const centerVh = LEAD_IN * BASE_VH + (i + 0.5) * STEP_VH;
+				const raw = holdAtCenter((scrolledVh - centerVh) / WINDOW_VH);
 				// The last pair doesn't cross back past center and fade/
 				// drift back out once it's arrived — it eases to a stop
 				// instead, and both its position and opacity just hold
