@@ -203,7 +203,9 @@ const projects = [
 
 	/* Horizontal scroll */
 	.scroll-section {
-		height: 700vh;
+		/* 600vh of horizontal travel + a 40vh hold on the final slide
+		   (FINAL_HOLD in the script) + the 100vh of the pinned view. */
+		height: 740vh;
 		position: relative;
 		display: none;
 	}
@@ -685,11 +687,14 @@ const projects = [
 		const fadeX = new Array<number>(fadeCards.length);
 		const imgBoxes: { el: HTMLElement; left: number; width: number }[] = [];
 		let curtainX = 0;
+		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
 			sectionTop = ss.getBoundingClientRect().top + window.scrollY;
-			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight);
+			// The travel ends FINAL_HOLD screens before the pin lets go, so the
+			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
+			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight * (1 + FINAL_HOLD));
 			curtainX = ce.offsetLeft;
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
