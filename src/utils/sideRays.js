@@ -53,7 +53,7 @@ const OPTS = {
   inReveal: 3.0,
   // Phones and tablets: later and slower, easing in instead of jumping up
   // in the first moment (power2.out does most of its change at once).
-  inCompact: { at: 0.4, opacity: 3.2, reveal: 3.6, ease: 'sine.inOut' },
+  inCompact: { at: 0.12, opacity: 0.96, reveal: 1.08, ease: 'sine.inOut' },
 };
 
 const VERT = `
