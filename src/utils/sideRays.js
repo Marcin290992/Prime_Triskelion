@@ -30,9 +30,9 @@ const OPTS = {
   // sits at a different distance from the corner on each, so one number
   // can't fit all (a phone's narrow hero puts it close, a tablet's wide,
   // short one far).
-  intensity: 2.6, // desktop
-  intensityCompact: 1.8, // phones
-  intensityTablet: 2.8, // tablets (touch or <=1024px, 700px and wider)
+  intensity: 1.6, // desktop
+  intensityCompact: 1.2, // phones
+  intensityTablet: 1.8, // tablets (touch or <=1024px, 700px and wider)
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
@@ -62,8 +62,9 @@ const OPTS = {
   inReveal: 3.0,
   // Phones and tablets: same start, then a sunrise — the light creeps up
   // from nothing (slow start, power1.in) and keeps growing for seconds,
-  // never jumping in (power2.out did most of its change at once).
-  inCompact: { at: 0.1, opacity: 5.5, reveal: 6, ease: 'power1.inOut' },
+  // never jumping in (power2.out did most of its change at once). Kept to
+  // ~2-3s: the earlier 5-6s made the wait too long.
+  inCompact: { at: 0.1, opacity: 2.2, reveal: 2.8, ease: 'power1.inOut' },
 };
 
 const VERT = `
