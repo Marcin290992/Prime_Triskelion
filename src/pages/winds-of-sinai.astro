@@ -248,18 +248,34 @@ import CtaSection from '../components/sections/CtaSection.astro';
               </div>
             </div>
 
-            <div class="scr-slide scr-slide--device">
+            <div class="scr-slide">
               <div class="scr-slide__meta">
-                <span class="showcase-desc">Mobile — homepage</span>
+                <span class="showcase-desc">About page</span>
               </div>
-              <div class="device-ph scr-device-single"></div>
+              <div class="browser-frame browser-frame--scr">
+                <div class="browser-frame__bar">
+                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
+                  <div class="browser-frame__url">windsofsinai.com/about</div>
+                </div>
+                <div class="browser-frame__screen browser-frame__screen--tall">
+                  <div class="browser-frame__ph">Desktop — About</div>
+                </div>
+              </div>
             </div>
 
-            <div class="scr-slide scr-slide--device">
+            <div class="scr-slide">
               <div class="scr-slide__meta">
-                <span class="showcase-desc">Mobile — experiences</span>
+                <span class="showcase-desc">Contact page</span>
               </div>
-              <div class="device-ph scr-device-single"></div>
+              <div class="browser-frame browser-frame--scr">
+                <div class="browser-frame__bar">
+                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
+                  <div class="browser-frame__url">windsofsinai.com/contact</div>
+                </div>
+                <div class="browser-frame__screen browser-frame__screen--tall">
+                  <div class="browser-frame__ph">Desktop — Contact</div>
+                </div>
+              </div>
             </div>
 
             <div class="scr-slide">
@@ -304,19 +320,31 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
         <div class="showcase-item">
           <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">Mobile — homepage</span>
+            <span class="showcase-desc">About page</span>
           </div>
-          <div class="showcase-devices wos-inner">
-            <div class="device-ph"></div>
+          <div class="browser-frame browser-frame--wide">
+            <div class="browser-frame__bar">
+              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
+              <div class="browser-frame__url">windsofsinai.com/about</div>
+            </div>
+            <div class="browser-frame__screen browser-frame__screen--tall">
+              <div class="browser-frame__ph">Desktop — About</div>
+            </div>
           </div>
         </div>
 
         <div class="showcase-item">
           <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">Mobile — experiences</span>
+            <span class="showcase-desc">Contact page</span>
           </div>
-          <div class="showcase-devices wos-inner">
-            <div class="device-ph"></div>
+          <div class="browser-frame browser-frame--wide">
+            <div class="browser-frame__bar">
+              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
+              <div class="browser-frame__url">windsofsinai.com/contact</div>
+            </div>
+            <div class="browser-frame__screen browser-frame__screen--tall">
+              <div class="browser-frame__ph">Desktop — Contact</div>
+            </div>
           </div>
         </div>
 
@@ -903,67 +931,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
     }
   }
 
-  /* ─────────────────────────────────────────
-     PHONE FRAME
-  ───────────────────────────────────────── */
-  .phone-frame {
-    background: #111114;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 36px;
-    overflow: hidden;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.55);
-    width: clamp(140px, 18vw, 200px);
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 12px 8px 16px;
-    gap: 8px;
-    box-sizing: border-box;
-  }
-  .phone-frame__notch {
-    width: 60px;
-    height: 14px;
-    background: rgb(var(--c-bg));
-    border-radius: 8px;
-    flex-shrink: 0;
-  }
-  .phone-frame__screen {
-    width: 100%;
-    flex: 1;
-    background: linear-gradient(160deg, #141418 0%, #0e0e12 100%);
-    border-radius: 8px;
-    display: grid;
-    place-content: center;
-    min-height: clamp(220px, 30vw, 360px);
-    position: relative;
-    overflow: hidden;
-  }
-  .phone-frame__screen::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(135deg, rgb(var(--c-red) / 0.03) 0%, transparent 60%),
-      repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.02) 19px, rgba(255,255,255,0.02) 20px),
-      repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(255,255,255,0.02) 19px, rgba(255,255,255,0.02) 20px);
-  }
-  .phone-frame__ph {
-    font-family: var(--f-body);
-    font-size: 11px;
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.5);
-    position: relative;
-    z-index: 1;
-  }
-  .phone-frame__home {
-    width: 40px;
-    height: 4px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 2px;
-    flex-shrink: 0;
-  }
 
   /* ─────────────────────────────────────────
      TABLET FRAME
@@ -1110,47 +1077,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
     color: rgb(var(--c-cream) / 0.92);
   }
 
-  /* Devices row — 3 stacked placeholders */
-  .showcase-devices {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(1rem, 2vw, 1.5rem);
-    padding-block: clamp(1rem, 3vw, 2rem);
-  }
-  .device-ph {
-    width: min(calc(100% - var(--site-gutter) * 2), 860px);
-    aspect-ratio: 16 / 9;
-    background: linear-gradient(160deg, #1a1a20 0%, #121217 100%);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-  }
   /* Test image, same as .browser-frame__screen img above. */
-  .device-ph img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    position: relative;
-    z-index: 1;
-  }
   /* A phone screen is a portrait shape (the desktop gallery's is too). */
-  .showcase-devices .device-ph {
-    width: min(66%, 300px);
-    aspect-ratio: 9 / 19;
-    border-radius: 28px;
-  }
-  .device-ph::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(135deg, rgb(var(--c-red) / 0.03) 0%, transparent 55%),
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px);
-  }
 
   /* Stats */
   .showcase-stats {
@@ -1256,9 +1184,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
       1400px
     );
   }
-  .scr-slide--device .scr-slide__meta {
-    width: min(calc(100vw - var(--site-gutter) * 2), calc((100vh - 20rem) * 9 / 19), 520px);
-  }
   .browser-frame--scr {
     width: min(
       calc(100vw - var(--site-gutter) * 2),
@@ -1267,24 +1192,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
     );
     border-radius: 12px;
     flex-shrink: 0;
-  }
-  .scr-devices {
-    display: flex;
-    gap: clamp(0.8rem, 1.5vw, 1.5rem);
-    align-items: center;
-    width: min(calc(100vw - var(--site-gutter) * 2), 1400px);
-  }
-  .scr-devices .device-ph {
-    width: auto;
-    flex: 1;
-    min-width: 0;
-    aspect-ratio: 16 / 9;
-  }
-  .scr-device-single {
-    height: calc(100vh - 20rem);
-    width: auto;
-    max-width: min(calc(100vw - var(--site-gutter) * 2), 520px);
-    aspect-ratio: 9 / 19;
   }
   .scr-progress {
     position: absolute;
