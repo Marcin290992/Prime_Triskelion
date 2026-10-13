@@ -1050,6 +1050,7 @@
 					fc.rgb  = mix(vec3(g), fc.rgb, saturation);
 				}
 				fc.rgb *= raysColor;
+				fc *= 1.3; // overall light strength (keep in step with sideRays.js intensities)
 				gl_FragColor = fc;
 			}
 		`;

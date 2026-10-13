@@ -30,9 +30,9 @@ const OPTS = {
   // sits at a different distance from the corner on each, so one number
   // can't fit all (a phone's narrow hero puts it close, a tablet's wide,
   // short one far).
-  intensity: 1.6, // desktop
-  intensityCompact: 0.7, // phones
-  intensityTablet: 1.1, // tablets (touch or <=1024px, 700px and wider)
+  intensity: 2.1, // desktop
+  intensityCompact: 0.9, // phones
+  intensityTablet: 1.45, // tablets (touch or <=1024px, 700px and wider)
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
