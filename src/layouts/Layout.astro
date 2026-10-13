@@ -77,6 +77,29 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 
 				setLockedHeight();
 
+				// The one measurement above can land on a passing, shrunken
+				// viewport (page opened in a background tab, restored from the
+				// tab overview, a keyboard or bar mid-move) and then every
+				// section sized from it stays squeezed until a reload. Measure
+				// again once the page is really on screen, and once it has
+				// loaded if the value is implausibly small for the device — a
+				// portrait viewport with its bars out is never under ~60% of
+				// the screen. In every normal case the number doesn't change.
+				if (document.hidden) {
+					document.addEventListener('visibilitychange', function again() {
+						if (document.hidden) return;
+						document.removeEventListener('visibilitychange', again);
+						setTimeout(setLockedHeight, 300);
+					});
+				}
+				window.addEventListener('load', function () {
+					setTimeout(function () {
+						var locked = parseFloat(root.style.getPropertyValue('--app-stable-vh')) * 100;
+						var portrait = (window.innerHeight || 0) > (window.innerWidth || 0);
+						if (portrait && window.screen && locked < window.screen.height * 0.6) setLockedHeight();
+					}, 300);
+				}, { once: true });
+
 				window.addEventListener('orientationchange', function () {
 					setTimeout(setLockedHeight, 160);
 				}, { passive: true });
