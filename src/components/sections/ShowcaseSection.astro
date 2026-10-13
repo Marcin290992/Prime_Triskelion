@@ -388,6 +388,33 @@ const steps = [
 		}
 	}
 
+	/* Laptops and ordinary monitors (below 1900px): the three columns were
+	   pushed to the edges — the number far left, the copy far right, a small
+	   photo alone in the middle — and read as three separate things. Here
+	   they close in on the photo as one group: the number right beside its
+	   left edge, the copy right beside its right edge (left-aligned now,
+	   facing it), and the photo itself larger. */
+	@media (min-width: 1025px) and (max-width: 1899px) and (hover: hover), (min-width: 1025px) and (max-width: 1899px) and (pointer: fine) {
+		.process-rail__stage {
+			justify-content: center;
+			gap: clamp(1.75rem, 3vw, 3.5rem);
+		}
+		/* Same width both sides, so the photo sits on the page's centre
+		   line (with the MENU button); the number is right-aligned in its
+		   column, against the photo. */
+		.process-rail__col--num,
+		.process-rail__col--desc { flex: 0 1 clamp(240px, 27vw, 430px); }
+		.process-num { text-align: right; }
+		.process-desc {
+			left: 0;
+			right: auto;
+			margin-left: 0;
+			text-align: left;
+			align-items: flex-start;
+		}
+		.process-rail__media { width: clamp(360px, min(46vw, 78vh), 820px); }
+	}
+
 	/* Big monitors (27-32"+): the rail's caps were set for ~1440-1920px and
 	   left it small and bunched in the middle of a 2400px+ screen. Past
 	   1900px the stage widens and the photo, number and copy scale up with
