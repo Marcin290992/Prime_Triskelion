@@ -64,7 +64,7 @@ const OPTS = {
   // from nothing (slow start, power1.in) and keeps growing for seconds,
   // never jumping in (power2.out did most of its change at once). Kept to
   // ~2-3s: the earlier 5-6s made the wait too long.
-  inCompact: { at: 0.1, opacity: 2.2, reveal: 2.8, ease: 'power1.inOut' },
+  inCompact: { at: 0.1, opacity: 1.8, reveal: 2.3, ease: 'power1.inOut' },
 };
 
 const VERT = `
