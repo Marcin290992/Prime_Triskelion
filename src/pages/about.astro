@@ -142,7 +142,10 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       top: 0;
       height: 100svh;
       height: calc(var(--app-stable-vh, 1svh) * 100);
-      overflow: hidden;
+      /* Sideways only: the words slide out past the edges. Vertically the
+         veil bleeds out of the pin (see .am-veil). */
+      overflow: visible;
+      overflow-x: clip;
     }
     /* Everything but (iOS) Safari — see initAboutMobileReveal. Chrome on
        Android has its URL bar at the TOP: as it slides away the viewport's
@@ -161,10 +164,16 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       bottom: 0;
       flex-shrink: 0;
     }
-    /* Black layer between photo and title; faded out by scroll. */
+    /* Black layer between photo and title; faded out by scroll.
+       The pin is as tall as the page's first, toolbar-shown viewport. When
+       the browser's toolbar slides away the viewport grows past it — at the
+       top in Chrome (URL bar), at the bottom in Safari — and that strip was
+       the page's bare black, without the light. The veil (which carries the
+       light) bleeds out of the pin on both sides, so whichever edge opens
+       up is already covered. */
     .am-veil {
       position: absolute;
-      inset: 0;
+      inset: -140px 0;
       z-index: 4;
       background: rgb(var(--c-bg));
       pointer-events: none;
