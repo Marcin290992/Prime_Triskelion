@@ -31,8 +31,8 @@ const OPTS = {
   // can't fit all (a phone's narrow hero puts it close, a tablet's wide,
   // short one far).
   intensity: 1.6, // desktop
-  intensityCompact: 1.2, // phones
-  intensityTablet: 1.8, // tablets (touch or <=1024px, 700px and wider)
+  intensityCompact: 0.7, // phones
+  intensityTablet: 1.1, // tablets (touch or <=1024px, 700px and wider)
   spread: 1.6,
   origin: 'top-right', // top-right | top-left | bottom-right | bottom-left
   tilt: 0, // degrees
