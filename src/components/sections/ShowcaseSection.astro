@@ -54,11 +54,11 @@ const steps = [
 			</div>
 
 			<div class="process-rail__media">
-				<Image class="process-rail__img" data-index="0" src={steps[0].img} alt="" widths={[800, 1200]} sizes="600px" />
-				<Image class="process-rail__img" data-index="1" src={steps[1].img} alt="" widths={[800, 1200]} sizes="600px" />
-				<Image class="process-rail__img" data-index="2" src={steps[2].img} alt="" widths={[800, 1200]} sizes="600px" />
-				<Image class="process-rail__img" data-index="3" src={steps[3].img} alt="" widths={[800, 1200]} sizes="600px" />
-				<Image class="process-rail__img" data-index="4" src={steps[4].img} alt="" widths={[800, 1200]} sizes="600px" />
+				<Image class="process-rail__img" data-index="0" src={steps[0].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="1" src={steps[1].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="2" src={steps[2].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="3" src={steps[3].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="4" src={steps[4].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
 			</div>
 
 			<div class="process-rail__col process-rail__col--desc">
@@ -386,6 +386,21 @@ const steps = [
 			   container followed scroll position exactly. */
 			filter: grayscale(100%) contrast(1.1) brightness(0.75);
 		}
+	}
+
+	/* Big monitors (27-32"+): the rail's caps were set for ~1440-1920px and
+	   left it small and bunched in the middle of a 2400px+ screen. Past
+	   1900px the stage widens and the photo, number and copy scale up with
+	   it — the height caps stay, so a wide-but-short screen is still safe.
+	   Below 1900px nothing changes. */
+	@media (min-width: 1900px) and (hover: hover), (min-width: 1900px) and (pointer: fine) {
+		.process-rail__stage { max-width: min(100%, 2000px); }
+		.process-rail__media { width: clamp(320px, min(40vw, 68vh), 900px); }
+		.process-num { font-size: clamp(3rem, min(6vw, 11vh), 9rem); }
+		.process-desc { max-width: 42ch; gap: 1rem; }
+		.process-desc__tag { font-size: clamp(10px, 0.55vw, 14px); }
+		.process-desc h3 { font-size: clamp(1.1rem, min(2.6vw, 5vh, 12cqi), 3.6rem); }
+		.process-desc p { font-size: clamp(0.85rem, 0.9vw, 1.35rem); }
 	}
 
 	/* ── Process stack (phones and tablets; desktop has the rail) ── */
