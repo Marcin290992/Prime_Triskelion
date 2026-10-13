@@ -120,6 +120,13 @@ function mountGhostCursor() {
     pointerEvents: 'none',
     zIndex: '0',
   });
+  // The smoke comes up out of the footer's top edge instead of being cut by
+  // it: no seam between the CTA above and the footer, the cursor's smoke
+  // simply gathers as it goes down into the footer.
+  const soften =
+    'linear-gradient(to bottom, transparent 0%, rgb(0 0 0 / 0.12) 8%, rgb(0 0 0 / 0.45) 18%, rgb(0 0 0 / 0.85) 30%, #000 40%)';
+  canvas.style.maskImage = soften;
+  canvas.style.setProperty('-webkit-mask-image', soften);
   const gl = canvas.getContext('webgl2', {
     alpha: true,
     premultipliedAlpha: true,

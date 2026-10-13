@@ -47,6 +47,9 @@
      and tablets keep the compact footer above. */
   @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
     #site-footer {
+      /* No hairline: the CTA flows into the footer (ghostCursor.js fades its
+         smoke in from this edge). */
+      border-top: 0;
       min-height: calc(var(--app-stable-vh) * 100);
       box-sizing: border-box;
       display: flex;
