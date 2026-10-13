@@ -37,6 +37,7 @@ export function initFlameCanvas(
 		uniform float uRedGain; uniform float uGreenGain; uniform float uBlueGain;
 		uniform float uGreenPow; uniform float uBluePow; uniform float uAlpha;
 		uniform vec2 uPointer; uniform float uCursorActive; uniform float uCursorIntensity; uniform float uWarp;
+			uniform sampler2D uGlow; uniform float uBloom; uniform float uReveal; uniform float uFlare; uniform float uPass;
 
 		const float TAU = 6.2831853;
 		const float PI = 3.14159265;
@@ -44,6 +45,7 @@ export function initFlameCanvas(
 		void main() {
 			float aspect = uRes.x / uRes.y;
 			vec2 nrm = gl_FragCoord.xy / uRes;
+			vec2 uv0 = nrm;
 			vec2 st = vec2(nrm.x * aspect, nrm.y);
 
 			if (uDir == 1) {
@@ -101,7 +103,43 @@ export function initFlameCanvas(
 			float lum = dot(col, vec3(0.299, 0.587, 0.114));
 			float a = clamp(lum * 8.0, 0.0, 1.0);
 
-			gl_FragColor = vec4(col * a, a * uAlpha);
+			vec3 rgb = col * a;
+			float alpha = a * uAlpha;
+
+			// Entrance (from the Light Pillar's reveal): the flame climbs the
+			// section behind a soft front that flares as it passes, then
+			// settles. uReveal is past the top (and uFlare 0) once it's done.
+			float yUp = uv0.y;
+			float head = (yUp - uReveal + 0.2) / 0.2;
+			rgb += rgb * exp(-head * head) * uFlare * 1.5;
+			float mask = 1.0 - smoothstep(uReveal - 0.5, uReveal, yUp);
+			rgb *= mask;
+			alpha *= mask;
+
+			// The halo is fed only by the flame's hot cores (the small copy in
+			// pass 1 keeps just the brightest parts), so the tongues stay
+			// sharp and the glow doesn't haze the whole canvas.
+			if (uPass > 0.5) {
+				float pk = max(rgb.r, max(rgb.g, rgb.b));
+				rgb *= smoothstep(0.45, 1.0, pk);
+			}
+
+			// Bloom: a soft halo around the flame from a low-res copy of
+			// itself (uGlow, drawn in a first cheap pass), screened on top.
+			if (uBloom > 0.0) {
+				vec3 g = vec3(0.0);
+				for (int i = 0; i < 8; i++) {
+					float ang = float(i) * 0.785398;
+					vec2 d = vec2(cos(ang), sin(ang));
+					g += texture2D(uGlow, uv0 + d * 0.010).rgb;
+					g += texture2D(uGlow, uv0 + d * 0.026).rgb * 0.7;
+				}
+				g *= uBloom / 13.6;
+				rgb = 1.0 - (1.0 - clamp(rgb, 0.0, 1.0)) * (1.0 - clamp(g, 0.0, 1.0));
+				alpha = max(alpha, max(rgb.r, max(rgb.g, rgb.b)));
+			}
+
+			gl_FragColor = vec4(rgb, alpha);
 		}
 	`;
 
@@ -125,7 +163,7 @@ export function initFlameCanvas(
 	gl.enableVertexAttribArray(aPos);
 	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-	const uNames = ['uTime','uRes','uSpeed','uCenter','uAmp','uFreq','uInnerFreq','uPull','uDir','uPowA','uPowB','uRedGain','uGreenGain','uBlueGain','uGreenPow','uBluePow','uAlpha','uPointer','uCursorActive','uCursorIntensity','uWarp'];
+	const uNames = ['uTime','uRes','uSpeed','uCenter','uAmp','uFreq','uInnerFreq','uPull','uDir','uPowA','uPowB','uRedGain','uGreenGain','uBlueGain','uGreenPow','uBluePow','uAlpha','uPointer','uCursorActive','uCursorIntensity','uWarp','uGlow','uBloom','uReveal','uFlare','uPass'];
 	const U: Record<string, WebGLUniformLocation | null> = {};
 	uNames.forEach(n => { U[n] = gl!.getUniformLocation(prog, n); });
 
@@ -152,6 +190,19 @@ export function initFlameCanvas(
 	const isMobileDevice = window.matchMedia('(pointer: coarse)').matches;
 	const cursorEnabled = !isMobileDevice && !reduceMotion;
 	const TARGET_FRAME_MS = isMobileDevice ? 1000 / 24 : 0;
+
+	// Desktop with a mouse only: phones and tablets keep the flame exactly
+	// as it was (no entrance, no bloom, a single cheap pass).
+	const desktopFx = window.matchMedia('(min-width: 1025px) and (hover: hover) and (pointer: fine)').matches;
+	// Bloom is the reward of burning: none at rest, it swells with `heat`
+	// while the button is held and fades with it. It needs a second (tiny)
+	// pass and a dozen texture reads per pixel, so that only runs while lit.
+	const BLOOM = desktopFx && options.burn ? 0.8 : 0;
+	// Entrance: starts when the flame's section first comes into view.
+	const INTRO_SECONDS = 2.6;
+	const easeOut = (x: number) => 1 - Math.pow(1 - x, 3);
+	let intro = reduceMotion || !desktopFx ? 1 : 0;
+	let introOn = false;
 
 	const pointer = { x: 0.5, y: 0.5 };
 	const smoothPointer = { x: 0.5, y: 0.5 };
@@ -283,6 +334,26 @@ export function initFlameCanvas(
 	// drawn frame can be a couple of display frames away — the flame
 	// blinked out. Only resize on a real change, and redraw straight away.
 	let drawn = false;
+	// The low-res copy the bloom is read from (1/8 of the canvas).
+	let glowTex: WebGLTexture | null = null;
+	let glowFb: WebGLFramebuffer | null = null;
+	let dummyTex: WebGLTexture | null = null;
+	let GW = 1, GH = 1;
+	if (BLOOM > 0) {
+		glowTex = gl.createTexture();
+		glowFb = gl.createFramebuffer();
+		dummyTex = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, dummyTex);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 0]));
+		for (const tex of [dummyTex, glowTex]) {
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		}
+		gl.uniform1i(U.uGlow, 0);
+	}
 	function resize() {
 		const dpr = Math.min(devicePixelRatio, maxDpr);
 		const w = Math.round(canvas.offsetWidth * dpr), h = Math.round(canvas.offsetHeight * dpr);
@@ -290,6 +361,15 @@ export function initFlameCanvas(
 		W = w; H = h;
 		canvas.width = W; canvas.height = H;
 		gl!.viewport(0, 0, W, H);
+		if (glowTex && glowFb) {
+			GW = Math.max(1, Math.round(W / 8));
+			GH = Math.max(1, Math.round(H / 8));
+			gl!.bindTexture(gl!.TEXTURE_2D, glowTex);
+			gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, GW, GH, 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null);
+			gl!.bindFramebuffer(gl!.FRAMEBUFFER, glowFb);
+			gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, glowTex, 0);
+			gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+		}
 		if (drawn) render(elapsedTime);
 	}
 	function onResize() {
@@ -314,7 +394,6 @@ export function initFlameCanvas(
 		smoothCursorActive += (cursorActive - smoothCursorActive) * 0.08;
 
 		gl!.uniform1f(U.uTime, t);
-		gl!.uniform2f(U.uRes, W, H);
 		gl!.uniform1f(U.uSpeed, CFG.speed);
 		gl!.uniform1f(U.uCenter, CFG.center);
 		gl!.uniform1f(U.uAmp, CFG.amp);
@@ -338,6 +417,31 @@ export function initFlameCanvas(
 		// and bright from the cursor, but doesn't swing about with the mouse.
 		gl!.uniform1f(U.uWarp, 1 - 0.85 * heat);
 
+		const rise = easeOut(intro);
+		gl!.uniform1f(U.uReveal, intro >= 1 ? 10 : rise * 1.7);
+		gl!.uniform1f(U.uFlare, intro >= 1 ? 0 : (1 - rise) * 1.2 * Math.min(1, intro * 8));
+
+		const bloom = BLOOM * heat;
+		if (glowTex && glowFb && bloom > 0.01) {
+			// Pass 1: the flame again, into the small texture (1/64 of the pixels).
+			gl!.bindTexture(gl!.TEXTURE_2D, dummyTex); // never sample what's being drawn to
+			gl!.bindFramebuffer(gl!.FRAMEBUFFER, glowFb);
+			gl!.viewport(0, 0, GW, GH);
+			gl!.uniform2f(U.uRes, GW, GH);
+			gl!.uniform1f(U.uBloom, 0);
+			gl!.uniform1f(U.uPass, 1);
+			gl!.drawArrays(gl!.TRIANGLES, 0, 6);
+			// Pass 2: the flame to the screen, with the halo from pass 1.
+			gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
+			gl!.viewport(0, 0, W, H);
+			gl!.bindTexture(gl!.TEXTURE_2D, glowTex);
+			gl!.uniform1f(U.uBloom, bloom);
+			gl!.uniform1f(U.uPass, 0);
+		} else {
+			gl!.uniform1f(U.uBloom, 0);
+			gl!.uniform1f(U.uPass, 0);
+		}
+		gl!.uniform2f(U.uRes, W, H);
 		gl!.drawArrays(gl!.TRIANGLES, 0, 6);
 	}
 
@@ -359,6 +463,7 @@ export function initFlameCanvas(
 		// An ember (not yet lit) moves at half pace.
 		elapsedTime += dtSec * (1 + 18 * heat) * (0.5 + 0.5 * lit);
 		prevFrameTs = ts;
+		if (introOn && intro < 1) intro = Math.min(1, intro + Math.min(dtSec, 0.05) / INTRO_SECONDS);
 		updateBurn(Math.min(dtSec, 0.05));
 		render(elapsedTime);
 		drawn = true;
@@ -377,6 +482,7 @@ export function initFlameCanvas(
 	let isSectionVisible = true;
 	const sectionIO = new IntersectionObserver(([entry]) => {
 		isSectionVisible = entry.isIntersecting;
+		if (isSectionVisible) introOn = true;
 		if (!isSectionVisible) { inZone = false; holding = false; }
 		if (isSectionVisible && !document.hidden) {
 			if (!rafId) rafId = requestAnimationFrame(loop);
