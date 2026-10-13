@@ -388,13 +388,13 @@ const steps = [
 		}
 	}
 
-	/* Laptops and ordinary monitors (below 1900px): the three columns were
+	/* Every desktop screen: the three columns used to be
 	   pushed to the edges — the number far left, the copy far right, a small
 	   photo alone in the middle — and read as three separate things. Here
 	   they close in on the photo as one group: the number right beside its
 	   left edge, the copy right beside its right edge (left-aligned now,
 	   facing it), and the photo itself larger. */
-	@media (min-width: 1025px) and (max-width: 1899px) and (hover: hover), (min-width: 1025px) and (max-width: 1899px) and (pointer: fine) {
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.process-rail__stage {
 			justify-content: center;
 			gap: clamp(1.75rem, 3vw, 3.5rem);
@@ -422,7 +422,10 @@ const steps = [
 	   Below 1900px nothing changes. */
 	@media (min-width: 1900px) and (hover: hover), (min-width: 1900px) and (pointer: fine) {
 		.process-rail__stage { max-width: min(100%, 2000px); }
-		.process-rail__media { width: clamp(320px, min(40vw, 68vh), 900px); }
+		/* Same grouped layout as below 1900px, scaled up in proportion. */
+		.process-rail__media { width: clamp(360px, min(46vw, 78vh), 1300px); }
+		.process-rail__col--num,
+		.process-rail__col--desc { flex-basis: clamp(240px, 27vw, 640px); }
 		.process-num { font-size: clamp(3rem, min(6vw, 11vh), 9rem); }
 		.process-desc { max-width: 42ch; gap: 1rem; }
 		.process-desc__tag { font-size: clamp(10px, 0.55vw, 14px); }
