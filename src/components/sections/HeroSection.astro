@@ -345,8 +345,8 @@
 			z-index: 30;
 		}
 		.hero-kicker { margin-top: 0; font-size: 0.63rem; white-space: normal; }
-		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.88; margin-top: 0 !important; }
-		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.03rem; color: rgb(var(--c-cream) / 0.86); overflow-wrap: anywhere; }
+		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.94; word-spacing: 0.08em; margin-top: 0 !important; }
+		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.1rem; color: rgb(var(--c-cream) / 0.86); overflow-wrap: anywhere; }
 		.hero-cta-row {
 			width: 100%;
 			max-width: 320px;
@@ -359,7 +359,8 @@
 		.hero-bottom { margin-top: 1rem; padding-top: 1.1rem; align-items: stretch; }
 		.hero-inline-stats {
 			width: 100%;
-			display: grid;
+			/* Hidden on every size now (as on desktop) — one message, one CTA. */
+			display: none;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 0.45rem;
 			border: none;
@@ -389,7 +390,7 @@
 
 	@media (max-width: 640px) {
 		.hero-grid { padding-inline: 0.9rem; padding-top: clamp(4.5rem, 12vh, 6.5rem); padding-bottom: clamp(2rem, 5vh, 3.5rem); }
-		.h-hero-sub { font-size: 1rem; }
+		.h-hero-sub { font-size: 1.06rem; }
 		.hero-cta-row { max-width: 340px; }
 		.hero-center { padding-bottom: max(0.3rem, env(safe-area-inset-bottom)); }
 		.hero-inline-stats { margin-top: 0.8rem; }
