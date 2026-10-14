@@ -225,6 +225,11 @@
 		margin-top: clamp(2.5rem, 5vh, 4rem);
 		align-self: center;
 	}
+	/* Desktop: cleaner hero — one message, one CTA. The stats ribbon stays on
+	   phones/tablets, and the reveal timeline just animates the hidden node. */
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.hero-inline-stats { display: none; }
+	}
 	.hero-bottom__stat {
 		font-family: var(--f-body);
 		font-size: 10px;
