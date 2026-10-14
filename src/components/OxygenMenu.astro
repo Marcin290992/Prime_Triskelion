@@ -21,7 +21,9 @@ const navLinks = [
     <!-- Desktop side labels -->
     <div class="hud-side hud-side--left" id="hud-location">
       <span class="hud-location__city">Based in London, UK</span>
+      <span class="hud-time-text" id="hud-time">--:--</span>
       <span class="hud-location__tag">Est. 2024 · Branding &amp; Digital for ambitious brands</span>
+      <span class="hud-year">{new Date().getFullYear()}</span>
     </div>
     <!-- Hamburger button — centered -->
     <button id="hud-menu-btn" transition:persist class="hud-icon-btn hud-menu-btn" type="button" aria-label="Toggle menu" aria-expanded="false">
@@ -35,8 +37,6 @@ const navLinks = [
     </button>
   </div>
 
-  <!-- Desktop: clock — fixed bottom right -->
-  <div class="hud-time-text" id="hud-time">--:--</div>
 
   <!-- Fullscreen overlay — Crysis HUD style -->
   <div class="fixed inset-0 z-999 opacity-0 invisible overflow-hidden ox-menu-overlay" id="ox-menu-overlay">
@@ -150,16 +150,16 @@ const navLinks = [
        screen vs ~6% of 1080p. The top-bar CTA (.nav-cta, global.css) and
        the menu chip's width follow the same ratio. Mobile overrides these
        further down. */
-    --ox-menu-btn-size: clamp(56px, 8.5vh, 68px);
+    --ox-menu-btn-size: clamp(42px, 6.4vh, 50px);
     --ox-contact-btn-size: clamp(46px, 6.75vh, 54px);
-    --ox-menu-icon-width: 24px;
-    --ox-menu-icon-height: 20px;
-    --ox-menu-line-height: 2px;
+    --ox-menu-icon-width: 20px;
+    --ox-menu-icon-height: 16px;
+    --ox-menu-line-height: 1.5px;
     --ox-menu-line-1-top: 0;
-    --ox-menu-line-2-top: 9px;
-    --ox-menu-line-3-top: 18px;
-    --ox-menu-line-2-width: 17px;
-    --ox-menu-line-3-width: 11px;
+    --ox-menu-line-2-top: 7px;
+    --ox-menu-line-3-top: 14px;
+    --ox-menu-line-2-width: 14px;
+    --ox-menu-line-3-width: 9px;
   }
 
   /* ═══════════════════════════════════════
@@ -460,29 +460,45 @@ const navLinks = [
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 13px;
+    font-size: 11px;
     letter-spacing: 0.3em;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     opacity: 0;
     transition: opacity 0.6s ease;
   }
   .hud-side--left  {
     left: 2rem;
+    /* Spans the bar so the year can sit at the far right; it's one element
+       so it shares the location label's reveal / transition naming. Pointer
+       events are off (.hud-side), so it never blocks the menu button. */
+    right: 2rem;
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    align-items: baseline;
+    gap: 1rem;
   }
   .hud-location__city {
-    font-size: 13px;
-    letter-spacing: 0.3em;
-    color: rgba(255,255,255,0.85);
-  }
-  .hud-location__tag {
     font-size: 11px;
-    letter-spacing: 0.28em;
-    color: rgba(255,255,255,0.62);
+    letter-spacing: 0.3em;
+    color: rgba(255,255,255,0.6);
   }
+  /* The clock sits on the same line as the city (it still carries #hud-time,
+     which oxygenMenu.ts / Layout.astro drive). Declared with the extra
+     class so it beats the standalone fixed-corner .hud-time-text rule. */
+  .hud-side--left .hud-time-text {
+    position: static;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+  }
+  .hud-year {
+    margin-left: auto;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.4);
+  }
+  /* One line only — the tagline is dropped from the HUD on desktop. */
+  .hud-location__tag { display: none; }
   .hud-side--right { right: 2rem; font-size: 16px; letter-spacing: 0.08em; }
 
   /* ── Hamburger menu button — labeled chip: icon + "Menu" caption ──
@@ -495,10 +511,10 @@ const navLinks = [
        the only HUD control, so it can scale freely with viewport width. The 26vh cap
        keeps its proportions when --ox-menu-btn-size shrinks on short
        laptop screens (≥900px tall: plain 14vw as before). */
-    width: clamp(170px, min(14vw, 26vh), 260px);
+    width: clamp(128px, min(10.5vw, 19.5vh), 195px);
     height: var(--ox-menu-btn-size);
-    padding: 0 24px;
-    gap: 14px;
+    padding: 0 18px;
+    gap: 12px;
     justify-content: center;
     position: relative;
     overflow: visible;
@@ -546,9 +562,9 @@ const navLinks = [
   .hud-menu-btn::after {
     content: "Menu";
     font-family: var(--f-body);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
-    letter-spacing: 0.32em;
+    letter-spacing: 0.3em;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.8);
     transition: color 0.3s ease, text-shadow 0.45s ease;
@@ -636,13 +652,27 @@ const navLinks = [
     position: fixed;
     right: 1.5rem;
     bottom: 1.5rem;
-    font-size: 14px;
+    font-size: 12px;
     letter-spacing: 0.08em;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(255, 255, 255, 0.5);
     text-transform: uppercase;
     font-variant-numeric: tabular-nums;
     z-index: 9100;
     opacity: 0;
+  }
+
+  /* Desktop: the corner labels (location tagline, clock) only decorate the
+     first screen — once the page scrolls past it they fade away so fewer
+     fixed elements stay on screen. filter:opacity() (not opacity) because
+     GSAP / the reveal timelines own these elements' inline opacity and an
+     inline value would beat any class rule. */
+  .hud-side, .hud-time-text {
+    filter: opacity(1);
+    transition: filter 0.5s ease, opacity 0.6s ease;
+  }
+  .hud-deco-away .hud-side,
+  .hud-deco-away .hud-time-text {
+    filter: opacity(0);
   }
 
   /* Hamburger icon */

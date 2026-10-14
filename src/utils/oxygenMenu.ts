@@ -322,7 +322,13 @@ function initOxygenMenu() {
   }
 
   function handleScroll() {
-    if (!isMobile) return; // Desktop: nothing hides on scroll
+    if (!isMobile) {
+      // Desktop: only the decorative corner labels fade out once the first
+      // screen is scrolled past (see .hud-deco-away in OxygenMenu.astro).
+      document.getElementById('ox-hud-mobile')?.parentElement
+        ?.classList.toggle('hud-deco-away', window.scrollY > window.innerHeight * 0.6);
+      return;
+    }
     const scrollTop = window.scrollY;
     if (state.isMenuOpen) {
       state.lastScrollTop = scrollTop;
@@ -717,6 +723,7 @@ function initOxygenMenu() {
     hudMenuBtn?.style.removeProperty('filter');
     if (hudMenuBtn) gsap.set(hudMenuBtn, { scale: 1 });
     setBarHidden(false);
+    document.getElementById('oxygen-menu-root')?.classList.remove('hud-deco-away');
     state.barHidden = false;
     state.scrollAccum = 0;
     state.menuShrink = 0;
