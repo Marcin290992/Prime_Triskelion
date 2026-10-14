@@ -1332,8 +1332,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   function initPage() {
-    const gridLines = document.getElementById('grid-lines');
-    if (gridLines) gridLines.style.visibility = 'hidden';
+    // The sitewide column lines now run through this page too (they used to be
+    // hidden here, because the page has its own fine grid backgrounds).
+    // const gridLines = document.getElementById('grid-lines');
+    // if (gridLines) gridLines.style.visibility = 'hidden';
 
     // 1. Lenis musi być przed ScrollTrigger, żeby sync działał poprawnie
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
