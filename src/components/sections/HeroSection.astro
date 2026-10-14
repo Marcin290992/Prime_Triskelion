@@ -171,6 +171,22 @@
 		text-align: center;
 	}
 
+	/* Desktop polish: a little air around the heavy claim — more room under the
+	   kicker and above the sub, a touch of word-spacing so "I BUILD FOR" doesn't
+	   read as one tight block, and a slightly larger sub. Phones/tablets keep
+	   their own tuned spacing. */
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.h-hero-claim {
+			margin-top: clamp(1.6rem, 3vh, 2.2rem) !important;
+			line-height: 0.94;
+			word-spacing: 0.08em;
+		}
+		.h-hero-sub {
+			margin-top: clamp(1.4rem, 2.6vh, 2rem);
+			font-size: clamp(1.05rem, 1.5vw, 1.45rem);
+		}
+	}
+
 	/* ── CTA row ── */
 	.hero-cta-row {
 		display: flex;
