@@ -154,10 +154,16 @@ const services = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.38);
 			text-decoration: none;
-			transition: color 0.45s ease;
+			transition: color 0.45s ease, filter 0.45s ease;
 		}
 		.svc__row.is-active .svc__link { color: rgb(var(--c-cream)); }
 		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
+		/* Mouse only, and only while it is over the list or the picture: the names
+		   other than the active one go lightly soft, so the one in focus stands out. At rest, and
+		   for the title and "See more", nothing is blurred. */
+		@media (hover: hover) and (pointer: fine) {
+			.svc__body:hover .svc__row:not(.is-active) .svc__link { filter: blur(3px); }
+		}
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
 		#services .svc__footer { display: none; }
 		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
