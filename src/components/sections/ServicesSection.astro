@@ -1,17 +1,15 @@
 ---
 import { Image } from 'astro:assets';
-// Placeholder pictures (Unsplash, stored locally — the site's CSP blocks
-// remote images). Swap the files in src/img/services/ for real work.
-import imgWebsites from '../../img/services/websites.jpg';
-import imgBranding from '../../img/services/branding.jpg';
-import imgMotion from '../../img/services/motion.jpg';
-import imgStrategy from '../../img/services/strategy.jpg';
+// Every service uses the same deer photo for now (the site's CSP blocks remote
+// images, so it is the local file). deeer2.webp is a huge source (7360px wide) —
+// <Image> below generates the small versions each spot needs.
+import imgDeer from '../../img/deeer2.webp';
 
 const services = [
-	{ name: 'Websites', img: imgWebsites, desc: 'High-performance websites built to convert and scale.' },
-	{ name: 'Branding', img: imgBranding, desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
-	{ name: 'Motion', img: imgMotion, desc: 'Animation and motion systems that bring interfaces to life.' },
-	{ name: 'Strategy', img: imgStrategy, desc: 'Creative direction and strategy built around your goals.' },
+	{ name: 'Websites', img: imgDeer, desc: 'High-performance websites built to convert and scale.' },
+	{ name: 'Branding', img: imgDeer, desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
+	{ name: 'Motion', img: imgDeer, desc: 'Animation and motion systems that bring interfaces to life.' },
+	{ name: 'Strategy', img: imgDeer, desc: 'Creative direction and strategy built around your goals.' },
 ];
 ---
 <!-- ═══════ SERVICES ═══════ -->
@@ -60,21 +58,21 @@ const services = [
 	</div>
 
 	<div class="svc__list">
-		<div class="svc__item" data-img="/work-thumbs/01.svg">
+		<div class="svc__item">
 			<span class="svc__name">Websites</span>
-			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/01.svg" alt="" loading="lazy" /></div>
+			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
 		</div>
-		<div class="svc__item" data-img="/work-thumbs/02.svg">
+		<div class="svc__item">
 			<span class="svc__name">Branding</span>
-			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/02.svg" alt="" loading="lazy" /></div>
+			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
 		</div>
-		<div class="svc__item" data-img="/work-thumbs/03.svg">
+		<div class="svc__item">
 			<span class="svc__name">Motion</span>
-			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/03.svg" alt="" loading="lazy" /></div>
+			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
 		</div>
-		<div class="svc__item" data-img="/work-thumbs/04.svg">
+		<div class="svc__item">
 			<span class="svc__name">Strategy</span>
-			<div class="svc__img" aria-hidden="true"><img src="/work-thumbs/04.svg" alt="" loading="lazy" /></div>
+			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
 		</div>
 	</div>
 

@@ -32,6 +32,17 @@
   // ~15–20. (0.055 made them glow on the subpages' true black.)
   const LINE_ALPHA = 0.04;
 
+  // Desktop: four lines (20/40/60/80%). Phones and tablets (same pair of
+  // queries the rest of the site uses for "touch layout") get fewer, so they
+  // don't turn into a grid on a narrow screen: tablets 3 (25/50/75%), phones
+  // 2 (a third / two thirds).
+  const touchLayout = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
+  function linePositions() {
+    if (!touchLayout.matches) return [0.2, 0.4, 0.6, 0.8];
+    const narrow = Math.min(window.innerWidth, window.innerHeight) <= 640;
+    return narrow ? [1 / 3, 2 / 3] : [0.25, 0.5, 0.75];
+  }
+
   function drawGridLines() {
     const canvas = document.getElementById('grid-lines') as HTMLCanvasElement | null;
     if (!canvas) return;
@@ -53,7 +64,7 @@
     ctx.fillStyle = g;
     // 1 CSS px, snapped: 1 device px on 1x/1.25x, 2 on 1.5x/2x, 3 on 3x.
     const lineW = Math.max(1, Math.round(dpr));
-    for (const f of [0.2, 0.4, 0.6, 0.8]) {
+    for (const f of linePositions()) {
       ctx.fillRect(Math.round(W * f), 0, lineW, H);
     }
   }
