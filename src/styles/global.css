@@ -76,10 +76,10 @@ body {
 }
 
 /* Film grain: one layer for the whole site, drawn by utils/filmGrain.js —
-   desktop only; phones and tablets keep pure, deep black (a grain lifted the
-   black next to the solid-black bars iOS Safari paints, and a full-screen
-   layer over everything cost the menu and About frames on 120Hz and older
-   iPhones). */
+   now on every device. It used to be desktop only, because on phones it
+   lifted the black next to the solid-black bars iOS Safari paints and a
+   full-screen layer over everything cost the menu and About frames on 120Hz
+   and older iPhones — check those two things on a real phone. */
 
 /* Mobile subpages: content below the hero stays hidden until the hero
    title has blurred in, then fades in (revealAfterHero in

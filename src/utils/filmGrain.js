@@ -10,7 +10,7 @@
 // Normal blend at a low opacity, calibrated so black stays deep: the grain
 // lifts pure black by roughly OPACITY x 127 levels of 255 (see OPACITY).
 //
-// Desktop only (mouse, wide screen) — phones and tablets keep pure black.
+// On every device (desktop, tablet, phone).
 // Still when the user prefers reduced motion; paused while the tab is hidden.
 
 const TILE = 256; // px, the texture is a TILE x TILE square
@@ -20,7 +20,6 @@ const FPS = 24;
 const OVERSCAN = 120; // px the layer extends past the screen, so its edges never show
 const JUMP = 100; // px, max offset either way (must stay under OVERSCAN)
 
-const desktop = window.matchMedia('(min-width: 1025px) and (hover: hover) and (pointer: fine)');
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Small seeded generator (mulberry32).
@@ -76,12 +75,6 @@ function start() {
 }
 
 function ensure() {
-  if (!desktop.matches) {
-    stop();
-    layer?.remove();
-    layer = null;
-    return;
-  }
   if (!tileUrl) tileUrl = makeTile();
   if (!tileUrl) return;
   // The page's <body> is replaced on every navigation, so the layer is put
@@ -104,7 +97,6 @@ function ensure() {
 document.addEventListener('astro:page-load', ensure);
 document.addEventListener('astro:after-swap', ensure);
 document.addEventListener('visibilitychange', start);
-desktop.addEventListener('change', ensure);
 reduce.addEventListener('change', start);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ensure);
 else ensure();
