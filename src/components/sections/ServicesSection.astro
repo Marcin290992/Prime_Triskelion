@@ -6,10 +6,10 @@ import { Image } from 'astro:assets';
 import imgDeer from '../../img/deeer2.webp';
 
 const services = [
-	{ name: 'Websites', img: imgDeer, desc: 'High-performance websites built to convert and scale.' },
-	{ name: 'Branding', img: imgDeer, desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
-	{ name: 'Motion', img: imgDeer, desc: 'Animation and motion systems that bring interfaces to life.' },
-	{ name: 'Strategy', img: imgDeer, desc: 'Creative direction and strategy built around your goals.' },
+	{ name: 'Websites', img: imgDeer, pos: '50% 50%', desc: 'High-performance websites built to convert and scale.' },
+	{ name: 'Branding', img: imgDeer, pos: '20% 40%', desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
+	{ name: 'Motion', img: imgDeer, pos: '80% 60%', desc: 'Animation and motion systems that bring interfaces to life.' },
+	{ name: 'Strategy', img: imgDeer, pos: '50% 20%', desc: 'Creative direction and strategy built around your goals.' },
 ];
 ---
 <!-- ═══════ SERVICES ═══════ -->
@@ -57,22 +57,35 @@ const services = [
 	</div>
 	</div>
 
-	<div class="svc__list">
-		<div class="svc__item">
-			<span class="svc__name">Websites</span>
-			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
+	<!-- Desktop: all four names readable at once, one picture at the side that
+	     follows the active name. Phones and tablets use the pinned scene above. -->
+	<div class="svc__body">
+		<div class="svc__col">
+			<ul class="svc__list">
+				{services.map((sv, i) => (
+					<li class:list={['svc__row', i === 0 && 'is-active']} data-i={i}>
+						<a href="/services" class="svc__link">{sv.name}</a>
+					</li>
+				))}
+			</ul>
+			<a href="/services" class="svc__btn svc__btn--d" aria-label="View all services">
+				<span class="svc__btn__line"></span>
+				See more
+			</a>
 		</div>
-		<div class="svc__item">
-			<span class="svc__name">Branding</span>
-			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
-		</div>
-		<div class="svc__item">
-			<span class="svc__name">Motion</span>
-			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
-		</div>
-		<div class="svc__item">
-			<span class="svc__name">Strategy</span>
-			<div class="svc__img" aria-hidden="true"><Image src={imgDeer} alt="" widths={[420, 840]} sizes="420px" loading="lazy" /></div>
+		<div class="svc__media" aria-hidden="true">
+			{services.map((sv, i) => (
+				<Image
+					src={sv.img}
+					alt=""
+					widths={[480, 800, 1200]}
+					sizes="40vw"
+					loading="lazy"
+					class:list={['svc__img', i === 0 && 'is-active']}
+					data-i={i}
+					style={`object-position:${sv.pos}`}
+				/>
+			))}
 		</div>
 	</div>
 
@@ -114,62 +127,62 @@ const services = [
 		font-style: normal;
 		color: rgb(var(--c-red) / 1);
 	}
-	.svc__list {
-		width: 100%;
-		padding: 0 0 var(--section-space-bottom);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
+	/* ── Desktop (mouse): names on the left, one picture on the right ───────
+	   Sized by height too, so title + list + "See more" fit one laptop screen
+	   and none of it sits in the page's soft top/bottom edge zones. */
+	.svc__body, .svc__btn--d { display: none; }
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.svc__header { padding: clamp(3.75rem, 7vh, 5.5rem) var(--site-gutter) clamp(1rem, 3vh, 2rem); }
+		.svc__title-main { font-size: clamp(3.5rem, min(8vw, 11vh), 8.5rem); }
+		.svc__body {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+			gap: clamp(1.5rem, 5vw, 6rem);
+			align-items: center;
+			padding: 0 var(--site-gutter);
+		}
+		.svc__list { list-style: none; margin: 0; padding: 0; }
+		.svc__row { padding: clamp(0.1rem, 0.6vh, 0.5rem) 0; }
+		.svc__link {
+			display: block;
+			width: fit-content;
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2.4rem, min(6vw, 9vh), 6.5rem);
+			line-height: 1.04;
+			letter-spacing: 0.005em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.38);
+			text-decoration: none;
+			transition: color 0.45s ease;
+		}
+		.svc__row.is-active .svc__link { color: rgb(var(--c-cream)); }
+		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
+		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
+		#services .svc__footer { display: none; }
+		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
+		.svc__media {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 4 / 3;
+			max-height: 50vh;
+			overflow: hidden;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			background: #060608;
+		}
+		.svc__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			filter: grayscale(100%) contrast(1.08) brightness(0.82);
+			opacity: 0;
+			transform: scale(1.05);
+			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc__img.is-active { opacity: 1; transform: none; }
 	}
-	.svc__item {
-		position: relative;
-		padding: clamp(1.2rem, 3.5vh, 4rem) clamp(3rem, 6vw, 8rem);
-		text-align: center;
-		width: 100%;
-		pointer-events: none;
-		z-index: 1;
-		filter: blur(6px);
-		opacity: 0.3;
-		transition: filter 0.4s ease, opacity 0.4s ease;
-	}
-	.svc__item:has(.svc__name:hover) { filter: blur(0); opacity: 1; z-index: 10; }
-	.svc__name {
-		font-family: var(--f-display);
-		font-weight: 700;
-		font-size: clamp(4.5rem, 14vw, 16rem);
-		text-transform: uppercase;
-		line-height: 0.88;
-		letter-spacing: -0.03em;
-		color: rgb(var(--c-cream));
-		text-decoration: none;
-		position: relative;
-		z-index: 2;
-		mix-blend-mode: difference;
-		user-select: none;
-		pointer-events: auto;
-		cursor: default;
-		display: block;
-		width: fit-content;
-		margin: 0 auto;
-	}
-	.svc__img {
-		position: absolute;
-		top: 0; left: 0;
-		width: 420px; height: 280px;
-		background: #141414;
-		border: 1px solid rgba(255,255,255,0.07);
-		z-index: 1;
-		pointer-events: none;
-		transform: translate(calc(var(--x, 50%) - 50%), calc(var(--y, 50%) - 50%)) scale(0.5);
-		opacity: 0;
-		transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.svc__item:has(.svc__name:hover) .svc__img {
-		opacity: 1;
-		transform: translate(calc(var(--x) - 50%), calc(var(--y) - 50%)) scale(1);
-		transition: opacity 0.3s ease 0.18s, transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
-	}
-	.svc__img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 	/* Phones/tablets only — see the mobile block below. */
 	.svc-m { display: none; }
 	.svc__footer {
@@ -211,7 +224,7 @@ const services = [
 	.svc__btn:hover .svc__btn__line { width: 56px; }
 	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.svc__list { display: none; }
+		.svc__body { display: none; }
 		/* The title stays pinned over the scene, like The Process's; the
 		   scene's pin starts just under it (--svc-head, its measured
 		   height, set by initServicesMobile). Its fade covers what slides
@@ -484,21 +497,20 @@ const services = [
 			}
 		}
 
-		section.querySelectorAll<HTMLElement>('.svc__item').forEach(item => {
-			const name = item.querySelector<HTMLElement>('.svc__name');
-			if (!name) return;
-
-			name.addEventListener('mouseenter', (e: MouseEvent) => {
-				const rect = item.getBoundingClientRect();
-				item.style.setProperty('--x', `${e.clientX - rect.left}px`);
-				item.style.setProperty('--y', `${e.clientY - rect.top}px`);
-			});
-
-			name.addEventListener('mousemove', (e: MouseEvent) => {
-				const rect = item.getBoundingClientRect();
-				item.style.setProperty('--x', `${e.clientX - rect.left}px`);
-				item.style.setProperty('--y', `${e.clientY - rect.top}px`);
-			});
+		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
+		const imgs = Array.from(section.querySelectorAll<HTMLElement>('.svc__img'));
+		let active = 0;
+		const set = (i: number) => {
+			if (i === active) return;
+			active = i;
+			rows.forEach((r, n) => r.classList.toggle('is-active', n === i));
+			imgs.forEach((im, n) => im.classList.toggle('is-active', n === i));
+		};
+		// The name under the mouse (or with keyboard focus) is active; it stays on
+		// the last one when the mouse leaves.
+		rows.forEach((row, i) => {
+			row.addEventListener('mouseenter', () => set(i));
+			row.querySelector('a')?.addEventListener('focus', () => set(i));
 		});
 	}
 
