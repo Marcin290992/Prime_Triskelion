@@ -1,8 +1,9 @@
 ---
 // Four services as a 3D cylinder of words. The section is a tall stage with a
-// pinned (position: sticky) screen inside; scrolling through the stage turns
-// the cylinder so each word comes to the front in turn and rests there.
-// Plain CSS + one scroll listener, no libraries. Without JS, or with reduced
+// pinned (position: sticky) screen inside. Scrolling (wheel or finger) through
+// the stage chooses which word is at the front, but the roll itself runs at its
+// own steady speed — a hard flick and a slow nudge look the same. Plain CSS +
+// a scroll listener + one rAF loop, no libraries. Without JS, or with reduced
 // motion, it is just a stacked list of links.
 const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 ---
@@ -175,6 +176,8 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 	const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 	const GAP = 90;            // degrees between words: four words = one full turn
 	const RADIUS = 0.42;       // cylinder radius as a share of the scene's height
+	const MAX_SPEED = 540;     // the roll never goes faster than this, degrees per second
+	const EASE_TIME = 0.13;    // seconds: how soft the landing on a word is
 
 	function initServices() {
 		const section = document.getElementById('services');
@@ -227,30 +230,46 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 			});
 		};
 
-		// Progress through the stage -> cylinder angle. Each word rests at the
-		// front for a while (a plateau), then the next turns in quickly.
-		const smooth = (x: number) => x * x * (3 - 2 * x);
-		const angleAt = (p: number) => {
-			const n = words.length;
-			const u = clamp(p, 0, 1) * (n - 1);
-			const k = Math.min(n - 2, Math.floor(u));
-			const f = u - k;
-			const shaped = smooth(clamp((f - 0.3) / 0.4, 0, 1));
-			return (k + shaped) * GAP;
+		// Scroll position -> which word is at the front: each word owns an equal
+		// slice of the stage. The cylinder then rolls to it at its own pace — a
+		// capped speed with a soft landing — however fast the scroll was.
+		let target = 0;           // degrees
+		let angle = 0;
+		let raf = 0;
+		let last = 0;
+		const paint = () => { cyl.style.transform = `rotateX(${angle.toFixed(2)}deg)`; };
+		const frame = (now: number) => {
+			raf = 0;
+			const dt = Math.min(0.05, (now - last) / 1000);
+			last = now;
+			const diff = target - angle;
+			if (Math.abs(diff) < 0.05) { angle = target; paint(); return; }
+			// Ease toward the target, but never faster than MAX_SPEED.
+			const ease = diff * (1 - Math.exp(-dt / EASE_TIME));
+			const cap = MAX_SPEED * dt;
+			angle += clamp(ease, -cap, cap);
+			paint();
+			raf = requestAnimationFrame(frame);
 		};
+		const kick = () => { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } };
 
-		let ticking = false;
 		const update = () => {
-			ticking = false;
 			const range = Math.max(1, stage.offsetHeight - sticky.offsetHeight);
 			const p = clamp(-stage.getBoundingClientRect().top / range, 0, 1);
-			cyl.style.transform = `rotateX(${angleAt(p).toFixed(2)}deg)`;
+			const idx = Math.min(words.length - 1, Math.floor(p * words.length));
+			const next = idx * GAP;
+			if (next !== target) { target = next; kick(); }
 		};
-		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+		let ticking = false;
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => { ticking = false; update(); }); } };
 		const onResize = () => { place(); update(); };
 
 		place();
+		// Start on the word the scroll position already points at (a reload
+		// halfway down the stage), without a roll.
 		update();
+		angle = target;
+		paint();
 		window.addEventListener('scroll', onScroll, { passive: true });
 		window.addEventListener('resize', onResize, { passive: true });
 		const ro = new ResizeObserver(onResize);
@@ -258,6 +277,7 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		document.fonts?.ready.then(onResize);
 
 		_svcOff = () => {
+			if (raf) cancelAnimationFrame(raf);
 			window.removeEventListener('scroll', onScroll);
 			window.removeEventListener('resize', onResize);
 			ro.disconnect();
