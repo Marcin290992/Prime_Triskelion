@@ -441,8 +441,8 @@ export function createLightRays(canvas: HTMLCanvasElement, options: LightRaysOpt
     gl.uniform1f(u.uIntensity, Math.max(0, s.intensity));
     gl.uniform4f(u.uShadow, shade.x * width, shade.y * height, shade.presence, 16);
     gl.uniform4fv(u.uPulses, pulseData);
-    // The hero's timeline tweens `open` 0 → 1: the rays grow out of their
-    // source (reach) while the light fades up.
+    // The hero's timeline tweens `open` 0 → 1 (already eased): the rays grow
+    // out of their source (reach) while the light fades up.
     gl.uniform2f(u.uIntro, open * 2.6, smoother(open / 0.5));
     gl.uniform1f(u.uLight, s.lightMode ? 1 : 0);
     gl.uniform1f(u.uOpacity, clamp(s.opacity, 0, 1));
