@@ -154,15 +154,19 @@ const services = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.38);
 			text-decoration: none;
-			transition: color 0.45s ease, filter 0.45s ease;
+			/* Room for the white plate on hover; the negative margin keeps the
+			   letters on the column's edge. */
+			padding: 0 0.16em;
+			margin-left: -0.16em;
+			transition: color 0.4s ease, background-color 0.4s ease, filter 0.45s ease;
 		}
-		.svc__row.is-active .svc__link { color: rgb(var(--c-cream)); }
 		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
-		/* Mouse only, and only while it is over the list or the picture: the names
-		   other than the active one go lightly soft, so the one in focus stands out. At rest, and
-		   for the title and "See more", nothing is blurred. */
+		/* Mouse only. At rest, and whenever the mouse is off the names (on the
+		   picture too), every name is dimmed. The one under the mouse gets a
+		   white plate with dark text; the others stay dim and go lightly soft. */
 		@media (hover: hover) and (pointer: fine) {
-			.svc__body:hover .svc__row:not(.is-active) .svc__link { filter: blur(3px); }
+			.svc__link:hover { background: rgb(var(--c-cream)); color: rgb(var(--c-bg)); }
+			.svc__list:has(.svc__link:hover) .svc__link:not(:hover) { filter: blur(3px); }
 		}
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
 		#services .svc__footer { display: none; }
@@ -515,7 +519,7 @@ const services = [
 		// The name under the mouse (or with keyboard focus) is active; it stays on
 		// the last one when the mouse leaves.
 		rows.forEach((row, i) => {
-			row.addEventListener('mouseenter', () => set(i));
+			row.querySelector('a')?.addEventListener('mouseenter', () => set(i));
 			row.querySelector('a')?.addEventListener('focus', () => set(i));
 		});
 	}

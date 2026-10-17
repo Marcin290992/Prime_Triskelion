@@ -898,6 +898,9 @@
 				(window as any).__ptGridHold = true;
 				gsap.killTweensOf(gridEl);
 				gsap.set(gridEl, { opacity: 0 });
+				// The film grain waits with them (filmGrain.js starts a new layer hidden).
+				const g0 = document.querySelector<HTMLElement>('.film-grain');
+				if (g0) { gsap.killTweensOf(g0); gsap.set(g0, { opacity: 0 }); }
 			}
 
 			const tl = gsap.timeline({
@@ -985,6 +988,10 @@
 			if (intro && gridEl) {
 				tl.add(() => { (window as any).__ptGridHold = false; }, endAt - 0.8);
 				tl.to(gridEl, { opacity: 1, duration: 1.4, ease: 'power2.out' }, endAt - 0.8);
+				tl.add(() => {
+					const g = document.querySelector<HTMLElement>('.film-grain');
+					if (g) gsap.to(g, { opacity: Number(g.dataset.opacity) || 0.05, duration: 1.4, ease: 'power2.out' });
+				}, endAt - 0.8);
 			}
 		}
 

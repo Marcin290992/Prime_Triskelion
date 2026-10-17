@@ -83,10 +83,11 @@ function ensure() {
     layer = document.createElement('div');
     layer.className = 'film-grain'; // kept out of the "hide the page" rules (menu open, page leaving)
     layer.setAttribute('aria-hidden', 'true');
+    layer.dataset.opacity = String(OPACITY); // the home intro fades it in to this
     layer.style.cssText =
       `position:fixed;top:-${OVERSCAN}px;left:-${OVERSCAN}px;right:-${OVERSCAN}px;` +
       `height:calc(100lvh + ${OVERSCAN * 2}px);z-index:9999;pointer-events:none;` +
-      `opacity:${OPACITY};will-change:transform;image-rendering:pixelated;` +
+      `opacity:${window.__ptGridHold ? 0 : OPACITY};will-change:transform;image-rendering:pixelated;` +
       `background-image:url("${tileUrl}");background-size:${TILE}px ${TILE}px;`;
     document.body.appendChild(layer);
     jump();
