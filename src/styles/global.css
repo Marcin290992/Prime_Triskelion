@@ -75,6 +75,19 @@ body {
   overflow-x: clip;
 }
 
+/* The page's copy can't be selected (drag, double-click, long-press) — it
+   turned the hero into blue blocks. Form fields stay selectable, and so does
+   anything that opts in with user-select (e.g. .pt-toast__email--select). */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Film grain: one layer for the whole site, drawn by utils/filmGrain.js —
    now on every device. It used to be desktop only, because on phones it
    lifted the black next to the solid-black bars iOS Safari paints and a
