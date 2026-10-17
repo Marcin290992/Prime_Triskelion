@@ -136,12 +136,9 @@
 		margin: 1.7rem 0 0;
 		font-family: var(--f-body);
 		font-size: 0.68rem;
-		font-weight: 600;
+		font-weight: 500;
 		letter-spacing: 0.14em;
-		/* Sits in the brightest part of the light: brighter, with a soft dark
-		   halo so it doesn't dissolve into the rays. */
-		color: rgb(var(--c-cream) / 0.95);
-		text-shadow: 0 0 10px rgb(0 0 0 / 0.65), 0 0 22px rgb(0 0 0 / 0.45);
+		color: rgb(var(--c-cream) / 0.72);
 		text-transform: uppercase;
 		line-height: 1;
 		text-align: center;
@@ -1053,16 +1050,6 @@ import { createLightRays } from '../../utils/lightRays';
 		const rays = createLightRays(canvas, {
 			// The hero's timeline tweens window.__ptRays.reveal (the entrance).
 			reveal: () => (window as any).__ptRays?.reveal ?? 1,
-			// Long and soft, like the light it replaced.
-			intensity: 1.0,
-			rayLength: 5.25,
-			// Wide like the light it replaced, but with the component's own
-			// visible rays (default density and sharpness).
-			lightSpread: 1.5,
-			rayDensity: 1,
-			raySharpness: 0.35,
-			glow: 0.4,
-			haze: 0.2,
 			maxDevicePixelRatio: isMobileDevice ? 1 : 2,
 			frameMs: isMobileDevice ? 1000 / 24 : 0,
 			mouseInfluence: isMobileDevice ? 0 : 0.1,

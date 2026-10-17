@@ -36,14 +36,14 @@ const OPTS = {
   // sits at a different distance from the corner on each, so one number
   // can't fit all (a phone's narrow hero puts it close, a tablet's wide,
   // short one far).
-  intensity: 1.7 * 0.75, // desktop
+  intensity: 1.5 * 0.75, // desktop
   intensityCompact: 0.9 * 0.75, // phones
   intensityTablet: 1.45 * 0.75, // tablets (touch or <=1024px, 700px and wider)
-  spread: 3 * 0.225,
+  spread: 2 * 0.225,
   density: 5,
-  sharpness: 0.05,
-  falloff: 0.65,
-  glow: 1.0 * 1.2,
+  sharpness: 0.5,
+  falloff: 1.6,
+  glow: 1 * 1.2,
   saturation: 1,
   dust: 0,
   opacity: 1,
@@ -66,7 +66,7 @@ const OPTS = {
   // Entrance, as the home hero's light: right after the hero's text has
   // come in (title 0.8s, lead done at ~0.85s — titleIn/supportIn's short
   // entrance) the rays grow out of their source to full length (reveal)
-  // while the light fades up (opacity) — a sunrise. Seconds.
+  // while the light fades up (opacity) — seconds.
   inAt: 0.85,
   inOpacity: 2.6,
   inReveal: 3.0,
@@ -405,7 +405,7 @@ function mountSideRays(host) {
     follow.value += follow.velocity * dt;
 
     gl.uniform1f(u.uTime, time);
-    gl.uniform1f(u.uReveal, intro.reveal); // eased by the entrance tween
+    gl.uniform1f(u.uReveal, intro.reveal);
     gl.uniform1f(u.uAim, aimBase + follow.value);
     gl.uniform3f(u.uFocus, follow.focusAngle, Math.max(0.06, spread * 0.25), follow.focusStrength * 1.4);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -466,12 +466,16 @@ function mountSideRays(host) {
       if (still) draw(0);
       return;
     }
-    const c = compact.matches
-      ? OPTS.inCompact
-      : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power2.out' };
     tweens = [
-      gsap.to(canvas, { opacity: 1, duration: c.opacity, delay: c.at, ease: c.ease }),
-      gsap.to(intro, { reveal: 1, duration: c.reveal, delay: c.at, ease: c.ease }),
+      ...(() => {
+        const c = compact.matches
+          ? OPTS.inCompact
+          : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power2.out' };
+        return [
+          gsap.to(canvas, { opacity: 1, duration: c.opacity, delay: c.at, ease: c.ease }),
+          gsap.to(intro, { reveal: 1, duration: c.reveal, delay: c.at, ease: c.ease }),
+        ];
+      })(),
     ];
   });
 
