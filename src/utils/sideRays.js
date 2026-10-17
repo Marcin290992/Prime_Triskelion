@@ -16,6 +16,7 @@
 
 import gsap from 'gsap';
 import { afterPageTransition, subpageMode } from './afterPageTransition';
+import { mountSideRaysLegacy } from './sideRaysLegacy';
 
 // Kill switch: set to false and nothing is mounted.
 const ENABLED = true;
@@ -496,7 +497,9 @@ function mountAll() {
   if (!ENABLED) return;
   const cleanups = [];
   document.querySelectorAll('[data-side-rays]').forEach((host) => {
-    const c = mountSideRays(host);
+    // Phones and tablets (touch) keep the original light: the new shader's
+    // ribs rendered with hard edges in Chrome there.
+    const c = window.matchMedia('(pointer: coarse)').matches ? mountSideRaysLegacy(host) : mountSideRays(host);
     if (c) cleanups.push(c);
   });
   if (!cleanups.length) return;
