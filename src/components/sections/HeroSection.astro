@@ -1060,9 +1060,12 @@ import { createLightRays } from '../../utils/lightRays';
 			// Wide like the light it replaced, but with the component's own
 			// visible rays (default density and sharpness).
 			lightSpread: 1.5,
-			rayDensity: 1,
-			// Touch: softer rib edges (Chrome on a phone showed them hard).
-			raySharpness: isMobileDevice ? 0.05 : 0.35,
+			// Touch: the rib pattern is laid out over the cosine of the angle,
+			// so on a narrow portrait screen only one or two ribs fit and they
+			// read as hard bands. A very low density there makes the light one
+			// smooth, soft shaft, as the original was.
+			rayDensity: isMobileDevice ? 0.15 : 1,
+			raySharpness: isMobileDevice ? 0.3 : 0.35,
 			glow: 0.4,
 			haze: 0.2,
 			maxDevicePixelRatio: isMobileDevice ? 1 : 2,
