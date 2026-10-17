@@ -63,7 +63,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		@supports (animation-timeline: view()) {
 			#manifesto h2 { view-timeline-name: --manifesto; }
 			#manifesto .mw:not(.br) {
-				animation: mw-focus linear both;
+				/* Longhands on purpose, and not all of them: with the `animation`
+				   shorthand the build's CSS minifier (Astro 7) folded the timeline
+				   into it (`animation: 1ms linear both mw-focus --manifesto`),
+				   which browsers reject whole — the words were just there. */
+				animation-name: mw-focus;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
 				animation-duration: 1ms;
 				animation-timeline: --manifesto;
 				animation-range: cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34);
