@@ -891,6 +891,15 @@
 			const intro = !chromeShown && !pastHero && !!title && !!logoText;
 			const heroAt = intro ? playIntro() : 0;
 
+			// First visit: the background grid lines wait for the very end of
+			// the intro (GridLines.astro skips its own fade while this is set).
+			const gridEl = document.getElementById('grid-lines');
+			if (intro && gridEl) {
+				(window as any).__ptGridHold = true;
+				gsap.killTweensOf(gridEl);
+				gsap.set(gridEl, { opacity: 0 });
+			}
+
 			const tl = gsap.timeline({
 				delay: heroAt,
 				onComplete: () => {
@@ -971,6 +980,12 @@
 
 			// Intro over — the CTA's glare sweep may start (global.css).
 			tl.add(() => hero!.classList.add('pt-intro-done'), endAt + 0.4);
+
+			// …and the grid lines fade in last of all.
+			if (intro && gridEl) {
+				tl.add(() => { (window as any).__ptGridHold = false; }, endAt - 0.8);
+				tl.to(gridEl, { opacity: 1, duration: 1.4, ease: 'power2.out' }, endAt - 0.8);
+			}
 		}
 
 		// Start as the new page appears (not before) when arriving via a
