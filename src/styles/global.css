@@ -162,8 +162,8 @@ html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
 html:active-view-transition .zoom-col,
 html:active-view-transition .gradual-blur__layer {
-  backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 /* Persistent site chrome (named during page transitions — see nameChrome
@@ -257,8 +257,8 @@ main {
   border-radius: 0;
   padding: 1rem;
   background: var(--cta-bg);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   transition: color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, transform 0.15s ease;
   box-shadow: inset 0 1px 0 rgb(var(--c-cream) / 0.04), 0 8px 24px rgb(var(--c-bg) / 0.25);
   position: relative;
@@ -411,8 +411,8 @@ main {
   min-height: 48px;
   padding: 0.75rem 1.4rem;
   font-size: 0.95rem;
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 /* Top-bar CTA (z-index 1002) sits above the menu overlay (999): hide it
    while the menu is open so it fades out with the overlay coming in and is

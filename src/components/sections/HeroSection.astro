@@ -894,16 +894,34 @@
 			const intro = !chromeShown && !pastHero && !!title && !!logoText;
 			const heroAt = intro ? playIntro() : 0;
 
-			// First visit: the background grid lines wait for the very end of
-			// the intro (GridLines.astro skips its own fade while this is set).
+			// First entry of the session only: the background grid lines and the
+			// film grain wait for the very end of the intro (GridLines.astro and
+			// filmGrain.js check __ptGridHold). After that they stay on for the
+			// whole session — a return to Home, a reload in the same tab, or
+			// leaving before the intro ends must never switch them off again.
 			const gridEl = document.getElementById('grid-lines');
-			if (intro && gridEl) {
+			let fxSeen = !!(window as any).__ptFxRevealed;
+			try { fxSeen = fxSeen || sessionStorage.getItem('pt:fx-revealed') === '1'; } catch { /* no storage */ }
+			const fxGate = intro && !!gridEl && !fxSeen;
+			let fxDone = false;
+			const markFxRevealed = () => {
+				(window as any).__ptGridHold = false;
+				(window as any).__ptFxRevealed = true;
+				try { sessionStorage.setItem('pt:fx-revealed', '1'); } catch { /* no storage */ }
+			};
+			if (fxGate && gridEl) {
 				(window as any).__ptGridHold = true;
 				gsap.killTweensOf(gridEl);
 				gsap.set(gridEl, { opacity: 0 });
 				// The film grain waits with them (filmGrain.js starts a new layer hidden).
 				const g0 = document.querySelector<HTMLElement>('.film-grain');
 				if (g0) { gsap.killTweensOf(g0); gsap.set(g0, { opacity: 0 }); }
+				// Left before the intro finished: switch both on for the next page.
+				document.addEventListener('astro:before-swap', () => {
+					if (fxDone) return;
+					fxDone = true;
+					markFxRevealed();
+				}, { once: true });
 			}
 
 			const tl = gsap.timeline({
@@ -987,11 +1005,13 @@
 			// Intro over — the CTA's glare sweep may start (global.css).
 			tl.add(() => hero!.classList.add('pt-intro-done'), endAt + 0.4);
 
-			// …and the grid lines fade in last of all.
-			if (intro && gridEl) {
-				tl.add(() => { (window as any).__ptGridHold = false; }, endAt - 0.8);
-				tl.to(gridEl, { opacity: 1, duration: 1.4, ease: 'power2.out' }, endAt - 0.8);
+			// …and the grid lines and the grain fade in last of all.
+			if (fxGate && gridEl) {
 				tl.add(() => {
+					if (fxDone) return;
+					fxDone = true;
+					markFxRevealed();
+					gsap.to(gridEl, { opacity: 1, duration: 1.4, ease: 'power2.out' });
 					const g = document.querySelector<HTMLElement>('.film-grain');
 					if (g) gsap.to(g, { opacity: Number(g.dataset.opacity) || 0.05, duration: 1.4, ease: 'power2.out' });
 				}, endAt - 0.8);
