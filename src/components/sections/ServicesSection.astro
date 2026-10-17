@@ -31,7 +31,12 @@ const services = [
 			<div class="svc-m__stage">
 				<div class="svc-m__copy">
 					<ol class="svc-m__list">
-						{services.map((sv, i) => <li class:list={['svc-m__name', i === 0 && 'is-active']} data-i={i}>{sv.name}</li>)}
+						{services.map((sv, i) => <li class:list={['svc-m__name', i === 0 && 'is-active']} data-i={i}>
+								<span class="svc__roll">
+									<span class="svc__roll__base">{sv.name}</span>
+									<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
+								</span>
+							</li>)}
 					</ol>
 					<div class="svc-m__descs">
 						{services.map((sv, i) => <p class:list={['svc-m__desc', i === 0 && 'is-active']} data-i={i}>{sv.desc}</p>)}
@@ -64,7 +69,12 @@ const services = [
 			<ul class="svc__list">
 				{services.map((sv, i) => (
 					<li class:list={['svc__row', i === 0 && 'is-active']} data-i={i}>
-						<a href="/services" class="svc__link">{sv.name}</a>
+						<a href="/services" class="svc__link">
+								<span class="svc__roll">
+									<span class="svc__roll__base">{sv.name}</span>
+									<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
+								</span>
+							</a>
 					</li>
 				))}
 			</ul>
@@ -131,6 +141,20 @@ const services = [
 	   Sized by height too, so title + list + "See more" fit one laptop screen
 	   and none of it sits in the page's soft top/bottom edge zones. */
 	.svc__body, .svc__btn--d { display: none; }
+	/* Rolling text, as in the menu: the dimmed name slides up, the red one
+	   comes in from below, in white — red stays the section title's alone. */
+	.svc__roll { position: relative; display: block; overflow: hidden; }
+	.svc__roll__base, .svc__roll__red {
+		display: block;
+		transition: transform 0.34s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	.svc__roll__red {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		width: 100%;
+		color: rgb(var(--c-cream));
+	}
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__header { padding: clamp(3.75rem, 7vh, 5.5rem) var(--site-gutter) clamp(1rem, 3vh, 2rem); }
 		.svc__title-main { font-size: clamp(3.5rem, min(8vw, 11vh), 8.5rem); }
@@ -154,18 +178,15 @@ const services = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.38);
 			text-decoration: none;
-			/* Room for the white plate on hover; the negative margin keeps the
-			   letters on the column's edge. */
-			padding: 0 0.16em;
-			margin-left: -0.16em;
-			transition: color 0.4s ease, background-color 0.4s ease, filter 0.45s ease;
+			transition: color 0.4s ease, filter 0.45s ease;
 		}
 		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
 		/* Mouse only. At rest, and whenever the mouse is off the names (on the
-		   picture too), every name is dimmed. The one under the mouse gets a
-		   white plate with dark text; the others stay dim and go lightly soft. */
+		   picture too), every name is dimmed. The one under the mouse rolls to
+		   white; the others stay dim and go lightly soft. */
 		@media (hover: hover) and (pointer: fine) {
-			.svc__link:hover { background: rgb(var(--c-cream)); color: rgb(var(--c-bg)); }
+			.svc__link:hover .svc__roll__base,
+			.svc__link:hover .svc__roll__red { transform: translateY(-100%); }
 			.svc__list:has(.svc__link:hover) .svc__link:not(:hover) { filter: blur(3px); }
 		}
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
@@ -312,7 +333,11 @@ const services = [
 			-webkit-touch-callout: none;
 			outline: none;
 		}
-		.svc-m__name.is-active { color: rgb(var(--c-cream)); }
+		/* The same roll as the desktop list: the dimmed name slides up, the
+		   white one comes in from below. */
+		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.2); }
+		.svc-m__name.is-active .svc__roll__base,
+		.svc-m__name.is-active .svc__roll__red { transform: translateY(-100%); }
 		/* All four lines stacked in one spot; the active one fades up. */
 		.svc-m__descs {
 			display: grid;
@@ -413,6 +438,7 @@ const services = [
 		}
 		@media (prefers-reduced-motion: reduce) {
 			.svc-m__desc, .svc-m__img { transition: opacity 0.2s linear; transform: none; }
+			.svc__roll__base, .svc__roll__red { transition: none; }
 		}
 	}
 </style>
