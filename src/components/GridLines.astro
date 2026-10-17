@@ -88,6 +88,8 @@
     const el = document.getElementById('grid-lines');
     if (!el) return;
     drawGridLines();
+    // The home intro reveals the lines itself, at its very end.
+    if ((window as any).__ptGridHold) return;
     gsap.set(el, { opacity: 0 });
     gsap.to(el, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.2 });
   }
