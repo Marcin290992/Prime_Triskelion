@@ -25,6 +25,10 @@ export default defineConfig({
       entries: ['src/pages/**/*.astro', 'src/pages/**/*.html'],
     },
     build: {
+      // CSS targets for the minifier (Lightning CSS): Safari 15-17 still need
+      // `-webkit-backdrop-filter` (and friends); with newer targets it drops
+      // those prefixes. Older Chrome/Firefox listed so nothing newer is assumed.
+      cssTarget: ['chrome100', 'firefox100', 'safari15'],
       rollupOptions: {
         output: {
           manualChunks(id) {

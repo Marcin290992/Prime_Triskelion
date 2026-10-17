@@ -527,8 +527,8 @@ const navLinks = [
     border: none;
     border-radius: var(--sb-radius, 0px);
     background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 24px rgba(0, 0, 0, 0.25);
     transition: opacity 0.25s ease;
   }
@@ -542,8 +542,8 @@ const navLinks = [
      element is static again and blur is safe to switch back on. */
   .hud-icon-btn.hud-menu-btn.hud-menu-btn--settling {
     background: rgba(0, 0, 0, 0.82);
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
   /* No red hover on the button chrome itself — the shared .hud-icon-btn:hover
      rule (background/border tint) still fires otherwise, since equal-specificity
@@ -593,8 +593,8 @@ const navLinks = [
     height: var(--ox-contact-btn-size);
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(0, 0, 0, 0.55);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     color: rgba(255, 255, 255, 0.7);
     text-decoration: none;
     cursor: pointer;
@@ -638,8 +638,8 @@ const navLinks = [
      the real fix now (browser-native, can't be raced by the DOM swap).
      Left in place as a harmless no-op / extra safety net, not removed. */
   html.ox-vt-active .hud-icon-btn {
-    backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background: rgba(0, 0, 0, 0.85);
   }
 
@@ -759,8 +759,8 @@ const navLinks = [
     .hud-menu-btn .specular-button__fx { display: none; }
     .hud-menu-spin-border { display: block; }
     .hud-icon-btn {
-      backdrop-filter: none !important;
       -webkit-backdrop-filter: none !important;
+      backdrop-filter: none !important;
       background: rgba(0, 0, 0, 0.92) !important;
       /* The base rule's box-shadow (further up) includes a soft drop
          shadow — 0 8px 24px rgba(0,0,0,0.25) — meant to lift the glassy
