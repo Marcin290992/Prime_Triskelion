@@ -1054,7 +1054,8 @@ import { createLightRays } from '../../utils/lightRays';
 			// The hero's timeline tweens window.__ptRays.reveal (the entrance).
 			reveal: () => (window as any).__ptRays?.reveal ?? 1,
 			// Long and soft, like the light it replaced.
-			intensity: 1.0,
+			// Phones/tablets: the reach now matches the original, so a softer strength.
+			intensity: isMobileDevice ? 0.85 : 1.0,
 			rayLength: 5.25,
 			// Wide like the light it replaced, but with the component's own
 			// visible rays (default density and sharpness).

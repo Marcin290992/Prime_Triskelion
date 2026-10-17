@@ -424,7 +424,13 @@ export function createLightRays(canvas: HTMLCanvasElement, options: LightRaysOpt
     gl.uniform1f(u.uTime, time);
     gl.uniform2f(u.uSource, sourceX, sourceY);
     gl.uniform2f(u.uAim, dirX, dirY);
-    gl.uniform1f(u.uReach, Math.max(width, height));
+    // The light's scale follows the longer side — fine on a wide screen, but
+    // on a portrait phone/tablet it left the glow and the fade a third of
+    // the hero. Narrow screens get the reach a desktop has relative to its
+    // height (~2.35x), blending out by a ~1.4 aspect.
+    const aspect = width / Math.max(height, 1);
+    const portrait = 1 - clamp((aspect - 0.9) / 0.5, 0, 1);
+    gl.uniform1f(u.uReach, Math.max(width, height) * (1 + 1.35 * portrait));
     gl.uniform3f(u.uColor, c[0], c[1], c[2]);
     gl.uniform1f(u.uSpread, Math.max(0.001, s.lightSpread));
     gl.uniform1f(u.uLength, Math.max(0.01, s.rayLength));
