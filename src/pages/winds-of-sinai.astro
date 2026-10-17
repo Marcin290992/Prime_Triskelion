@@ -1,6 +1,20 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import CtaSection from '../components/sections/CtaSection.astro';
+import { Image } from 'astro:assets';
+// Stand-in screens (Unsplash, saved locally — the site's CSP blocks remote
+// images) until the real screenshots arrive.
+import scr1 from '../img/wos/screen-1.jpg';
+import scr2 from '../img/wos/screen-2.jpg';
+import scr3 from '../img/wos/screen-3.jpg';
+import scr4 from '../img/wos/screen-4.jpg';
+
+const screens = [
+  { img: scr1, url: 'windsofsinai.com', label: 'Homepage — above the fold' },
+  { img: scr2, url: 'windsofsinai.com/about', label: 'About page' },
+  { img: scr3, url: 'windsofsinai.com/contact', label: 'Contact page' },
+  { img: scr4, url: 'windsofsinai.com/experiences', label: 'Experiences page' },
+];
 ---
 
 <Layout title="Winds Of Sinai — Prime Triskelion" description="Case study: Winds Of Sinai — branding, web design and development by Prime Triskelion.">
@@ -231,69 +245,35 @@ import CtaSection from '../components/sections/CtaSection.astro';
       <!-- DESKTOP: horizontal scroll via GSAP ScrollTrigger -->
       <div class="scr-outer">
         <div class="scr-sticky">
-          <div class="scr-track">
-
-            <div class="scr-slide">
-              <div class="scr-slide__meta">
-                <span class="showcase-desc">Homepage — above the fold</span>
+          <!-- One frame stays put; the screen inside changes as the page
+               scrolls (initScreensScroll). -->
+          <div class="scr-slide">
+            <div class="scr-slide__meta">
+              <div class="scr-stack scr-labels">
+                {screens.map((sc, i) => <span class="showcase-desc scr-stack__item" data-i={i}>{sc.label}</span>)}
               </div>
-              <div class="browser-frame browser-frame--scr">
+              <div class="scr-stack scr-count" aria-hidden="true">
+                {screens.map((_, i) => <span class="showcase-desc scr-stack__item" data-i={i}>{`0${i + 1} / 0${screens.length}`}</span>)}
+              </div>
+            </div>
+            <div class="scr-persp">
+              <div class="browser-frame browser-frame--scr scr-frame">
                 <div class="browser-frame__bar">
                   <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                  <div class="browser-frame__url">windsofsinai.com</div>
+                  <div class="browser-frame__url scr-urls">
+                    {screens.map((sc, i) => <span class="scr-stack__item" data-i={i}>{sc.url}</span>)}
+                  </div>
                 </div>
                 <div class="browser-frame__screen browser-frame__screen--tall">
-                  <div class="browser-frame__ph">Desktop — Homepage</div>
+                  {screens.map((sc, i) => (
+                    <div class="scr-shot" data-i={i}>
+                      <Image src={sc.img} alt="" widths={[1280, 1920]} sizes="90vw" loading="lazy" />
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-
-            <div class="scr-slide">
-              <div class="scr-slide__meta">
-                <span class="showcase-desc">About page</span>
-              </div>
-              <div class="browser-frame browser-frame--scr">
-                <div class="browser-frame__bar">
-                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                  <div class="browser-frame__url">windsofsinai.com/about</div>
-                </div>
-                <div class="browser-frame__screen browser-frame__screen--tall">
-                  <div class="browser-frame__ph">Desktop — About</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="scr-slide">
-              <div class="scr-slide__meta">
-                <span class="showcase-desc">Contact page</span>
-              </div>
-              <div class="browser-frame browser-frame--scr">
-                <div class="browser-frame__bar">
-                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                  <div class="browser-frame__url">windsofsinai.com/contact</div>
-                </div>
-                <div class="browser-frame__screen browser-frame__screen--tall">
-                  <div class="browser-frame__ph">Desktop — Contact</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="scr-slide">
-              <div class="scr-slide__meta">
-                <span class="showcase-desc">Experiences page</span>
-              </div>
-              <div class="browser-frame browser-frame--scr">
-                <div class="browser-frame__bar">
-                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                  <div class="browser-frame__url">windsofsinai.com/experiences</div>
-                </div>
-                <div class="browser-frame__screen browser-frame__screen--tall">
-                  <div class="browser-frame__ph">Desktop — Experiences</div>
-                </div>
-              </div>
-            </div>
-
-          </div><!-- /scr-track -->
+          </div>
 
           <div class="scr-progress" aria-hidden="true">
             <div class="scr-progress__fill"></div>
@@ -1131,7 +1111,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   /* ─────────────────────────────────────────
-     SCREENS — horizontal scroll
+     SCREENS — one frame, the screen changes on scroll
   ───────────────────────────────────────── */
 
   .scr-mobile { display: none; }
@@ -1142,6 +1122,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
   }
 
   .scr-outer {
+    /* As big as the screen allows: the full width, or the height left after
+       the label above and the progress line below (16.5rem), whichever is
+       smaller — it grows with the display up to 2000px (a 32" monitor). */
+    --scr-w: min(
+      calc(100vw - var(--site-gutter) * 2),
+      calc((100vh - 16.5rem - 34px) * 16 / 9),
+      2000px
+    );
     height: 100vh;
     overflow: clip;
   }
@@ -1149,12 +1137,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
     height: 100vh;
     overflow: hidden;
     background: rgb(var(--c-bg));
-  }
-  .scr-track {
-    display: flex;
-    width: 400vw;
-    height: 100%;
-    will-change: transform;
   }
   .scr-slide {
     width: 100vw;
@@ -1165,31 +1147,38 @@ import CtaSection from '../components/sections/CtaSection.astro';
     justify-content: center;
     align-items: center;
     /* Top clears the fixed top blur band (up to 7rem, utils/gradualBlur.js) so the slide label stays sharp. */
-    padding: clamp(7.5rem, 14vh, 9rem) var(--site-gutter) clamp(9rem, 17vh, 11rem);
+    padding: clamp(6.5rem, 12vh, 8.5rem) var(--site-gutter) clamp(8rem, 15vh, 10rem);
     box-sizing: border-box;
     gap: 1.2rem;
   }
+  /* Label, counter and address: all four stacked in one spot, the current
+     one faded in by the scroll timeline. */
+  .scr-stack { display: grid; }
+  .scr-stack__item { grid-area: 1 / 1; opacity: 0; white-space: nowrap; }
+  .scr-stack__item[data-i="0"] { opacity: 1; }
+  .scr-labels { flex: 1; min-width: 0; }
+  .scr-count { margin-left: auto; text-align: right; }
+  .scr-count .scr-stack__item { text-align: right; }
+  .scr-urls { display: grid; align-content: center; }
+  .scr-urls .scr-stack__item { font: inherit; }
+  /* The frame tilts in 3D and straightens as you scroll. */
+  .scr-persp { perspective: 1800px; display: flex; justify-content: center; width: 100%; }
+  .scr-frame { transform-style: preserve-3d; will-change: transform; backface-visibility: hidden; }
+  .scr-shot { position: absolute; inset: 0; z-index: 1; overflow: hidden; will-change: clip-path; }
+  .scr-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; will-change: transform; }
   /* The label is as wide as the frame under it and centred with it, so it
      starts on the frame's left edge (it used to sit at the slide's edge,
-     far left of a narrower frame). 20rem = what the slide keeps free
+     far left of a narrower frame). 16.5rem = what the slide keeps free
      around the frame: the label above, the progress line below. */
   .scr-slide__meta {
     display: flex;
     align-items: baseline;
     gap: 1.2rem;
     align-self: center;
-    width: min(
-      calc(100vw - var(--site-gutter) * 2),
-      calc((100vh - 20rem - 34px) * 16 / 9),
-      1400px
-    );
+    width: var(--scr-w);
   }
   .browser-frame--scr {
-    width: min(
-      calc(100vw - var(--site-gutter) * 2),
-      calc((100vh - 20rem - 34px) * 16 / 9),
-      1400px
-    );
+    width: var(--scr-w);
     border-radius: 12px;
     flex-shrink: 0;
   }
@@ -1311,24 +1300,53 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
   function initScreensScroll() {
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
-    const outer   = document.querySelector<HTMLElement>('.scr-outer');
-    const track   = document.querySelector<HTMLElement>('.scr-track');
-    const fill    = document.querySelector<HTMLElement>('.scr-progress__fill');
-    if (!outer || !track) return;
-    const dist = () => window.innerWidth * 3; // 4 slides − 1
+    const outer = document.querySelector<HTMLElement>('.scr-outer');
+    const frame = document.querySelector<HTMLElement>('.scr-frame');
+    const fill  = document.querySelector<HTMLElement>('.scr-progress__fill');
+    if (!outer || !frame) return;
+    const shots = Array.from(outer.querySelectorAll<HTMLElement>('.scr-shot'));
+    const imgs  = shots.map((el) => el.querySelector('img'));
+    const stacks = ['.scr-labels', '.scr-count', '.scr-urls'].map((sel) =>
+      Array.from(outer.querySelectorAll<HTMLElement>(`${sel} .scr-stack__item`)));
+    const n = shots.length;
+
+    // One frame stays put; each next screen is revealed from the bottom
+    // (clip-path) while its picture settles from a slight zoom, and the
+    // label, counter and address change with it.
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: outer,
         start: 'top top',
-        end: () => `+=${dist()}`,
+        end: () => `+=${window.innerHeight * (n + 0.6)}`,
         scrub: 1,
         pin: true,
         invalidateOnRefresh: true,
       },
     });
-    tl.to(track,   { x: () => -dist(), ease: 'none' });
-    // From empty (not from 1/4) so the line tracks the scroll exactly.
-    if (fill)    tl.fromTo(fill, { scaleX: 0 }, { scaleX: 1, ease: 'none' }, '<');
+
+    // Tilted and a little small, then it comes square to the viewer…
+    gsap.set(frame, { transformPerspective: 1800, transformOrigin: '50% 60%' });
+    tl.fromTo(frame,
+      { rotationX: 16, rotationY: -9, scale: 0.86, y: 50 },
+      { rotationX: 0, rotationY: 0, scale: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 0);
+    // …and over the rest of the scroll turns a few degrees the other way.
+    tl.to(frame, { rotationY: 3.5, rotationX: -1.5, duration: n - 0.4, ease: 'none' }, 0.8);
+
+    shots.forEach((shot, i) => {
+      if (i === 0) return;
+      const at = i - 0.2;
+      tl.fromTo(shot, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.9, ease: 'power2.inOut' }, at);
+      tl.fromTo(imgs[i], { scale: 1.18 }, { scale: 1, duration: 1.1, ease: 'power2.out' }, at);
+      // The one underneath drifts back a little as it is covered.
+      tl.to(imgs[i - 1], { scale: 0.96, duration: 1.1, ease: 'none' }, at);
+    });
+    stacks.forEach((items) => items.forEach((el, i) => {
+      // Out as the next picture starts to cover, in just after.
+      if (i > 0) tl.fromTo(el, { opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.35, ease: 'none' }, i + 0.15);
+      if (i < n - 1) tl.to(el, { opacity: 0, filter: 'blur(6px)', duration: 0.3, ease: 'none' }, i + 1 - 0.2);
+    }));
+    // From empty, so the line tracks the scroll exactly.
+    if (fill) tl.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: tl.duration(), ease: 'none' }, 0);
   }
 
   function initPage() {
