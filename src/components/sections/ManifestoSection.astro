@@ -77,7 +77,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		}
 	}
 	@keyframes mw-focus {
-		from { filter: blur(8px); opacity: 0; }
+		from { filter: blur(8px); opacity: 0.15; }
 		to { filter: blur(0px); opacity: 1; }
 	}
 	.mw {
@@ -116,7 +116,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		// Phones/tablets: the focus-in is CSS (scroll-driven), see <style>.
 		if (isMobile) return;
 		const heading = section.querySelector<HTMLElement>('h2');
-		gsap.set(words, { filter: 'blur(8px)', opacity: 0, y: 0 });
+		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
 		if (heading) gsap.set(heading, { filter: 'blur(0px)', opacity: 1 });
 
 		// Pinned: the words come into focus one by one, the finished line
