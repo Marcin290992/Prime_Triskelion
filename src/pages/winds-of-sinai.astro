@@ -1123,14 +1123,11 @@ const screens = [
 
   .scr-outer {
     /* As big as the screen allows: the full width, or the height left after
-       the slide's padding, the label above and some room for the tilt
-       (4.5rem), whichever is
+       the label above and the progress line below (16.5rem), whichever is
        smaller — it grows with the display up to 2000px (a 32" monitor). */
-    --scr-pad-t: clamp(6.5rem, 12vh, 8.5rem);
-    --scr-pad-b: clamp(8rem, 15vh, 10rem);
     --scr-w: min(
       calc(100vw - var(--site-gutter) * 2),
-      calc((100vh - var(--scr-pad-t) - var(--scr-pad-b) - 4.5rem - 34px) * 16 / 9),
+      calc((100vh - 16.5rem - 34px) * 16 / 9),
       2000px
     );
     height: 100vh;
@@ -1150,7 +1147,7 @@ const screens = [
     justify-content: center;
     align-items: center;
     /* Top clears the fixed top blur band (up to 7rem, utils/gradualBlur.js) so the slide label stays sharp. */
-    padding: var(--scr-pad-t) var(--site-gutter) var(--scr-pad-b);
+    padding: clamp(6.5rem, 12vh, 8.5rem) var(--site-gutter) clamp(8rem, 15vh, 10rem);
     box-sizing: border-box;
     gap: 1.2rem;
   }
@@ -1328,14 +1325,9 @@ const screens = [
     });
 
     // Tilted and a little small, then it comes square to the viewer…
-    // The perspective grows with the frame, so the tilt looks the same on a
-    // 32" monitor as on a laptop (a fixed 1800px made it far steeper there).
-    const persp = Math.max(1800, frame.offsetWidth * 1.6);
-    const perspWrap = frame.parentElement;
-    if (perspWrap) perspWrap.style.perspective = `${persp}px`;
-    gsap.set(frame, { transformPerspective: persp, transformOrigin: '50% 60%' });
+    gsap.set(frame, { transformPerspective: 1800, transformOrigin: '50% 60%' });
     tl.fromTo(frame,
-      { rotationX: 16, rotationY: -9, scale: 0.86, y: -10 },
+      { rotationX: 16, rotationY: -9, scale: 0.86, y: 50 },
       { rotationX: 0, rotationY: 0, scale: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 0);
     // …and over the rest of the scroll turns a few degrees the other way.
     tl.to(frame, { rotationY: 3.5, rotationX: -1.5, duration: n - 0.4, ease: 'none' }, 0.8);

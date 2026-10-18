@@ -14,7 +14,7 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:260vh;height:260lvh;height:calc(var(--app-stable-vh) * 260);z-index:10">
+<section id="manifesto" class="relative" style="height:180vh;height:180lvh;height:calc(var(--app-stable-vh) * 180);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
@@ -115,22 +115,10 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 
 		// Phones/tablets: the focus-in is CSS (scroll-driven), see <style>.
 		if (isMobile) return;
-		const heading = section.querySelector<HTMLElement>('h2');
 		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
-		if (heading) gsap.set(heading, { filter: 'blur(0px)', opacity: 1 });
-
-		// Pinned: the words come into focus one by one, the finished line
-		// holds a moment, then the whole text fades out where it stands — the
-		// next section (What we've built) rises out of the black after it,
-		// instead of the text scrolling away with the page.
-		const tl = gsap.timeline();
-		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
-		if (heading) tl.to(heading, { filter: 'blur(10px)', opacity: 0, duration: 0.7, ease: 'none' }, '+=0.5');
-		// Just a breath of empty black before the next section comes in.
-		tl.to({}, { duration: 0.15 });
 
 		_manifestoST = ScrollTrigger.create({
-			animation: tl,
+			animation: gsap.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' }),
 			trigger: section,
 			start: 'top top',
 			end: 'bottom bottom',
