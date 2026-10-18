@@ -14,7 +14,7 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:320vh;height:320lvh;height:calc(var(--app-stable-vh) * 320);z-index:10">
+<section id="manifesto" class="relative" style="height:260vh;height:260lvh;height:calc(var(--app-stable-vh) * 260);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
@@ -126,8 +126,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		const tl = gsap.timeline();
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
 		if (heading) tl.to(heading, { filter: 'blur(10px)', opacity: 0, duration: 0.7, ease: 'none' }, '+=0.5');
-		// A beat of empty black before the next section starts to appear.
-		tl.to({}, { duration: 1.2 });
+		// Just a breath of empty black before the next section comes in.
+		tl.to({}, { duration: 0.15 });
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,

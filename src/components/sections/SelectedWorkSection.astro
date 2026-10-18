@@ -203,10 +203,10 @@ const projects = [
 
 	/* Horizontal scroll */
 	.scroll-section {
-		/* 120vh for the blur-in (ENTER_SCREENS in the script) + 600vh of
+		/* 100vh for the blur-in (ENTER_SCREENS in the script) + 600vh of
 		   horizontal travel + a 40vh hold on the final slide (FINAL_HOLD) +
 		   the 100vh of the pinned view. */
-		height: 860vh;
+		height: 840vh;
 		position: relative;
 		display: none;
 	}
@@ -693,7 +693,7 @@ const projects = [
 		const imgBoxes: { el: HTMLElement; left: number; width: number }[] = [];
 		let curtainX = 0;
 		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
-		const ENTER_SCREENS = 1.2; // screens of blur-in before the horizontal travel
+		const ENTER_SCREENS = 1.0; // screens of blur-in before the horizontal travel
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
@@ -725,7 +725,7 @@ const projects = [
 			// Blurs in on the spot, once pinned (the manifesto has just faded
 			// out), before the horizontal travel starts.
 			const t = Math.max(0, Math.min(1, (window.scrollY - sectionTop) / (ENTER_SCREENS * window.innerHeight)));
-			const e = t * t * (3 - 2 * t); // slow start, slow landing
+			const e = 1 - (1 - t) * (1 - t); // comes in at once, then settles
 			sv.style.opacity = e > 0 ? '1' : '0';
 			tr.style.opacity = String(e);
 			tr.style.filter = e < 1 ? `blur(${((1 - e) * 10).toFixed(1)}px)` : '';
