@@ -684,6 +684,7 @@ const projects = [
 		let currentX = 0;
 		let maxScroll = 0;
 		let sectionTop = 0;
+		let enterFrom = 0; // scrollY where the manifesto's pin really ends
 		let scrollableH = 1;
 		let rafId = 0;
 		let lastTime = 0;
@@ -698,6 +699,15 @@ const projects = [
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
 			sectionTop = ss.getBoundingClientRect().top + window.scrollY;
+			// Measured, not assumed (the manifesto sizes off a frozen --app-stable-vh,
+			// this off the live viewport; they differ once the window is resized):
+			// the blur-in must start only when the manifesto's pin has ended
+			// and this view is pinned itself.
+			const man = document.getElementById('manifesto');
+			const manPin = man?.firstElementChild as HTMLElement | null;
+			enterFrom = man && manPin
+				? Math.max(sectionTop, man.getBoundingClientRect().bottom + window.scrollY - manPin.offsetHeight)
+				: sectionTop;
 			// The travel ends FINAL_HOLD screens before the pin lets go, so the
 			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
 			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight * (1 + FINAL_HOLD + ENTER_SCREENS));
@@ -716,7 +726,7 @@ const projects = [
 			lastTime = now;
 
 			const enterY = ENTER_SCREENS * window.innerHeight;
-			const progress = Math.max(0, Math.min(1, (window.scrollY - sectionTop - enterY) / scrollableH));
+			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - enterY) / scrollableH));
 			const targetX = progress * maxScroll;
 
 			currentX += (targetX - currentX) * (1 - Math.exp(-EASE_PER_SECOND * dt));
@@ -724,7 +734,7 @@ const projects = [
 
 			// Blurs in on the spot, once pinned (the manifesto has just faded
 			// out), before the horizontal travel starts.
-			const t = Math.max(0, Math.min(1, (window.scrollY - sectionTop) / (ENTER_SCREENS * window.innerHeight)));
+			const t = Math.max(0, Math.min(1, (window.scrollY - enterFrom) / (ENTER_SCREENS * window.innerHeight)));
 			const e = 1 - (1 - t) * (1 - t); // comes in at once, then settles
 			sv.style.opacity = e > 0 ? '1' : '0';
 			tr.style.opacity = String(e);
@@ -767,7 +777,7 @@ const projects = [
 			if (rafId) return;
 			/* snap to the correct spot on re-entry so the track never visibly
 			   catches up from a stale position */
-			const progress = Math.max(0, Math.min(1, (window.scrollY - sectionTop - ENTER_SCREENS * window.innerHeight) / scrollableH));
+			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH));
 			currentX = progress * maxScroll;
 			lastTime = performance.now();
 			rafId = requestAnimationFrame(tick);
