@@ -16,6 +16,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	<div id="hero-pin">
 		<HeroSection />
 	</div>
+	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
 	<div class="relative" style="z-index:30">
 		<ManifestoSection />
@@ -34,15 +35,17 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		   into the black (#hero-veil, driven by the script below), and the
 		   manifesto is pulled up to start exactly where that ends — its words
 		   come into focus on the spot instead of riding up from the bottom. */
-		#hero-veil {
+		#hero-veil,
+		#hero-blur {
 			position: fixed;
 			inset: 0;
-			z-index: 20;
 			pointer-events: none;
-			background: #000;
-			opacity: 0;
 			visibility: hidden;
 		}
+		/* Two layers, so the blur does not fade with the dark: the blur (it
+		   softens whatever is behind it) comes up first, the black after. */
+		#hero-blur { z-index: 19; }
+		#hero-veil { z-index: 20; background: #000; opacity: 0; }
 		@media ((min-width: 1025px) and (hover: hover)) or ((min-width: 1025px) and (pointer: fine)) {
 			@media (prefers-reduced-motion: no-preference) {
 				#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
@@ -64,10 +67,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const pin = document.getElementById('hero-pin');
 			const hero = document.getElementById('hero');
 			const veil = document.getElementById('hero-veil');
+			const blur = document.getElementById('hero-blur');
 			const rays = document.getElementById('rays-canvas');
 			const man = document.getElementById('manifesto');
 			const stage = man?.querySelector<HTMLElement>(':scope > .sticky');
-			if (!pin || !hero || !veil || !man || !stage) return;
+			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			const desktop = window.matchMedia('(min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine)').matches;
 			if (!desktop || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -87,11 +91,16 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// The light goes first: it is the source of everything on screen.
 				// Brightness, not opacity (the intro owns the canvas's opacity).
 				if (rays) rays.style.filter = p > 0 ? `brightness(${(1 - smooth(clamp01(p / 0.6))).toFixed(3)})` : '';
-				// Then the type and the rest sink into the dark, blurring.
-				const a = smooth(clamp01((p - 0.3) / 0.65));
-				veil.style.visibility = a > 0 && y < pinStart + window.innerHeight ? 'visible' : 'hidden';
+				// Then the type and the rest go soft (the blur layer), and only once
+				// they are soft do they sink into the dark (the black layer) — the
+				// same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.12) / 0.65));
+				const a = smooth(clamp01((p - 0.45) / 0.5));
+				const live = y < pinStart + window.innerHeight;
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
 				veil.style.opacity = a.toFixed(3);
-				veil.style.backdropFilter = veil.style.webkitBackdropFilter = a > 0 && a < 1 ? `blur(${(a * 14).toFixed(1)}px)` : '';
 				// The manifesto's line comes up slowly once its stage is pinned
 				// (about 0.4 of a screen), before the words start to focus.
 				const vh = window.innerHeight;

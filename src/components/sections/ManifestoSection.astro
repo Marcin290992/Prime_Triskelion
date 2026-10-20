@@ -10,20 +10,21 @@ const slice = (i: number) => {
 	const end = ((i * 0.1 + 1) / total) * 100;
 	return `--s:${start.toFixed(2)}%;--e:${end.toFixed(2)}%`;
 };
+const accent = new Set(['experiences', 'lasting', 'mark']);
 let n = 0;
-const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
+const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:220vh;height:220lvh;height:calc(var(--app-stable-vh) * 220);z-index:10">
+<section id="manifesto" class="relative" style="height:330vh;height:330lvh;height:calc(var(--app-stable-vh) * 330);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
 			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
 			aria-label="I craft digital experiences that push boundaries, challenge conventions, and leave a lasting mark on the world."
 		>
-			{words[0].map(({ w, style }) => <span class="mw" style={style}>{w}</span>)}
+			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
 			<span class="mw br"></span>
-			{words[1].map(({ w, style }) => <span class="mw" style={style}>{w}</span>)}
+			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
 		</h2>
 	</div>
 </section>
@@ -122,6 +123,25 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		const tl = gsap.timeline();
 		tl.to({}, { duration: 1.0 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+
+		// Once the line is whole it is held, and two things happen in the hold:
+		// the camera pushes in on it very slowly, and the words that carry the
+		// sentence take the red, one after another.
+		const heading = section.querySelector<HTMLElement>('h2');
+		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
+		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
+		const HOLD = 1.5;
+		if (heading) {
+			gsap.set(heading, { transformOrigin: '0% 50%' });
+			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
+		}
+		if (picked.length && red) tl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, `-=${HOLD}`);
+
+		// Then the whole line goes out where it stands, into blur and the dark;
+		// the work section comes up out of that dark on the next scroll (it
+		// pins itself exactly where this pin ends, see SelectedWorkSection).
+		if (heading) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
+		tl.to({}, { duration: 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
