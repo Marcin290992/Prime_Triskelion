@@ -14,7 +14,7 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:180vh;height:180lvh;height:calc(var(--app-stable-vh) * 180);z-index:10">
+<section id="manifesto" class="relative" style="height:220vh;height:220lvh;height:calc(var(--app-stable-vh) * 220);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
@@ -117,8 +117,14 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 		if (isMobile) return;
 		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
 
+		// Lead-in: the faint line comes up out of the dark (the stage fades in,
+		// see index.astro) before the words start to focus.
+		const tl = gsap.timeline();
+		tl.to({}, { duration: 1.0 });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+
 		_manifestoST = ScrollTrigger.create({
-			animation: gsap.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' }),
+			animation: tl,
 			trigger: section,
 			start: 'top top',
 			end: 'bottom bottom',
