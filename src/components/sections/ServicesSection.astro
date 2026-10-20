@@ -89,8 +89,9 @@ const services = [
 					src={sv.img}
 					alt=""
 					widths={[480, 800, 1200]}
-					sizes="40vw"
-					loading="lazy"
+					sizes="30vw"
+					loading="eager"
+					decoding="async"
 					class:list={['svc__img', i === 0 && 'is-active']}
 					data-i={i}
 					style={`object-position:${sv.pos}`}
@@ -166,10 +167,29 @@ const services = [
 			padding: 0 var(--site-gutter);
 		}
 		.svc__list { list-style: none; margin: 0; padding: 0; }
-		.svc__row { padding: clamp(0.1rem, 0.6vh, 0.5rem) 0; }
+		/* Each name is a full-width row, ruled above and below, so what the
+		   pointer is on is plain to see: the whole band between the two lines
+		   answers to it, not only the letters. The lines light up on the row
+		   under the pointer. */
+		.svc__row { position: relative; padding: clamp(0.3rem, 1vh, 0.85rem) 0; }
+		.svc__row::before,
+		.svc__row::after {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			height: 1px;
+			background: rgb(var(--c-cream) / 0.14);
+			transition: background-color 0.4s ease;
+			pointer-events: none;
+		}
+		.svc__row::before { top: 0; }
+		.svc__row::after { bottom: 0; }
+		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::before,
+		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::after { background: rgb(var(--c-cream) / 0.6); }
 		.svc__link {
 			display: block;
-			width: fit-content;
+			width: 100%;
 			font-family: var(--f-display);
 			font-weight: 700;
 			font-size: clamp(2.4rem, min(6vw, 9vh), 6.5rem);
@@ -213,6 +233,40 @@ const services = [
 			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 		.svc__img.is-active { opacity: 1; transform: none; }
+
+		/* A real mouse: the picture is not a fixed panel on the right but a card
+		   that comes up in the middle of the screen while the pointer is on a
+		   name (initServices sets its place) and is gone otherwise — the reward
+		   for pointing at a name. */
+		@media (hover: hover) and (pointer: fine) {
+			.svc__body { grid-template-columns: minmax(0, 1fr); }
+			.svc__media {
+				position: fixed;
+				left: 0;
+				top: 0;
+				z-index: 60;
+				width: clamp(300px, 28vw, 480px);
+				max-height: none;
+				pointer-events: none;
+				opacity: 0;
+				filter: blur(12px);
+				/* Closed from the top: it opens upward, like a shutter lifting. */
+				clip-path: inset(22% 3% 0 3%);
+				transition: opacity 0.4s ease, filter 0.6s ease, clip-path 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+				will-change: transform, opacity, clip-path;
+			}
+			.svc__media.is-shown { opacity: 1; filter: none; clip-path: inset(0 0 0 0); }
+			/* The picture sits a little oversized inside its frame and slides
+			   against the card's own movement (--ix / --iy, set per frame), which
+			   gives the card depth; a new picture comes in from below or above,
+			   by whether the next name is further down or up the list. */
+			.svc__img {
+				translate: calc(var(--ix, 0) * 1px) calc(var(--iy, 0) * 1px);
+				scale: 1.14;
+				transform: translateY(calc(var(--svc-dir, 1) * 8%));
+				transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+			}
+		}
 	}
 	/* Phones/tablets only — see the mobile block below. */
 	.svc-m { display: none; }
@@ -538,6 +592,7 @@ const services = [
 		let active = 0;
 		const set = (i: number) => {
 			if (i === active) return;
+			section.style.setProperty('--svc-dir', i > active ? '1' : '-1');
 			active = i;
 			rows.forEach((r, n) => r.classList.toggle('is-active', n === i));
 			imgs.forEach((im, n) => im.classList.toggle('is-active', n === i));
@@ -548,6 +603,113 @@ const services = [
 			row.querySelector('a')?.addEventListener('mouseenter', () => set(i));
 			row.querySelector('a')?.addEventListener('focus', () => set(i));
 		});
+
+		// A real mouse: the picture is a card at the pointer's right while the
+		// pointer is on a name, travelling with it. It has weight: it trails the
+		// pointer a little late, leans and banks with its own speed, and the
+		// picture inside slides against the card. It never covers the letters of
+		// the name that is pointed at. It shows only after the mouse has actually
+		// moved over a name (not because the list scrolled under a resting
+		// pointer) and goes away on scroll or when the pointer leaves the names.
+		const card = section.querySelector<HTMLElement>('.svc__media');
+		if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+			const list = section.querySelector<HTMLElement>('.svc__list');
+			const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1;
+			const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+			const GAP = 36;
+			let raf = 0, shown = false, idle = 0;
+			let px = -1, py = -1; // the pointer, as last seen
+			let textRight = 0; // where the pointed-at name's letters end
+			let lastRow: Element | null = null;
+			const cur = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 };
+			// Where the card wants to be: right of the pointer, past the end of the
+			// name's letters, vertically centred on the pointer. Always on the right
+			// (it never jumps across the pointer); at the screen's right edge it
+			// simply stops there and the pointer slides onto it. Kept on screen.
+			const target = () => {
+				const w = card.offsetWidth, h = card.offsetHeight;
+				const x = Math.min(window.innerWidth - w - 16, Math.max(px + GAP, textRight + GAP * 0.6));
+				const y = clamp(py - h / 2, 16, window.innerHeight - h - 16);
+				return { x, y };
+			};
+			let last = 0;
+			const step = (now: number) => {
+				// Smoothing by time, not by frame, so it feels the same at 60 and
+				// 144 Hz: each rate is "per second", turned into this frame's share.
+				const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+				last = now;
+				const k = (rate: number) => 1 - Math.exp(-rate * dt);
+				const t = target();
+				const px0 = cur.x, py0 = cur.y;
+				cur.x += (t.x - cur.x) * k(8.4);
+				cur.y += (t.y - cur.y) * k(8.4);
+				const vx = (cur.x - px0) / (dt * 60), vy = (cur.y - py0) / (dt * 60); // its own speed, px per 60 Hz frame
+				cur.rz += (clamp(vx * 0.5, -6, 6) * calm - cur.rz) * k(7.6);
+				cur.ry += (clamp(vx * 0.9, -9, 9) * calm - cur.ry) * k(7.6);
+				cur.rx += (clamp(-vy * 0.7, -7, 7) * calm - cur.rx) * k(7.6);
+				cur.s += ((shown ? 1 : 0.93) - cur.s) * k(6.3);
+				cur.ix += (clamp(-vx * 2.2, -26, 26) * calm - cur.ix) * k(6.3);
+				cur.iy += (clamp(-vy * 1.6, -18, 18) * calm - cur.iy) * k(6.3);
+				card.style.transform =
+					`translate3d(${cur.x.toFixed(1)}px, ${cur.y.toFixed(1)}px, 0) perspective(1100px) ` +
+					`rotateX(${cur.rx.toFixed(2)}deg) rotateY(${cur.ry.toFixed(2)}deg) rotateZ(${cur.rz.toFixed(2)}deg) scale(${cur.s.toFixed(4)})`;
+				card.style.setProperty('--ix', cur.ix.toFixed(1));
+				card.style.setProperty('--iy', cur.iy.toFixed(1));
+				// Runs while shown, and a moment after it hides (the fade-out).
+				idle = shown ? 0 : idle + 1;
+				raf = idle < 70 ? requestAnimationFrame(step) : 0;
+				if (!raf) last = 0;
+			};
+			const show = () => {
+				if (shown) return;
+				shown = true;
+				idle = 0;
+				if (!raf) {
+					// Starts at its place, small and still: it does not fly in.
+					const t = target();
+					Object.assign(cur, { x: t.x, y: t.y, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 });
+					last = 0;
+					raf = requestAnimationFrame(step);
+				}
+				card.classList.add('is-shown');
+			};
+			const hide = () => {
+				if (!shown) return;
+				shown = false;
+				card.classList.remove('is-shown');
+			};
+			// The right end of a name's letters (its row is the full width).
+			const measure = (row: Element) => {
+				const base = row.querySelector('.svc__roll__base');
+				if (!base) return;
+				const r = document.createRange();
+				r.selectNodeContents(base);
+				textRight = r.getBoundingClientRect().right;
+			};
+			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
+			list?.addEventListener('mousemove', (e) => {
+				if (!e.movementX && !e.movementY) return; // a synthetic move after a scroll
+				const row = (e.target as HTMLElement).closest('.svc__row');
+				if (!row) { hide(); return; }
+				if (row !== lastRow) { lastRow = row; measure(row); }
+				show();
+			});
+			list?.addEventListener('mouseleave', hide);
+			// While the page scrolls (Lenis keeps easing for a moment after the wheel
+			// stops) the card stays as long as a name is still under the pointer;
+			// it goes only when the list has moved away from it.
+			let sticking = false;
+			window.addEventListener('scroll', () => {
+				if (!shown || sticking) return;
+				sticking = true;
+				requestAnimationFrame(() => {
+					sticking = false;
+					const under = document.elementFromPoint(px, py);
+					const row = under && under.closest('.svc__row');
+					if (!row) hide(); else if (row !== lastRow) { lastRow = row; measure(row); }
+				});
+			}, { passive: true });
+		}
 	}
 
 	onReady(initServices);
