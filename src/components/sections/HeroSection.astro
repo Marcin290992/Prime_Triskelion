@@ -1028,9 +1028,16 @@
 		const hero = document.getElementById('hero');
 		if (!wrap || !hero) return;
 
+		// The nav button comes in only once the work section ("What we've built")
+		// is on screen, and stays from there on. (Without that section: past
+		// most of the hero, as before.)
+		const work = document.getElementById('selected-work');
 		function update() {
 			const scrollY = window.scrollY || window.pageYOffset;
-			wrap!.classList.toggle('hero-nav-cta--visible', gate.allow(scrollY > hero!.offsetHeight * 0.6));
+			const past = work
+				? work.getBoundingClientRect().top < window.innerHeight * 0.5
+				: scrollY > hero!.offsetHeight * 0.6;
+			wrap!.classList.toggle('hero-nav-cta--visible', gate.allow(past));
 		}
 		const gate = createMenuCtaGate(update);
 
