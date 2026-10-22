@@ -2,15 +2,8 @@ import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
-// astro:page-load fires as soon as the new DOM is swapped in — before the
-// page View Transition (quick fade-out, then the new page fading in, see
-// Layout.astro) has played. Run entrance animations through this so they
-// start as the new page begins to appear: shortly after the transition's
-// animations kick off (`ready`), not once it has fully finished — waiting
-// for `finished` left a noticeable pause of plain page before anything
-// moved. The titles start at opacity 0, so the page's own short fade-in
-// can't make them read as blurring in twice. Falls back to `finished` (or
-// runs immediately) where `ready` isn't available, e.g. on a hard load.
+// astro:page-load fires as soon as the new DOM is swapped in. Entrances use
+// this so they start as the page begins to emerge from its transition veil.
 //
 // Imported by Layout.astro too, so the before-swap listener is registered
 // on every page from the first load — a page script loaded only after
@@ -75,8 +68,10 @@ document.addEventListener('visibilitychange', () => {
 // (Layout.astro) and the title starts sharpening from the very first frame.
 // Re-applied after the swap because Astro replaces <html>'s attributes.
 let cutNext = false;
-export function cutNextTransition(): void {
+let blurPageInNext = false;
+export function cutNextTransition(blurIn = true): void {
 	cutNext = true;
+	blurPageInNext = blurIn;
 	document.documentElement.classList.add('vt-cut');
 }
 let cutting = false;
@@ -208,7 +203,7 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 		});
 	const load = e.loader;
 	e.loader = async () => { await Promise.all([load(), open]); };
-	cutNextTransition();
+	cutNextTransition(false);
 });
 const preloadCase = (e: Event) => {
 	const src = (e.target as Element | null)?.closest?.('[data-case]')?.getAttribute('data-case-src');
@@ -232,12 +227,9 @@ document.addEventListener('astro:after-swap', () => {
 });
 
 // In-page links and back/forward (not the menu, not a case study's own
-// opening), on every device: the same shape as leaving through the menu —
-// the page fades down to black (while the next one loads, so it costs no
-// extra wait when that takes longer), then a cut and the new title focuses
-// in. Desktop used to get the quick root cross-fade, which read as stiff
-// and abrupt next to the menu's exit. Only the page content fades — the
-// logo, menu and edge strips stay (the set html.ox-menu-covered hides).
+// opening), on every device: the page blurs and fades to black while the
+// next one loads, then the new page emerges through a matching blur veil.
+// Only the page content fades — the logo, menu and edge strips stay.
 // A black cover over other content ([data-leave-keep], About's overlay over
 // the portrait) keeps its opacity: faded on its own it went see-through and
 // showed what it hides before everything reached black.
@@ -249,7 +241,10 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	);
 	// Its own content (the title on it) still fades with the page.
 	const keptContent = document.querySelectorAll<HTMLElement>('[data-leave-keep] > *');
-	if (keptContent.length) gsap.to(keptContent, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
+	if (keptContent.length) {
+		gsap.to(keptContent, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
+		gsap.to(keptContent, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
+	}
 	// The top-right CTA is animated separately so it can leave with the page
 	// even when the home hero's stacking context would otherwise cover it.
 	const cta = ['site-cta-wrap', 'hero-nav-cta-wrap']
@@ -280,9 +275,40 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	const fade = new Promise<void>((resolve) => {
 		gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut', onComplete: () => resolve() });
 	});
+	if (content.length) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
 	const load = e.loader;
 	e.loader = async () => { await Promise.all([load(), fade]); };
 	cutNextTransition();
+});
+document.addEventListener('astro:after-swap', () => {
+	if (!blurPageInNext) return;
+	blurPageInNext = false;
+
+	const blur = reducedMotion() ? 0 : 18;
+	const veil = document.createElement('div');
+	veil.setAttribute('aria-hidden', 'true');
+	veil.style.cssText = `position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;opacity:1;will-change:opacity,backdrop-filter;-webkit-backdrop-filter:blur(${blur}px);backdrop-filter:blur(${blur}px)`;
+	document.documentElement.append(veil);
+
+	const pageLoaded = new Promise<void>((resolve) => {
+		document.addEventListener('astro:page-load', () => resolve(), { once: true });
+	});
+	Promise.all([pending, pageLoaded]).then(() => requestAnimationFrame(() => requestAnimationFrame(() => {
+		const t = { value: 1 };
+		const paint = () => {
+			veil.style.opacity = String(t.value);
+			const filter = `blur(${(blur * t.value).toFixed(1)}px)`;
+			veil.style.backdropFilter = filter;
+			veil.style.setProperty('-webkit-backdrop-filter', filter);
+		};
+		gsap.to(t, {
+			value: 0,
+			duration: blur ? 0.55 : 0.2,
+			ease: 'power2.out',
+			onUpdate: paint,
+			onComplete: () => veil.remove(),
+		});
+	})));
 });
 document.addEventListener('astro:before-swap', (e) => {
 	if (!cutNext) return;

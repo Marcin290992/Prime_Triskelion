@@ -426,20 +426,20 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     }
     const develop = { p: 0 };
 
-    // Timeline spans the whole 240 stable-vh the pin holds. On compact screens,
-    // the portrait waits until the title is gone, then settles before the dither
-    // develops — the face doesn't appear all at once in the title's exit.
+    // Timeline spans the whole 240 stable-vh the pin holds: the light fades,
+    // then the title blurs away, and only then does the portrait reveal begin.
     const rays = veil.querySelector<HTMLElement>('canvas');
-    const portraitStart = compact ? 0.28 : 0.1;
+    const lightDuration = 0.2;
+    const portraitStart = 0.36;
     const portraitDuration = compact ? 0.3 : 0.32;
-    const scaleDuration = compact ? 0.4 : 0.6;
-    const developStart = compact ? 0.68 : 0.48;
-    const developDuration = compact ? 0.22 : 0.32;
-    const holdStart = compact ? 0.9 : 0.8;
-    const tl = gsap.timeline({ defaults: { ease: 'none' } })
-      .fromTo([wordL, wordR], { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.15, ease: 'sine.in' }, 0)
-      .fromTo([wordL, wordR], { opacity: 1 }, { opacity: 0, duration: 0.17, ease: 'sine.inOut' }, 0.05);
-    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.24, ease: 'sine.inOut' }, 0);
+    const scaleDuration = compact ? 0.4 : 0.55;
+    const developStart = compact ? 0.76 : 0.74;
+    const developDuration = 0.22;
+    const holdStart = 0.98;
+    const tl = gsap.timeline({ defaults: { ease: 'none' } });
+    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: lightDuration, ease: 'sine.inOut' }, 0);
+    tl.fromTo([wordL, wordR], { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.18, ease: 'sine.in' }, lightDuration)
+      .fromTo([wordL, wordR], { opacity: 1 }, { opacity: 0, duration: 0.18, ease: 'sine.inOut' }, lightDuration);
     // The portrait's own entrance is a blur-in: it comes up out of the dark soft
     // and finds focus as the veil clears (so the pixels arrive out of focus too).
     // Desktop only — a scrubbed filter over the portrait is what mobile Safari
@@ -467,21 +467,21 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // — not innerHeight.
       end: () => `+=${reveal.offsetHeight - pin.offsetHeight}`,
       scrub: true,
-      // The lens wakes once the title has gone off the face and the veil is
-      // lifting (the first 30% of the timeline).
+      // The lens wakes only once the title is gone and the portrait starts
+      // to reveal.
       onUpdate: (self) => {
-        _lensGate?.(self.progress >= 0.3);
+        _lensGate?.(self.progress >= portraitStart);
         // The light in the veil (sideRays.js): on the way down it goes with
         // the veil. On the way back it would come up with the veil as soon
         // as the scroll turned — it stays out until the words have joined
         // again, then fades back in. .rays-off also stops it rendering
         // while the portrait is up (sideRays.js watches the class).
-        if (self.progress >= 0.3) veil.classList.add('rays-off');
-        else if (self.progress <= 0.25) veil.classList.remove('rays-off');
+        if (self.progress >= lightDuration) veil.classList.add('rays-off');
+        else veil.classList.remove('rays-off');
       },
     });
     // Landing mid-scene (back/forward): set the lens from where it is now.
-    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= 0.3));
+    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= portraitStart));
 
     // As the name/bio slide in, the portrait sinks back toward the dark:
     // dims, the vignette closes on the face and the edges re-dither. Tied
