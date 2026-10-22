@@ -412,6 +412,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     // (or no WebGL2) just keeps the <img>.
     const ditherCanvas = document.querySelector<HTMLCanvasElement>('.am-dither');
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
     if (ditherCanvas?.dataset.src && !reduceMotion) {
       _amDither = initDitherPortrait(ditherCanvas, {
         src: ditherCanvas.dataset.src,
@@ -425,22 +426,16 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     }
     const develop = { p: 0 };
 
-    // Timeline spans the whole 240 stable-vh the pin holds. One scene, in which
-    // the title, the light and the figure trade places:
-    //   0.00-0.22  the title goes out where it stands (soft, then gone) and, with
-    //              it, the light goes out (the rays in the veil dim);
-    //   0.10-0.42  the dark veil lifts off the portrait as the light fades, so
-    //              the figure comes up out of the dark — soft, blurring in to
-    //              focus (0.10-0.46);
-    //   0.10-0.70  the camera eases back from the portrait (a long settle from a
-    //              slight push-in);
-    //   0.48-0.80  only once it is sharp does the portrait develop out of the
-    //              dither (more pixels, the photo resolving) — never at the same
-    //              time as the blur-in, so the figure arrives in one state and
-    //              then changes in another;
-    //   0.80-1.00  a hold on the finished portrait, so the name/bio don't slide
-    //              up the instant the face resolves.
+    // Timeline spans the whole 240 stable-vh the pin holds. On compact screens,
+    // the portrait waits until the title is gone, then settles before the dither
+    // develops — the face doesn't appear all at once in the title's exit.
     const rays = veil.querySelector<HTMLElement>('canvas');
+    const portraitStart = compact ? 0.28 : 0.1;
+    const portraitDuration = compact ? 0.3 : 0.32;
+    const scaleDuration = compact ? 0.4 : 0.6;
+    const developStart = compact ? 0.68 : 0.48;
+    const developDuration = compact ? 0.22 : 0.32;
+    const holdStart = compact ? 0.9 : 0.8;
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
       .fromTo([wordL, wordR], { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.15, ease: 'sine.in' }, 0)
       .fromTo([wordL, wordR], { opacity: 1 }, { opacity: 0, duration: 0.17, ease: 'sine.inOut' }, 0.05);
@@ -451,17 +446,17 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     // handles worst (see .am-portrait-img).
     const stack = document.querySelector<HTMLElement>('.am-portrait-stack');
     if (stack && !window.matchMedia('(pointer: coarse)').matches) {
-      tl.fromTo(stack, { filter: 'blur(20px)' }, { filter: 'blur(0px)', duration: 0.36, ease: 'sine.out' }, 0.1);
+      tl.fromTo(stack, { filter: 'blur(20px)' }, { filter: 'blur(0px)', duration: 0.36, ease: 'sine.out' }, portraitStart);
     }
-    tl.fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.32, ease: 'sine.inOut' }, 0.1)
-      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.6, ease: 'sine.out' }, 0.1)
+    tl.fromTo(veil, { opacity: 1 }, { opacity: 0, duration: portraitDuration, ease: 'sine.inOut' }, portraitStart)
+      .fromTo(img, { scale: 1.12 }, { scale: 1, duration: scaleDuration, ease: 'sine.out' }, portraitStart)
       .fromTo(develop, { p: 0 }, {
         p: 1,
-        duration: 0.32,
+        duration: developDuration,
         ease: 'sine.inOut',
         onUpdate: () => _amDither?.setProgress(develop.p),
-      }, 0.48)
-      .to({}, { duration: 0.2 }, 0.8);
+      }, developStart)
+      .to({}, { duration: 1 - holdStart }, holdStart);
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
