@@ -15,6 +15,10 @@ import { warmPages } from './pageCache';
 // compacting on scroll, see handleScroll() below).
 const MENU_SHRINK_SCALE = 0.68;
 
+// The chip's shrink progress (0..1) outlives page navigations: it only grows
+// back when the user scrolls up, not because a new page loaded.
+let persistedMenuShrink = 0;
+
 // Chromium can render backdrop-filter as solid white during the native
 // View Transition (used by Astro's <ClientRouter/>) instead of blurring
 // correctly — most visible on these glassy HUD buttons during
@@ -112,7 +116,7 @@ function initOxygenMenu() {
     // Continuous 0→1 shrink progress for the mobile menu chip (iOS Safari
     // toolbar-style compacting as you scroll down), independent of the
     // barHidden swap above — see handleScroll().
-    menuShrink: 0,
+    menuShrink: persistedMenuShrink,
     timeInterval: null as ReturnType<typeof setInterval> | null,
     scrollPosition: 0,
     releaseScrollLock: null as (() => void) | null,
@@ -128,6 +132,8 @@ function initOxygenMenu() {
   if ((window as any).__oxygenMenuCleanup) {
     (window as any).__oxygenMenuCleanup();
   }
+
+  const menuScale = () => 1 - state.menuShrink * (1 - MENU_SHRINK_SCALE);
 
   function getLenis() {
     return (window as any).__lenis;
@@ -370,9 +376,13 @@ function initOxygenMenu() {
     // smoothly instead of snapping. Same scrollTop > 50 near-top guard as
     // the swap below, so it can't shrink (with nothing to hand off to) from
     // a small bounce right at the top.
-    state.menuShrink = scrollTop > 50
-      ? Math.min(1, Math.max(0, state.menuShrink + delta / THRESHOLD))
-      : 0;
+    // Growing back (scrolling up) works anywhere, including at the very top;
+    // shrinking needs the near-top guard. At the top of a freshly loaded page
+    // the chip therefore keeps its size until the user scrolls up.
+    if (delta < 0 || scrollTop > 50) {
+      state.menuShrink = Math.min(1, Math.max(0, state.menuShrink + delta / THRESHOLD));
+    }
+    persistedMenuShrink = state.menuShrink;
     // GSAP tween (not a CSS transform, not gsap.set) for two separate
     // reasons: (1) hudMenuBtn already carries a permanent inline transform
     // from HeroSection's entrance reveal (that tween only clearProps's
@@ -388,7 +398,7 @@ function initOxygenMenu() {
     // rapid-fire calls from stacking up competing tweens on the same prop.
     if (hudMenuBtn) {
       gsap.to(hudMenuBtn, {
-        scale: 1 - state.menuShrink * (1 - MENU_SHRINK_SCALE),
+        scale: menuScale(),
         duration: 0.35,
         ease: 'power2.out',
         overwrite: 'auto',
@@ -417,7 +427,8 @@ function initOxygenMenu() {
     state.isMenuOpen = true;
     state.menuAnimating = true;
     state.scrollAccum = 0;
-    state.menuShrink = 0;
+    // The chip is drawn full size while the menu is open, but menuShrink is
+    // kept: closing without leaving, or the next page, returns to it.
     // Eased tween back to full size (matches the shrink tween in
     // handleScroll — same duration/ease), not gsap.set: this fires right
     // when the user taps the shrunk chip to open the menu, so snapping it
@@ -465,6 +476,9 @@ function initOxygenMenu() {
       setPageCovered(false);
       btn?.classList.remove('active');
       btn?.setAttribute('aria-expanded', 'false');
+      // Staying on this page: back to the scroll-driven size. (Leaving — the
+      // blurOut path — the next page's init applies it.)
+      if (!blurOut && btn) gsap.to(btn, { scale: menuScale(), duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
 
       if (!keepOverlay) {
         // Restore HUD side labels and the clock
@@ -735,12 +749,12 @@ function initOxygenMenu() {
     hudMenuBtn?.style.removeProperty('opacity');
     hudMenuBtn?.style.removeProperty('pointer-events');
     hudMenuBtn?.style.removeProperty('filter');
-    if (hudMenuBtn) gsap.set(hudMenuBtn, { scale: 1 });
+    // Not back to scale 1: the shrink is global, see persistedMenuShrink.
+    if (hudMenuBtn) gsap.to(hudMenuBtn, { scale: menuScale(), duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
     setBarHidden(false);
     document.getElementById('oxygen-menu-root')?.classList.remove('hud-deco-away');
     state.barHidden = false;
     state.scrollAccum = 0;
-    state.menuShrink = 0;
   }
   resetHudMenuBtn();
   showHeader();
