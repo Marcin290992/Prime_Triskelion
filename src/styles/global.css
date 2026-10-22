@@ -160,8 +160,7 @@ html:active-view-transition .h-hero-cta,
 html:active-view-transition .nav-cta,
 html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
-html:active-view-transition .zoom-col,
-html:active-view-transition .gradual-blur__layer {
+html:active-view-transition .zoom-col {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }

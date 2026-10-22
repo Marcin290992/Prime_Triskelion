@@ -97,14 +97,22 @@ export function createGradualBlur(options = {}) {
   return root;
 }
 
-// The page's two bands. The <body> is replaced on every navigation, so they
-// are put back each time (right after the swap, before the new page paints).
+// The page's two bands. They live on <html>, not on <body>: the <body> is
+// replaced on every navigation (and faded out with the page when leaving), so
+// bands put on it vanished with the page and came back only on the next one.
+// On <html> they are one and the same pair for the whole visit — never faded,
+// never swapped, there through every change of page or section. They keep
+// their place in the stacking order (the <body> makes no stacking context of
+// its own): over the page, under the menu overlay, the logo and the buttons.
+// Called again after swaps and loads only as a safety net (it does nothing
+// while the pair is there).
 export function mountGradualBlur() {
   if (!ENABLED) return;
-  const body = document.body;
-  if (!body || body.querySelector(':scope > .gradual-blur')) return;
-  body.prepend(createGradualBlur({ position: 'bottom' }));
-  body.prepend(createGradualBlur({ position: 'top' }));
+  const root = document.documentElement;
+  if (!root || root.querySelector(':scope > .gradual-blur')) return;
+  // A pair left on a <body> by an earlier version of the page: gone.
+  document.body?.querySelectorAll(':scope > .gradual-blur').forEach((el) => el.remove());
+  root.append(createGradualBlur({ position: 'top' }), createGradualBlur({ position: 'bottom' }));
 }
 
 document.addEventListener('astro:after-swap', mountGradualBlur);
