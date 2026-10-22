@@ -7,7 +7,7 @@ import deeer2 from '../../img/deeer2.webp';
 // Full-screen version for the case-study entrance (data-case-src, see
 // afterPageTransition.ts) — a card-sized image blows up soft.
 const deeer2Full = await getImage({ src: deeer2, width: 2400 });
-// Phones/tablets carousel. Placeholder pictures (stored locally — the
+// Phones/tablets work list. Placeholder pictures (stored locally — the
 // site's CSP blocks remote images) for all but Winds of Sinai; swap the
 // img for each project's own shot.
 import imgUnfall from '../../img/services/websites.jpg';
@@ -16,12 +16,12 @@ import imgSteak from '../../img/process/launch.jpg';
 import imgJosh from '../../img/process/support.jpg';
 import imgUmzug from '../../img/process/discovery.jpg';
 const projects = [
-	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', tags: ['Branding', 'Web'], img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
-	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: imgUnfall, href: '/work/unfallfix24' },
-	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: imgMousa, href: '/work/mousa-export' },
-	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: imgSteak },
-	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: imgJosh },
-	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: imgUmzug },
+	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', img: imgUnfall, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', img: imgMousa, href: '/work/mousa-export' },
+	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', img: imgSteak },
+	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', img: imgJosh },
+	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', img: imgUmzug },
 ];
 ---
 <section id="selected-work">
@@ -139,35 +139,34 @@ const projects = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the work as a carousel you swipe — native
-	     horizontal scroll that snaps card to card (no script per frame),
-	     the next card peeking in. Desktop keeps the horizontal scene above. -->
+	<!-- Phones and tablets: a vertical list matching the desktop card style.
+	     Desktop keeps the horizontal scene above. -->
 	<div class="sw-m">
-		<div class="sw-m__track" aria-label="Selected work">
-			{projects.map((p) => {
+		<div class="sw-m__track">
+			{projects.map((p, i) => {
 				const Tag = p.href ? 'a' : 'div';
 				return (
 					<Tag class="sw-m__card" href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
 						<div class="sw-m__media" data-case-media={p.caseSrc ? '' : undefined}>
-							{/* Eager, not lazy: Safari only starts a lazy image once it's
-							    nearly in view, so swiping showed the next card empty and its
-							    picture popping in. Six card-sized images, loaded with the page. */}
-							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 78vw, 82vw" loading="eager" decoding="async" />
+							<Image
+								src={p.img}
+								alt=""
+								widths={[480, 800, 1200]}
+								sizes="(min-width: 700px) 90vw, 92vw"
+								loading={i === 0 ? 'eager' : 'lazy'}
+								decoding="async"
+							/>
 						</div>
 						<div class="sw-m__bar">
 							<div class="sw-m__text">
 								<h3 class="sw-m__title">{p.title}</h3>
 								<p class="sw-m__desc">{p.desc}</p>
-								<span class="sw-m__tags">{p.tags.join(' · ')}</span>
 							</div>
+							<span class="sw-m__explore link-btn no-border">Explore</span>
 						</div>
 					</Tag>
 				);
 			})}
-		</div>
-		<div class="sw-m__foot">
-			<div class="sw-m__progress" aria-hidden="true"><span></span></div>
-			<span class="sw-m__count" aria-hidden="true">01 / {String(projects.length).padStart(2, '0')}</span>
 		</div>
 		<div class="h-hero-cta-wrap sw-m__cta">
 			<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
@@ -196,6 +195,7 @@ const projects = [
 		filter: blur(8px);
 		transform: translateY(14px);
 		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
+		text-align: center;
 	}
 	.sw-header.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
 	.sw-header__title {
@@ -490,7 +490,7 @@ const projects = [
 		.final-title { font-size: min(11vw, 13.5vh); }
 	}
 
-	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
+	/* ── Phones/tablets work list (desktop has the horizontal scene) ── */
 	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
@@ -500,123 +500,70 @@ const projects = [
 		}
 		.sw-m__track {
 			display: flex;
-			gap: 0.75rem;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: var(--site-gutter);
+			flex-direction: column;
+			gap: clamp(2.5rem, 7vh, 5rem);
 			padding: 0 var(--site-gutter);
-			scrollbar-width: none;
-			-webkit-overflow-scrolling: touch;
 		}
-		.sw-m__track::-webkit-scrollbar { display: none; }
 		.sw-m__card {
-			position: relative;
-			flex: 0 0 82%;
-			scroll-snap-align: start;
-			aspect-ratio: 4 / 5;
-			max-height: 66vh;
-			overflow: hidden;
+			width: min(100%, 900px);
+			margin-inline: auto;
 			display: block;
 			color: inherit;
 			text-decoration: none;
-			background: #0b0b0d;
-			border: 1px solid rgb(var(--c-cream) / 0.1);
+			background: rgba(255,255,255,0.018);
+			border: 1px solid rgba(255,255,255,0.06);
+			padding: 0.75rem;
 			-webkit-tap-highlight-color: transparent;
 		}
-		.sw-m__media { position: absolute; inset: 0; }
+		.sw-m__media {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 16 / 10;
+			overflow: hidden;
+			background: #0d0d0f;
+			border: 1px solid rgba(255,255,255,0.08);
+			box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+		}
 		.sw-m__media img {
 			width: 100%;
 			height: 100%;
 			object-fit: cover;
 			display: block;
 		}
-		/* Legibility for the bar at the foot. */
-		.sw-m__media::after {
-			content: '';
-			position: absolute;
-			inset: 0;
-			background: linear-gradient(to top, rgb(0 0 0 / 0.75) 0%, rgb(0 0 0 / 0.15) 45%, transparent 70%);
-		}
-		/* Same glass info bar as the Projects page cards. */
 		.sw-m__bar {
-			position: absolute;
-			left: 0.75rem;
-			right: 0.75rem;
-			bottom: 0.75rem;
 			display: flex;
-			align-items: center;
+			align-items: flex-start;
 			justify-content: space-between;
-			gap: 1rem;
-			padding: 1rem 1.1rem;
-			background: rgb(var(--c-bg) / 0.38);
-			-webkit-backdrop-filter: blur(20px) saturate(160%);
-			backdrop-filter: blur(20px) saturate(160%);
-			border: 1px solid rgb(255 255 255 / 0.1);
+			gap: 1.25rem;
+			padding: 1rem 0.15rem 0.25rem;
 		}
 		.sw-m__text { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
 		.sw-m__title {
 			margin: 0;
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.35rem, 6vw, 1.9rem);
-			line-height: 1;
-			letter-spacing: -0.01em;
+			font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+			line-height: 1.1;
+			letter-spacing: -0.02em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
 		.sw-m__desc {
 			margin: 0;
 			font-family: var(--f-body);
-			font-size: 0.82rem;
+			font-size: 0.9rem;
 			font-weight: 300;
-			line-height: 1.45;
-			color: rgb(var(--c-cream) / 0.75);
+			line-height: 1.6;
+			color: rgb(var(--c-cream) / 0.82);
+			max-width: 320px;
 		}
-		.sw-m__tags {
-			font-family: var(--f-body);
-			font-size: 10px;
-			font-weight: 500;
-			letter-spacing: 0.32em;
-			text-transform: uppercase;
-			color: rgb(var(--c-cream) / 0.7);
-		}
-		/* Where in the row you are. */
-		.sw-m__foot {
-			display: flex;
-			align-items: center;
-			gap: 1rem;
-			padding: 1.25rem var(--site-gutter) 0;
-		}
-		.sw-m__progress {
-			flex: 1 1 auto;
-			height: 1px;
-			background: rgb(var(--c-cream) / 0.14);
-			overflow: hidden;
-		}
-		.sw-m__progress span {
-			display: block;
-			height: 100%;
-			background: rgb(var(--c-red));
-			transform-origin: left center;
-			transform: scaleX(var(--p, 0.1667));
-			transition: transform 0.2s linear;
-		}
-		.sw-m__count {
-			font-family: var(--f-body);
-			font-size: 11px;
-			font-weight: 500;
-			letter-spacing: 0.28em;
-			font-variant-numeric: tabular-nums;
-			color: rgb(var(--c-cream) / 0.6);
-		}
-		.sw-m__cta { margin: 1.75rem var(--site-gutter) 0; width: auto !important; }
-		/* Tablet width: still one main card with the next peeking in (as on
-		   a phone), in a landscape frame — 4:5 at this width ran taller
-		   than the screen. */
-		@media (min-width: 700px) {
-			.sw-m__card { flex-basis: 78%; aspect-ratio: 3 / 2; max-height: 70vh; }
-			.sw-m__cta { margin-inline: var(--site-gutter) auto; }
+		.sw-m__explore { margin-top: 0.2rem; }
+		.sw-m__cta { margin: clamp(2.5rem, 7vh, 4rem) var(--site-gutter) 0; width: auto !important; }
+		@media (hover: hover) {
+			.sw-m__media { transition: transform 0.8s cubic-bezier(0.16,1,0.3,1), border-color 0.8s ease; }
+			.sw-m__card:hover .sw-m__media { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
+			.sw-m__card:hover .sw-m__explore { color: rgb(var(--c-cream)); transform: translateX(5px); }
+			.sw-m__card:hover .sw-m__explore::after { transform: scaleX(1); }
 		}
 	}
 </style>
@@ -624,57 +571,12 @@ const projects = [
 <script>
 	import { onReady } from '../../utils/onReady';
 
-	// Phones/tablets: the carousel scrolls natively; this only keeps the
-	// counter and the progress hairline in step (on scroll, a frame at most).
-	let _workCarouselOff: (() => void) | null = null;
-	function initWorkCarousel(section: HTMLElement) {
-		_workCarouselOff?.();
-		_workCarouselOff = null;
-		const track = section.querySelector<HTMLElement>('.sw-m__track');
-		const cards = Array.from(section.querySelectorAll<HTMLElement>('.sw-m__card'));
-		const bar = section.querySelector<HTMLElement>('.sw-m__progress');
-		const count = section.querySelector<HTMLElement>('.sw-m__count');
-		if (!track || cards.length < 2) return;
-		const total = String(cards.length).padStart(2, '0');
-		let ticking = false;
-		let shown = -1;
-		const update = () => {
-			ticking = false;
-			// The card nearest the start edge; the last one once the row is
-			// scrolled to its end (on a tablet a few are in view at once).
-			const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-			const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 2;
-			let i = cards.length - 1;
-			if (!atEnd) {
-				let best = Infinity;
-				cards.forEach((c, k) => {
-					const d = Math.abs(c.offsetLeft - pad - track.scrollLeft);
-					if (d < best) { best = d; i = k; }
-				});
-			}
-			bar?.style.setProperty('--p', ((i + 1) / cards.length).toFixed(4));
-			if (i !== shown && count) {
-				shown = i;
-				count.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
-			}
-		};
-		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-		track.addEventListener('scroll', onScroll, { passive: true });
-		update();
-		_workCarouselOff = () => track.removeEventListener('scroll', onScroll);
-	}
-	document.addEventListener('astro:before-swap', () => {
-		_workCarouselOff?.();
-		_workCarouselOff = null;
-	});
-
 	function initSelectedWork() {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
 
 		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
-			initWorkCarousel(section);
 			return;
 		}
 
