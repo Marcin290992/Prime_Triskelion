@@ -75,11 +75,19 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 				animation-timeline: --manifesto;
 				animation-range: cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34);
 			}
+			#manifesto .mw--accent:not(.br) {
+				animation-name: mw-focus-accent;
+				transform-origin: center;
+			}
 		}
 	}
 	@keyframes mw-focus {
 		from { filter: blur(8px); opacity: 0.15; }
 		to { filter: blur(0px); opacity: 1; }
+	}
+	@keyframes mw-focus-accent {
+		from { filter: blur(8px); opacity: 0.15; color: rgb(var(--c-cream)); transform: scale(1); }
+		to { filter: blur(0px); opacity: 1; color: rgb(var(--c-red)); transform: scale(1.04); }
 	}
 	.mw {
 		display: inline-block;
