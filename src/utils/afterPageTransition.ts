@@ -107,8 +107,8 @@ window.addEventListener('popstate', (e: any) => {
 // fades down to black, and then the title focuses in like every other
 // hero. A cut otherwise (no browser view transition), so it plays the
 // same everywhere. The chrome (logo, menu, z-index 1002) stays above it.
-const CASE_SETTLE_S = 0.85; // the card's picture first eases back to its plain crop
-const CASE_OPEN_S = 0.95; // then the page goes down to black around the picture (no opening, no growth)
+const CASE_OPEN_S = 1.2;
+const CASE_PUSH = 0.12;  // extra zoom at the middle of the move
 const CASE_SCRIM = 0.4;
 let caseShot: HTMLElement | null = null;
 const casePreloaded = new Set<string>();
@@ -120,32 +120,12 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	const media = img.closest<HTMLElement>('[data-case-media]') ?? img;
 	if (!media.offsetWidth || !media.offsetHeight || !img.naturalWidth) return;
 
-	// A beat of calm first: the card's own picture eases back to its plain crop —
-	// the drift it has across the frame and the lean it takes under the cursor are
-	// released — so the opening starts from a clean, un-zoomed picture and has a
-	// real distance to grow (it used to start already blown up, and so barely
-	// grew). The page's drift loop is told to leave the picture alone meanwhile.
-	img.setAttribute('data-hold', '');
-	const settle = new Promise<void>((resolve) => {
-		if (media !== img) {
-			const lean = new DOMMatrix(getComputedStyle(media).transform).a || 1;
-			media.style.transition = 'none';
-			gsap.set(media, { scale: lean });
-			gsap.to(media, { scale: 1, duration: CASE_SETTLE_S, ease: 'power2.inOut' });
-		}
-		gsap.to(img, { scale: 1, x: 0, y: 0, xPercent: 0, yPercent: 0, duration: CASE_SETTLE_S, ease: 'power2.inOut', onComplete: () => resolve() });
-	});
-
-	const play = (): Promise<unknown> => {
 	// A navigation that never swapped (superseded by this one) mustn't
 	// leave its picture over the page.
 	caseShot?.remove();
 	const shot = document.createElement('div');
 	shot.setAttribute('aria-hidden', 'true');
-	// z-index 997: above the page, but UNDER the edge blur bands (998, gradualBlur.js):
-	// the picture opens and grows beneath them, so the top and bottom blur stays on
-	// throughout, as over the page, instead of the picture covering it up.
-	shot.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;visibility:hidden';
+	shot.style.cssText = 'position:fixed;inset:0;z-index:1000;pointer-events:none;visibility:hidden';
 	document.documentElement.append(shot);
 	caseShot = shot;
 
@@ -187,48 +167,6 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	const frame = shot.firstElementChild as HTMLElement;
 	const stage = frame.firstElementChild as HTMLElement;
 	const scrim = frame.lastElementChild as HTMLElement;
-
-	// What the card wears over its picture — the dark foot behind its caption, the
-	// title, the line under it and the Explore button — would vanish in the very
-	// first frame (the layer covers the card). So they are carried into the layer
-	// and let go together, slowly, as the page goes down: blurring out and fading.
-	const card = link as HTMLElement;
-	const cr = card.getBoundingClientRect();
-	const foot = getComputedStyle(card, '::after').backgroundImage;
-	let shade: HTMLElement | null = null;
-	if (foot && foot !== 'none') {
-		shade = document.createElement('div');
-		shade.style.cssText = `position:absolute;pointer-events:none;background-image:${foot};inset:${(mr.top - sr.top).toFixed(1)}px ${(sr.right - mr.right).toFixed(1)}px ${(sr.bottom - mr.bottom).toFixed(1)}px ${(mr.left - sr.left).toFixed(1)}px`;
-		frame.insertBefore(shade, scrim);
-	}
-	let caption: HTMLElement | null = null;
-	const info = card.querySelector<HTMLElement>('.card-info');
-	if (info) {
-		caption = document.createElement('div');
-		caption.style.cssText = `position:absolute;pointer-events:none;left:${cr.left - sr.left}px;top:${cr.top - sr.top}px;width:${cr.width}px;height:${cr.height}px;will-change:opacity,filter`;
-		const copy = info.cloneNode(true) as HTMLElement;
-		// The button's look lives in the card's own CSS (out of reach here), so what
-		// makes it a button is copied across as it stands — arrow included.
-		const btn = info.querySelector<HTMLElement>('.link-btn');
-		const btnCopy = copy.querySelector<HTMLElement>('.link-btn');
-		if (btn && btnCopy) {
-			const cs = getComputedStyle(btn);
-			btnCopy.style.cssText = ['display', 'alignItems', 'gap', 'padding', 'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'whiteSpace', 'color', 'backgroundColor']
-				.map((k) => `${k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())}:${(cs as any)[k]}`).join(';')
-				+ ';border-width:' + cs.borderTopWidth + ';border-style:' + cs.borderTopStyle + ';border-color:' + cs.borderTopColor + ';flex:none';
-			const after = getComputedStyle(btn, '::after');
-			if (after.content && after.content !== 'none') {
-				const arrow = document.createElement('span');
-				arrow.textContent = after.content.replace(/^["']|["']$/g, '');
-				arrow.style.cssText = `font-size:${after.fontSize};line-height:${after.lineHeight};letter-spacing:0`;
-				btnCopy.append(arrow);
-			}
-		}
-		caption.append(copy);
-		frame.insertBefore(caption, scrim);
-	}
-
-
 	const addPic = (src: string) => {
 		const pic = document.createElement('img');
 		pic.src = src;
@@ -250,43 +188,24 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 		sharp.decode().then(() => gsap.to(sharp, { opacity: 1, duration: 0.25, ease: 'none' }), () => {});
 	}
 
-	// The picture stays exactly as it is — card-sized, in its plain crop, under the
-	// edge blur bands — while the page behind it goes to black (p: 0 -> 1) and the
-	// case study loads. It does not open to the full screen and does not grow.
-	// The "Start a project" CTA lets go on the same curve as the caption. Its own
-	// class transitions are switched off meanwhile, so it follows p exactly.
-	const ctas = [...document.querySelectorAll<HTMLElement>('#hero-nav-cta-wrap, #site-cta-wrap')]
-		.filter((el) => getComputedStyle(el).opacity !== '0');
-	ctas.forEach((el) => { el.style.transition = 'none'; });
 	const apply = (p: number) => {
+		const k = 1 - p;
+		frame.style.clipPath = `inset(${inset.map((v) => (v * k).toFixed(1) + 'px').join(' ')} round ${(radius * k).toFixed(1)}px)`;
+		const scale = (s0 + (1 - s0) * p) * (1 + CASE_PUSH * Math.sin(Math.PI * p));
+		stage.style.transform = `translate3d(${(dx * k).toFixed(1)}px,${(dy * k).toFixed(1)}px,0) scale(${scale.toFixed(4)})`;
 		scrim.style.opacity = String(CASE_SCRIM * p);
-		// Out of focus and out, together, on one soft curve (no step in it).
-		const soft = p * p * (3 - 2 * p);
-		if (caption) {
-			caption.style.opacity = String(1 - soft);
-			caption.style.filter = soft > 0 ? `blur(${(soft * 16).toFixed(1)}px)` : '';
-		}
-		if (shade) shade.style.opacity = String(1 - soft);
-		ctas.forEach((el) => {
-			el.style.opacity = String(1 - soft);
-			el.style.filter = soft > 0 ? `blur(${(soft * 8).toFixed(1)}px)` : '';
-		});
 		shot.style.backgroundColor = `rgb(0 0 0 / ${Math.min(1, p * 1.6).toFixed(3)})`;
 	};
-	frame.style.clipPath = `inset(${inset.map((v) => v.toFixed(1) + 'px').join(' ')} round ${radius.toFixed(1)}px)`;
-	stage.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) scale(${s0.toFixed(4)})`;
 	apply(0);
 	// Shown and started only once the picture can paint: a freshly made
 	// <img> can take a frame or two even from cache, and until then the
 	// card itself is still there underneath, identical.
 	const v = { p: 0 };
-	return Promise.race([first.decode().catch(() => {}), new Promise((r) => setTimeout(r, 250))])
+	const open = Promise.race([first.decode().catch(() => {}), new Promise((r) => setTimeout(r, 250))])
 		.then(() => {
 			shot.style.visibility = '';
-			return gsap.to(v, { p: 1, duration: CASE_OPEN_S, ease: 'sine.inOut', onUpdate: () => apply(v.p) }).then();
+			return gsap.to(v, { p: 1, duration: CASE_OPEN_S, ease: 'power2.inOut', onUpdate: () => apply(v.p) }).then();
 		});
-	};
-	const open = settle.then(play);
 	const load = e.loader;
 	e.loader = async () => { await Promise.all([load(), open]); };
 	cutNextTransition();
@@ -682,28 +601,9 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut' }, at);
 }
 
-// The "Based in London" label and the clock come in last on every subpage:
-// once the title's entrance is over they blur in from nothing (the home hero
-// stages them in its own reveal), then stay as they were. Layout/oxygenMenu
-// leave them hidden until this runs.
-function hudIn(): void {
-	const loc = document.getElementById('hud-location');
-	if (!loc || document.getElementById('hero')) return;
-	(window as any).__hudInStarted = true;
-	const m = subpageMode();
-	loc.style.transition = 'none';
-	if (m === 'none') { loc.style.opacity = '1'; loc.style.transition = ''; return; }
-	const reduce = reducedMotion();
-	gsap.fromTo(loc, { opacity: 0, filter: reduce ? 'blur(0px)' : 'blur(8px)' },
-		{ opacity: 1, filter: 'blur(0px)', duration: reduce ? 0.3 : 0.9, delay: reduce ? 0.3 : 1.1, ease: 'power2.out',
-			// The inline filter would beat .hud-deco-away's filter:opacity(0), which
-			// takes the label away on scroll — hand the property back to the CSS.
-			onComplete: () => { loc.style.filter = ''; loc.style.transition = ''; } });
-}
-
 export function afterPageTransition(fn: () => void): void {
 	const release = holdRestore();
-	const run = () => { try { fn(); hudIn(); } finally { release(); } };
+	const run = () => { try { fn(); } finally { release(); } };
 	if (pending) pending.then(run);
 	else run();
 }
