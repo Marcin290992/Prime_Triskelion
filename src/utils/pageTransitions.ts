@@ -53,6 +53,7 @@ const IDLE_RUN: RouteRun = {
 };
 
 let activeRun = { ...IDLE_RUN };
+let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
 let transitionReady: Promise<void> = Promise.resolve();
 let caseShot: HTMLElement | null = null;
@@ -70,6 +71,15 @@ export function reducedMotion(): boolean {
 export function cutNextTransition(blurIn = true): void {
 	requestedIncoming = blurIn ? 'blur' : 'none';
 	document.documentElement.classList.add('vt-cut');
+}
+
+// True from the start of a navigation whose native View Transition is skipped
+// (a cut). Persistent chrome must not get a view-transition-name then: the
+// transition is still "active" for a few frames before the skip lands, and a
+// named element is lifted out of the page into its own snapshot layer, above
+// the film grain and with its beam frozen/blank.
+export function skipsNativeTransition(): boolean {
+	return nativeSkipped;
 }
 
 export function waitForPageTransition(): Promise<void> {
@@ -125,6 +135,7 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		}
 	}
 
+	nativeSkipped = activeRun.skipNative;
 	inlineNewStylesheets(event);
 });
 

@@ -396,7 +396,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   import Lenis from 'lenis';
   import gsap from 'gsap';
   import { isSafari } from '../utils/isSafari';
-  import { syncTickerToScroll } from '../utils/afterPageTransition';
+  import { syncTickerToScroll, skipsNativeTransition } from '../utils/afterPageTransition';
   import '../utils/pageCache';
   import '../utils/filmGrain.js';
   import '../utils/starBorder.js';
@@ -507,6 +507,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   // opacity, so it would flash into view for the length of the transition.
   // Unnamed, it stays in the root snapshot, where its opacity: 0 holds.
   function nameChrome(on: boolean) {
+    if (on && skipsNativeTransition()) return;
     for (const [id, name] of Object.entries(CHROME_NAMES)) {
       const el = document.getElementById(id);
       if (!el) continue;
