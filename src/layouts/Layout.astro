@@ -533,28 +533,38 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     else nameChrome(false);
   });
 
-  // Border beams (.hud-spin-border::before, `global-spin` 4s) on the
-  // chrome buttons: re-inserting an element restarts its CSS animations,
-  // and the swap re-inserts even the transition:persist menu button — the
-  // beam snapped back to its start on every navigation. Pin every beam to
-  // the document timeline (which keeps running across client-side
-  // navigations) with startTime = 0, so its angle is always a function of
-  // the current time and it just carries on. startTime, not currentTime:
-  // a just-inserted animation is still pending, and a currentTime set then
-  // is held until it's ready — through the view transition's paused
-  // rendering — so the beam resumed behind where it should be (stepped
-  // back), then jumped forward on the next sync.
-  // WebKit only creates the restarted animations after this runs, so on
-  // Safari the beam showed its 0° start (top-right corner) for a moment
-  // before animationstart re-locked it. --beam-delay (the animation-delay
-  // in OxygenMenu.astro) is therefore set to minus the current phase first:
-  // a restart then begins at the right angle by itself, in any engine.
-  // lockBeam accounts for that delay — the angle comes from
-  // (now - startTime - delay), so startTime = -delay keeps it at `now`.
+  // The remaining CSS border beams restart when their elements are swapped,
+  // so align them to the document timeline. The mobile menu beam uses a
+  // persistent Web Animation below instead of restarting with its CSS.
   const SPIN_PERIOD = 4000;
+  const menuBeamMedia = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
+  let menuBeamElement: HTMLElement | null = null;
+  let menuBeamAnimation: Animation | null = null;
   function lockBeam(a: Animation) {
     if ((a as CSSAnimation).animationName !== 'global-spin') return;
+    // The negative CSS delay is already the desired phase; compensate it in
+    // startTime so the animation continues against the absolute timeline.
     a.startTime = -(Number(a.effect?.getTiming().delay) || 0);
+  }
+  function syncMenuBeam() {
+    const beam = document.querySelector<HTMLElement>('#hud-menu-btn .hud-menu-spin-beam');
+    if (!menuBeamMedia.matches || !beam) {
+      menuBeamAnimation?.cancel();
+      menuBeamAnimation = null;
+      menuBeamElement = null;
+      return;
+    }
+    if (beam === menuBeamElement && menuBeamAnimation?.playState === 'running') return;
+
+    menuBeamAnimation?.cancel();
+    menuBeamElement = beam;
+    const effect = new KeyframeEffect(
+      beam,
+      [{ transform: 'rotate(0deg)' }, { transform: 'rotate(360deg)' }],
+      { duration: SPIN_PERIOD, iterations: Infinity, easing: 'linear' },
+    );
+    menuBeamAnimation = new Animation(effect, document.timeline);
+    menuBeamAnimation.startTime = 0;
   }
   function syncChromeBeams() {
     const now = document.timeline.currentTime;
@@ -565,6 +575,10 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   }
   document.addEventListener('astro:page-load', syncChromeBeams, { once: true });
   document.addEventListener('astro:after-swap', syncChromeBeams);
+  syncMenuBeam();
+  document.addEventListener('astro:page-load', syncMenuBeam, { once: true });
+  document.addEventListener('astro:after-swap', syncMenuBeam);
+  menuBeamMedia.addEventListener('change', syncMenuBeam);
   // Any other restart (e.g. a beam shown again after display:none) re-locks
   // itself.
   document.addEventListener('animationstart', (e) => {

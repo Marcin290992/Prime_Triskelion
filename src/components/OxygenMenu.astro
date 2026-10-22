@@ -28,7 +28,7 @@ const navLinks = [
     <!-- Hamburger button — centered -->
     <button id="hud-menu-btn" transition:persist class="hud-icon-btn hud-menu-btn" type="button" aria-label="Toggle menu" aria-expanded="false">
       <span class="specular-button__fx" aria-hidden="true"></span>
-      <span class="hud-spin-border hud-menu-spin-border" aria-hidden="true"></span>
+      <span class="hud-spin-border hud-menu-spin-border" aria-hidden="true"><span class="hud-menu-spin-beam"></span></span>
       <span class="hud-ico" aria-hidden="true">
         <span class="hud-ico__line"></span>
         <span class="hud-ico__line"></span>
@@ -851,7 +851,19 @@ const navLinks = [
        see syncChromeBeams there. */
     animation: global-spin 4s linear var(--beam-delay, 0s) infinite;
   }
-  @keyframes global-spin { 100% { transform: rotate(360deg); } }
+  @keyframes global-spin { 100% { transform: rotate(360deg); }   }
+  .hud-menu-spin-border::before { display: none; }
+  .hud-menu-spin-beam {
+    position: absolute;
+    inset: -200%;
+    background: conic-gradient(from 0deg at 50% 50%,
+      transparent 0deg,
+      rgba(255,255,255,0.12) 30deg,
+      rgba(255,255,255,0.55) 60deg,
+      rgba(255,255,255,0.12) 90deg,
+      transparent 130deg,
+      transparent 360deg);
+  }
 
   /* Shared CTA button: no spinning beam — plain static border only (the
      small circular icon buttons below keep the animated one; the menu

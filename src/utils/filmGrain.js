@@ -17,6 +17,8 @@ const TILE = 256; // px, the texture is a TILE x TILE square
 const CONTRAST = 0.6; // 0..1, how far the grain reaches from mid-grey
 const OPACITY = 0.05; // layer opacity -> black lifted by ~OPACITY x 127
 const FPS = 24;
+const LOOP_SECONDS = 10;
+const FRAME_COUNT = FPS * LOOP_SECONDS;
 const OVERSCAN = 120; // px the layer extends past the screen, so its edges never show
 const JUMP = 100; // px, max offset either way (must stay under OVERSCAN)
 
@@ -54,32 +56,36 @@ function makeTile() {
 
 let layer = null;
 let tileUrl = '';
-let timer = 0;
+let motion = null;
 
-function jump() {
-  if (!layer) return;
-  const x = (Math.random() * 2 - 1) * JUMP;
-  const y = (Math.random() * 2 - 1) * JUMP;
-  layer.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
-}
-
-function stop() {
-  if (timer) clearInterval(timer);
-  timer = 0;
+function makeMotionFrames() {
+  const frames = Array.from({ length: FRAME_COUNT }, (_, index) => {
+    const x = (Math.random() * 2 - 1) * JUMP;
+    const y = (Math.random() * 2 - 1) * JUMP;
+    return {
+      transform: `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`,
+      offset: index / FRAME_COUNT,
+      easing: 'steps(1, end)',
+    };
+  });
+  frames.push({ ...frames[0], offset: 1 });
+  return frames;
 }
 
 function start() {
-  stop();
-  if (!layer || reduce.matches || document.hidden) return;
-  timer = setInterval(jump, 1000 / FPS);
+  if (!motion) return;
+  if (reduce.matches || document.hidden) {
+    motion.pause();
+    return;
+  }
+  motion.play();
 }
 
 function ensure() {
   if (!tileUrl) tileUrl = makeTile();
   if (!tileUrl) return;
-  // The page's <body> is replaced on every navigation, so the layer is put
-  // back each time.
   if (!layer || !layer.isConnected) {
+    motion?.cancel();
     layer = document.createElement('div');
     layer.className = 'film-grain'; // kept out of the "hide the page" rules (menu open, page leaving)
     layer.setAttribute('aria-hidden', 'true');
@@ -89,8 +95,18 @@ function ensure() {
       `height:calc(100lvh + ${OVERSCAN * 2}px);z-index:9999;pointer-events:none;` +
       `opacity:${window.__ptGridHold ? 0 : OPACITY};will-change:transform;image-rendering:pixelated;` +
       `background-image:url("${tileUrl}");background-size:${TILE}px ${TILE}px;`;
-    document.body.appendChild(layer);
-    jump();
+    // Astro replaces <body> on client-side navigation; keeping the effect on
+    // <html> lets both its texture and animation survive the swap.
+    document.documentElement.appendChild(layer);
+    const frames = makeMotionFrames();
+    layer.style.transform = frames[0].transform;
+    motion = layer.animate(frames, {
+      duration: LOOP_SECONDS * 1000,
+      iterations: Infinity,
+    });
+  }
+  if (window.__ptFxRevealed && layer.style.opacity === '0') {
+    layer.style.opacity = String(OPACITY);
   }
   start();
 }
