@@ -692,13 +692,13 @@ function hudIn(): void {
 	(window as any).__hudInStarted = true;
 	const m = subpageMode();
 	loc.style.transition = 'none';
-	if (m === 'none') { loc.style.opacity = '1'; return; }
+	if (m === 'none') { loc.style.opacity = '1'; loc.style.transition = ''; return; }
 	const reduce = reducedMotion();
 	gsap.fromTo(loc, { opacity: 0, filter: reduce ? 'blur(0px)' : 'blur(8px)' },
 		{ opacity: 1, filter: 'blur(0px)', duration: reduce ? 0.3 : 0.9, delay: reduce ? 0.3 : 1.1, ease: 'power2.out',
 			// The inline filter would beat .hud-deco-away's filter:opacity(0), which
 			// takes the label away on scroll — hand the property back to the CSS.
-			onComplete: () => { loc.style.filter = ''; } });
+			onComplete: () => { loc.style.filter = ''; loc.style.transition = ''; } });
 }
 
 export function afterPageTransition(fn: () => void): void {
