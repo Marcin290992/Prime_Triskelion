@@ -688,34 +688,26 @@ const services = [
 			};
 			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
 			list?.addEventListener('mousemove', (e) => {
+				if (!e.movementX && !e.movementY) return; // a synthetic move after a scroll
 				const row = (e.target as HTMLElement).closest('.svc__row');
 				if (!row) { hide(); return; }
 				if (row !== lastRow) { lastRow = row; measure(row); }
 				show();
 			});
 			list?.addEventListener('mouseleave', hide);
-			// Whatever is under the pointer decides, moving or not: a name scrolling
-			// in under a resting pointer shows the card at once (and the next name
-			// that arrives takes over), and when the list moves away the card goes.
+			// While the page scrolls (Lenis keeps easing for a moment after the wheel
+			// stops) the card stays as long as a name is still under the pointer;
+			// it goes only when the list has moved away from it.
 			let sticking = false;
-			const follow = () => {
-				sticking = false;
-				if (px < 0) return; // the pointer has not been seen yet
-				const under = document.elementFromPoint(px, py);
-				const row = under && under.closest('.svc__row');
-				if (!row) { hide(); lastRow = null; return; }
-				if (row !== lastRow) {
-					lastRow = row;
-					measure(row);
-					const i = rows.indexOf(row as HTMLElement);
-					if (i >= 0) set(i);
-				}
-				show();
-			};
 			window.addEventListener('scroll', () => {
-				if (sticking) return;
+				if (!shown || sticking) return;
 				sticking = true;
-				requestAnimationFrame(follow);
+				requestAnimationFrame(() => {
+					sticking = false;
+					const under = document.elementFromPoint(px, py);
+					const row = under && under.closest('.svc__row');
+					if (!row) hide(); else if (row !== lastRow) { lastRow = row; measure(row); }
+				});
 			}, { passive: true });
 		}
 	}

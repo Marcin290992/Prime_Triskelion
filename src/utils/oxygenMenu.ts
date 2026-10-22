@@ -297,11 +297,9 @@ function initOxygenMenu() {
     // skipped on the homepage, where HeroSection's own reveal timeline
     // already owns #hud-location so the two don't race each other.
     if (!document.getElementById('hero')) {
-      // Subpages blur it in last (hudIn, afterPageTransition.ts); this is only
-      // the fallback for a page that never calls afterPageTransition.
       setTimeout(() => {
-        if (menuLocation && !(window as any).__hudInStarted) { menuLocation.style.opacity = '1'; }
-      }, 4000);
+        if (menuLocation) { menuLocation.style.opacity = '1'; }
+      }, 700);
     }
   }
 

@@ -523,8 +523,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     // "--:--" until oxygenMenu's page-load tick, on the live new snapshot.
     if ((window as any).__ptShellShown) {
       const loc = e.newDocument.getElementById('hud-location');
-      // Subpages bring the label in last themselves (hudIn, afterPageTransition.ts).
-      if (loc && e.newDocument.getElementById('hero')) loc.style.opacity = '1';
+      if (loc) loc.style.opacity = '1';
       const time = e.newDocument.getElementById('hud-time');
       if (time) {
         time.style.opacity = '1';
@@ -588,7 +587,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     const time = document.getElementById('hud-time');
     if (time) gsap.set(time, { opacity: 1 });
     const loc = document.getElementById('hud-location');
-    if (loc && document.getElementById('hero')) loc.style.opacity = '1';
+    if (loc) loc.style.opacity = '1';
   });
   // Registered after the listener above so the new page's HUD is already
   // visible when nameChrome checks opacity.
