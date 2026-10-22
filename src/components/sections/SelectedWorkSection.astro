@@ -27,7 +27,7 @@ const projects = [
 <section id="selected-work">
 
 	<div class="sw-header">
-		<h2 class="sw-header__title">What we've<br><em>built.</em></h2>
+		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
 	</div>
 
 	<div class="scroll-section" id="sw-scroll-section">
@@ -211,10 +211,10 @@ const projects = [
 
 	/* Horizontal scroll */
 	.scroll-section {
-		/* 100vh for the blur-in (ENTER_SCREENS in the script) + ~660vh of
+		/* 70vh for the blur-in (ENTER_SCREENS in the script) + ~660vh of
 		   horizontal travel + a 40vh hold on the final slide (FINAL_HOLD) +
 		   the 100vh of the pinned view. */
-		height: 900vh;
+		height: 870vh;
 		position: relative;
 		display: none;
 	}
@@ -690,9 +690,8 @@ const projects = [
 
 		/* All layout reads happen in measure() (init + resize only); tick() works
 		   off cached offsets + window.scrollY so the frame never forces a reflow.
-		   Easing is time-based: identical feel to the old 0.055/frame constant at
-		   60 fps, but consistent on 120/144 Hz displays too. */
-		const EASE_PER_SECOND = -Math.log(1 - 0.055) * 60;
+		   Easing is time-based, so it stays consistent across display refresh rates. */
+		const EASE_PER_SECOND = 4.5;
 
 		let currentX = 0;
 		let maxScroll = 0;
@@ -707,7 +706,7 @@ const projects = [
 		const imgBoxes: { el: HTMLElement; left: number; width: number }[] = [];
 		let curtainX = 0;
 		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
-		const ENTER_SCREENS = 1.0; // screens of blur-in before the horizontal travel
+		const ENTER_SCREENS = 0.7; // screens of blur-in before the horizontal travel
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;

@@ -34,7 +34,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
           />
           <canvas class="am-dither" data-src={ditherTexture.src} aria-hidden="true"></canvas>
         </div>
-        <div class="am-veil" aria-hidden="true" data-side-rays="0.5,0.55"></div>
+        <div class="am-veil" aria-hidden="true" data-side-rays="0.5,0.55" data-side-rays-intensity="0.65"></div>
         <div class="am-hero">
           <p class="am-who">
             <span class="am-who-l"><span class="am-who-w">Who's</span></span>
@@ -584,4 +584,3 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
   document.addEventListener('astro:page-load', initAbout);
 </script>
-

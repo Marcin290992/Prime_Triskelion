@@ -257,9 +257,10 @@ export function mountSideRaysLegacy(host) {
   // centred title). Phones and tablets aim the same on every page.
   const ownAim = (host.dataset.sideRays || '').split(',').map(Number);
   const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
+  const compactIntensityScale = host.dataset.sideRaysIntensity === undefined ? 1 : Number(host.dataset.sideRaysIntensity);
   const setIntensity = () => {
     gl.uniform1f(u.iIntensity, !compact.matches ? OPTS.intensity
-      : window.innerWidth >= 700 ? OPTS.intensityTablet : OPTS.intensityCompact);
+      : (window.innerWidth >= 700 ? OPTS.intensityTablet : OPTS.intensityCompact) * compactIntensityScale);
   };
   setIntensity();
   const setAim = () => gl.uniform2f(u.iAim, ...(
