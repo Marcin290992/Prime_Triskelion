@@ -7,18 +7,14 @@ import deeer2 from '../../img/deeer2.webp';
 // Full-screen version for the case-study entrance (data-case-src, see
 // afterPageTransition.ts) — a card-sized image blows up soft.
 const deeer2Full = await getImage({ src: deeer2, width: 2400 });
+const deeer2Card = await getImage({ src: deeer2, width: 1800 });
 // Phones/tablets carousel. Placeholder pictures (stored locally — the
 // site's CSP blocks remote images) for all but Winds of Sinai; swap the
 // img for each project's own shot.
-import imgUnfall from '../../img/services/websites.jpg';
-import imgMousa from '../../img/process/development.jpg';
-import imgSteak from '../../img/process/launch.jpg';
-import imgJosh from '../../img/process/support.jpg';
-import imgUmzug from '../../img/process/discovery.jpg';
 const projects = [
 	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', tags: ['Branding', 'Web'], img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
-	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: imgUnfall, href: '/work/unfallfix24' },
-	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: imgMousa, href: '/work/mousa-export' },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: deeer2, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: deeer2, href: '/work/mousa-export' },
 	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: imgSteak },
 	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: imgJosh },
 	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: imgUmzug },
@@ -39,9 +35,9 @@ const projects = [
 					<a href="/projects" class="link-btn no-border">View All Projects</a>
 				</div>
 
-				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
+				<div class="slide slide-card card-fade" data-case data-case-src={deeer2Full.src}>
 					<a href="/winds-of-sinai" class="img-box" data-case-media>
-						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
+						<img src={deeer2Card.src} class="img-parallax" alt="Winds Of Sinai">
 					</a>
 					<div class="card-info">
 						<div>
@@ -54,7 +50,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/unfallfix24" class="img-box">
-						<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="UnfallFix24">
+						<img src={deeer2Card.src} class="img-parallax" alt="UnfallFix24">
 					</a>
 					<div class="card-info">
 						<div>
@@ -67,7 +63,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/mousa-export" class="img-box">
-						<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Mousa Export">
+						<img src={deeer2Card.src} class="img-parallax" alt="Mousa Export">
 					</a>
 					<div class="card-info">
 						<div>
@@ -80,7 +76,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Steak Club">
+						<img src={deeer2Card.src} class="img-parallax" alt="Steak Club">
 					</a>
 					<div class="card-info">
 						<div>
@@ -93,7 +89,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Josh Jabs">
+						<img src={deeer2Card.src} class="img-parallax" alt="Josh Jabs">
 					</a>
 					<div class="card-info">
 						<div>
@@ -106,7 +102,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Umzugsservice">
+						<img src={deeer2Card.src} class="img-parallax" alt="Umzugsservice">
 					</a>
 					<div class="card-info">
 						<div>
