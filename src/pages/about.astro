@@ -387,7 +387,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   gsap.registerPlugin(ScrollTrigger);
 
 
-  // The intro, every device: the words split apart and the black veil
+  // The intro, every device: the title blurs out and the black veil
   // lifts off the portrait, which develops out of dither — scrubbed by
   // scroll over .am-reveal (its sticky pin holds for exactly that
   // distance, then scrolls away into the name/bio below).
@@ -425,20 +425,42 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     }
     const develop = { p: 0 };
 
-    // Timeline spans the whole 240 stable-vh the pin holds: title split +
-    // veil lift first (same pace as before the track grew), then the
-    // dither develop, then a hold on the finished portrait (last 0.2) so
-    // the name/bio don't slide up the instant the face resolves.
+    // Timeline spans the whole 240 stable-vh the pin holds. One scene, in which
+    // the title, the light and the figure trade places:
+    //   0.00-0.22  the title goes out where it stands (soft, then gone) and, with
+    //              it, the light goes out (the rays in the veil dim);
+    //   0.10-0.42  the dark veil lifts off the portrait as the light fades, so
+    //              the figure comes up out of the dark — soft, blurring in to
+    //              focus (0.10-0.46);
+    //   0.10-0.70  the camera eases back from the portrait (a long settle from a
+    //              slight push-in);
+    //   0.48-0.80  only once it is sharp does the portrait develop out of the
+    //              dither (more pixels, the photo resolving) — never at the same
+    //              time as the blur-in, so the figure arrives in one state and
+    //              then changes in another;
+    //   0.80-1.00  a hold on the finished portrait, so the name/bio don't slide
+    //              up the instant the face resolves.
+    const rays = veil.querySelector<HTMLElement>('canvas');
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
-      .fromTo(wordL, { x: 0, opacity: 1 }, { x: '-60vw', opacity: 0, duration: 0.25 }, 0)
-      .fromTo(wordR, { x: 0, opacity: 1 }, { x: '60vw', opacity: 0, duration: 0.25 }, 0)
-      .fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.33 }, 0)
-      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.42 }, 0)
+      .fromTo([wordL, wordR], { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.15, ease: 'sine.in' }, 0)
+      .fromTo([wordL, wordR], { opacity: 1 }, { opacity: 0, duration: 0.17, ease: 'sine.inOut' }, 0.05);
+    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.24, ease: 'sine.inOut' }, 0);
+    // The portrait's own entrance is a blur-in: it comes up out of the dark soft
+    // and finds focus as the veil clears (so the pixels arrive out of focus too).
+    // Desktop only — a scrubbed filter over the portrait is what mobile Safari
+    // handles worst (see .am-portrait-img).
+    const stack = document.querySelector<HTMLElement>('.am-portrait-stack');
+    if (stack && !window.matchMedia('(pointer: coarse)').matches) {
+      tl.fromTo(stack, { filter: 'blur(20px)' }, { filter: 'blur(0px)', duration: 0.36, ease: 'sine.out' }, 0.1);
+    }
+    tl.fromTo(veil,  { opacity: 1 }, { opacity: 0, duration: 0.32, ease: 'sine.inOut' }, 0.1)
+      .fromTo(img,   { scale: 1.12 }, { scale: 1, duration: 0.6, ease: 'sine.out' }, 0.1)
       .fromTo(develop, { p: 0 }, {
         p: 1,
-        duration: 0.51,
+        duration: 0.32,
+        ease: 'sine.inOut',
         onUpdate: () => _amDither?.setProgress(develop.p),
-      }, 0.29)
+      }, 0.48)
       .to({}, { duration: 0.2 }, 0.8);
 
     _amRevealST = ScrollTrigger.create({
@@ -450,21 +472,21 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // — not innerHeight.
       end: () => `+=${reveal.offsetHeight - pin.offsetHeight}`,
       scrub: true,
-      // The lens wakes once the title has split off the face (the split
-      // runs over the first quarter of the timeline).
+      // The lens wakes once the title has gone off the face and the veil is
+      // lifting (the first 30% of the timeline).
       onUpdate: (self) => {
-        _lensGate?.(self.progress >= 0.25);
+        _lensGate?.(self.progress >= 0.3);
         // The light in the veil (sideRays.js): on the way down it goes with
         // the veil. On the way back it would come up with the veil as soon
         // as the scroll turned — it stays out until the words have joined
         // again, then fades back in. .rays-off also stops it rendering
         // while the portrait is up (sideRays.js watches the class).
-        if (self.progress >= 0.33) veil.classList.add('rays-off');
-        else if (self.progress <= 0.01) veil.classList.remove('rays-off');
+        if (self.progress >= 0.3) veil.classList.add('rays-off');
+        else if (self.progress <= 0.25) veil.classList.remove('rays-off');
       },
     });
     // Landing mid-scene (back/forward): set the lens from where it is now.
-    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= 0.25));
+    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= 0.3));
 
     // As the name/bio slide in, the portrait sinks back toward the dark:
     // dims, the vignette closes on the face and the edges re-dither. Tied

@@ -323,10 +323,24 @@ function initOxygenMenu() {
 
   function handleScroll() {
     if (!isMobile) {
-      // Desktop: only the decorative corner labels fade out once the first
-      // screen is scrolled past (see .hud-deco-away in OxygenMenu.astro).
-      document.getElementById('ox-hud-mobile')?.parentElement
-        ?.classList.toggle('hud-deco-away', window.scrollY > window.innerHeight * 0.6);
+      // Desktop: the location / clock / year label (see .hud-side in
+      // OxygenMenu.astro) is not a fixture of every screen. It belongs to two
+      // places only: the home page's hero, where it blurs in with the
+      // entrance and blurs out again as the page scrolls away; and the footer,
+      // where the big wordmark is, where it blurs in again. Everywhere else —
+      // the middle of every page and the top of every subpage — it is not
+      // there. One number, 0..1, set on the menu root (the CSS turns it into
+      // blur + opacity), recomputed on scroll.
+      const root = document.getElementById('oxygen-menu-root');
+      if (root) {
+        const vh = window.innerHeight;
+        const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+        const home = !!document.getElementById('hero');
+        const heroV = home ? 1 - clamp01(window.scrollY / (vh * 0.45)) : 0;
+        const foot = document.getElementById('site-footer');
+        const footV = foot ? clamp01((vh * 0.78 - foot.getBoundingClientRect().top) / (vh * 0.3)) : 0;
+        root.style.setProperty('--hud-loc', Math.max(heroV, footV).toFixed(3));
+      }
       return;
     }
     const scrollTop = window.scrollY;

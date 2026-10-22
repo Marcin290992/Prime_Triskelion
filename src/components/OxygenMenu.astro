@@ -666,14 +666,20 @@ const navLinks = [
      fixed elements stay on screen. filter:opacity() (not opacity) because
      GSAP / the reveal timelines own these elements' inline opacity and an
      inline value would beat any class rule. */
-  .hud-side, .hud-time-text {
+  .hud-time-text {
     filter: opacity(1);
     transition: filter 0.5s ease, opacity 0.6s ease;
   }
-  .hud-deco-away .hud-side,
-  .hud-deco-away .hud-time-text {
-    filter: opacity(0);
+  /* The location / clock / year label: --hud-loc (0..1) is set on the menu
+     root by oxygenMenu.ts from the scroll position — 1 in the home hero and
+     at the footer, 0 elsewhere — and drives blur and opacity together, so it
+     blurs in and out with the scroll. (The label's own inline opacity belongs
+     to the entrance timelines; this is a filter, so the two do not collide.) */
+  .hud-side {
+    filter: blur(calc((1 - var(--hud-loc, 0)) * 12px)) opacity(var(--hud-loc, 0));
+    transition: filter 0.3s ease, opacity 0.6s ease;
   }
+  .hud-side .hud-time-text { filter: none; }
 
   /* Hamburger icon */
   .hud-ico {
