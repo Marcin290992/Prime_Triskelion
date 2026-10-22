@@ -171,7 +171,6 @@ html:active-view-transition .zoom-col {
    mid-way, so on Safari they faded with the page anyway. Show the (live)
    new one straight away; the group itself still morphs position/size. */
 ::view-transition-old(pt-logo),
-::view-transition-old(pt-top-cta),
 ::view-transition-old(pt-menu-btn),
 ::view-transition-old(pt-location),
 ::view-transition-old(pt-clock) {
@@ -179,7 +178,6 @@ html:active-view-transition .zoom-col {
   opacity: 0;
 }
 ::view-transition-new(pt-logo),
-::view-transition-new(pt-top-cta),
 ::view-transition-new(pt-menu-btn),
 ::view-transition-new(pt-location),
 ::view-transition-new(pt-clock) {

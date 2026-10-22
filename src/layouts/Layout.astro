@@ -484,9 +484,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
     setTimeout(() => { (window as any).__ptShellShown = true; }, 0);
   }, { once: true });
 
-  // Persistent site chrome: logo, top-bar CTA, menu button, and on desktop
-  // the location label and clock are pulled out of the root page fade/blur during a page
-  // transition, so they stay put while only the page content changes.
+  // Persistent site chrome: logo, menu button, and on desktop the location
+  // label and clock stay put while only the page content changes. The top-bar
+  // CTA is intentionally not included: it fades out with the page.
   // Named only WHILE a transition runs — a permanent view-transition-name
   // makes the element a backdrop root, which would blank the glass
   // (backdrop-filter) of the buttons inside it the rest of the time. Set
@@ -498,16 +498,14 @@ const { title, description = "Prime Triskelion — one-person design studio craf
   // ones carry over by themselves).
   const CHROME_NAMES: Record<string, string> = {
     'h-title': 'pt-logo',
-    'site-cta-wrap': 'pt-top-cta',
     'hud-menu-btn': 'pt-menu-btn',
     'hud-location': 'pt-location',
     'hud-time': 'pt-clock',
   };
-  // Hidden chrome (e.g. the top-bar CTA before the page is scrolled) is left
+  // Hidden chrome is left
   // unnamed: WebKit's snapshot of a named element drops the element's own
-  // opacity, so Safari flashed the invisible "Start a project" button in
-  // the top-right corner for the length of the transition. Unnamed, it
-  // stays in the root snapshot, where its opacity: 0 holds.
+  // opacity, so it would flash into view for the length of the transition.
+  // Unnamed, it stays in the root snapshot, where its opacity: 0 holds.
   function nameChrome(on: boolean) {
     for (const [id, name] of Object.entries(CHROME_NAMES)) {
       const el = document.getElementById(id);

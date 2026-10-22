@@ -245,11 +245,38 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	if (cutNext || (e.navigationType === 'traverse' && uaVisualNext)) return;
 	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 	const content = document.querySelectorAll<HTMLElement>(
-		'body > :not(#oxygen-menu-root):not(#h-title):not(.edge-tint):not(.film-grain):not([data-leave-keep])'
+		'body > :not(#oxygen-menu-root):not(#h-title):not(#site-cta-wrap):not(#hero-nav-cta-wrap):not(.edge-tint):not(.film-grain):not([data-leave-keep])'
 	);
 	// Its own content (the title on it) still fades with the page.
 	const keptContent = document.querySelectorAll<HTMLElement>('[data-leave-keep] > *');
 	if (keptContent.length) gsap.to(keptContent, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
+	// The top-right CTA is animated separately so it can leave with the page
+	// even when the home hero's stacking context would otherwise cover it.
+	const cta = ['site-cta-wrap', 'hero-nav-cta-wrap']
+		.map((id) => document.getElementById(id))
+		.filter((el): el is HTMLElement => !!el);
+	// Pin its current appearance: scroll handlers can toggle the reveal class
+	// during navigation, which would otherwise make the CTA disappear early.
+	cta.forEach((el) => {
+		const cs = getComputedStyle(el);
+		el.style.transition = 'none';
+		el.style.pointerEvents = 'none';
+		el.style.opacity = cs.opacity;
+		el.style.filter = cs.filter;
+		el.style.transform = cs.transform === 'none' ? 'none' : cs.transform;
+		// The home hero's button lives inside #hero-pin. Once that fades
+		// (opacity < 1 makes it a stacking context) the button loses its own
+		// z-index 1002 and the page's other layers cover it at once, ahead of
+		// the fade. Moved up to <body>, it keeps its place above everything
+		// and is faded by its own tween, in step with the page.
+		if (el.parentElement !== document.body) document.body.append(el);
+	});
+	if (cta.length) gsap.to(cta, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
+	// The blur is held back to the second half of that motion. The page's own
+	// fade starts slowly, and a blur that starts at once makes the button look
+	// gone while the page is still whole — it has to go soft and out when the
+	// page does, not ahead of it. It ends on the same beat (0.15 + 0.6 = 0.75s).
+	if (cta.length) gsap.to(cta, { filter: 'blur(10px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
 	const fade = new Promise<void>((resolve) => {
 		gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut', onComplete: () => resolve() });
 	});
