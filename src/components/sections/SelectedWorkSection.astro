@@ -494,6 +494,30 @@ const projects = [
 	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
+		@media (prefers-reduced-motion: no-preference) {
+			.sw-header {
+				height: calc(var(--app-stable-vh) * 100);
+				min-height: calc(var(--app-stable-vh) * 100);
+				margin-top: calc(var(--app-stable-vh) * -100);
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				padding-top: clamp(3rem, 8vh, 6rem);
+				padding-bottom: clamp(3rem, 8vh, 6rem);
+			}
+			#selected-work .sw-header {
+				opacity: 0 !important;
+				filter: blur(8px) !important;
+				transform: translateY(14px) !important;
+				transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1) !important;
+			}
+			#selected-work .sw-header.visible {
+				opacity: 1 !important;
+				filter: blur(0) !important;
+				transform: translateY(0) !important;
+			}
+		}
 		.sw-m {
 			display: block;
 			padding-bottom: clamp(3.5rem, 10vw, 5.5rem);
@@ -576,7 +600,31 @@ const projects = [
 		if (!section) return;
 
 		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
+			const header = section.querySelector<HTMLElement>('.sw-header');
+			if (!header) return;
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+				header.classList.add('visible');
+				return;
+			}
+
+			let scrollRaf = 0;
+			const cleanup = () => {
+				window.removeEventListener('scroll', onScroll);
+				document.removeEventListener('astro:before-swap', cleanup);
+				if (scrollRaf) cancelAnimationFrame(scrollRaf);
+			};
+			const reveal = () => {
+				scrollRaf = 0;
+				if (header.getBoundingClientRect().top > 0) return;
+				header.classList.add('visible');
+				cleanup();
+			};
+			const onScroll = () => {
+				if (!scrollRaf) scrollRaf = requestAnimationFrame(reveal);
+			};
+			window.addEventListener('scroll', onScroll, { passive: true });
+			document.addEventListener('astro:before-swap', cleanup, { once: true });
+			reveal();
 			return;
 		}
 

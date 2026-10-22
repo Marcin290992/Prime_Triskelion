@@ -3,16 +3,8 @@ const lines = [
 	['I', 'craft', 'digital', 'experiences', 'that', 'push', 'boundaries,'],
 	['challenge', 'conventions,', 'and', 'leave', 'a', 'lasting', 'mark', 'on', 'the', 'world.'],
 ];
-const count = lines.flat().length;
-const total = 1 + (count - 1) * 0.1;
-const slice = (i: number) => {
-	const start = ((i * 0.1) / total) * 100;
-	const end = ((i * 0.1 + 1) / total) * 100;
-	return `--s:${start.toFixed(2)}%;--e:${end.toFixed(2)}%`;
-};
 const accent = new Set(['experiences', 'lasting', 'mark']);
-let n = 0;
-const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
+const words = lines.map((line) => line.map((w) => ({ w, accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
 <section id="manifesto" class="relative" style="height:330vh;height:330lvh;height:calc(var(--app-stable-vh) * 330);z-index:10">
@@ -22,9 +14,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
 			aria-label="I craft digital experiences that push boundaries, challenge conventions, and leave a lasting mark on the world."
 		>
-			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
+			{words[0].map(({ w, accent }) => <span class:list={['mw', accent && 'mw--accent']}>{w}</span>)}
 			<span class="mw br"></span>
-			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
+			{words[1].map(({ w, accent }) => <span class:list={['mw', accent && 'mw--accent']}>{w}</span>)}
 		</h2>
 	</div>
 </section>
@@ -36,50 +28,36 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets: desktop's word-by-word focus-in, without the pin —
-	   pinned, the line sat in the middle of a full black screen with a
-	   lot of empty space above and below it. Here the section is its
-	   natural height and the words focus one after another as the text
-	   rises from the lower part of the screen to above its middle (cover
-	   28%–62% of the heading's own view timeline; --s/--e give each word
-	   its slice, same stagger as desktop). Scroll-driven CSS, run by the
-	   browser with its own scroll — no GSAP per frame. Without support
-	   (Safari before 26) the words are simply there. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto { height: auto !important; }
-		/* About three quarters of a screen, the line centred in it: as the
-		   words come into focus the line is alone on black, the next
-		   section not yet in view (at its natural height it ran straight
-		   into What we've built, worst on a tall portrait tablet). */
-		#manifesto > .sticky {
-			position: relative !important;
-			top: auto !important;
-			height: auto !important;
-			min-height: 75svh !important;
-			min-height: calc(var(--app-stable-vh, 1svh) * 75) !important;
-			padding-top: clamp(3.5rem, 12vw, 5rem);
-			padding-bottom: clamp(3.5rem, 12vw, 5rem);
-			box-sizing: border-box;
-		}
-		@supports (animation-timeline: view()) {
-			#manifesto h2 { view-timeline-name: --manifesto; }
-			#manifesto .mw:not(.br) {
-				/* Longhands on purpose, and not all of them: with the `animation`
-				   shorthand the build's CSS minifier (Astro 7) folded the timeline
-				   into it (`animation: 1ms linear both mw-focus --manifesto`),
-				   which browsers reject whole — the words were just there. */
-				animation-name: mw-focus;
-				animation-timing-function: linear;
-				animation-fill-mode: both;
-				animation-duration: 1ms;
-				animation-timeline: --manifesto;
-				animation-range: cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34);
+		@media (prefers-reduced-motion: no-preference) {
+			#manifesto {
+				height: calc(var(--app-stable-vh) * 330) !important;
+				margin-top: calc(var(--app-stable-vh) * -100);
+				pointer-events: none;
+			}
+			#manifesto > .sticky {
+				position: sticky !important;
+				top: 0 !important;
+				height: calc(var(--app-stable-vh) * 100) !important;
+				min-height: 0 !important;
+				padding-top: 0 !important;
+				padding-bottom: 0 !important;
+				box-sizing: border-box;
 			}
 		}
-	}
-	@keyframes mw-focus {
-		from { filter: blur(8px); opacity: 0.15; }
-		to { filter: blur(0px); opacity: 1; }
+		@media (prefers-reduced-motion: reduce) {
+			#manifesto { height: auto !important; }
+			#manifesto > .sticky {
+				position: relative !important;
+				top: auto !important;
+				height: auto !important;
+				min-height: 75svh !important;
+				min-height: calc(var(--app-stable-vh, 1svh) * 75) !important;
+				padding-top: clamp(3.5rem, 12vw, 5rem);
+				padding-bottom: clamp(3.5rem, 12vw, 5rem);
+				box-sizing: border-box;
+			}
+		}
 	}
 	.mw {
 		display: inline-block;
@@ -107,15 +85,14 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		gsap.registerPlugin(ScrollTrigger);
 
-		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
-			|| navigator.maxTouchPoints > 0
-			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
 
 		_manifestoST?.kill();
 
-		// Phones/tablets: the focus-in is CSS (scroll-driven), see <style>.
-		if (isMobile) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			gsap.set(words, { filter: 'none', opacity: 1 });
+			return;
+		}
 		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
 
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
