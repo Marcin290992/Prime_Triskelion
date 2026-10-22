@@ -74,6 +74,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		gsap.registerPlugin(ScrollTrigger);
 
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
+			|| navigator.maxTouchPoints > 0
+			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
 
 		_manifestoST?.kill();
@@ -101,8 +104,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// Then the whole line goes out where it stands, into blur and the dark;
 		// the work section comes up out of that dark on the next scroll (it
 		// pins itself exactly where this pin ends, see SelectedWorkSection).
-		if (heading) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
-		tl.to({}, { duration: 0.15 }); // a breath of black
+		if (heading && !isMobile) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
+		if (!isMobile) tl.to({}, { duration: 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
