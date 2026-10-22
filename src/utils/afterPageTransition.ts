@@ -682,9 +682,25 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut' }, at);
 }
 
+// The "Based in London" label and the clock come in last on every subpage:
+// once the title's entrance is over they blur in from nothing (the home hero
+// stages them in its own reveal), then stay as they were. Layout/oxygenMenu
+// leave them hidden until this runs.
+function hudIn(): void {
+	const loc = document.getElementById('hud-location');
+	if (!loc || document.getElementById('hero')) return;
+	(window as any).__hudInStarted = true;
+	const m = subpageMode();
+	loc.style.transition = 'none';
+	if (m === 'none') { gsap.set(loc, { opacity: 1, filter: 'blur(0px)' }); return; }
+	const reduce = reducedMotion();
+	gsap.fromTo(loc, { opacity: 0, filter: reduce ? 'blur(0px)' : 'blur(8px)' },
+		{ opacity: 1, filter: 'blur(0px)', duration: reduce ? 0.3 : 0.9, delay: reduce ? 0.3 : 1.1, ease: 'power2.out' });
+}
+
 export function afterPageTransition(fn: () => void): void {
 	const release = holdRestore();
-	const run = () => { try { fn(); } finally { release(); } };
+	const run = () => { try { fn(); hudIn(); } finally { release(); } };
 	if (pending) pending.then(run);
 	else run();
 }
