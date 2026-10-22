@@ -26,8 +26,10 @@ const projects = [
 ---
 <section id="selected-work">
 
-	<div class="sw-header">
-		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
+	<div class="sw-header-stage">
+		<div class="sw-header">
+			<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
+		</div>
 	</div>
 
 	<div class="scroll-section" id="sw-scroll-section">
@@ -185,6 +187,8 @@ const projects = [
 		z-index: 44;
 		color: rgb(var(--c-cream));
 	}
+
+	.sw-header-stage { display: none; }
 
 	/* Header — mobile only */
 	.sw-header {
@@ -458,7 +462,6 @@ const projects = [
 		   manifesto's pin ends: it blurs in on the spot (nothing slides in from
 		   below), then the horizontal travel starts. */
 		.scroll-section { display: block; margin-top: -100vh; }
-		.sw-header { display: none; }
 	}
 
 	@media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
@@ -493,12 +496,18 @@ const projects = [
 	/* ── Phones/tablets work list (desktop has the horizontal scene) ── */
 	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.sw-header-stage { display: block; }
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
 		@media (prefers-reduced-motion: no-preference) {
+			.sw-header-stage {
+				height: calc(var(--app-stable-vh) * 200);
+				margin-top: calc(var(--app-stable-vh) * -100);
+			}
 			.sw-header {
+				position: sticky;
+				top: 0;
 				height: calc(var(--app-stable-vh) * 100);
 				min-height: calc(var(--app-stable-vh) * 100);
-				margin-top: calc(var(--app-stable-vh) * -100);
 				display: flex;
 				flex-direction: column;
 				align-items: center;
@@ -601,7 +610,8 @@ const projects = [
 
 		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			const header = section.querySelector<HTMLElement>('.sw-header');
-			if (!header) return;
+			const headerStage = section.querySelector<HTMLElement>('.sw-header-stage');
+			if (!header || !headerStage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
 				header.classList.add('visible');
 				return;
@@ -615,7 +625,7 @@ const projects = [
 			};
 			const reveal = () => {
 				scrollRaf = 0;
-				if (header.getBoundingClientRect().top > 0) return;
+				if (headerStage.getBoundingClientRect().top > 0) return;
 				header.classList.add('visible');
 				cleanup();
 			};
