@@ -342,13 +342,12 @@
 			height: 100%;
 			align-items: center;
 			text-align: center;
-			justify-content: center;
-			gap: clamp(1rem, 2.8vh, 1.7rem);
+			justify-content: space-evenly;
 			padding-top: clamp(1.5rem, 4vh, 3rem);
 			padding-bottom: clamp(1.5rem, 4vh, 3rem);
 			z-index: 30;
 		}
-		.hero-kicker { margin: 0; font-size: 0.63rem; white-space: normal; }
+		.hero-kicker { margin-top: 0; font-size: 0.63rem; white-space: normal; }
 		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.94; word-spacing: 0.08em; margin-top: 0 !important; }
 		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.1rem; color: rgb(var(--c-cream) / 0.86); overflow-wrap: anywhere; }
 		.hero-cta-row {
@@ -360,7 +359,6 @@
 			position: relative;
 			z-index: 36;
 		}
-		.hero-cta-row > .h-hero-cta-wrap { margin-top: 0 !important; }
 		.hero-bottom { margin-top: 1rem; padding-top: 1.1rem; align-items: stretch; }
 		.hero-inline-stats {
 			width: 100%;
@@ -1072,7 +1070,6 @@
 
 	document.addEventListener('astro:page-load', () => { initHeroReveal(); initHeroNavCta(); });
 </script>
-
 <script>
 import { createLightRays } from '../../utils/lightRays';
 
