@@ -350,7 +350,10 @@ function initOxygenMenu() {
       return;
     }
     const scrollTop = window.scrollY;
-    if (state.isMenuOpen) {
+    // Back/forward restores the old scroll position in one jump (see
+    // settleRestoredPage in pageTransitions.ts) — that is not the user
+    // scrolling, so it must not shrink the chip or swap the bar.
+    if (state.isMenuOpen || document.documentElement.classList.contains('pt-restoring')) {
       state.lastScrollTop = scrollTop;
       state.scrollAccum = 0;
       return;
@@ -427,8 +430,10 @@ function initOxygenMenu() {
     state.isMenuOpen = true;
     state.menuAnimating = true;
     state.scrollAccum = 0;
-    // The chip is drawn full size while the menu is open, but menuShrink is
-    // kept: closing without leaving, or the next page, returns to it.
+    // Opening the menu un-shrinks the chip for good (until the next scroll
+    // down), so the page chosen from it also starts full size.
+    state.menuShrink = 0;
+    persistedMenuShrink = 0;
     // Eased tween back to full size (matches the shrink tween in
     // handleScroll — same duration/ease), not gsap.set: this fires right
     // when the user taps the shrunk chip to open the menu, so snapping it
@@ -476,10 +481,6 @@ function initOxygenMenu() {
       setPageCovered(false);
       btn?.classList.remove('active');
       btn?.setAttribute('aria-expanded', 'false');
-      // Staying on this page: back to the scroll-driven size. (Leaving — the
-      // blurOut path — the next page's init applies it.)
-      if (!blurOut && btn) gsap.to(btn, { scale: menuScale(), duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-
       if (!keepOverlay) {
         // Restore HUD side labels and the clock
         const hudEl = document.getElementById('ox-hud-mobile');
