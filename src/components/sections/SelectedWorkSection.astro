@@ -41,7 +41,7 @@ const projects = [
 
 				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
 					<a href="/winds-of-sinai" class="img-box" data-case-media>
-						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
+						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
 					</a>
 					<div class="card-info">
 						<div>
@@ -54,7 +54,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/unfallfix24" class="img-box">
-						<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="UnfallFix24">
+						<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="UnfallFix24">
 					</a>
 					<div class="card-info">
 						<div>
@@ -67,7 +67,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/mousa-export" class="img-box">
-						<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Mousa Export">
+						<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Mousa Export">
 					</a>
 					<div class="card-info">
 						<div>
@@ -80,7 +80,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Steak Club">
+						<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Steak Club">
 					</a>
 					<div class="card-info">
 						<div>
@@ -93,7 +93,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Josh Jabs">
+						<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Josh Jabs">
 					</a>
 					<div class="card-info">
 						<div>
@@ -106,7 +106,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Umzugsservice">
+						<img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Umzugsservice">
 					</a>
 					<div class="card-info">
 						<div>
@@ -203,10 +203,10 @@ const projects = [
 
 	/* Horizontal scroll */
 	.scroll-section {
-		/* 100vh for the blur-in (ENTER_SCREENS in the script) + 600vh of
-		   horizontal travel + a 40vh hold on the final slide (FINAL_HOLD) +
-		   the 100vh of the pinned view. */
-		height: 840vh;
+		/* 100vh for the blur-in (ENTER_SCREENS in the script) + ~990vh of
+		   horizontal travel (each project is a full screen wide) + a 40vh hold
+		   on the final slide (FINAL_HOLD) + the 100vh of the pinned view. */
+		height: 1230vh;
 		position: relative;
 		display: none;
 	}
@@ -222,14 +222,17 @@ const projects = [
 		display: flex;
 		height: 100%;
 		align-items: center;
-		padding-left: 10vw;
+		/* No lead-in space: the intro is a whole screen wide (below), so the title
+		   stands in the middle of it at the start, alone — the first frame is a
+		   screen away, out of sight. */
+		padding-left: 0;
 		gap: 10vw;
 		will-change: transform;
 	}
 	.slide { flex-shrink: 0; will-change: transform, opacity; }
 
 	/* Intro */
-	.slide-intro { width: 42vw; padding-right: 5vw; }
+	.slide-intro { width: 100vw; text-align: center; }
 	.slide-intro h2 {
 		font-family: var(--f-display);
 		font-weight: 600;
@@ -247,50 +250,68 @@ const projects = [
 	}
 	.slide-intro h2 em { font-style: normal; color: rgb(var(--c-red)); }
 
-	/* Cards */
+	/* Cards: a full-screen-wide frame (widescreen, the screen above and below it
+	   black, like the bars of a cinema frame), the title and the line about it
+	   set over its foot. They come in the way they always did — rising from below
+	   as they move toward the middle (the script). */
 	.slide-card {
-		width: 45vw;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-		margin-top: 2.5rem;
-		padding: 1rem 1rem 1.4rem;
-		border: 1px solid rgba(255,255,255,0.06);
-		background: rgba(255,255,255,0.018);
+		position: relative;
+		width: 100vw;
+		height: min(78vh, calc(100vw / 2.1));
+		overflow: hidden;
+		background: #050506;
 	}
 	.img-box {
+		position: absolute;
+		inset: 0;
 		display: block;
-		width: 100%;
-		aspect-ratio: 16 / 10;
 		overflow: hidden;
-		background-color: #0d0d0f;
-		border: 1px solid rgba(255,255,255,0.08);
-		box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
 	}
 	.img-box img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transform: scale(1.2);
+		transform: scale(1.25);
 	}
-	.card-info { display: flex; justify-content: space-between; align-items: flex-start; }
+	/* Dark at the foot (the caption) and a little at the head. */
+	.slide-card::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background:
+			linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 30%, transparent 58%),
+			linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 22%);
+	}
+	.card-info {
+		position: absolute;
+		left: var(--site-gutter);
+		right: var(--site-gutter);
+		bottom: clamp(1.4rem, 3.4vh, 2.6rem);
+		z-index: 1;
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 2rem;
+	}
 	.card-title-link { text-decoration: none; display: block; }
 	.card-info h3 {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+		font-size: clamp(2.2rem, 4.4vw, 5rem);
+		line-height: 0.92;
 		letter-spacing: -0.02em;
 		text-transform: uppercase;
 		color: rgb(var(--c-cream));
-		margin-bottom: 0.5rem;
+		margin-bottom: 0.6rem;
 	}
 	.card-info p {
 		font-family: var(--f-body);
-		font-size: 0.9rem;
+		font-size: clamp(0.85rem, 1.05vw, 1rem);
 		font-weight: 300;
-		line-height: 1.6;
-		color: rgb(var(--c-cream) / 0.82);
-		max-width: 320px;
+		line-height: 1.5;
+		color: rgb(var(--c-cream) / 0.85);
+		max-width: 38ch;
 	}
 
 	.link-btn {
@@ -356,26 +377,38 @@ const projects = [
 		}
 	}
 
-	/* Desktop: the whole card answers to the cursor, not only its small link —
-	   the same as the cards on the Projects page. The frame leans in a touch
-	   and its edge lights, the description comes to full strength and the
-	   Explore link does what it does under the cursor (shifts, underline draws
-	   in). The frame (not the <img>, which the parallax moves) is what scales. */
+	/* Explore: a real button — a hairline frame and the label — on a dark,
+	   soft field so it holds up over any picture. Over the whole frame (the
+	   cursor anywhere on it) it fills with cream. */
+	.slide-card .card-info .link-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		flex: none;
+		padding: 1.05rem 1.7rem;
+		font-size: 0.78rem;
+		letter-spacing: 0.26em;
+		color: rgb(var(--c-cream));
+		background: rgba(0, 0, 0, 0.42);
+		border: 1px solid rgb(var(--c-cream) / 0.6);
+		transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+	}
+	/* No arrow, and none of the link's usual underline either. */
+	.slide-card .card-info .link-btn::after { content: none; }
 	@media (hover: hover) and (pointer: fine) {
-		.img-box {
-			transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s ease;
-		}
+		/* The picture comes slowly a little closer under the cursor (its frame
+		   scales; the picture inside keeps its own drift). The card clips it. */
+		.img-box { transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
+		.slide-card:hover .img-box { transform: scale(1.045); }
 		.card-info p { transition: color 0.5s ease; }
-		.slide-card:hover .img-box {
-			transform: scale(1.02);
-			border-color: rgba(255,255,255,0.2);
-		}
 		.slide-card:hover .card-info p { color: rgb(var(--c-cream) / 0.95); }
-		.slide-card:hover .link-btn.no-border {
-			color: rgb(var(--c-cream));
-			transform: translateX(5px);
+		.slide-card:hover .card-info .link-btn,
+		.slide-card .card-info .link-btn:hover {
+			color: rgb(var(--c-bg));
+			background: rgb(var(--c-cream));
+			border-color: rgb(var(--c-cream));
+			transform: none;
 		}
-		.slide-card:hover .link-btn.no-border::after { transform: scaleX(1); }
 	}
 
 	/* Curtain */
@@ -448,25 +481,8 @@ const projects = [
 	}
 
 	@media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
-		.track { padding-left: 5vw; gap: 5vw; }
-		.slide-intro { width: 44vw; padding-right: 2vw; }
-		.slide-card { width: 42vw; }
+		.track { gap: 5vw; }
 		.slide-intro h2 { font-size: clamp(3rem, 6vw, 8rem); }
-	}
-
-	/* Laptop-height viewports: the card (16/10 image + info block + the
-	   decorative margin-top) is tall enough that, vertically centred in the
-	   sticky 100vh view, its footer runs into the fixed MENU button. Keep
-	   the card WIDTH untouched (it drives the horizontal-scroll track math
-	   and the final-slide reveal) — only drop the decorative offset and
-	   flatten the image to a cinematic crop to reclaim the height. */
-	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
-		.slide-card { margin-top: 0; }
-		.img-box { aspect-ratio: 2 / 1; }
-	}
-
-	@media (min-width: 1025px) and (hover: hover) and (max-height: 820px), (min-width: 1025px) and (pointer: fine) and (max-height: 820px) {
-		.img-box { aspect-ratio: 21 / 9; }
 	}
 
 	/* Final slide headline had only a vw size — on short laptops the four
@@ -679,7 +695,8 @@ const projects = [
 		   off cached offsets + window.scrollY so the frame never forces a reflow.
 		   Easing is time-based: identical feel to the old 0.055/frame constant at
 		   60 fps, but consistent on 120/144 Hz displays too. */
-		const EASE_PER_SECOND = -Math.log(1 - 0.055) * 60;
+		const BASE_EASE = -Math.log(1 - 0.055) * 60;
+		let EASE_PER_SECOND = BASE_EASE; // raised for a moment while a clicked card is brought to the middle
 
 		let currentX = 0;
 		let maxScroll = 0;
@@ -716,8 +733,11 @@ const projects = [
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
 			imgBoxes.length = 0;
 			images.forEach(img => {
+				// The card's place along the track (the picture's box is positioned
+				// inside the card, so its own offsetLeft would say 0).
 				const box = img.parentElement!;
-				imgBoxes.push({ el: img, left: box.offsetLeft, width: box.offsetWidth });
+				const card = (box.closest('.slide-card') as HTMLElement | null) ?? box;
+				imgBoxes.push({ el: img, left: card.offsetLeft, width: card.offsetWidth });
 			});
 		}
 
@@ -763,10 +783,13 @@ const projects = [
 			if (cp < 1.2 && cp > -1) ct.style.transform = `translate3d(${cp * 200}px,0,0)`;
 
 			imgBoxes.forEach(d => {
+				// A picture the page transition has taken hold of (it eases it to its
+				// plain crop before opening) is not ours to move any more.
+				if (d.el.hasAttribute('data-hold')) return;
 				const left = d.left - currentX;
 				if (left < vw && left + d.width > 0) {
 					const ip = (left - vw / 2) / vw;
-					d.el.style.transform = `scale(1.2) translate3d(${ip * 8}%,0,0)`;
+					d.el.style.transform = `scale(1.25) translate3d(${ip * 6}%,0,0)`;
 				}
 			});
 
@@ -806,7 +829,48 @@ const projects = [
 		   element-scoped observers above may never fire a final "out of view".
 		   Tear down the loop + observers explicitly the moment the page swap
 		   begins, and remove the listener again on exit (once:true). */
+		/* Opening a project that is not standing in the middle of the screen (the
+		   strip is half-way along, the card still rising): the click is held, the
+		   page scrolls so that the card comes to rest centred — the strip follows
+		   the scroll — and only then is the click let through, so the transition
+		   starts from a card that is where it should be. */
+		let centring = false;
+		const onCardClick = (e: MouseEvent) => {
+			if (centring || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+			const target = e.target as Element | null;
+			const card = target?.closest<HTMLElement>('.slide-card');
+			const link = target?.closest<HTMLAnchorElement>('a');
+			if (!card || !link || !section.contains(card)) return;
+			const left = () => card.getBoundingClientRect().left;
+			if (Math.abs(left()) < 3) return; // already centred: nothing to do
+			e.preventDefault();
+			e.stopPropagation();
+			centring = true;
+			EASE_PER_SECOND = BASE_EASE * 3;
+			const y = enterFrom + ENTER_SCREENS * window.innerHeight + (card.offsetLeft / Math.max(1, maxScroll)) * scrollableH;
+			const lenis = (window as any).__lenis;
+			if (lenis) lenis.scrollTo(y, { duration: 0.55, lock: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+			else window.scrollTo({ top: y, behavior: 'smooth' });
+			// Through once it has stood still in the middle for a few frames (or, at
+			// the latest, after a few seconds).
+			const t0 = performance.now();
+			let still = 0;
+			const wait = () => {
+				still = Math.abs(left()) < 8 ? still + 1 : 0;
+				if (still >= 3 || performance.now() - t0 > 3000) {
+					centring = false;
+					EASE_PER_SECOND = BASE_EASE;
+					link.click();
+					return;
+				}
+				requestAnimationFrame(wait);
+			};
+			requestAnimationFrame(wait);
+		};
+		section.addEventListener('click', onCardClick, true);
+
 		const onBeforeSwap = () => {
+			section.removeEventListener('click', onCardClick, true);
 			stop();
 			io.disconnect();
 			ro.disconnect();

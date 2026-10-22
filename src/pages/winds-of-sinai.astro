@@ -1271,16 +1271,20 @@ const screens = [
     gsap.set(image, { opacity: 0, scale: 0.9, yPercent: 4 });
     if (bottomEls.length) gsap.set(bottomEls, { opacity: 0, y: 28, filter: 'blur(8px)' });
 
-    const tl = gsap.timeline()
-      .to(wordL, { x: '-42vw', opacity: 0, ease: 'power3.out', duration: 0.75 }, 0)
-      .to(wordR, { x:  '42vw', opacity: 0, ease: 'power3.out', duration: 0.75 }, 0)
-      .to(image, { opacity: 1, scale: 1.06, yPercent: 0, ease: 'power2.out' }, 0.05);
+    // The title goes out where it stands, the way the home hero does: it goes
+    // soft first and then fades into the dark (no sliding apart). Only then does
+    // the page come up out of that dark — the picture, then the title, the line
+    // and the buttons after it. All of it is scrubbed by the scroll.
+    const tl = gsap.timeline({ defaults: { ease: 'none' } })
+      .to([wordL, wordR], { filter: 'blur(16px)', duration: 0.6, ease: 'sine.in' }, 0)
+      .to([wordL, wordR], { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25)
+      .to(image, { opacity: 1, scale: 1.06, yPercent: 0, ease: 'sine.inOut', duration: 0.9 }, 0.7);
 
     if (bottomEls.length) {
       tl.to(bottomEls, {
         opacity: 1, y: 0, filter: 'blur(0px)',
-        stagger: 0.1, ease: 'power3.out',
-      }, 0.48);
+        stagger: 0.12, duration: 0.6, ease: 'sine.out',
+      }, 1.15);
     }
 
     // Entrance: the word split focus-pulls in like every other page title.
