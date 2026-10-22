@@ -253,6 +253,11 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 	// The picture stays exactly as it is — card-sized, in its plain crop, under the
 	// edge blur bands — while the page behind it goes to black (p: 0 -> 1) and the
 	// case study loads. It does not open to the full screen and does not grow.
+	// The "Start a project" CTA lets go on the same curve as the caption. Its own
+	// class transitions are switched off meanwhile, so it follows p exactly.
+	const ctas = [...document.querySelectorAll<HTMLElement>('#hero-nav-cta-wrap, #site-cta-wrap')]
+		.filter((el) => getComputedStyle(el).opacity !== '0');
+	ctas.forEach((el) => { el.style.transition = 'none'; });
 	const apply = (p: number) => {
 		scrim.style.opacity = String(CASE_SCRIM * p);
 		// Out of focus and out, together, on one soft curve (no step in it).
@@ -262,6 +267,10 @@ document.addEventListener('astro:before-preparation', (e: any) => {
 			caption.style.filter = soft > 0 ? `blur(${(soft * 16).toFixed(1)}px)` : '';
 		}
 		if (shade) shade.style.opacity = String(1 - soft);
+		ctas.forEach((el) => {
+			el.style.opacity = String(1 - soft);
+			el.style.filter = soft > 0 ? `blur(${(soft * 8).toFixed(1)}px)` : '';
+		});
 		shot.style.backgroundColor = `rgb(0 0 0 / ${Math.min(1, p * 1.6).toFixed(3)})`;
 	};
 	frame.style.clipPath = `inset(${inset.map((v) => v.toFixed(1) + 'px').join(' ')} round ${radius.toFixed(1)}px)`;
@@ -673,9 +682,28 @@ export function supportIn(tl: gsap.core.Timeline, el: Element | null, at: number
 		.to(el, { filter: 'blur(0px)', y: 0, duration: 1.2 * speed, ease: 'power2.inOut' }, at);
 }
 
+// The "Based in London" label and the clock come in last on every subpage:
+// once the title's entrance is over they blur in from nothing (the home hero
+// stages them in its own reveal), then stay as they were. Layout/oxygenMenu
+// leave them hidden until this runs.
+function hudIn(): void {
+	const loc = document.getElementById('hud-location');
+	if (!loc || document.getElementById('hero')) return;
+	(window as any).__hudInStarted = true;
+	const m = subpageMode();
+	loc.style.transition = 'none';
+	if (m === 'none') { loc.style.opacity = '1'; loc.style.transition = ''; return; }
+	const reduce = reducedMotion();
+	gsap.fromTo(loc, { opacity: 0, filter: reduce ? 'blur(0px)' : 'blur(8px)' },
+		{ opacity: 1, filter: 'blur(0px)', duration: reduce ? 0.3 : 0.9, delay: reduce ? 0.3 : 1.1, ease: 'power2.out',
+			// The inline filter would beat .hud-deco-away's filter:opacity(0), which
+			// takes the label away on scroll — hand the property back to the CSS.
+			onComplete: () => { loc.style.filter = ''; loc.style.transition = ''; } });
+}
+
 export function afterPageTransition(fn: () => void): void {
 	const release = holdRestore();
-	const run = () => { try { fn(); } finally { release(); } };
+	const run = () => { try { fn(); hudIn(); } finally { release(); } };
 	if (pending) pending.then(run);
 	else run();
 }

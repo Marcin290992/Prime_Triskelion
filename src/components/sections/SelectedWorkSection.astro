@@ -7,21 +7,17 @@ import deeer2 from '../../img/deeer2.webp';
 // Full-screen version for the case-study entrance (data-case-src, see
 // afterPageTransition.ts) — a card-sized image blows up soft.
 const deeer2Full = await getImage({ src: deeer2, width: 2400 });
+const deeer2Card = await getImage({ src: deeer2, width: 1800 });
 // Phones/tablets carousel. Placeholder pictures (stored locally — the
 // site's CSP blocks remote images) for all but Winds of Sinai; swap the
 // img for each project's own shot.
-import imgUnfall from '../../img/services/websites.jpg';
-import imgMousa from '../../img/process/development.jpg';
-import imgSteak from '../../img/process/launch.jpg';
-import imgJosh from '../../img/process/support.jpg';
-import imgUmzug from '../../img/process/discovery.jpg';
 const projects = [
 	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', tags: ['Branding', 'Web'], img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
-	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: imgUnfall, href: '/work/unfallfix24' },
-	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: imgMousa, href: '/work/mousa-export' },
-	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: imgSteak },
-	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: imgJosh },
-	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: imgUmzug },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: deeer2, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: deeer2, href: '/work/mousa-export' },
+	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: deeer2 },
+	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: deeer2 },
+	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: deeer2 },
 ];
 ---
 <section id="selected-work">
@@ -35,14 +31,15 @@ const projects = [
 			<div class="track" id="sw-track">
 
 				<div class="slide slide-intro">
-					<h2>What we've<br><em>created.</em></h2>
+					<h2>What we've<br><em>built.</em></h2>
 					<a href="/projects" class="link-btn no-border">View All Projects</a>
 				</div>
 
-				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
+				<div class="slide slide-card card-fade" data-case data-case-src={deeer2Full.src}>
 					<a href="/winds-of-sinai" class="img-box" data-case-media>
-						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
+						<img src={deeer2Card.src} class="img-parallax" alt="Winds Of Sinai">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>01 / 06</span><span>Branding · Web</span></div>
 					<div class="card-info">
 						<div>
 							<a href="/winds-of-sinai" class="card-title-link"><h3>Winds Of Sinai</h3></a>
@@ -54,8 +51,9 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/unfallfix24" class="img-box">
-						<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="UnfallFix24">
+						<img src={deeer2Card.src} class="img-parallax" alt="UnfallFix24">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>02 / 06</span><span>Web · Software</span></div>
 					<div class="card-info">
 						<div>
 							<a href="/work/unfallfix24" class="card-title-link"><h3>UnfallFix24</h3></a>
@@ -67,8 +65,9 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/mousa-export" class="img-box">
-						<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Mousa Export">
+						<img src={deeer2Card.src} class="img-parallax" alt="Mousa Export">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>03 / 06</span><span>Web</span></div>
 					<div class="card-info">
 						<div>
 							<a href="/work/mousa-export" class="card-title-link"><h3>Mousa Export</h3></a>
@@ -80,8 +79,9 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Steak Club">
+						<img src={deeer2Card.src} class="img-parallax" alt="Steak Club">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>04 / 06</span><span>Web · Branding</span></div>
 					<div class="card-info">
 						<div>
 							<a href="#" class="card-title-link"><h3>Steak Club</h3></a>
@@ -93,8 +93,9 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Josh Jabs">
+						<img src={deeer2Card.src} class="img-parallax" alt="Josh Jabs">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>05 / 06</span><span>Web · Branding</span></div>
 					<div class="card-info">
 						<div>
 							<a href="#" class="card-title-link"><h3>Josh Jabs</h3></a>
@@ -106,8 +107,9 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=75&w=1800&auto=format&fit=crop" class="img-parallax" alt="Umzugsservice">
+						<img src={deeer2Card.src} class="img-parallax" alt="Umzugsservice">
 					</a>
+					<div class="card-meta" aria-hidden="true"><span>06 / 06</span><span>Web · SEO</span></div>
 					<div class="card-info">
 						<div>
 							<a href="#" class="card-title-link"><h3>Umzugsservice</h3></a>
@@ -126,6 +128,7 @@ const projects = [
 				<div class="slide slide-final" id="sw-final-slide">
 					<h2 class="final-title">A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 				</div>
+
 
 			</div>
 		</div>
@@ -203,10 +206,10 @@ const projects = [
 
 	/* Horizontal scroll */
 	.scroll-section {
-		/* 100vh for the blur-in (ENTER_SCREENS in the script) + ~990vh of
-		   horizontal travel (each project is a full screen wide) + a 40vh hold
-		   on the final slide (FINAL_HOLD) + the 100vh of the pinned view. */
-		height: 1230vh;
+		/* 100vh for the blur-in (ENTER_SCREENS in the script) + the travel + a hold on the last
+		   card + the pinned view. The script sets the real height from the
+		   measured travel (measure()); this is only the first paint. */
+		height: 700vh;
 		position: relative;
 		display: none;
 	}
@@ -282,6 +285,24 @@ const projects = [
 		background:
 			linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 30%, transparent 58%),
 			linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, transparent 22%);
+	}
+	/* A film title's small print: number and tags, in the corners of the frame. */
+	.card-meta {
+		position: absolute;
+		z-index: 1;
+		top: clamp(1.1rem, 2.6vh, 2rem);
+		left: var(--site-gutter);
+		right: var(--site-gutter);
+		display: flex;
+		justify-content: space-between;
+		pointer-events: none;
+		font-family: var(--f-body);
+		font-size: 0.66rem;
+		font-weight: 500;
+		letter-spacing: 0.34em;
+		text-transform: uppercase;
+		font-variant-numeric: tabular-nums;
+		color: rgb(var(--c-cream) / 0.7);
 	}
 	.card-info {
 		position: absolute;
@@ -377,38 +398,51 @@ const projects = [
 		}
 	}
 
-	/* Explore: a real button — a hairline frame and the label — on a dark,
-	   soft field so it holds up over any picture. Over the whole frame (the
-	   cursor anywhere on it) it fills with cream. */
+	/* Only the title is always there. The line about the project and Explore
+	   (a plain link with an arrow, no frame) come up when the cursor is on the
+	   frame — the page transition carries them across as they stand. */
 	.slide-card .card-info .link-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.9rem;
 		flex: none;
-		padding: 1.05rem 1.7rem;
-		font-size: 0.78rem;
-		letter-spacing: 0.26em;
+		padding: 0;
+		font-size: 0.74rem;
+		letter-spacing: 0.28em;
 		color: rgb(var(--c-cream));
-		background: rgba(0, 0, 0, 0.42);
-		border: 1px solid rgb(var(--c-cream) / 0.6);
-		transition: color 0.4s ease, background-color 0.4s ease, border-color 0.4s ease;
+		background: none;
+		border: 0;
 	}
-	/* No arrow, and none of the link's usual underline either. */
-	.slide-card .card-info .link-btn::after { content: none; }
+	.slide-card .card-info .link-btn::after {
+		content: '\2192';
+		position: static;
+		width: auto;
+		height: auto;
+		background: none;
+		transform: none;
+		font-size: 1.05rem;
+		letter-spacing: 0;
+		transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+	}
 	@media (hover: hover) and (pointer: fine) {
 		/* The picture comes slowly a little closer under the cursor (its frame
 		   scales; the picture inside keeps its own drift). The card clips it. */
 		.img-box { transition: transform 1.4s cubic-bezier(0.16, 1, 0.3, 1); }
 		.slide-card:hover .img-box { transform: scale(1.045); }
-		.card-info p { transition: color 0.5s ease; }
-		.slide-card:hover .card-info p { color: rgb(var(--c-cream) / 0.95); }
-		.slide-card:hover .card-info .link-btn,
-		.slide-card .card-info .link-btn:hover {
-			color: rgb(var(--c-bg));
-			background: rgb(var(--c-cream));
-			border-color: rgb(var(--c-cream));
+		.card-info p,
+		.slide-card .card-info .link-btn {
+			opacity: 0;
+			transform: translateY(10px);
+			transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.slide-card:hover .card-info p,
+		.slide-card:hover .card-info .link-btn {
+			opacity: 1;
 			transform: none;
 		}
+		.slide-card:hover .card-info p { transition-delay: 0.05s; }
+		.slide-card:hover .card-info .link-btn { transition-delay: 0.14s; }
+		.slide-card .card-info .link-btn:hover::after { transform: translateX(6px); }
 	}
 
 	/* Curtain */
@@ -472,6 +506,7 @@ const projects = [
 		color: rgb(var(--c-cream) / 0.72);
 	}
 
+
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		/* Pulled up by one screen, so the pinned view takes over exactly where the
 		   manifesto's pin ends: it blurs in on the spot (nothing slides in from
@@ -485,12 +520,27 @@ const projects = [
 		.slide-intro h2 { font-size: clamp(3rem, 6vw, 8rem); }
 	}
 
+
 	/* Final slide headline had only a vw size — on short laptops the four
 	   lines overflowed the viewport top/bottom (and the wide words bled off
 	   the sides), so the closing reveal looked broken. Cap it against height
 	   too. */
 	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
 		.final-title { font-size: min(11vw, 13.5vh); }
+	}
+
+	/* Big monitors (27–32"): the type is capped in rem for ordinary screens, which
+	   reads small on a 2560px-wide frame — so above 1920px it keeps growing with
+	   the width. Desktop only: phones and tablets are not touched. */
+	@media (min-width: 1921px) and (hover: hover), (min-width: 1921px) and (pointer: fine) {
+		.slide-intro h2 { font-size: 8vw; margin-bottom: 3.5rem; }
+		.slide-curtain h2 { font-size: 3.8vw; }
+		.card-info h3 { font-size: 4.4vw; }
+		.card-info p { font-size: 1.05vw; }
+		.card-meta { font-size: 0.52vw; }
+		.slide-card .card-info .link-btn { font-size: 0.62vw; }
+		.slide-intro .link-btn { font-size: 0.78vw; }
+		.slide-card .card-info .link-btn::after { font-size: 0.85vw; }
 	}
 
 	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
@@ -709,12 +759,33 @@ const projects = [
 		const cardX = new Array<number>(cards.length);
 		const fadeX = new Array<number>(fadeCards.length);
 		const imgBoxes: { el: HTMLElement; left: number; width: number }[] = [];
+		// Pinned on each project: the strip rests on a frame (the first screen, then every
+		// project) for a stretch of scroll and only then moves on to the next, so one
+		// flick of the wheel cannot carry you past a project. snapX = where it rests.
 		let curtainX = 0;
-		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
+		const EASE_MIX = 0.65; // 0 = steady travel, 1 = full stop on every frame; between, it slows down on each project and never stops
+		let snapX: number[] = [0];
+		const slideCards = Array.from(section.querySelectorAll<HTMLElement>('.slide-card'));
+		const travelAt = (p: number) => {
+			const n = snapX.length - 1;
+			if (n < 1) return 0;
+			const s = Math.max(0, Math.min(1, p)) * n;
+			const i = Math.min(n - 1, Math.floor(s));
+			const f = s - i;
+			// Steady travel with a soft pull toward every frame: the strip eases
+			// off as a project comes to the middle and eases away again, but its
+			// speed never drops to zero, so the scroll stays fluid.
+			const g = f + (f * f * (3 - 2 * f) - f) * EASE_MIX;
+			return snapX[i] + (snapX[i + 1] - snapX[i]) * g;
+		};
+		const FINAL_HOLD = 0.4; // screens the last card is held before the pin lets go
+		const TRAVEL_RATIO = 1; // as long as the original: one px of scroll per px of travel, so nothing is skipped 
 		const ENTER_SCREENS = 1.0; // screens of blur-in before the horizontal travel
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
+			// The block is only as tall as the travel needs: enter + travel + hold + the pinned view.
+			ss.style.height = `${Math.round(window.innerHeight * (1 + ENTER_SCREENS + FINAL_HOLD) + maxScroll * TRAVEL_RATIO)}px`;
 			sectionTop = ss.getBoundingClientRect().top + window.scrollY;
 			// Measured, not assumed (the manifesto sizes off a frozen --app-stable-vh,
 			// this off the live viewport; they differ once the window is resized):
@@ -730,6 +801,7 @@ const projects = [
 			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight * (1 + FINAL_HOLD + ENTER_SCREENS));
 			curtainX = ce.offsetLeft;
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
+			snapX = [0, ...slideCards.map((c) => Math.min(c.offsetLeft, maxScroll)), Math.min(curtainX, maxScroll), maxScroll].filter((x, i, a) => i === 0 || x > a[i - 1]);
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
 			imgBoxes.length = 0;
 			images.forEach(img => {
@@ -747,7 +819,7 @@ const projects = [
 
 			const enterY = ENTER_SCREENS * window.innerHeight;
 			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - enterY) / scrollableH));
-			const targetX = progress * maxScroll;
+			const targetX = travelAt(progress);
 
 			currentX += (targetX - currentX) * (1 - Math.exp(-EASE_PER_SECOND * dt));
 			tr.style.transform = `translate3d(-${currentX}px,0,0)`;
@@ -801,7 +873,7 @@ const projects = [
 			/* snap to the correct spot on re-entry so the track never visibly
 			   catches up from a stale position */
 			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH));
-			currentX = progress * maxScroll;
+			currentX = travelAt(progress);
 			lastTime = performance.now();
 			rafId = requestAnimationFrame(tick);
 		}
@@ -847,7 +919,7 @@ const projects = [
 			e.stopPropagation();
 			centring = true;
 			EASE_PER_SECOND = BASE_EASE * 3;
-			const y = enterFrom + ENTER_SCREENS * window.innerHeight + (card.offsetLeft / Math.max(1, maxScroll)) * scrollableH;
+			const y = enterFrom + ENTER_SCREENS * window.innerHeight + (Math.max(0, snapX.indexOf(Math.min(card.offsetLeft, maxScroll))) / Math.max(1, snapX.length - 1)) * scrollableH;
 			const lenis = (window as any).__lenis;
 			if (lenis) lenis.scrollTo(y, { duration: 0.55, lock: true, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
 			else window.scrollTo({ top: y, behavior: 'smooth' });
@@ -869,7 +941,35 @@ const projects = [
 		};
 		section.addEventListener('click', onCardClick, true);
 
+		/* A gentle magnet: once the wheel has been still for a moment and a project
+		   is almost in the middle, the page eases the last bit so it rests exactly
+		   there (never a stop in the middle of a move, never against the user). */
+		let idle = 0;
+		let settling = false;
+		const onScrollIdle = () => {
+			if (settling) return;
+			window.clearTimeout(idle);
+			idle = window.setTimeout(() => {
+				const n = snapX.length - 1;
+				if (n < 1) return;
+				const pr = (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH;
+				if (pr <= 0 || pr >= 1) return;
+				const sPos = pr * n;
+				const k = Math.round(sPos);
+				if (k < 1 || k > slideCards.length || Math.abs(sPos - k) > 0.16) return;
+				const y = enterFrom + ENTER_SCREENS * window.innerHeight + (k / n) * scrollableH;
+				if (Math.abs(y - window.scrollY) < 2) return;
+				const lenis = (window as any).__lenis;
+				settling = true;
+				if (lenis) lenis.scrollTo(y, { duration: 0.7, lock: false, onComplete: () => { settling = false; } });
+				else { window.scrollTo({ top: y, behavior: 'smooth' }); window.setTimeout(() => { settling = false; }, 700); }
+			}, 160);
+		};
+		window.addEventListener('scroll', onScrollIdle, { passive: true });
+
 		const onBeforeSwap = () => {
+			window.clearTimeout(idle);
+			window.removeEventListener('scroll', onScrollIdle);
 			section.removeEventListener('click', onCardClick, true);
 			stop();
 			io.disconnect();
