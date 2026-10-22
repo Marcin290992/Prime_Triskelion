@@ -10,9 +10,15 @@ const slice = (i: number) => {
 	const end = ((i * 0.1 + 1) / total) * 100;
 	return `--s:${start.toFixed(2)}%;--e:${end.toFixed(2)}%`;
 };
-const accent = new Set(['experiences', 'lasting', 'mark']);
+const accentOrder = ['experiences', 'lasting', 'mark'];
 let n = 0;
-const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
+const words = lines.map((line) => line.map((w) => {
+	const accentIndex = accentOrder.indexOf(w);
+	const accentRange = accentIndex < 0
+		? ''
+		: `;--accent-start:${66 + accentIndex * 7}%;--accent-end:${72 + accentIndex * 7}%`;
+	return { w, style: `${slice(n++)}${accentRange}`, accent: accentIndex >= 0 };
+}));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
 <section id="manifesto" class="relative" style="height:330vh;height:330lvh;height:calc(var(--app-stable-vh) * 330);z-index:10">
@@ -76,7 +82,14 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 				animation-range: cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34);
 			}
 			#manifesto .mw--accent:not(.br) {
-				animation-name: mw-focus-accent;
+				animation-name: mw-focus, mw-accent;
+				animation-timing-function: linear, linear;
+				animation-fill-mode: both, both;
+				animation-duration: 1ms, 1ms;
+				animation-timeline: --manifesto, --manifesto;
+				animation-range:
+					cover calc(28% + var(--s) * 0.34) cover calc(28% + var(--e) * 0.34),
+					cover var(--accent-start) cover var(--accent-end);
 				transform-origin: center;
 			}
 		}
@@ -85,9 +98,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		from { filter: blur(8px); opacity: 0.15; }
 		to { filter: blur(0px); opacity: 1; }
 	}
-	@keyframes mw-focus-accent {
-		from { filter: blur(8px); opacity: 0.15; color: rgb(var(--c-cream)); transform: scale(1); }
-		to { filter: blur(0px); opacity: 1; color: rgb(var(--c-red)); transform: scale(1.04); }
+	@keyframes mw-accent {
+		from { color: rgb(var(--c-cream)); transform: scale(1); }
+		to { color: rgb(var(--c-red)); transform: scale(1.04); }
 	}
 	.mw {
 		display: inline-block;
