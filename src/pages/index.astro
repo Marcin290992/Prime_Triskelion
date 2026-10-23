@@ -90,7 +90,17 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// Brightness, not opacity (the intro owns the canvas's opacity).
-				if (rays) rays.style.filter = p > 0 ? `brightness(${(1 - smooth(clamp01(p / 0.6))).toFixed(3)})` : '';
+				if (rays) {
+					const light = p > 0 ? 1 - smooth(clamp01(p / 0.6)) : 1;
+					// Fully out: nothing to see, so the hero stops drawing it
+					// (HeroSection's initRays listens) and starts again on the way back.
+					const dark = light <= 0;
+					if (rays.dataset.dark !== (dark ? '1' : '')) {
+						rays.dataset.dark = dark ? '1' : '';
+						rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
+					}
+					rays.style.filter = p > 0 ? `brightness(${light.toFixed(3)})` : '';
+				}
 				// Then the type and the rest go soft (the blur layer), and only once
 				// they are soft do they sink into the dark (the black layer) — the
 				// same going-out as the manifesto's line.

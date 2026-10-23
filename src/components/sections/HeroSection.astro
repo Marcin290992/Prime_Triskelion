@@ -1365,19 +1365,27 @@ import { createLightRays } from '../../utils/lightRays';
 		// light fades out and stops rendering; back up, it fades in again.
 		const RAYS_ACTIVE_RATIO = 0.35;
 		let raysStopTimer: ReturnType<typeof setTimeout> | undefined;
+		// The home page's pinned exit (index.astro) dims the light to black well
+		// before the hero is out of view: from then on there is nothing to draw.
+		let raysDark = canvas.dataset.dark === '1';
 		function setRaysActive(on: boolean) {
 			if (on === isHeroVisible) return;
 			isHeroVisible = on;
 			clearTimeout(raysStopTimer);
 			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 0.5s ease';
 			canvas!.style.filter = on ? '' : 'opacity(0)';
-			if (on) { if (!document.hidden) rays!.start(); }
+			if (on) { if (!document.hidden && !raysDark) rays!.start(); }
 			else raysStopTimer = setTimeout(() => rays!.stop(), 550);
 		}
+		canvas.addEventListener('pt:rays-dark', (event) => {
+			raysDark = (event as CustomEvent<boolean>).detail;
+			if (raysDark) rays!.stop();
+			else if (isHeroVisible && !document.hidden) rays!.start();
+		});
 
 		function onVisibilityChange() {
 			if (document.hidden) { rays!.stop(); return; }
-			if (isHeroVisible) rays!.start();
+			if (isHeroVisible && !raysDark) rays!.start();
 			// Back on the tab: re-size only if the settled width really changed.
 			setTimeout(() => { if (canvas!.offsetWidth !== lastWidth) { lastWidth = canvas!.offsetWidth; rays!.resize(); } }, 1000);
 		}
@@ -1390,7 +1398,7 @@ import { createLightRays } from '../../utils/lightRays';
 			heroIO.observe(heroSectionEl);
 		}
 
-		rays.start();
+		if (!raysDark) rays.start();
 
 		document.addEventListener('astro:before-swap', () => {
 			clearTimeout(raysStopTimer);

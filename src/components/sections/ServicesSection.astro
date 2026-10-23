@@ -608,9 +608,9 @@ const services = [
 		// pointer is on a name, travelling with it. It has weight: it trails the
 		// pointer a little late, leans and banks with its own speed, and the
 		// picture inside slides against the card. It never covers the letters of
-		// the name that is pointed at. It shows only after the mouse has actually
-		// moved over a name (not because the list scrolled under a resting
-		// pointer) and goes away on scroll or when the pointer leaves the names.
+		// the name that is pointed at. It shows whenever a name is under the
+		// pointer — also when the list scrolled under a resting one — and goes
+		// away when the pointer is no longer on a name.
 		const card = section.querySelector<HTMLElement>('.svc__media');
 		if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
 			const list = section.querySelector<HTMLElement>('.svc__list');
@@ -686,28 +686,28 @@ const services = [
 				r.selectNodeContents(base);
 				textRight = r.getBoundingClientRect().right;
 			};
-			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; }, { passive: true });
-			list?.addEventListener('mousemove', (e) => {
-				if (!e.movementX && !e.movementY) return; // a synthetic move after a scroll
-				const row = (e.target as HTMLElement).closest('.svc__row');
+			// Whatever name is under the pointer is the active one and has the card —
+			// whether the pointer moved onto it or the list scrolled under a resting
+			// pointer (no mouse event reliably comes then).
+			const sync = () => {
+				const under = px < 0 ? null : document.elementFromPoint(px, py);
+				const row = under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null;
 				if (!row) { hide(); return; }
-				if (row !== lastRow) { lastRow = row; measure(row); }
+				if (row !== lastRow) {
+					lastRow = row;
+					measure(row);
+					set(rows.indexOf(row));
+				}
 				show();
-			});
+			};
+			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; sync(); }, { passive: true });
+			document.documentElement.addEventListener('mouseleave', () => { px = -1; hide(); });
 			list?.addEventListener('mouseleave', hide);
-			// While the page scrolls (Lenis keeps easing for a moment after the wheel
-			// stops) the card stays as long as a name is still under the pointer;
-			// it goes only when the list has moved away from it.
-			let sticking = false;
+			let syncing = false;
 			window.addEventListener('scroll', () => {
-				if (!shown || sticking) return;
-				sticking = true;
-				requestAnimationFrame(() => {
-					sticking = false;
-					const under = document.elementFromPoint(px, py);
-					const row = under && under.closest('.svc__row');
-					if (!row) hide(); else if (row !== lastRow) { lastRow = row; measure(row); }
-				});
+				if (syncing || px < 0) return;
+				syncing = true;
+				requestAnimationFrame(() => { syncing = false; sync(); });
 			}, { passive: true });
 		}
 	}
