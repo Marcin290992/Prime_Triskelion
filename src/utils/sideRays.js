@@ -64,13 +64,13 @@ const OPTS = {
   activeRatio: 0.35,
   dimMs: 500,
   relightMs: 1600,
-  // Entrance, as the home hero's light: right after the hero's text has
-  // come in (title 0.8s, lead done at ~0.85s — titleIn/supportIn's short
-  // entrance) the rays grow out of their source to full length (reveal)
-  // while the light fades up (opacity) — a sunrise. Seconds.
-  inAt: 0.85,
-  inOpacity: 2.6,
-  inReveal: 3.0,
+  // Entrance, as the home hero's light: it starts as the lead is half in
+  // (the lead runs 0.15-0.85s in titleIn/supportIn's short entrance), and the
+  // rays grow out of their source to full length (reveal) while the light
+  // fades up (opacity) — a sunrise of about two seconds. Seconds.
+  inAt: 0.5,
+  inOpacity: 2.0,
+  inReveal: 2.0,
   // Phones and tablets: same start, then a sunrise — the light creeps up
   // from nothing (slow start, power1.in) and keeps growing for seconds,
   // never jumping in (power2.out did most of its change at once). Kept to
