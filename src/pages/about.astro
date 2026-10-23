@@ -498,7 +498,18 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       });
     }
 
+    // A click (or tap) on the portrait sends a wave across it that shows the
+    // photo wherever it passes. Only once the veil has lifted off it.
+    const onPortraitDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if ((_amRevealST?.progress ?? 0) < portraitStart) return;
+      const r = ditherCanvas!.getBoundingClientRect();
+      _amDither?.burst(e.clientX - r.left, e.clientY - r.top);
+    };
+    if (_amDither && stack) stack.addEventListener('pointerdown', onPortraitDown, { passive: true });
+
     document.addEventListener('astro:before-swap', () => {
+      stack?.removeEventListener('pointerdown', onPortraitDown);
       _amRevealST?.kill();
       _amRevealST = null;
       _amSinkST?.kill();

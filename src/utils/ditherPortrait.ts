@@ -3,7 +3,8 @@
 // real photo "develops" in through a Bayer-ordered cell pattern. Driven
 // entirely from outside via setProgress (the page's ScrollTrigger) and only
 // renders when something changed — no continuous rAF loop, which is what
-// mobile Safari handles worst.
+// mobile Safari handles worst. The one exception is a click wave (burst),
+// which runs frames for its ~1.2s and then stops again.
 //
 // Frames the photo like the <img> underneath it (object-fit: cover +
 // object-position), so the fully developed canvas and the plain fallback
@@ -39,8 +40,15 @@ export interface DitherPortraitHandle {
   // dither there runs at a much finer cell, as if a lens pulled that part
   // of the face into focus. amount 0..1 fades it in and out.
   setLens(x: number, y: number, amount: number): void;
+  // A wave from (x, y), in CSS px from the canvas's top-left: a ring runs
+  // out across the portrait and shows the photo wherever it passes.
+  burst(x: number, y: number): void;
   destroy(): void;
 }
+
+const MAX_BURSTS = 4;
+const BURST_SECONDS = 1.2;
+const BURST_WIDTH = 180; // CSS px, the wave's soft trail
 
 const FLOYD: [number, number, number][] = [
   [1, 0, 7 / 16],
@@ -82,9 +90,26 @@ uniform float uSinkRadius;
 uniform vec3 uLens; // x, y (device px, top-down), amount
 uniform float uLensRadius;
 uniform float uFineCell;
+uniform vec4 uBursts[4]; // x, y (device px, top-down), radius, strength (0 = unused)
+uniform float uBurstWidth;
 
 in vec2 vUv;
 out vec4 fragColor;
+
+// Click waves: a ring running out from the click. Behind its front is a long
+// soft trail, ahead of it a short sharp edge; the whole thing weakens as it
+// goes. 0..1.
+float shockwave(vec2 p) {
+  float value = 0.0;
+  for (int i = 0; i < 4; i++) {
+    vec4 burst = uBursts[i];
+    if (burst.w <= 0.0) continue;
+    float offset = distance(p, burst.xy) - burst.z;
+    float edge = offset > 0.0 ? offset / (uBurstWidth * 0.35) : -offset / uBurstWidth;
+    value = max(value, clamp(1.0 - edge, 0.0, 1.0) * burst.w);
+  }
+  return value;
+}
 
 float bayer(vec2 cell) {
   ivec2 p = ivec2(mod(cell, 8.0));
@@ -138,10 +163,14 @@ void main() {
   vec3 photo = texture(tImage, imageUv(vUv)).rgb;
   // Outside the vignette the photo dissolves back into dither, cell by
   // cell in the same Bayer order it developed in.
-  float shown = uDevelop - (1.0 - vign) * uSink;
-  color = mix(color, photo, step(bayer(cell.yx), shown));
-  // Dim toward ~30% in the face, to black at the edges.
-  color *= mix(1.0, 0.3 * vign, uSink);
+  // A click wave shows the photo wherever it passes, whatever else the
+  // portrait is doing (still dithered, or sunk back into the dark).
+  float wave = shockwave(center);
+  float order = bayer(cell.yx);
+  float shown = max(uDevelop - (1.0 - vign) * uSink, wave);
+  color = mix(color, photo, step(order, shown));
+  // Dim toward ~30% in the face, to black at the edges — lifted by the wave.
+  color *= mix(mix(1.0, 0.3 * vign, uSink), 1.0, step(order, wave));
   fragColor = vec4(color, 1.0);
 }`;
 
@@ -229,6 +258,7 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     'tImage', 'tDiffused', 'uDiffused', 'uResolution', 'uCover', 'uOffset', 'uCell',
     'uInk', 'uPaper', 'uMatte', 'uKey', 'uContrast', 'uBrightness', 'uDevelop',
     'uSink', 'uSinkFocus', 'uSinkRadius', 'uLens', 'uLensRadius', 'uFineCell',
+    'uBursts', 'uBurstWidth',
   ] as const;
   const u = {} as Record<(typeof names)[number], WebGLUniformLocation | null>;
   for (const n of names) u[n] = gl.getUniformLocation(program, n);
@@ -280,6 +310,9 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
   let lensY = 0;
   let lensAmt = 0;
   const LENS_RADIUS = 140; // CSS px
+  // Waves in flight, in device px from the canvas's top-left.
+  const bursts: { x: number; y: number; start: number }[] = [];
+  const burstData = new Float32Array(MAX_BURSTS * 4);
   let diffusionBlocked = false;
   // Diffused cells keyed by cell size — the scrub only ever visits a
   // handful of integer sizes, so scrolling back and forth never re-runs the
@@ -454,7 +487,27 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
     gl!.uniform1f(u.uLensRadius, LENS_RADIUS * dpr);
     // A third of the current cell, never under ~1.5 CSS px.
     gl!.uniform1f(u.uFineCell, Math.max(1.5 * dpr, cell / 3));
+
+    // Each wave's ring grows (eased out) until it has cleared the far corner,
+    // fading as it goes; finished ones drop out.
+    const now = performance.now();
+    for (let i = bursts.length - 1; i >= 0; i--) {
+      if ((now - bursts[i].start) / 1000 >= BURST_SECONDS) bursts.splice(i, 1);
+    }
+    const width = BURST_WIDTH * dpr;
+    burstData.fill(0);
+    bursts.forEach((b, i) => {
+      const k = (now - b.start) / 1000 / BURST_SECONDS;
+      const reach = Math.hypot(Math.max(b.x, canvas.width - b.x), Math.max(b.y, canvas.height - b.y)) + width;
+      burstData[i * 4] = b.x;
+      burstData[i * 4 + 1] = b.y;
+      burstData[i * 4 + 2] = reach * Math.sin((k * Math.PI) / 2);
+      burstData[i * 4 + 3] = 1 - k * k * k;
+    });
+    gl!.uniform4fv(u.uBursts, burstData);
+    gl!.uniform1f(u.uBurstWidth, width);
     gl!.drawArrays(gl!.TRIANGLES, 0, 3);
+    if (bursts.length) schedule();
 
     if (!ready) {
       ready = true;
@@ -546,6 +599,12 @@ export function initDitherPortrait(canvas: HTMLCanvasElement, opts: DitherPortra
       lensX = x;
       lensY = y;
       lensAmt = a;
+      schedule();
+    },
+    burst(x: number, y: number) {
+      if (!image) return;
+      bursts.push({ x: x * dpr, y: y * dpr, start: performance.now() });
+      if (bursts.length > MAX_BURSTS) bursts.shift();
       schedule();
     },
     destroy() {
