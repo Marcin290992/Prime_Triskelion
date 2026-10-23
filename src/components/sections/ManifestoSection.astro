@@ -89,7 +89,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			mtl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
 			const mPicked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
 			const mRed = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
-			if (mPicked.length && mRed) mtl.to(mPicked, { color: `rgb(${mRed})`, duration: 0.5, stagger: 0.3, ease: 'none' });
+			if (mPicked.length && mRed) mtl.to(mPicked, { color: `rgb(${mRed})`, duration: 0.5, stagger: 0.3, ease: 'none' }, '-=1.4');
 			_manifestoST = ScrollTrigger.create({
 				animation: mtl,
 				trigger: section,
