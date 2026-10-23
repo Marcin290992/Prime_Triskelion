@@ -688,17 +688,16 @@ const projects = [
 		const fadeCards  = Array.from(section.querySelectorAll<HTMLElement>('.card-fade'));
 		const images = Array.from(section.querySelectorAll<HTMLElement>('.img-parallax'));
 
-		/* All layout reads happen in measure() (init + resize only); tick() works
-		   off cached offsets + window.scrollY so the frame never forces a reflow.
-		   Easing is time-based, so it stays consistent across display refresh rates. */
-		const EASE_PER_SECOND = 4.5;
-
+		/* All layout reads happen in measure() (init + resize only); render() works
+		   off cached offsets + window.scrollY so scroll frames never force a reflow. */
+		const EASE_PER_SECOND = 8;
 		let currentX = 0;
 		let maxScroll = 0;
 		let sectionTop = 0;
 		let enterFrom = 0; // scrollY where the manifesto's pin really ends
 		let scrollableH = 1;
 		let rafId = 0;
+		let active = false;
 		let lastTime = 0;
 
 		const cardX = new Array<number>(cards.length);
@@ -733,14 +732,13 @@ const projects = [
 			});
 		}
 
-		function tick(now: number) {
-			const dt = Math.min((now - lastTime) / 1000, 0.1);
-			lastTime = now;
-
+		function render(now: number) {
+			rafId = 0;
 			const enterY = ENTER_SCREENS * window.innerHeight;
 			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - enterY) / scrollableH));
 			const targetX = progress * maxScroll;
-
+			const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.1) : 1 / 60;
+			lastTime = now;
 			currentX += (targetX - currentX) * (1 - Math.exp(-EASE_PER_SECOND * dt));
 			tr.style.transform = `translate3d(-${currentX}px,0,0)`;
 
@@ -782,31 +780,45 @@ const projects = [
 				}
 			});
 
-			rafId = requestAnimationFrame(tick);
+			if (Math.abs(targetX - currentX) > 0.25) scheduleRender();
+		}
+
+		function scheduleRender() {
+			if (active && !rafId) rafId = requestAnimationFrame(render);
+		}
+
+		function onScroll() {
+			scheduleRender();
 		}
 
 		function start() {
-			if (rafId) return;
-			/* snap to the correct spot on re-entry so the track never visibly
-			   catches up from a stale position */
+			if (active) return;
+			active = true;
 			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH));
 			currentX = progress * maxScroll;
-			lastTime = performance.now();
-			rafId = requestAnimationFrame(tick);
+			lastTime = 0;
+			scheduleRender();
 		}
 
 		function stop() {
-			if (!rafId) return;
-			cancelAnimationFrame(rafId);
-			rafId = 0;
+			active = false;
+			if (rafId) {
+				cancelAnimationFrame(rafId);
+				rafId = 0;
+			}
+		}
+
+		function onResize() {
+			measure();
+			scheduleRender();
 		}
 
 		const ro = new ResizeObserver(() => {
-			const prevMax = maxScroll;
-			measure();
-			if (prevMax > 0 && maxScroll > 0) currentX = (currentX / prevMax) * maxScroll;
+			onResize();
 		});
 		ro.observe(tr);
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('resize', onResize, { passive: true });
 
 		/* run the loop only while the section (± one viewport) is near view */
 		const io = new IntersectionObserver(entries => {
@@ -822,6 +834,8 @@ const projects = [
 			stop();
 			io.disconnect();
 			ro.disconnect();
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('resize', onResize);
 			document.removeEventListener('astro:before-swap', onBeforeSwap);
 		};
 		document.addEventListener('astro:before-swap', onBeforeSwap);
