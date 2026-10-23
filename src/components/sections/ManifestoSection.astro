@@ -88,7 +88,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
-		tl.to({}, { duration: 1.0 });
+		if (!isMobile) tl.to({}, { duration: 1.0 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
