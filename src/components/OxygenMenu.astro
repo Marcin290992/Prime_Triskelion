@@ -335,6 +335,17 @@ const navLinks = [
     .ox-menu-link:hover .ox-link-text--base { transform: translateY(-100%); }
     .ox-menu-link:hover .ox-link-text--red  { transform: translateY(-100%); }
   }
+  /* Mouse only, as in the Services list: while one name is pointed at, the
+     others dim and go lightly soft. Put on the inner text wrap, not the <li>
+     or the link — GSAP drives those (open/close, dissolveMenu) and a CSS
+     transition on them would fight its tweens. */
+  .ox-link-text-wrap { transition: filter 0.45s ease, opacity 0.4s ease; }
+  @media (hover: hover) and (pointer: fine) {
+    #ox-menu-overlay nav:has(.ox-menu-link:hover) .ox-menu-item:not(:has(.ox-menu-link:hover)) .ox-link-text-wrap {
+      filter: blur(3px);
+      opacity: 0.38;
+    }
+  }
   /* Touch active state */
   .ox-link--active .ox-link-text--base { transform: translateY(-100%); }
   .ox-link--active .ox-link-text--red  { transform: translateY(-100%); }
