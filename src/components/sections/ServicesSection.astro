@@ -203,19 +203,17 @@ const services = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream) / 0.38);
 			text-decoration: none;
-			transition: color 0.4s ease, filter 0.45s ease;
+			transition: color 0.4s ease;
 		}
 		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
 		/* Mouse only. At rest, and whenever the mouse is off the names (on the
 		   picture too), every name is dimmed. The one under the mouse rolls to
-		   white; the others stay dim and go lightly soft. */
+		   white; the others stay dim. */
 		@media (hover: hover) and (pointer: fine) {
 			.svc__link:hover .svc__roll__base,
 			.svc__link:hover .svc__roll__red,
 			.svc__row.is-hot .svc__roll__base,
 			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
-			.svc__list:has(.svc__link:hover) .svc__link:not(:hover),
-			.svc__list.has-hot .svc__row:not(.is-hot) .svc__link { filter: blur(3px); }
 		}
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
 		#services .svc__footer { display: none; }
@@ -704,7 +702,6 @@ const services = [
 			// The row under the pointer is lit by the script (see .is-hot in the CSS).
 			const heat = (hot: Element | null) => {
 				rows.forEach((r) => r.classList.toggle('is-hot', r === hot));
-				list?.classList.toggle('has-hot', !!hot);
 			};
 			// The right end of a name's letters (its row is the full width).
 			const measure = (row: Element) => {
