@@ -493,6 +493,10 @@ const projects = [
 	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
 	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.sw-header {
+			padding-top: clamp(3.5rem, 10vw, 5rem);
+			padding-bottom: clamp(1rem, 3vw, 1.5rem);
+		}
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
 		.sw-m {
 			display: block;
