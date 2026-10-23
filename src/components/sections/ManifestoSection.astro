@@ -36,14 +36,14 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets keep the copy visible while pinning for one viewport. */
+	/* Phones and tablets use the same normal section flow and spacing as the rest of the page. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto { height: calc(var(--app-stable-vh, 1svh) * 200) !important; }
+		#manifesto { height: auto !important; }
 		#manifesto > .sticky {
-			position: sticky !important;
-			top: 0 !important;
-			height: calc(var(--app-stable-vh, 1svh) * 100) !important;
-			min-height: calc(var(--app-stable-vh, 1svh) * 100) !important;
+			position: static !important;
+			top: auto !important;
+			height: auto !important;
+			min-height: 0 !important;
 			padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom) !important;
 		}
 	}
