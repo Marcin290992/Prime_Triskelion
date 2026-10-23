@@ -80,9 +80,24 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		_manifestoST?.kill();
 		_manifestoST = null;
 		if (isMobile) {
-			gsap.set(words, { clearProps: 'filter,opacity,transform,color' });
+			// Same word-by-word focus as desktop, but no pin and no extra scroll
+			// height: the section stays in normal flow and the reveal is scrubbed
+			// while it travels up through the viewport.
+			gsap.registerPlugin(ScrollTrigger);
+			gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
+			const mtl = gsap.timeline();
+			mtl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+			const mPicked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
+			const mRed = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
+			if (mPicked.length && mRed) mtl.to(mPicked, { color: `rgb(${mRed})`, duration: 0.5, stagger: 0.3, ease: 'none' });
+			_manifestoST = ScrollTrigger.create({
+				animation: mtl,
+				trigger: section,
+				start: 'top 80%',
+				end: 'bottom 40%',
+				scrub: true,
+			});
 			gsap.set(content, { clearProps: 'opacity' });
-			if (heading) gsap.set(heading, { clearProps: 'filter,opacity,transform,color' });
 			return;
 		}
 
