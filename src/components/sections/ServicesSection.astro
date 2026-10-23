@@ -186,7 +186,12 @@ const services = [
 		.svc__row::before { top: 0; }
 		.svc__row::after { bottom: 0; }
 		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::before,
-		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::after { background: rgb(var(--c-cream) / 0.6); }
+		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::after,
+		/* .is-hot: set by the script for the name under the pointer — the browser
+		   does not update :hover while the page scrolls under a pointer that is
+		   not moving. */
+		.svc__row.is-hot::before,
+		.svc__row.is-hot::after { background: rgb(var(--c-cream) / 0.6); }
 		.svc__link {
 			display: block;
 			width: 100%;
@@ -206,8 +211,11 @@ const services = [
 		   white; the others stay dim and go lightly soft. */
 		@media (hover: hover) and (pointer: fine) {
 			.svc__link:hover .svc__roll__base,
-			.svc__link:hover .svc__roll__red { transform: translateY(-100%); }
-			.svc__list:has(.svc__link:hover) .svc__link:not(:hover) { filter: blur(3px); }
+			.svc__link:hover .svc__roll__red,
+			.svc__row.is-hot .svc__roll__base,
+			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
+			.svc__list:has(.svc__link:hover) .svc__link:not(:hover),
+			.svc__list.has-hot .svc__row:not(.is-hot) .svc__link { filter: blur(3px); }
 		}
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
 		#services .svc__footer { display: none; }
@@ -502,6 +510,14 @@ const services = [
 
 	let _isBackNav = false;
 
+	// Where the mouse last was, kept for the whole visit: a page's own scripts
+	// start knowing nothing, but the pointer is still where the click that
+	// brought the visitor here left it. Bound once; -1 = not known / outside.
+	const pointer = { x: -1, y: -1 };
+	const track = (e: MouseEvent) => { pointer.x = e.clientX; pointer.y = e.clientY; };
+	['mousemove', 'mousedown', 'click'].forEach((type) => window.addEventListener(type, track as EventListener, { passive: true, capture: true }));
+	document.documentElement.addEventListener('mouseleave', () => { pointer.x = -1; pointer.y = -1; });
+
 	document.addEventListener('astro:before-swap', (e: any) => {
 		_isBackNav = (e.navigationType ?? '') === 'traverse';
 	});
@@ -618,7 +634,7 @@ const services = [
 			const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 			const GAP = 36;
 			let raf = 0, shown = false, idle = 0;
-			let px = -1, py = -1; // the pointer, as last seen
+			let px = pointer.x, py = pointer.y; // the pointer, as last seen
 			let textRight = 0; // where the pointed-at name's letters end
 			let lastRow: Element | null = null;
 			const cur = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 };
@@ -628,8 +644,14 @@ const services = [
 			// simply stops there and the pointer slides onto it. Kept on screen.
 			const target = () => {
 				const w = card.offsetWidth, h = card.offsetHeight;
-				const x = Math.min(window.innerWidth - w - 16, Math.max(px + GAP, textRight + GAP * 0.6));
-				const y = clamp(py - h / 2, 16, window.innerHeight - h - 16);
+				// Before the pointer has moved on this page its position is unknown
+				// (it can rest on a name since the page was entered): the card then
+				// sits at the end of the name, on its row, until the first move.
+				const known = px >= 0;
+				const rowBox = lastRow?.getBoundingClientRect();
+				const cy = known ? py : rowBox ? rowBox.top + rowBox.height / 2 : 0;
+				const x = Math.min(window.innerWidth - w - 16, Math.max((known ? px : 0) + GAP, textRight + GAP * 0.6));
+				const y = clamp(cy - h / 2, 16, window.innerHeight - h - 16);
 				return { x, y };
 			};
 			let last = 0;
@@ -674,9 +696,15 @@ const services = [
 				card.classList.add('is-shown');
 			};
 			const hide = () => {
+				heat(null);
 				if (!shown) return;
 				shown = false;
 				card.classList.remove('is-shown');
+			};
+			// The row under the pointer is lit by the script (see .is-hot in the CSS).
+			const heat = (hot: Element | null) => {
+				rows.forEach((r) => r.classList.toggle('is-hot', r === hot));
+				list?.classList.toggle('has-hot', !!hot);
 			};
 			// The right end of a name's letters (its row is the full width).
 			const measure = (row: Element) => {
@@ -688,11 +716,18 @@ const services = [
 			};
 			// Whatever name is under the pointer is the active one and has the card —
 			// whether the pointer moved onto it or the list scrolled under a resting
-			// pointer (no mouse event reliably comes then).
+			// pointer. The browser does not update :hover (nor send mouse events) in
+			// that case, so the row is found from the pointer's last known position
+			// (kept across pages, see `pointer`); :hover only backs it up when no
+			// position is known yet.
 			const sync = () => {
-				const under = px < 0 ? null : document.elementFromPoint(px, py);
-				const row = under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null;
+				px = pointer.x;
+				py = pointer.y;
+				const under = px >= 0 ? document.elementFromPoint(px, py) : null;
+				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null)
+					?? (px < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
 				if (!row) { hide(); return; }
+				heat(row);
 				if (row !== lastRow) {
 					lastRow = row;
 					measure(row);
@@ -703,9 +738,15 @@ const services = [
 			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; sync(); }, { passive: true });
 			document.documentElement.addEventListener('mouseleave', () => { px = -1; hide(); });
 			list?.addEventListener('mouseleave', hide);
+			rows.forEach((row) => row.querySelector('a')?.addEventListener('mouseenter', sync));
+			// The browser refreshes :hover a moment after a scroll stops, so check
+			// again then as well as while it runs.
 			let syncing = false;
+			let settle = 0;
 			window.addEventListener('scroll', () => {
-				if (syncing || px < 0) return;
+				clearTimeout(settle);
+				settle = window.setTimeout(sync, 160);
+				if (syncing) return;
 				syncing = true;
 				requestAnimationFrame(() => { syncing = false; sync(); });
 			}, { passive: true });
