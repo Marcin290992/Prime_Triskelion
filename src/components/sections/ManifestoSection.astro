@@ -93,8 +93,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			_manifestoST = ScrollTrigger.create({
 				animation: mtl,
 				trigger: section,
-				start: 'top 90%',
-				end: 'center 60%',
+				start: 'center center',
+				end: '+=70%',
+				pin: true,
 				scrub: true,
 			});
 			gsap.set(content, { clearProps: 'opacity' });
