@@ -36,8 +36,11 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets use the same pinned text sequence as desktop. */
+	/* Phones and tablets keep the pinned reveal but reach the next section sooner. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto {
+			height: calc(var(--app-stable-vh, 1svh) * 230) !important;
+		}
 		#manifesto > .sticky {
 			position: sticky !important;
 			top: 0 !important;
