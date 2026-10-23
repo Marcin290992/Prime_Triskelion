@@ -36,19 +36,15 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets keep the pinned reveal but reach the next section sooner. */
+	/* Phones and tablets use the same normal section flow and spacing as the rest of the page. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto {
-			height: calc(var(--app-stable-vh, 1svh) * 230) !important;
-		}
+		#manifesto { height: auto !important; }
 		#manifesto > .sticky {
-			position: sticky !important;
-			top: 0 !important;
-			height: calc(var(--app-stable-vh, 1svh) * 100) !important;
-			min-height: calc(var(--app-stable-vh, 1svh) * 100) !important;
-			padding-top: clamp(3.5rem, 12vw, 5rem);
-			padding-bottom: clamp(3.5rem, 12vw, 5rem);
-			box-sizing: border-box;
+			position: static !important;
+			top: auto !important;
+			height: auto !important;
+			min-height: 0 !important;
+			padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom) !important;
 		}
 	}
 	.mw {
@@ -75,32 +71,33 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		const content = section.querySelector<HTMLElement>(':scope > div');
 		if (!content) return;
 
-		gsap.registerPlugin(ScrollTrigger);
-
 		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
 			|| navigator.maxTouchPoints > 0
 			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
+		const heading = section.querySelector<HTMLElement>('h2');
 
 		_manifestoST?.kill();
+		_manifestoST = null;
+		if (isMobile) {
+			gsap.set(words, { clearProps: 'filter,opacity,transform,color' });
+			gsap.set(content, { clearProps: 'opacity' });
+			if (heading) gsap.set(heading, { clearProps: 'filter,opacity,transform,color' });
+			return;
+		}
+
+		gsap.registerPlugin(ScrollTrigger);
 		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
-		if (isMobile) gsap.set(content, { opacity: 0 });
 
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
-		if (isMobile) {
-			tl.to(content, { opacity: 1, duration: 0.1, ease: 'none' }, 0);
-			tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' }, 0);
-		} else {
-			tl.to({}, { duration: 1.0 });
-			tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
-		}
+		tl.to({}, { duration: 1.0 });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the
 		// sentence take the red, one after another.
-		const heading = section.querySelector<HTMLElement>('h2');
 		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
 		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
 		const HOLD = 1.5;
@@ -113,8 +110,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// Then the whole line goes out where it stands, into blur and the dark;
 		// the work section comes up out of that dark on the next scroll (it
 		// pins itself exactly where this pin ends, see SelectedWorkSection).
-		if (heading && !isMobile) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
-		if (!isMobile) tl.to({}, { duration: 0.15 }); // a breath of black
+		if (heading) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
+		tl.to({}, { duration: 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
