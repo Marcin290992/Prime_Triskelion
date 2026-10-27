@@ -1,12 +1,13 @@
 ---
 import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
-import portraitTop from '../img/portrait-top.webp';
+import CtaSection from '../components/sections/CtaSection.astro';
+import portrait from '../img/Marcin 1.jpg';
 ---
 
 <Layout title="About — Prime Triskelion">
   <Fragment slot="head">
-    <link rel="preload" href={portraitTop.src} as="image" />
+    <link rel="preload" href={portrait.src} as="image" />
   </Fragment>
   <!-- The About scene, on every device (the desktop fluid-sim version is
        kept in _about-fluid.astro). -->
@@ -19,7 +20,7 @@ import portraitTop from '../img/portrait-top.webp';
         <div class="am-portrait-stack">
           <Image
             class="am-portrait am-portrait-img"
-            src={portraitTop}
+            src={portrait}
             alt="Martin — Prime Triskelion"
             widths={[480, 768, 1080]}
             sizes="100vw"
@@ -58,7 +59,7 @@ import portraitTop from '../img/portrait-top.webp';
     <div class="ac-photo">
       <Image
         class="ac-photo__img"
-        src={portraitTop}
+        src={portrait}
         alt="Martin — Prime Triskelion"
         widths={[640, 960, 1280]}
         sizes="(min-width: 1025px) 55vw, 100vw"
@@ -78,6 +79,7 @@ import portraitTop from '../img/portrait-top.webp';
         </div>
       </div>
     </div>
+    <div class="ac-cta"><CtaSection /></div>
   </section>
 
 </Layout>
@@ -110,7 +112,7 @@ import portraitTop from '../img/portrait-top.webp';
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 50% 72%;
+    object-position: 50% 30%;
     filter: grayscale(1) contrast(1.1) brightness(0.9);
   }
   /* The window the copy scrolls through while the portrait stays put;
@@ -126,19 +128,37 @@ import portraitTop from '../img/portrait-top.webp';
     display: flex;
     align-items: center;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
-    mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
   }
   .ac-scroll { will-change: transform; }
+  /* The fire and the closing line, in the same frame as the portrait and
+     the copy; invisible until the scene brings them up. */
+  .ac-cta {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ac-cta > :global(#contact-cta) { width: 100%; }
+  /* No animation: the closing line just sits under the copy. */
+  @media (prefers-reduced-motion: reduce) {
+    .ac-cta { position: static; opacity: 1; pointer-events: auto; }
+  }
   .ac-body {
     font-family: var(--f-body);
-    font-size: clamp(1rem, 1.25vw, 1.2rem);
+    font-size: clamp(0.9rem, 1.05vw, 1.05rem);
     font-weight: 300;
-    line-height: 1.75;
+    line-height: 1.65;
     color: rgb(var(--c-cream) / 0.82);
-    margin: 0 0 1.6rem;
+    margin: 0 0 1.1rem;
   }
-  .ac-scroll .am-bio { padding: 1rem 0 0; }
+  /* A compact list, so the whole copy fits beside the portrait at rest. */
+  .ac-scroll .am-bio { padding: 0.6rem 0 0; }
+  .ac-scroll .am-item { font-size: clamp(0.8rem, 0.95vw, 1rem); padding: 0.4rem 0; }
 
   /* -- Phones and tablets: one column -- */
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
@@ -165,8 +185,15 @@ import portraitTop from '../img/portrait-top.webp';
        Veil lift, then a short hold on the photo. */
     .am-reveal {
       position: relative;
-      height: 400svh;
-      height: calc(var(--app-stable-vh, 1svh) * 400);
+      /* Above the About section that slides up under its last screen. */
+      z-index: 2;
+      height: 345svh;
+      height: calc(var(--app-stable-vh, 1svh) * 345);
+      /* Once the title scene is over, the About section takes the screen
+         at once instead of after one more empty screen of scroll: it
+         starts a viewport early, over the (black) pin on its way out. */
+      margin-bottom: -100svh;
+      margin-bottom: calc(var(--app-stable-vh, 1svh) * -100);
     }
     /* Positioned so it paints above the sticky pin's black veil it now
        overlaps by that 25%. */
@@ -341,7 +368,7 @@ import portraitTop from '../img/portrait-top.webp';
       inset: 0;
       z-index: 0;
       object-fit: cover;
-      object-position: center 72%;
+      object-position: center 36%;
       filter: grayscale(1) contrast(1.3) brightness(0.7);
       /* The dark is part of the picture: the face holds its light, and the
          shoulders and edges sink into black through a long, soft falloff. */
@@ -460,33 +487,6 @@ import portraitTop from '../img/portrait-top.webp';
 
 </style>
 
-<style is:global>
-  /* The footer is shared by every page. On About it is the last frame of
-     the pinned scene: fixed over it, invisible until the scene brings it up
-     (initAboutContent), so the page ends there with no extra scroll. */
-  html #site-footer.is-about-final {
-    position: fixed !important;
-    inset: 0 !important;
-    z-index: 5;
-    min-height: 0 !important;
-    height: calc(var(--app-stable-vh, 1svh) * 100);
-    padding: 0 !important;
-    background: transparent;
-    pointer-events: none;
-    border: 0;
-    display: flex !important;
-    flex-direction: column;
-    justify-content: center !important;
-    align-items: stretch;
-    gap: clamp(1.5rem, 4vh, 3rem);
-  }
-  /* Where the portrait and the copy were: the name in the middle of the
-     screen, the icons and the line right under it. */
-  html #site-footer.is-about-final .footer-mark { margin: 0; order: 1; }
-  html #site-footer.is-about-final .footer-inner { order: 2; }
-  html #site-footer.is-about-final .ghost-cursor { opacity: var(--gc, 0); }
-</style>
-
 <script>
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
@@ -525,8 +525,8 @@ import portraitTop from '../img/portrait-top.webp';
     const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
     // Original order: the light goes out first, then the title dissolves
     // (blur + fade), then the rest; `o` shifts the rest behind them.
-    const hold = 0.2; // the name stands alone on black before the face is lit
-    const o = 0.53; // light out (0–0.2), title dissolves (0.2–0.44), a beat of dark, then the name at 0.58
+    const hold = 0.12; // the name stands alone on black before the face is lit
+    const o = 0.48; // light out (0–0.2), title dissolves (0.2–0.44), a short beat of dark, then the name at 0.53
     const rays = veil.querySelector<HTMLElement>('canvas');
     if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.2, immediateRender: false }, 0);
     tl.fromTo([wordL, wordR], { opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(16px)', duration: 0.24, ease: 'sine.in' }, 0.2)
@@ -536,9 +536,9 @@ import portraitTop from '../img/portrait-top.webp';
       .fromTo(nameBox, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.4 + o + hold)
       .fromTo(stack, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.62 + o + hold)
       .fromTo(closing, { opacity: 0, filter: 'blur(14px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12 }, 0.74 + o + hold)
-      .to(closing, { opacity: 0, duration: 0.14 }, 0.98 + o + hold)
+      .to(closing, { opacity: 0, duration: 0.14 }, 0.9 + o + hold)
       // …and then a stretch of pure black before the page carries on.
-      .to({}, { duration: 0.2 }, 1.12 + o + hold);
+      .to({}, { duration: 0.04 }, 1.04 + o + hold);
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
@@ -552,7 +552,7 @@ import portraitTop from '../img/portrait-top.webp';
       scrub: 0.8,
       // .rays-off stops sideRays.js rendering once the light has faded; on
       // the way back it stays out until the title has rejoined.
-      onUpdate: (self) => veil.classList.toggle('rays-off', self.progress >= 0.2 / 2.05),
+      onUpdate: (self) => veil.classList.toggle('rays-off', self.progress >= 0.2 / 1.68),
     });
 
     document.addEventListener('astro:before-swap', () => {
@@ -582,46 +582,48 @@ import portraitTop from '../img/portrait-top.webp';
     if (!section || !photo || !body) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const footer      = document.querySelector<HTMLElement>('#site-footer');
-    const footerMark  = footer?.querySelector<HTMLElement>('.footer-mark');
-    const footerInner = footer?.querySelector<HTMLElement>('.footer-inner');
+    const cta = document.querySelector<HTMLElement>('.ac-cta');
     const inner = body.querySelector<HTMLElement>('.ac-scroll');
     const img = photo.querySelector<HTMLElement>('.ac-photo__img');
     if (!inner) return;
     // Scroll distance: the portrait develops first, then the copy travels
     // from below the screen to above it.
     const travel = () => window.innerHeight + inner.offsetHeight;
-    const develop = 0.3;
+    const develop = 0.14;
+    // The scene's own length, plus a stretch of rest on the finished frame
+    // (fire and line standing) before the page lets go and scrolls on.
+    const baseDist = () => window.innerHeight * 1.5 + travel() * 0.5;
+    const holdDist = () => 0;
 
     const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
     // Out of pure black: heavy blur and no light at first, the picture
     // slowly settles (scale) and finds focus as the light comes up.
     tl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: develop, ease: 'power2.out' }, 0);
     if (img) {
-      tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop + 0.1, ease: 'sine.out' }, 0);
+      tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop, ease: 'sine.out' }, 0);
     }
-    tl.fromTo(inner, { y: () => travel() / 2 }, { y: () => -travel() / 2, duration: 0.52, ease: 'none' }, develop);
-    // Then it all sinks back into the dark, out of focus, and the footer follows.
-    tl.to([photo, body], { opacity: 0, filter: 'blur(36px)', duration: 0.1, ease: 'sine.in', immediateRender: false }, 0.82);
-    // …and in the same place the footer comes up out of the dark, from a
-    // blur. It is pinned over the section for this (see #site-footer.is-about-final),
-    // so there is no further scroll: the page ends here.
-    if (footerMark && footerInner && footer) {
-      footer.classList.add('is-about-final');
-      // The smoke that follows the cursor (ghostCursor.js, lives in the
-      // footer) is off until now and comes up with it.
-      tl.fromTo(footer, { '--gc': 0 }, { '--gc': 1, duration: 0.12, ease: 'sine.out' }, 0.88)
-        .fromTo(footerMark, { opacity: 0, filter: 'blur(40px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12, ease: 'sine.out' }, 0.88)
-        .fromTo(footerInner, { opacity: 0, filter: 'blur(16px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.08, ease: 'sine.out' }, 0.94)
-        .fromTo(footer, { pointerEvents: 'none' }, { pointerEvents: 'auto', duration: 0.001 }, 0.96);
+    // The copy rises from below and comes to rest in the middle, beside the
+    // portrait — it stays there, readable, until the whole scene hands over.
+    tl.fromTo(inner, { y: () => travel() / 2 }, { y: 0, duration: 0.36, ease: 'sine.out' }, develop);
+    // Then it all sinks back into the dark, out of focus.
+    tl.to([photo, body], { opacity: 0, filter: 'blur(36px)', duration: 0.1, ease: 'sine.in', immediateRender: false }, 0.62);
+    // …and in the same place the fire and "Let's build something sharp"
+    // come up out of the dark, from a blur. They live inside the pinned
+    // section, so once the scene ends the page simply carries on to the
+    // footer as it always was.
+    if (cta) {
+      tl.fromTo(cta, { opacity: 0, filter: 'blur(40px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12, ease: 'sine.out' }, 0.68)
+        .fromTo(cta, { pointerEvents: 'none' }, { pointerEvents: 'auto', duration: 0.001 }, 0.78);
     }
+
+    tl.to({}, { duration: 0.2 }, 0.8);
 
     _acST = ScrollTrigger.create({
       animation: tl,
       trigger: section,
       // Pinned: the portrait stays; the scroll plays the picture, then the copy.
       start: 'top top',
-      end: () => `+=${window.innerHeight * 1.2 + travel() * 1.1}`,
+      end: () => `+=${baseDist() + holdDist()}`,
       pin: true,
       scrub: 1,
       invalidateOnRefresh: true,
@@ -629,10 +631,6 @@ import portraitTop from '../img/portrait-top.webp';
     document.addEventListener('astro:before-swap', () => {
       _acST?.kill();
       _acST = null;
-      // The footer is shared with every page: leave it as it was.
-      footer?.classList.remove('is-about-final');
-      footer?.style.removeProperty('--gc');
-      gsap.set([footer, footerMark, footerInner], { clearProps: 'opacity,filter,pointerEvents,--gc' });
     }, { once: true });
   }
 
