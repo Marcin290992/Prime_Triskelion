@@ -1,12 +1,7 @@
 ---
-import { Image, getImage } from 'astro:assets';
+import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
-import CtaSection from '../components/sections/CtaSection.astro';
 import portraitTop from '../img/portrait-top.webp';
-
-// Dither texture — the full 3840px original is far more than the portrait
-// frame ever needs.
-const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'webp' });
 ---
 
 <Layout title="About — Prime Triskelion">
@@ -17,9 +12,8 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
        kept in _about-fluid.astro). -->
   <div id="about-mobile">
     <!-- Scroll-linked intro: "Who's Behind?" centred on black; scrolling
-         splits the words apart, lifts the black and the portrait develops
-         out of dither. CSS sticky pin, scrubbed by ScrollTrigger. With a
-         mouse, a lens under the cursor resolves the dots into the photo. -->
+         fades the words, lifts the black and the black & white portrait
+         appears. CSS sticky pin, scrubbed by ScrollTrigger. -->
     <div class="am-reveal">
       <div class="am-reveal__pin">
         <div class="am-portrait-stack">
@@ -32,7 +26,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
             loading="eager"
             fetchpriority="high"
           />
-          <canvas class="am-dither" data-src={ditherTexture.src} aria-hidden="true"></canvas>
         </div>
         <div class="am-veil" aria-hidden="true" data-side-rays="0.5,0.55" data-side-rays-intensity="0.65"></div>
         <div class="am-hero">
@@ -41,77 +34,126 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
             <span class="am-who-r"><span class="am-who-w">Behind?</span></span>
           </p>
         </div>
+        <div class="am-namebox">
+          <p class="am-greeting">Hi, my name is</p>
+          <p class="am-name">Martin.</p>
+        </div>
+        <div class="am-closing">
+          <div class="am-brand" role="img" aria-label="Prime Triskelion">
+            <svg class="am-brand__mark" aria-hidden="true" viewBox="128 152 744 644" fill="#FFF">
+              <defs><polygon id="am-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
+              <use href="#am-arm"/>
+              <use href="#am-arm" transform="rotate(120 500 577.259)"/>
+              <use href="#am-arm" transform="rotate(240 500 577.259)"/>
+            </svg>
+            <div class="am-brand__text"><span>PRIME</span><span>TRISKELION</span></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="am-after" data-after-hero>
-    <div class="am-intro">
-      <p class="am-greeting">Hi, my name is</p>
-      <p class="am-name">Martin.</p>
-    </div>
-    <div class="am-bio">
-      <span class="am-item">Creative Director &amp; Developer</span>
-      <span class="am-item">Blender · 3D · Motion</span>
-      <span class="am-item">Brand Identity · Web Dev</span>
-      <span class="am-item">London, UK · Est. 2024</span>
-    </div>
     </div>
   </div>
 
-  <!-- Content: canvas has scrolled away, normal page resumes -->
+  <!-- The portrait comes up out of the dark once the logo has gone. -->
   <section id="about-content" data-after-hero>
-    <div class="ac-grid">
-      <h2 class="ac-label">About</h2>
-      <div class="ac-body-col">
-        <p class="ac-body">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
-        <p class="ac-body">Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    <div class="ac-photo">
+      <Image
+        class="ac-photo__img"
+        src={portraitTop}
+        alt="Martin — Prime Triskelion"
+        widths={[640, 960, 1280]}
+        sizes="(min-width: 1025px) 55vw, 100vw"
+        loading="lazy"
+      />
+    </div>
+    <div class="ac-body-col">
+      <div class="ac-scroll">
+        <p class="ac-body">Martin is a creative director and web developer working out of London. Three years in, the tools have stopped mattering. What is left is the obsession: the need to make something that makes you stop.</p>
+        <p class="ac-body">His work starts in the dark. Before the colour, before the code, there is a feeling — and he builds backwards from it until every frame, every scroll, every pause belongs to it.</p>
+        <p class="ac-body">It is not about the stack. It is about the pull — the nights spent on a single transition, the refusal to ship anything that feels merely fine. Quiet, a little dangerous, impossible to ignore.</p>
+        <div class="am-bio">
+          <span class="am-item">Creative Director &amp; Developer</span>
+          <span class="am-item">Blender · 3D · Motion</span>
+          <span class="am-item">Brand Identity · Web Dev</span>
+          <span class="am-item">London, UK · Est. 2024</span>
+        </div>
       </div>
     </div>
   </section>
 
-  <CtaSection />
 </Layout>
 
 <style>
-  /* -- Content section -- */
+  /* -- Content section: portrait left, details right -- */
   #about-content {
     position: relative;
     z-index: 1;
     background: rgb(var(--c-bg));
-    padding: clamp(6rem, 14vw, 14rem) var(--site-gutter, 2rem);
-  }
-  .ac-grid {
+    min-height: 100svh;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
-    align-items: start;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    align-items: center;
+    padding-right: var(--site-gutter, 2rem);
   }
-  .ac-label {
-    font-family: var(--f-display);
-    font-weight: 700;
-    font-size: clamp(3.5rem, 8vw, 9rem);
-    letter-spacing: -0.03em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream));
-    line-height: 0.9;
-    margin: 0;
-    position: sticky;
-    /* Held just under the top blur band (its height in gradualBlur.js),
-       not in it — and clear of the logo above it. */
-    top: calc(clamp(5.5rem, 6vw, 7rem) + 1.25rem);
+  .ac-photo {
+    grid-column: 1;
+    grid-row: 1;
+    height: 100svh;
+    overflow: hidden;
+    /* Every edge melts into the black through a gradient — no hard cut. */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 58%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 18%, #000 66%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 58%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 18%, #000 66%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
   }
+  .ac-photo__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 72%;
+    filter: grayscale(1) contrast(1.1) brightness(0.9);
+  }
+  /* The window the copy scrolls through while the portrait stays put;
+     its top and bottom fade into the black. */
   .ac-body-col {
-    padding-top: 0.5rem;
+    grid-column: 2;
+    grid-row: 1;
+    height: 100svh;
+    width: 100%;
+    max-width: 38rem;
+    padding-left: clamp(2rem, 7vw, 9rem);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 78%, transparent 100%);
   }
+  .ac-scroll { will-change: transform; }
   .ac-body {
     font-family: var(--f-body);
-    font-size: clamp(1.1rem, 1.7vw, 1.55rem);
+    font-size: clamp(1rem, 1.25vw, 1.2rem);
     font-weight: 300;
     line-height: 1.75;
     color: rgb(var(--c-cream) / 0.82);
-    margin: 0 0 2rem;
+    margin: 0 0 1.6rem;
   }
-  .ac-body:last-child { margin: 0; }
+  .ac-scroll .am-bio { padding: 1rem 0 0; }
 
+  /* -- Phones and tablets: one column -- */
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+    #about-content {
+      grid-template-columns: 1fr;
+      align-items: start;
+      padding: 0 0 clamp(3rem, 8vw, 5rem);
+    }
+    .ac-photo {
+      height: 70svh;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
+    }
+    .ac-body-col { grid-column: 1; grid-row: 1; padding: 0 var(--site-gutter, 1.5rem); max-width: none; }
+  }
 
   /* -- The scene, every device (desktop sizes further down) -- */
   @media all {
@@ -120,16 +162,11 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
        340 stable-vh of scroll room with a sticky full-screen pin inside,
        same pattern as #manifesto on Home: --app-stable-vh is measured
        once (Layout.astro), so the toolbar can't resize it mid-scroll.
-       Veil lift, dither develop, then a short hold on the photo. */
+       Veil lift, then a short hold on the photo. */
     .am-reveal {
       position: relative;
-      height: 340svh;
-      height: calc(var(--app-stable-vh, 1svh) * 340);
-      /* The photo ends at 75% of the pin (see .am-portrait-stack) — pull
-         the name/bio up by the remaining 25% so they follow right under
-         the photo instead of after a band of empty black. */
-      margin-bottom: -25svh;
-      margin-bottom: calc(var(--app-stable-vh, 1svh) * -25);
+      height: 400svh;
+      height: calc(var(--app-stable-vh, 1svh) * 400);
     }
     /* Positioned so it paints above the sticky pin's black veil it now
        overlaps by that 25%. */
@@ -230,22 +267,50 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       top: 25%;
       height: 50%;
       overflow: hidden;
+      /* One soft pass of light, left to right: --pc is the beam's centre
+         (% of the width). The face is lit only where the light is: dark
+         ahead of the beam, and dark again behind it once it has passed. */
+      will-change: mask-image;
+      --pc: -65;
+      -webkit-mask-image: linear-gradient(90deg,
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 50%),
+        rgb(0 0 0 / 0.06) calc(var(--pc) * 1% - 42%),
+        rgb(0 0 0 / 0.22) calc(var(--pc) * 1% - 32%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 20%),
+        rgb(0 0 0 / 0.82) calc(var(--pc) * 1% - 9%),
+        rgb(0 0 0 / 1) calc(var(--pc) * 1% + 0%),
+        rgb(0 0 0 / 0.84) calc(var(--pc) * 1% + 8%),
+        rgb(0 0 0 / 0.6) calc(var(--pc) * 1% + 18%),
+        rgb(0 0 0 / 0.36) calc(var(--pc) * 1% + 30%),
+        rgb(0 0 0 / 0.16) calc(var(--pc) * 1% + 44%),
+        rgb(0 0 0 / 0.05) calc(var(--pc) * 1% + 56%),
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 66%));
+      mask-image: linear-gradient(90deg,
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 50%),
+        rgb(0 0 0 / 0.06) calc(var(--pc) * 1% - 42%),
+        rgb(0 0 0 / 0.22) calc(var(--pc) * 1% - 32%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 20%),
+        rgb(0 0 0 / 0.82) calc(var(--pc) * 1% - 9%),
+        rgb(0 0 0 / 1) calc(var(--pc) * 1% + 0%),
+        rgb(0 0 0 / 0.84) calc(var(--pc) * 1% + 8%),
+        rgb(0 0 0 / 0.6) calc(var(--pc) * 1% + 18%),
+        rgb(0 0 0 / 0.36) calc(var(--pc) * 1% + 30%),
+        rgb(0 0 0 / 0.16) calc(var(--pc) * 1% + 44%),
+        rgb(0 0 0 / 0.05) calc(var(--pc) * 1% + 56%),
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 66%));
     }
     /* A tablet in landscape: full width at half the height made a wide
        strip, and the 16:9 photo, cropped top and bottom to fill it, lost
        the top of the head. Keep the phone's proportions, centred. */
     @media (min-width: 1025px) {
       .am-portrait-stack {
-        left: 50%;
-        right: auto;
+        left: 0;
+        right: 0;
+        margin-inline: auto;
         top: 10%;
         height: 80%;
         width: min(100%, 96vh);
-        transform: translateX(-50%);
       }
-      /* The photo now ends at 90% of the pin, so the name/bio below
-         pull up by the remaining 10% (see .am-reveal). */
-      .am-reveal { margin-bottom: calc(var(--app-stable-vh, 1svh) * -10); }
     }
     .am-portrait-stack::after {
       content: '';
@@ -277,46 +342,70 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       z-index: 0;
       object-fit: cover;
       object-position: center 72%;
-      transform-origin: 50% 72%;
-      /* Settles to scale(1) as the veil lifts (scroll-scrubbed). No blur
-         here — a scrubbed full-screen filter is what mobile Safari
-         handles worst. */
-      transform: scale(1.12);
+      filter: grayscale(1) contrast(1.3) brightness(0.7);
+      /* The dark is part of the picture: the face holds its light, and the
+         shoulders and edges sink into black through a long, soft falloff. */
+      -webkit-mask-image: radial-gradient(ellipse 52% 58% at 50% 40%, #000 18%, rgb(0 0 0 / 0.82) 34%, rgb(0 0 0 / 0.5) 52%, rgb(0 0 0 / 0.2) 70%, transparent 92%);
+      mask-image: radial-gradient(ellipse 52% 58% at 50% 40%, #000 18%, rgb(0 0 0 / 0.82) 34%, rgb(0 0 0 / 0.5) 52%, rgb(0 0 0 / 0.2) 70%, transparent 92%);
     }
-    /* Dither → photo canvas (see initDitherPortrait) over the <img>, which
-       stays underneath as the fallback (no WebGL2, reduced motion, still
-       loading). Below the ::after bottom fade. */
-    .am-dither {
+    /* The name, left of the screen, over the black veil (scroll-driven) */
+    .am-namebox {
+      position: absolute;
+      left: max(var(--site-gutter, 1.5rem), calc((100% - var(--site-max-width, 100%)) / 2));
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+    }
+    /* Closing mark once the photo has faded out */
+    .am-closing {
       position: absolute;
       inset: 0;
-      z-index: 1;
-      display: block;
-      width: 100%;
-      height: 100%;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0 max(var(--site-gutter, 1.5rem), calc((100% - var(--site-max-width, 100%)) / 2));
       opacity: 0;
-      transition: opacity 0.4s ease;
+      pointer-events: none;
     }
-    .am-dither.is-ready { opacity: 1; }
-    /* Intro */
-    .am-intro {
-      padding: clamp(2.5rem, 7vw, 4rem) var(--site-gutter, 1.5rem);
+    /* Same lock-up as the top bar (Logo.astro), same sizes */
+    .am-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.55em;
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(13px, 0.95vw, 17px);
+      line-height: 1;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: rgb(var(--c-cream));
+    }
+    .am-brand__mark { height: clamp(34px, 3vw, 52px); width: auto; display: block; flex-shrink: 0; overflow: visible; }
+    .am-brand__text { display: flex; flex-direction: column; gap: 0.15em; }
+    @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+      .am-brand { font-size: clamp(10px, 2.6vw, 12px); }
+      .am-brand__mark { height: 26px; }
     }
     .am-greeting {
       font-family: var(--f-body);
-      font-size: clamp(0.85rem, 3vw, 1rem);
+      font-size: clamp(0.6rem, 2.2vw, 0.75rem);
       font-weight: 300;
-      letter-spacing: 0.04em;
-      color: rgb(var(--c-cream) / 0.82);
-      margin: 0 0 0.5rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgb(var(--c-cream) / 0.6);
+      margin: 0 0 clamp(0.35rem, 0.9vw, 0.6rem);
     }
     .am-name {
       font-family: var(--f-display);
       font-weight: 700;
-      font-size: clamp(2rem, 7.5vw, 3.2rem);
-      letter-spacing: -0.02em;
+      font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+      letter-spacing: 0.02em;
       text-transform: uppercase;
       color: rgb(var(--c-red));
-      line-height: 0.9;
+      line-height: 0.85;
       margin: 0;
     }
 
@@ -352,29 +441,50 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
   }
 
-  /* -- Phones and tablets: the About copy in one column -- */
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    #about-content { padding: clamp(3rem, 8vw, 5rem) var(--site-gutter, 1.5rem); }
-    .ac-grid      { grid-template-columns: 1fr; gap: 2rem; }
-    .ac-label     { font-size: clamp(2.5rem, 10vw, 5rem); position: static; }
-  }
-
   /* -- Desktop: the scene at a desktop scale -- */
   @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
     .am-who-l, .am-who-r { font-size: clamp(3rem, 8.5vw, 9rem); }
-    .am-intro, .am-bio {
+    .am-bio {
       width: min(100%, var(--site-max-width));
       margin-inline: auto;
       box-sizing: border-box;
     }
-    .am-greeting { font-size: 1.1rem; }
-    .am-name { font-size: clamp(3.5rem, 7vw, 7rem); }
+    /* Name and logo stand clear of the portrait's own edges (its box is
+       min(100%, 96vh) wide, centred), never closer than the page margin. */
+    .am-namebox { left: max(var(--site-gutter, 1.5rem), calc(50% - min(50%, 48vh) - 7rem)); }
+    .am-closing { padding: 0 max(var(--site-gutter, 1.5rem), calc(50% - min(50%, 48vh) - 7rem)); }
+    .am-greeting { font-size: 0.6rem; }
+    .am-name { font-size: clamp(1.2rem, 1.6vw, 1.8rem); }
     .am-item { font-size: clamp(1.1rem, 1.8vw, 2rem); }
-    /* The lens follows a mouse over the portrait (the cursor stays: once
-       the face has developed the lens shows nothing new to find it by). */
-    .am-portrait-stack { pointer-events: auto; }
   }
 
+</style>
+
+<style is:global>
+  /* The footer is shared by every page. On About it is the last frame of
+     the pinned scene: fixed over it, invisible until the scene brings it up
+     (initAboutContent), so the page ends there with no extra scroll. */
+  html #site-footer.is-about-final {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 5;
+    min-height: 0 !important;
+    height: calc(var(--app-stable-vh, 1svh) * 100);
+    padding: 0 !important;
+    background: transparent;
+    pointer-events: none;
+    border: 0;
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center !important;
+    align-items: stretch;
+    gap: clamp(1.5rem, 4vh, 3rem);
+  }
+  /* Where the portrait and the copy were: the name in the middle of the
+     screen, the icons and the line right under it. */
+  html #site-footer.is-about-final .footer-mark { margin: 0; order: 1; }
+  html #site-footer.is-about-final .footer-inner { order: 2; }
+  html #site-footer.is-about-final .ghost-cursor { opacity: var(--gc, 0); }
 </style>
 
 <script>
@@ -382,18 +492,14 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
-  import { initDitherPortrait, type DitherPortraitHandle } from '../utils/ditherPortrait';
 
   gsap.registerPlugin(ScrollTrigger);
 
-
-  // The intro, every device: the title blurs out and the black veil
-  // lifts off the portrait, which develops out of dither — scrubbed by
-  // scroll over .am-reveal (its sticky pin holds for exactly that
-  // distance, then scrolls away into the name/bio below).
+  // The intro, every device: the title fades out and the black veil lifts
+  // off the (black & white) portrait — scrubbed by scroll over .am-reveal
+  // (its sticky pin holds for exactly that distance, then scrolls away into
+  // the name/bio below).
   let _amRevealST: ScrollTrigger | null = null;
-  let _amDither: DitherPortraitHandle | null = null;
-  let _amSinkST: ScrollTrigger | null = null;
   function initAboutMobileReveal() {
     const reveal = document.querySelector<HTMLElement>('.am-reveal');
     const pin    = document.querySelector<HTMLElement>('.am-reveal__pin');
@@ -408,55 +514,31 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     // .am-reveal--bottom). Same scroll range either way.
     reveal.classList.toggle('am-reveal--bottom', !isSafari());
 
-    // Dither → photo develop on top of the plain portrait. Reduced motion
-    // (or no WebGL2) just keeps the <img>.
-    const ditherCanvas = document.querySelector<HTMLCanvasElement>('.am-dither');
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-    if (ditherCanvas?.dataset.src && !reduceMotion) {
-      _amDither = initDitherPortrait(ditherCanvas, {
-        src: ditherCanvas.dataset.src,
-        ink: [0, 0, 0],
-        paper: [242 / 255, 237 / 255, 232 / 255],
-        focusX: 0.5,
-        focusY: 0.72,
-        onReady: () => ditherCanvas.classList.add('is-ready'),
-      });
-      if (_amDither) initAboutLens(ditherCanvas, _amDither);
-    }
-    const develop = { p: 0 };
+    const nameBox = document.querySelector<HTMLElement>('.am-namebox');
+    const stack   = document.querySelector<HTMLElement>('.am-portrait-stack');
+    const closing = document.querySelector<HTMLElement>('.am-closing');
+    if (!nameBox || !stack || !closing) return;
 
-    // Timeline spans the whole 240 stable-vh the pin holds: the light fades,
-    // then the title blurs away, and only then does the portrait reveal begin.
+    // black → name on the left → one soft pass of light brings the portrait
+    // out of the dark → the name fades → the portrait fades → closing logo.
+    // Overlapping steps, so it scrolls as one wave.
+    const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
+    // Original order: the light goes out first, then the title dissolves
+    // (blur + fade), then the rest; `o` shifts the rest behind them.
+    const hold = 0.2; // the name stands alone on black before the face is lit
+    const o = 0.53; // light out (0–0.2), title dissolves (0.2–0.44), a beat of dark, then the name at 0.58
     const rays = veil.querySelector<HTMLElement>('canvas');
-    const lightDuration = 0.2;
-    const portraitStart = 0.36;
-    const portraitDuration = compact ? 0.3 : 0.32;
-    const scaleDuration = compact ? 0.4 : 0.55;
-    const developStart = compact ? 0.76 : 0.74;
-    const developDuration = 0.22;
-    const holdStart = 0.98;
-    const tl = gsap.timeline({ defaults: { ease: 'none' } });
-    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: lightDuration, ease: 'sine.inOut' }, 0);
-    tl.fromTo([wordL, wordR], { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.18, ease: 'sine.in' }, lightDuration)
-      .fromTo([wordL, wordR], { opacity: 1 }, { opacity: 0, duration: 0.18, ease: 'sine.inOut' }, lightDuration);
-    // The portrait's own entrance is a blur-in: it comes up out of the dark soft
-    // and finds focus as the veil clears (so the pixels arrive out of focus too).
-    // Desktop only — a scrubbed filter over the portrait is what mobile Safari
-    // handles worst (see .am-portrait-img).
-    const stack = document.querySelector<HTMLElement>('.am-portrait-stack');
-    if (stack && !window.matchMedia('(pointer: coarse)').matches) {
-      tl.fromTo(stack, { filter: 'blur(20px)' }, { filter: 'blur(0px)', duration: 0.36, ease: 'sine.out' }, portraitStart);
-    }
-    tl.fromTo(veil, { opacity: 1 }, { opacity: 0, duration: portraitDuration, ease: 'sine.inOut' }, portraitStart)
-      .fromTo(img, { scale: 1.12 }, { scale: 1, duration: scaleDuration, ease: 'sine.out' }, portraitStart)
-      .fromTo(develop, { p: 0 }, {
-        p: 1,
-        duration: developDuration,
-        ease: 'sine.inOut',
-        onUpdate: () => _amDither?.setProgress(develop.p),
-      }, developStart)
-      .to({}, { duration: 1 - holdStart }, holdStart);
+    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.2, immediateRender: false }, 0);
+    tl.fromTo([wordL, wordR], { opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(16px)', duration: 0.24, ease: 'sine.in' }, 0.2)
+      .fromTo(nameBox, { opacity: 0, filter: 'blur(14px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12 }, 0.05 + o)
+      .fromTo(veil, { opacity: 1 }, { opacity: 0, duration: 0.04 }, 0.06 + o + hold)
+      .fromTo(stack, { '--pc': -65 }, { '--pc': 145, duration: 0.7, ease: 'sine.inOut' }, 0.1 + o + hold)
+      .fromTo(nameBox, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.4 + o + hold)
+      .fromTo(stack, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.62 + o + hold)
+      .fromTo(closing, { opacity: 0, filter: 'blur(14px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12 }, 0.74 + o + hold)
+      .to(closing, { opacity: 0, duration: 0.14 }, 0.98 + o + hold)
+      // …and then a stretch of pure black before the page carries on.
+      .to({}, { duration: 0.2 }, 1.12 + o + hold);
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
@@ -466,110 +548,17 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       // from the stable --app-stable-vh, which the toolbar doesn't change)
       // — not innerHeight.
       end: () => `+=${reveal.offsetHeight - pin.offsetHeight}`,
-      scrub: true,
-      // The lens wakes only once the title is gone and the portrait starts
-      // to reveal.
-      onUpdate: (self) => {
-        _lensGate?.(self.progress >= portraitStart);
-        // The light in the veil (sideRays.js): on the way down it goes with
-        // the veil. On the way back it would come up with the veil as soon
-        // as the scroll turned — it stays out until the words have joined
-        // again, then fades back in. .rays-off also stops it rendering
-        // while the portrait is up (sideRays.js watches the class).
-        if (self.progress >= lightDuration) veil.classList.add('rays-off');
-        else veil.classList.remove('rays-off');
-      },
+      // A little smoothing so the wheel's steps don't show in the light.
+      scrub: 0.8,
+      // .rays-off stops sideRays.js rendering once the light has faded; on
+      // the way back it stays out until the title has rejoined.
+      onUpdate: (self) => veil.classList.toggle('rays-off', self.progress >= 0.2 / 2.05),
     });
-    // Landing mid-scene (back/forward): set the lens from where it is now.
-    requestAnimationFrame(() => _lensGate?.((_amRevealST?.progress ?? 0) >= portraitStart));
-
-    // As the name/bio slide in, the portrait sinks back toward the dark:
-    // dims, the vignette closes on the face and the edges re-dither. Tied
-    // to the text itself (not the pin timeline) so it starts exactly when
-    // the name appears and carries on after the pin lets go.
-    const after = document.querySelector<HTMLElement>('.am-after');
-    if (_amDither && after) {
-      _amSinkST = ScrollTrigger.create({
-        trigger: after,
-        start: 'top bottom',
-        end: 'top 45%',
-        scrub: true,
-        onUpdate: (self) => _amDither?.setSink(self.progress),
-      });
-    }
-
-    // A click (or tap) on the portrait sends a wave across it that shows the
-    // photo wherever it passes. Only once the veil has lifted off it.
-    const onPortraitDown = (e: PointerEvent) => {
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if ((_amRevealST?.progress ?? 0) < portraitStart) return;
-      const r = ditherCanvas!.getBoundingClientRect();
-      _amDither?.burst(e.clientX - r.left, e.clientY - r.top);
-    };
-    if (_amDither && stack) stack.addEventListener('pointerdown', onPortraitDown, { passive: true });
 
     document.addEventListener('astro:before-swap', () => {
-      stack?.removeEventListener('pointerdown', onPortraitDown);
       _amRevealST?.kill();
       _amRevealST = null;
-      _amSinkST?.kill();
-      _amSinkST = null;
-      _amDither?.destroy();
-      _amDither = null;
     }, { once: true });
-  }
-
-  // With a mouse: a lens under the cursor resolves the dots into the photo
-  // (DitherPortraitHandle.setLens). It eases after the pointer and fades
-  // in and out at the portrait's edge; a frame loop only while moving.
-  let _lensOff: (() => void) | null = null;
-  let _lensGate: ((open: boolean) => void) | null = null;
-  function initAboutLens(canvas: HTMLCanvasElement, dither: DitherPortraitHandle) {
-    _lensOff?.();
-    _lensOff = null;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    const box = canvas.closest<HTMLElement>('.am-portrait-stack') ?? canvas;
-    const goal = { x: 0, y: 0, on: 0 };
-    const cur = { x: 0, y: 0, on: 0 };
-    let raf = 0;
-    const tick = () => {
-      raf = 0;
-      cur.x += (goal.x - cur.x) * 0.2;
-      cur.y += (goal.y - cur.y) * 0.2;
-      cur.on += (goal.on - cur.on) * 0.12;
-      dither.setLens(cur.x, cur.y, cur.on);
-      const moving = Math.abs(goal.x - cur.x) + Math.abs(goal.y - cur.y) > 0.3 || Math.abs(goal.on - cur.on) > 0.004;
-      if (moving) raf = requestAnimationFrame(tick);
-    };
-    const wake = () => { if (!raf) raf = requestAnimationFrame(tick); };
-    // Shut until "Who's Behind?" has split apart (see _amRevealST).
-    let open = false;
-    let over = false;
-    const onMove = (e: PointerEvent) => {
-      const r = canvas.getBoundingClientRect();
-      goal.x = e.clientX - r.left;
-      goal.y = e.clientY - r.top;
-      if (goal.on === 0) { cur.x = goal.x; cur.y = goal.y; }
-      over = true;
-      goal.on = open ? 1 : 0;
-      wake();
-    };
-    const onLeave = () => { over = false; goal.on = 0; wake(); };
-    _lensGate = (next) => {
-      if (next === open) return;
-      open = next;
-      goal.on = open && over ? 1 : 0;
-      wake();
-    };
-    box.addEventListener('pointermove', onMove);
-    box.addEventListener('pointerleave', onLeave);
-    _lensOff = () => {
-      _lensGate = null;
-      cancelAnimationFrame(raf);
-      box.removeEventListener('pointermove', onMove);
-      box.removeEventListener('pointerleave', onLeave);
-    };
-    document.addEventListener('astro:before-swap', () => { _lensOff?.(); _lensOff = null; }, { once: true });
   }
 
   // "Who's Behind?" — same entrance as the Projects/Services headers so
@@ -583,9 +572,74 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     });
   }
 
+  // The portrait comes up out of the dark as the section scrolls in, from a
+  // blur, then the details after it.
+  let _acST: ScrollTrigger | null = null;
+  function initAboutContent() {
+    const section = document.querySelector<HTMLElement>('#about-content');
+    const photo   = document.querySelector<HTMLElement>('.ac-photo');
+    const body    = document.querySelector<HTMLElement>('.ac-body-col');
+    if (!section || !photo || !body) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const footer      = document.querySelector<HTMLElement>('#site-footer');
+    const footerMark  = footer?.querySelector<HTMLElement>('.footer-mark');
+    const footerInner = footer?.querySelector<HTMLElement>('.footer-inner');
+    const inner = body.querySelector<HTMLElement>('.ac-scroll');
+    const img = photo.querySelector<HTMLElement>('.ac-photo__img');
+    if (!inner) return;
+    // Scroll distance: the portrait develops first, then the copy travels
+    // from below the screen to above it.
+    const travel = () => window.innerHeight + inner.offsetHeight;
+    const develop = 0.3;
+
+    const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
+    // Out of pure black: heavy blur and no light at first, the picture
+    // slowly settles (scale) and finds focus as the light comes up.
+    tl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: develop, ease: 'power2.out' }, 0);
+    if (img) {
+      tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop + 0.1, ease: 'sine.out' }, 0);
+    }
+    tl.fromTo(inner, { y: () => travel() / 2 }, { y: () => -travel() / 2, duration: 0.52, ease: 'none' }, develop);
+    // Then it all sinks back into the dark, out of focus, and the footer follows.
+    tl.to([photo, body], { opacity: 0, filter: 'blur(36px)', duration: 0.1, ease: 'sine.in', immediateRender: false }, 0.82);
+    // …and in the same place the footer comes up out of the dark, from a
+    // blur. It is pinned over the section for this (see #site-footer.is-about-final),
+    // so there is no further scroll: the page ends here.
+    if (footerMark && footerInner && footer) {
+      footer.classList.add('is-about-final');
+      // The smoke that follows the cursor (ghostCursor.js, lives in the
+      // footer) is off until now and comes up with it.
+      tl.fromTo(footer, { '--gc': 0 }, { '--gc': 1, duration: 0.12, ease: 'sine.out' }, 0.88)
+        .fromTo(footerMark, { opacity: 0, filter: 'blur(40px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12, ease: 'sine.out' }, 0.88)
+        .fromTo(footerInner, { opacity: 0, filter: 'blur(16px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.08, ease: 'sine.out' }, 0.94)
+        .fromTo(footer, { pointerEvents: 'none' }, { pointerEvents: 'auto', duration: 0.001 }, 0.96);
+    }
+
+    _acST = ScrollTrigger.create({
+      animation: tl,
+      trigger: section,
+      // Pinned: the portrait stays; the scroll plays the picture, then the copy.
+      start: 'top top',
+      end: () => `+=${window.innerHeight * 1.2 + travel() * 1.1}`,
+      pin: true,
+      scrub: 1,
+      invalidateOnRefresh: true,
+    });
+    document.addEventListener('astro:before-swap', () => {
+      _acST?.kill();
+      _acST = null;
+      // The footer is shared with every page: leave it as it was.
+      footer?.classList.remove('is-about-final');
+      footer?.style.removeProperty('--gc');
+      gsap.set([footer, footerMark, footerInner], { clearProps: 'opacity,filter,pointerEvents,--gc' });
+    }, { once: true });
+  }
+
   function initAbout() {
     initAboutTitle();
     initAboutMobileReveal();
+    initAboutContent();
   }
 
   document.addEventListener('astro:page-load', initAbout);
