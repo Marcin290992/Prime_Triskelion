@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets';
 import Layout from '../layouts/Layout.astro';
 import CtaSection from '../components/sections/CtaSection.astro';
-import portrait from '../img/Marcin 1.jpg';
+import portrait from '../img/portrait-top.webp';
 ---
 
 <Layout title="About — Prime Triskelion">
@@ -102,8 +102,8 @@ import portrait from '../img/Marcin 1.jpg';
     height: 100svh;
     overflow: hidden;
     /* Every edge melts into the black through a gradient — no hard cut. */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 58%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 18%, #000 66%, transparent 100%);
-    mask-image: linear-gradient(90deg, transparent 0%, #000 14%, #000 58%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 18%, #000 66%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 50%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 28%, #000 56%, transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0%, #000 24%, #000 50%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 28%, #000 56%, transparent 100%);
     -webkit-mask-composite: source-in;
     mask-composite: intersect;
   }
@@ -112,7 +112,7 @@ import portrait from '../img/Marcin 1.jpg';
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: 50% 30%;
+    object-position: 50% 72%;
     filter: grayscale(1) contrast(1.1) brightness(0.9);
   }
   /* The window the copy scrolls through while the portrait stays put;
@@ -368,12 +368,12 @@ import portrait from '../img/Marcin 1.jpg';
       inset: 0;
       z-index: 0;
       object-fit: cover;
-      object-position: center 36%;
+      object-position: center 72%;
       filter: grayscale(1) contrast(1.3) brightness(0.7);
       /* The dark is part of the picture: the face holds its light, and the
          shoulders and edges sink into black through a long, soft falloff. */
-      -webkit-mask-image: radial-gradient(ellipse 52% 58% at 50% 40%, #000 18%, rgb(0 0 0 / 0.82) 34%, rgb(0 0 0 / 0.5) 52%, rgb(0 0 0 / 0.2) 70%, transparent 92%);
-      mask-image: radial-gradient(ellipse 52% 58% at 50% 40%, #000 18%, rgb(0 0 0 / 0.82) 34%, rgb(0 0 0 / 0.5) 52%, rgb(0 0 0 / 0.2) 70%, transparent 92%);
+      -webkit-mask-image: radial-gradient(ellipse 44% 50% at 50% 40%, #000 12%, rgb(0 0 0 / 0.75) 26%, rgb(0 0 0 / 0.42) 42%, rgb(0 0 0 / 0.16) 58%, transparent 78%);
+      mask-image: radial-gradient(ellipse 44% 50% at 50% 40%, #000 12%, rgb(0 0 0 / 0.75) 26%, rgb(0 0 0 / 0.42) 42%, rgb(0 0 0 / 0.16) 58%, transparent 78%);
     }
     /* The name, left of the screen, over the black veil (scroll-driven) */
     .am-namebox {
