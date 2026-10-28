@@ -767,7 +767,7 @@
 
 			// Intro timings: one beam of light over the big logo; the claim follows
 			// as the beam leaves it. The corner logo blurs in last (see below).
-			const IT = { start: 0.3, beam: 3.0, hero: 0.75 };
+			const IT = { start: 0.6, beam: 3.0, hero: 0.75 };
 
 			// ── Opening (first visit, full entrance) ──
 			// A large logo in the middle of the black, brought out of the dark
@@ -805,6 +805,13 @@
 				logo.style.setProperty('mask-image', beam);
 				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
 				overlay.appendChild(logo);
+				// A soft bloom under the beam: the same logo, blurred, on the
+				// same mask — the light seems to glow where it touches, instead
+				// of only uncovering.
+				const glow = logo.cloneNode(true) as HTMLElement;
+				glow.querySelector('polygon')?.removeAttribute('id');
+				glow.style.cssText += `;position:absolute;filter:blur(${isMobileReveal ? 9 : 14}px);opacity:0.55`;
+				overlay.insertBefore(glow, logo);
 				document.body.appendChild(overlay);
 
 				// No scrolling until the logo has landed: wheel, touch and
@@ -837,7 +844,12 @@
 				const START = IT.start;
 				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
 				// The beam crosses the logo left to right, on a timer.
-				tl.fromTo(logo, { '--pc': -80 }, { '--pc': 180, duration: IT.beam, ease: 'none' }, 0)
+				tl.fromTo([logo, glow], { '--pc': -80 }, { '--pc': 180, duration: IT.beam, ease: 'none' }, 0)
+					// Slow push-in on the whole frame, the camera drifting toward
+					// the mark for as long as the light is on it.
+					.fromTo(overlay, { scale: 1 }, { scale: 1.07, duration: IT.beam + 0.4, ease: 'none' }, 0)
+					// As the light leaves, the logo goes soft with it.
+					.to(overlay, { filter: 'blur(10px)', duration: 1.1, ease: 'power2.in' }, IT.beam - 1.3)
 					// The beam has crossed: the page scrolls again. The real logo
 					// in the corner stays hidden until the very end of the hero's
 					// own timeline.
