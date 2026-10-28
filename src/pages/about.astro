@@ -527,13 +527,16 @@ import portrait from '../img/portrait-top.webp';
         right: 0;
         margin-inline: 0;
         width: auto;
-        top: 25%;
-        height: 50%;
+        top: 24%;
+        height: 46%;
       }
       .am-namebox { top: 15%; }
       .am-closing {
         align-items: flex-end;
-        padding-bottom: 14%;
+        /* Clear of the browser's bottom toolbar (Safari's floating bar
+           blurs whatever sits under it). Height-based: a % padding would
+           resolve against the width. */
+        padding-bottom: max(130px, calc(var(--app-stable-vh, 1svh) * 22));
       }
     }
     .am-greeting {
