@@ -841,8 +841,6 @@
 					// Slow push-in on the whole frame, the camera drifting toward
 					// the mark for as long as the light is on it.
 					.fromTo(overlay, { scale: 1 }, { scale: 1.07, duration: IT.beam + 0.4, ease: 'none' }, 0)
-					// As the light leaves, the logo goes soft with it.
-					.to(overlay, { filter: 'blur(10px)', duration: 1.4, ease: 'power2.in' }, IT.beam - 1.6)
 					// The beam has crossed: the page scrolls again. The real logo
 					// in the corner stays hidden until the very end of the hero's
 					// own timeline.
