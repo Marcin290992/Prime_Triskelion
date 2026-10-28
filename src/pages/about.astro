@@ -461,6 +461,9 @@ import portrait from '../img/portrait-top.webp';
        clear of the browser's bottom bar). */
     @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
       .am-scene { translate: 0 calc(var(--app-stable-vh, 1svh) * -10); }
+      /* Name and logo sit below the ears, not level with them. */
+      .am-namebox { top: calc(50% + var(--app-stable-vh, 1svh) * 10); }
+      .am-closing { padding-top: calc(var(--app-stable-vh, 1svh) * 20); }
     }
     .am-greeting {
       font-family: var(--f-body);

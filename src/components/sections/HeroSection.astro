@@ -767,7 +767,7 @@
 
 			// Intro timings: one beam of light over the big logo; the claim follows
 			// as the beam leaves it. The corner logo blurs in last (see below).
-			const IT = { start: 0.6, beam: 3.3, dark: 0.9 };
+			const IT = { start: 0.4, beam: 3.3, dark: 0.4 };
 
 			// ── Opening (first visit, full entrance) ──
 			// A large logo in the middle of the black, brought out of the dark
@@ -988,10 +988,12 @@
 			tl.add(startDynamicWord, endAt);
 
 			// The corner logo blurs in where it lives (opacity first, focus
-			// after) together with the claim — no flight from the middle.
+			// after), a beat before the claim: the brand first, then the message
+			// — no flight from the middle.
 			if (intro && title) {
-				tl.to(title, { opacity: 1, duration: 0.7, ease: 'sine.inOut' }, claimAt)
-				  .to(title, { filter: 'blur(0px)', duration: 1.0, ease: 'power2.inOut', onComplete: () => { gsap.set(title, { filter: 'none' }); } }, claimAt);
+				gsap.timeline({ delay: Math.max(0, heroAt - 0.4) })
+				  .to(title, { opacity: 1, duration: 0.7, ease: 'sine.inOut' }, 0)
+				  .to(title, { filter: 'blur(0px)', duration: 1.0, ease: 'power2.inOut', onComplete: () => { gsap.set(title, { filter: 'none' }); } }, 0);
 				// Leaving before it has come in: never carry a hidden logo to
 				// the next page.
 				document.addEventListener('astro:before-swap', () => {
