@@ -163,26 +163,11 @@ import portrait from '../img/portrait-top.webp';
       padding: 0 0 clamp(3rem, 8vw, 5rem);
     }
     .ac-photo {
-      height: 64svh;
-      height: calc(var(--app-stable-vh, 1svh) * 64);
+      height: 70svh;
       -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
       mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
     }
-    /* No pin and no scrolling window on a phone: the copy follows the
-       portrait in the page's own flow, as tall as it needs to be, and each
-       piece comes in as it arrives (initAboutContent). */
-    #about-content { min-height: 0; }
-    .ac-body-col {
-      grid-column: 1;
-      grid-row: 2;
-      height: auto;
-      overflow: visible;
-      display: block;
-      padding: 0 var(--site-gutter, 1.5rem);
-      max-width: none;
-      -webkit-mask-image: none;
-      mask-image: none;
-    }
+    .ac-body-col { grid-column: 1; grid-row: 1; padding: 0 var(--site-gutter, 1.5rem); max-width: none; }
   }
 
   /* -- The scene, every device (desktop sizes further down) -- */
@@ -634,32 +619,6 @@ import portrait from '../img/portrait-top.webp';
     const inner = body.querySelector<HTMLElement>('.ac-scroll');
     const img = photo.querySelector<HTMLElement>('.ac-photo__img');
     if (!inner) return;
-
-    // Phones and tablets: no pin. The portrait comes up out of the dark as
-    // it enters, and the copy follows piece by piece, in normal flow.
-    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-      const pieces = Array.from(inner.querySelectorAll<HTMLElement>('.ac-body, .am-item'));
-      gsap.set(photo, { opacity: 0, filter: 'blur(48px)' });
-      if (img) gsap.set(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' });
-      gsap.set(pieces, { opacity: 0, filter: 'blur(10px)', y: 14 });
-      // The portrait waits until the section has come up under the title
-      // scene (its last light is out by then) — not as it first peeks in at
-      // the bottom of the screen, which was while the logo was still lit.
-      const sts: ScrollTrigger[] = [];
-      const once = (trigger: Element, vars: gsap.TweenVars, start: string) => {
-        const { targets, ...rest } = vars;
-        const t = gsap.to(targets ?? trigger, { ...rest, paused: true });
-        sts.push(ScrollTrigger.create({ trigger, start, once: true, onEnter: () => t.play() }));
-      };
-      once(photo, { targets: photo, opacity: 1, filter: 'blur(0px)', duration: 1.6, ease: 'power2.out' }, 'top 20%');
-      if (img) once(photo, { targets: img, scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: 2.2, ease: 'sine.out' }, 'top 20%');
-      pieces.forEach((el) => {
-        // Stays on blur(0px), not filter:none (a switch blinks on iOS Safari).
-        once(el, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.1, ease: 'power2.out' }, 'top 90%');
-      });
-      document.addEventListener('astro:before-swap', () => { sts.forEach((st) => st.kill()); }, { once: true });
-      return;
-    }
     // Scroll distance: the portrait develops first, then the copy rises
     // from below the screen to its place beside it.
     const travel = () => window.innerHeight + inner.offsetHeight;
