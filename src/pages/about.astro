@@ -17,17 +17,6 @@ import portrait from '../img/portrait-top.webp';
          appears. CSS sticky pin, scrubbed by ScrollTrigger. -->
     <div class="am-reveal">
       <div class="am-reveal__pin">
-        <div class="am-portrait-stack">
-          <Image
-            class="am-portrait am-portrait-img"
-            src={portrait}
-            alt="Martin — Prime Triskelion"
-            widths={[480, 768, 1080]}
-            sizes="100vw"
-            loading="eager"
-            fetchpriority="high"
-          />
-        </div>
         <div class="am-veil" aria-hidden="true" data-side-rays="0.5,0.55" data-side-rays-intensity="0.65"></div>
         <div class="am-hero">
           <p class="am-who">
@@ -35,19 +24,33 @@ import portrait from '../img/portrait-top.webp';
             <span class="am-who-r"><span class="am-who-w">Behind?</span></span>
           </p>
         </div>
-        <div class="am-namebox">
-          <p class="am-greeting">Hi, my name is</p>
-          <p class="am-name">Martin.</p>
-        </div>
-        <div class="am-closing">
-          <div class="am-brand" role="img" aria-label="Prime Triskelion">
-            <svg class="am-brand__mark" aria-hidden="true" viewBox="128 152 744 644" fill="#FFF">
-              <defs><polygon id="am-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
-              <use href="#am-arm"/>
-              <use href="#am-arm" transform="rotate(120 500 577.259)"/>
-              <use href="#am-arm" transform="rotate(240 500 577.259)"/>
-            </svg>
-            <div class="am-brand__text"><span>PRIME</span><span>TRISKELION</span></div>
+        <!-- One beam of light sweeps this whole layer: name, portrait, logo. -->
+        <div class="am-scene">
+          <div class="am-portrait-stack">
+            <Image
+              class="am-portrait am-portrait-img"
+              src={portrait}
+              alt="Martin — Prime Triskelion"
+              widths={[480, 768, 1080]}
+              sizes="100vw"
+              loading="eager"
+              fetchpriority="high"
+            />
+          </div>
+          <div class="am-namebox">
+            <p class="am-greeting">Hi, my name is</p>
+            <p class="am-name">Martin.</p>
+          </div>
+          <div class="am-closing">
+            <div class="am-brand" role="img" aria-label="Prime Triskelion">
+              <svg class="am-brand__mark" aria-hidden="true" viewBox="128 152 744 644" fill="#FFF">
+                <defs><polygon id="am-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/></defs>
+                <use href="#am-arm"/>
+                <use href="#am-arm" transform="rotate(120 500 577.259)"/>
+                <use href="#am-arm" transform="rotate(240 500 577.259)"/>
+              </svg>
+              <div class="am-brand__text"><span>PRIME</span><span>TRISKELION</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -294,37 +297,78 @@ import portrait from '../img/portrait-top.webp';
       top: 25%;
       height: 50%;
       overflow: hidden;
-      /* One soft pass of light, left to right: --pc is the beam's centre
-         (% of the width). The face is lit only where the light is: dark
-         ahead of the beam, and dark again behind it once it has passed. */
+    }
+    /* One soft pass of light, left to right: --pc is the beam's centre
+       (% of the width). The name, the face and the logo are lit only where
+       the light is: dark ahead of the beam, and dark again behind it once
+       it has passed. */
+    .am-scene {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
       will-change: mask-image;
-      --pc: -65;
+      --pc: -100;
       -webkit-mask-image: linear-gradient(90deg,
-        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 50%),
-        rgb(0 0 0 / 0.06) calc(var(--pc) * 1% - 42%),
-        rgb(0 0 0 / 0.22) calc(var(--pc) * 1% - 32%),
-        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 20%),
-        rgb(0 0 0 / 0.82) calc(var(--pc) * 1% - 9%),
-        rgb(0 0 0 / 1) calc(var(--pc) * 1% + 0%),
-        rgb(0 0 0 / 0.84) calc(var(--pc) * 1% + 8%),
-        rgb(0 0 0 / 0.6) calc(var(--pc) * 1% + 18%),
-        rgb(0 0 0 / 0.36) calc(var(--pc) * 1% + 30%),
-        rgb(0 0 0 / 0.16) calc(var(--pc) * 1% + 44%),
-        rgb(0 0 0 / 0.05) calc(var(--pc) * 1% + 56%),
-        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 66%));
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 85.0%),
+        rgb(0 0 0 / 0.017) calc(var(--pc) * 1% - 78.4%),
+        rgb(0 0 0 / 0.067) calc(var(--pc) * 1% - 71.8%),
+        rgb(0 0 0 / 0.146) calc(var(--pc) * 1% - 65.2%),
+        rgb(0 0 0 / 0.25) calc(var(--pc) * 1% - 58.7%),
+        rgb(0 0 0 / 0.371) calc(var(--pc) * 1% - 52.1%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 45.5%),
+        rgb(0 0 0 / 0.629) calc(var(--pc) * 1% - 38.9%),
+        rgb(0 0 0 / 0.75) calc(var(--pc) * 1% - 32.3%),
+        rgb(0 0 0 / 0.854) calc(var(--pc) * 1% - 25.8%),
+        rgb(0 0 0 / 0.933) calc(var(--pc) * 1% - 19.2%),
+        rgb(0 0 0 / 0.983) calc(var(--pc) * 1% - 12.6%),
+        rgb(0 0 0 / 1) calc(var(--pc) * 1% - 6.0%),
+        rgb(0 0 0 / 0.99) calc(var(--pc) * 1% + 11.6%),
+        rgb(0 0 0 / 0.962) calc(var(--pc) * 1% + 17.2%),
+        rgb(0 0 0 / 0.916) calc(var(--pc) * 1% + 22.9%),
+        rgb(0 0 0 / 0.854) calc(var(--pc) * 1% + 28.5%),
+        rgb(0 0 0 / 0.778) calc(var(--pc) * 1% + 34.1%),
+        rgb(0 0 0 / 0.691) calc(var(--pc) * 1% + 39.8%),
+        rgb(0 0 0 / 0.598) calc(var(--pc) * 1% + 45.4%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% + 51.0%),
+        rgb(0 0 0 / 0.402) calc(var(--pc) * 1% + 56.6%),
+        rgb(0 0 0 / 0.309) calc(var(--pc) * 1% + 62.2%),
+        rgb(0 0 0 / 0.222) calc(var(--pc) * 1% + 67.9%),
+        rgb(0 0 0 / 0.146) calc(var(--pc) * 1% + 73.5%),
+        rgb(0 0 0 / 0.084) calc(var(--pc) * 1% + 79.1%),
+        rgb(0 0 0 / 0.038) calc(var(--pc) * 1% + 84.8%),
+        rgb(0 0 0 / 0.01) calc(var(--pc) * 1% + 90.4%),
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 96.0%));
       mask-image: linear-gradient(90deg,
-        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 50%),
-        rgb(0 0 0 / 0.06) calc(var(--pc) * 1% - 42%),
-        rgb(0 0 0 / 0.22) calc(var(--pc) * 1% - 32%),
-        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 20%),
-        rgb(0 0 0 / 0.82) calc(var(--pc) * 1% - 9%),
-        rgb(0 0 0 / 1) calc(var(--pc) * 1% + 0%),
-        rgb(0 0 0 / 0.84) calc(var(--pc) * 1% + 8%),
-        rgb(0 0 0 / 0.6) calc(var(--pc) * 1% + 18%),
-        rgb(0 0 0 / 0.36) calc(var(--pc) * 1% + 30%),
-        rgb(0 0 0 / 0.16) calc(var(--pc) * 1% + 44%),
-        rgb(0 0 0 / 0.05) calc(var(--pc) * 1% + 56%),
-        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 66%));
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% - 85.0%),
+        rgb(0 0 0 / 0.017) calc(var(--pc) * 1% - 78.4%),
+        rgb(0 0 0 / 0.067) calc(var(--pc) * 1% - 71.8%),
+        rgb(0 0 0 / 0.146) calc(var(--pc) * 1% - 65.2%),
+        rgb(0 0 0 / 0.25) calc(var(--pc) * 1% - 58.7%),
+        rgb(0 0 0 / 0.371) calc(var(--pc) * 1% - 52.1%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 45.5%),
+        rgb(0 0 0 / 0.629) calc(var(--pc) * 1% - 38.9%),
+        rgb(0 0 0 / 0.75) calc(var(--pc) * 1% - 32.3%),
+        rgb(0 0 0 / 0.854) calc(var(--pc) * 1% - 25.8%),
+        rgb(0 0 0 / 0.933) calc(var(--pc) * 1% - 19.2%),
+        rgb(0 0 0 / 0.983) calc(var(--pc) * 1% - 12.6%),
+        rgb(0 0 0 / 1) calc(var(--pc) * 1% - 6.0%),
+        rgb(0 0 0 / 0.99) calc(var(--pc) * 1% + 11.6%),
+        rgb(0 0 0 / 0.962) calc(var(--pc) * 1% + 17.2%),
+        rgb(0 0 0 / 0.916) calc(var(--pc) * 1% + 22.9%),
+        rgb(0 0 0 / 0.854) calc(var(--pc) * 1% + 28.5%),
+        rgb(0 0 0 / 0.778) calc(var(--pc) * 1% + 34.1%),
+        rgb(0 0 0 / 0.691) calc(var(--pc) * 1% + 39.8%),
+        rgb(0 0 0 / 0.598) calc(var(--pc) * 1% + 45.4%),
+        rgb(0 0 0 / 0.5) calc(var(--pc) * 1% + 51.0%),
+        rgb(0 0 0 / 0.402) calc(var(--pc) * 1% + 56.6%),
+        rgb(0 0 0 / 0.309) calc(var(--pc) * 1% + 62.2%),
+        rgb(0 0 0 / 0.222) calc(var(--pc) * 1% + 67.9%),
+        rgb(0 0 0 / 0.146) calc(var(--pc) * 1% + 73.5%),
+        rgb(0 0 0 / 0.084) calc(var(--pc) * 1% + 79.1%),
+        rgb(0 0 0 / 0.038) calc(var(--pc) * 1% + 84.8%),
+        rgb(0 0 0 / 0.01) calc(var(--pc) * 1% + 90.4%),
+        rgb(0 0 0 / 0) calc(var(--pc) * 1% + 96.0%));
     }
     /* A tablet in landscape: full width at half the height made a wide
        strip, and the 16:9 photo, cropped top and bottom to fill it, lost
@@ -343,16 +387,14 @@ import portrait from '../img/portrait-top.webp';
       content: '';
       position: absolute;
       inset: auto 0 0;
-      height: 40%;
+      height: 24%;
       background: linear-gradient(
         to top,
-        rgba(0, 0, 0, 1)    0%,
-        rgba(0, 0, 0, 0.94) 18%,
-        rgba(0, 0, 0, 0.8)  34%,
-        rgba(0, 0, 0, 0.6)  48%,
-        rgba(0, 0, 0, 0.38) 62%,
-        rgba(0, 0, 0, 0.2)  76%,
-        rgba(0, 0, 0, 0.08) 88%,
+        rgba(0, 0, 0, 0.85) 0%,
+        rgba(0, 0, 0, 0.6)  22%,
+        rgba(0, 0, 0, 0.38) 42%,
+        rgba(0, 0, 0, 0.18) 62%,
+        rgba(0, 0, 0, 0.07) 80%,
         rgba(0, 0, 0, 0)    100%
       );
       pointer-events: none;
@@ -369,11 +411,11 @@ import portrait from '../img/portrait-top.webp';
       z-index: 0;
       object-fit: cover;
       object-position: center 72%;
-      filter: grayscale(1) contrast(1.3) brightness(0.7);
+      filter: grayscale(1) contrast(1.3) brightness(0.62);
       /* The dark is part of the picture: the face holds its light, and the
          shoulders and edges sink into black through a long, soft falloff. */
-      -webkit-mask-image: radial-gradient(ellipse 44% 50% at 50% 40%, #000 12%, rgb(0 0 0 / 0.75) 26%, rgb(0 0 0 / 0.42) 42%, rgb(0 0 0 / 0.16) 58%, transparent 78%);
-      mask-image: radial-gradient(ellipse 44% 50% at 50% 40%, #000 12%, rgb(0 0 0 / 0.75) 26%, rgb(0 0 0 / 0.42) 42%, rgb(0 0 0 / 0.16) 58%, transparent 78%);
+      -webkit-mask-image: radial-gradient(ellipse 46% 54% at 50% 50%, #000 18%, rgb(0 0 0 / 0.92) 28%, rgb(0 0 0 / 0.78) 38%, rgb(0 0 0 / 0.6) 47%, rgb(0 0 0 / 0.42) 56%, rgb(0 0 0 / 0.27) 64%, rgb(0 0 0 / 0.15) 72%, rgb(0 0 0 / 0.07) 80%, rgb(0 0 0 / 0.02) 86%, transparent 90%);
+      mask-image: radial-gradient(ellipse 46% 54% at 50% 50%, #000 18%, rgb(0 0 0 / 0.92) 28%, rgb(0 0 0 / 0.78) 38%, rgb(0 0 0 / 0.6) 47%, rgb(0 0 0 / 0.42) 56%, rgb(0 0 0 / 0.27) 64%, rgb(0 0 0 / 0.15) 72%, rgb(0 0 0 / 0.07) 80%, rgb(0 0 0 / 0.02) 86%, transparent 90%);
     }
     /* The name, left of the screen, over the black veil (scroll-driven) */
     .am-namebox {
@@ -382,10 +424,9 @@ import portrait from '../img/portrait-top.webp';
       top: 50%;
       transform: translateY(-50%);
       z-index: 5;
-      opacity: 0;
       pointer-events: none;
     }
-    /* Closing mark once the photo has faded out */
+    /* Closing mark, lit last by the beam */
     .am-closing {
       position: absolute;
       inset: 0;
@@ -394,7 +435,6 @@ import portrait from '../img/portrait-top.webp';
       align-items: center;
       justify-content: flex-end;
       padding: 0 max(var(--site-gutter, 1.5rem), calc((100% - var(--site-max-width, 100%)) / 2));
-      opacity: 0;
       pointer-events: none;
     }
     /* Same lock-up as the top bar (Logo.astro), same sizes */
@@ -415,6 +455,86 @@ import portrait from '../img/portrait-top.webp';
     @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
       .am-brand { font-size: clamp(10px, 2.6vw, 12px); }
       .am-brand__mark { height: 26px; }
+    }
+    /* Phones and touch tablets: the screen is tall, so the light comes
+       down it instead of across it, and the three pieces stack in the order
+       the beam meets them: name above the portrait, logo below. */
+    @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+      .am-scene {
+        -webkit-mask-image: linear-gradient(180deg,
+          rgb(0 0 0 / 0) calc(var(--pc) * 1% - 85.0%),
+          rgb(0 0 0 / 0.017) calc(var(--pc) * 1% - 78.4%),
+          rgb(0 0 0 / 0.067) calc(var(--pc) * 1% - 71.8%),
+          rgb(0 0 0 / 0.146) calc(var(--pc) * 1% - 65.2%),
+          rgb(0 0 0 / 0.25) calc(var(--pc) * 1% - 58.7%),
+          rgb(0 0 0 / 0.371) calc(var(--pc) * 1% - 52.1%),
+          rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 45.5%),
+          rgb(0 0 0 / 0.629) calc(var(--pc) * 1% - 38.9%),
+          rgb(0 0 0 / 0.75) calc(var(--pc) * 1% - 32.3%),
+          rgb(0 0 0 / 0.854) calc(var(--pc) * 1% - 25.8%),
+          rgb(0 0 0 / 0.933) calc(var(--pc) * 1% - 19.2%),
+          rgb(0 0 0 / 0.983) calc(var(--pc) * 1% - 12.6%),
+          rgb(0 0 0 / 1) calc(var(--pc) * 1% - 6.0%),
+          rgb(0 0 0 / 0.99) calc(var(--pc) * 1% + 11.6%),
+          rgb(0 0 0 / 0.962) calc(var(--pc) * 1% + 17.2%),
+          rgb(0 0 0 / 0.916) calc(var(--pc) * 1% + 22.9%),
+          rgb(0 0 0 / 0.854) calc(var(--pc) * 1% + 28.5%),
+          rgb(0 0 0 / 0.778) calc(var(--pc) * 1% + 34.1%),
+          rgb(0 0 0 / 0.691) calc(var(--pc) * 1% + 39.8%),
+          rgb(0 0 0 / 0.598) calc(var(--pc) * 1% + 45.4%),
+          rgb(0 0 0 / 0.5) calc(var(--pc) * 1% + 51.0%),
+          rgb(0 0 0 / 0.402) calc(var(--pc) * 1% + 56.6%),
+          rgb(0 0 0 / 0.309) calc(var(--pc) * 1% + 62.2%),
+          rgb(0 0 0 / 0.222) calc(var(--pc) * 1% + 67.9%),
+          rgb(0 0 0 / 0.146) calc(var(--pc) * 1% + 73.5%),
+          rgb(0 0 0 / 0.084) calc(var(--pc) * 1% + 79.1%),
+          rgb(0 0 0 / 0.038) calc(var(--pc) * 1% + 84.8%),
+          rgb(0 0 0 / 0.01) calc(var(--pc) * 1% + 90.4%),
+          rgb(0 0 0 / 0) calc(var(--pc) * 1% + 96.0%));
+        mask-image: linear-gradient(180deg,
+          rgb(0 0 0 / 0) calc(var(--pc) * 1% - 85.0%),
+          rgb(0 0 0 / 0.017) calc(var(--pc) * 1% - 78.4%),
+          rgb(0 0 0 / 0.067) calc(var(--pc) * 1% - 71.8%),
+          rgb(0 0 0 / 0.146) calc(var(--pc) * 1% - 65.2%),
+          rgb(0 0 0 / 0.25) calc(var(--pc) * 1% - 58.7%),
+          rgb(0 0 0 / 0.371) calc(var(--pc) * 1% - 52.1%),
+          rgb(0 0 0 / 0.5) calc(var(--pc) * 1% - 45.5%),
+          rgb(0 0 0 / 0.629) calc(var(--pc) * 1% - 38.9%),
+          rgb(0 0 0 / 0.75) calc(var(--pc) * 1% - 32.3%),
+          rgb(0 0 0 / 0.854) calc(var(--pc) * 1% - 25.8%),
+          rgb(0 0 0 / 0.933) calc(var(--pc) * 1% - 19.2%),
+          rgb(0 0 0 / 0.983) calc(var(--pc) * 1% - 12.6%),
+          rgb(0 0 0 / 1) calc(var(--pc) * 1% - 6.0%),
+          rgb(0 0 0 / 0.99) calc(var(--pc) * 1% + 11.6%),
+          rgb(0 0 0 / 0.962) calc(var(--pc) * 1% + 17.2%),
+          rgb(0 0 0 / 0.916) calc(var(--pc) * 1% + 22.9%),
+          rgb(0 0 0 / 0.854) calc(var(--pc) * 1% + 28.5%),
+          rgb(0 0 0 / 0.778) calc(var(--pc) * 1% + 34.1%),
+          rgb(0 0 0 / 0.691) calc(var(--pc) * 1% + 39.8%),
+          rgb(0 0 0 / 0.598) calc(var(--pc) * 1% + 45.4%),
+          rgb(0 0 0 / 0.5) calc(var(--pc) * 1% + 51.0%),
+          rgb(0 0 0 / 0.402) calc(var(--pc) * 1% + 56.6%),
+          rgb(0 0 0 / 0.309) calc(var(--pc) * 1% + 62.2%),
+          rgb(0 0 0 / 0.222) calc(var(--pc) * 1% + 67.9%),
+          rgb(0 0 0 / 0.146) calc(var(--pc) * 1% + 73.5%),
+          rgb(0 0 0 / 0.084) calc(var(--pc) * 1% + 79.1%),
+          rgb(0 0 0 / 0.038) calc(var(--pc) * 1% + 84.8%),
+          rgb(0 0 0 / 0.01) calc(var(--pc) * 1% + 90.4%),
+          rgb(0 0 0 / 0) calc(var(--pc) * 1% + 96.0%));
+      }
+      .am-portrait-stack {
+        left: 0;
+        right: 0;
+        margin-inline: 0;
+        width: auto;
+        top: 25%;
+        height: 50%;
+      }
+      .am-namebox { top: 15%; }
+      .am-closing {
+        align-items: flex-end;
+        padding-bottom: 14%;
+      }
     }
     .am-greeting {
       font-family: var(--f-body);
@@ -514,14 +634,12 @@ import portrait from '../img/portrait-top.webp';
     // .am-reveal--bottom). Same scroll range either way.
     reveal.classList.toggle('am-reveal--bottom', !isSafari());
 
-    const nameBox = document.querySelector<HTMLElement>('.am-namebox');
-    const stack   = document.querySelector<HTMLElement>('.am-portrait-stack');
-    const closing = document.querySelector<HTMLElement>('.am-closing');
-    if (!nameBox || !stack || !closing) return;
+    const scene = document.querySelector<HTMLElement>('.am-scene');
+    if (!scene) return;
 
-    // black → name on the left → one soft pass of light brings the portrait
-    // out of the dark → the name fades → the portrait fades → closing logo.
-    // Overlapping steps, so it scrolls as one wave.
+    // black → one slow beam of light sweeps left to right and brings the
+    // name, the portrait and the logo out of the dark in turn, then leaves
+    // them dark again.
     const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
     // Original order: the light goes out first, then the title dissolves
     // (blur + fade), then the rest; `o` shifts the rest behind them.
@@ -530,13 +648,8 @@ import portrait from '../img/portrait-top.webp';
     const rays = veil.querySelector<HTMLElement>('canvas');
     if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.2, immediateRender: false }, 0);
     tl.fromTo([wordL, wordR], { opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(16px)', duration: 0.24, ease: 'sine.in' }, 0.2)
-      .fromTo(nameBox, { opacity: 0, filter: 'blur(14px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12 }, 0.05 + o)
       .fromTo(veil, { opacity: 1 }, { opacity: 0, duration: 0.04 }, 0.06 + o + hold)
-      .fromTo(stack, { '--pc': -65 }, { '--pc': 145, duration: 0.7, ease: 'sine.inOut' }, 0.1 + o + hold)
-      .fromTo(nameBox, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.4 + o + hold)
-      .fromTo(stack, { opacity: 1 }, { opacity: 0, duration: 0.14, immediateRender: false }, 0.62 + o + hold)
-      .fromTo(closing, { opacity: 0, filter: 'blur(14px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12 }, 0.74 + o + hold)
-      .to(closing, { opacity: 0, duration: 0.14 }, 0.9 + o + hold)
+      .fromTo(scene, { '--pc': -100 }, { '--pc': 190, duration: 0.9, ease: 'none' }, 0.1 + o + hold)
       // …and then a stretch of pure black before the page carries on.
       .to({}, { duration: 0.04 }, 1.04 + o + hold);
 
