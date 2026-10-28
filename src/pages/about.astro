@@ -82,8 +82,10 @@ import portrait from '../img/portrait-top.webp';
         </div>
       </div>
     </div>
-    <div class="ac-cta"><CtaSection /></div>
   </section>
+
+  <!-- After the pinned scene the page just scrolls on, normally. -->
+  <section class="ac-after"><CtaSection /></section>
 
 </Layout>
 
@@ -135,21 +137,11 @@ import portrait from '../img/portrait-top.webp';
     mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
   }
   .ac-scroll { will-change: transform; }
-  /* The fire and the closing line, in the same frame as the portrait and
-     the copy; invisible until the scene brings them up. */
-  .ac-cta {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    opacity: 0;
-    pointer-events: none;
-  }
-  .ac-cta > :global(#contact-cta) { width: 100%; }
-  /* No animation: the closing line just sits under the copy. */
-  @media (prefers-reduced-motion: reduce) {
-    .ac-cta { position: static; opacity: 1; pointer-events: auto; }
+  /* The fire and the closing line: in the page's flow, under the scene. */
+  .ac-after {
+    position: relative;
+    z-index: 1;
+    background: rgb(var(--c-bg));
   }
   .ac-body {
     font-family: var(--f-body);
@@ -171,11 +163,26 @@ import portrait from '../img/portrait-top.webp';
       padding: 0 0 clamp(3rem, 8vw, 5rem);
     }
     .ac-photo {
-      height: 70svh;
+      height: 64svh;
+      height: calc(var(--app-stable-vh, 1svh) * 64);
       -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
       mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%), linear-gradient(180deg, transparent 0%, #000 16%, #000 62%, transparent 100%);
     }
-    .ac-body-col { grid-column: 1; grid-row: 1; padding: 0 var(--site-gutter, 1.5rem); max-width: none; }
+    /* No pin and no scrolling window on a phone: the copy follows the
+       portrait in the page's own flow, as tall as it needs to be, and each
+       piece comes in as it arrives (initAboutContent). */
+    #about-content { min-height: 0; }
+    .ac-body-col {
+      grid-column: 1;
+      grid-row: 2;
+      height: auto;
+      overflow: visible;
+      display: block;
+      padding: 0 var(--site-gutter, 1.5rem);
+      max-width: none;
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
   }
 
   /* -- The scene, every device (desktop sizes further down) -- */
@@ -624,16 +631,37 @@ import portrait from '../img/portrait-top.webp';
     if (!section || !photo || !body) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const cta = document.querySelector<HTMLElement>('.ac-cta');
     const inner = body.querySelector<HTMLElement>('.ac-scroll');
     const img = photo.querySelector<HTMLElement>('.ac-photo__img');
     if (!inner) return;
-    // Scroll distance: the portrait develops first, then the copy travels
-    // from below the screen to above it.
+
+    // Phones and tablets: no pin. The portrait comes up out of the dark as
+    // it enters, and the copy follows piece by piece, in normal flow.
+    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
+      const pieces = Array.from(inner.querySelectorAll<HTMLElement>('.ac-body, .am-item'));
+      gsap.set(photo, { opacity: 0, filter: 'blur(48px)' });
+      if (img) gsap.set(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' });
+      gsap.set(pieces, { opacity: 0, filter: 'blur(10px)', y: 14 });
+      const sts: ScrollTrigger[] = [];
+      const once = (trigger: Element, vars: gsap.TweenVars, start: string) => {
+        const { targets, ...rest } = vars;
+        const t = gsap.to(targets ?? trigger, { ...rest, paused: true });
+        sts.push(ScrollTrigger.create({ trigger, start, once: true, onEnter: () => t.play() }));
+      };
+      once(photo, { targets: photo, opacity: 1, filter: 'blur(0px)', duration: 1.6, ease: 'power2.out' }, 'top 85%');
+      if (img) once(photo, { targets: img, scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: 2.2, ease: 'sine.out' }, 'top 85%');
+      pieces.forEach((el) => {
+        // Stays on blur(0px), not filter:none (a switch blinks on iOS Safari).
+        once(el, { opacity: 1, filter: 'blur(0px)', y: 0, duration: 1.1, ease: 'power2.out' }, 'top 90%');
+      });
+      document.addEventListener('astro:before-swap', () => { sts.forEach((st) => st.kill()); }, { once: true });
+      return;
+    }
+    // Scroll distance: the portrait develops first, then the copy rises
+    // from below the screen to its place beside it.
     const travel = () => window.innerHeight + inner.offsetHeight;
     const develop = 0.14;
-    // The scene's own length, plus a stretch of rest on the finished frame
-    // (fire and line standing) before the page lets go and scrolls on.
+    // The scene's own length (the pin holds for 62% of it, see `end`).
     const baseDist = () => window.innerHeight * 1.5 + travel() * 0.5;
     const holdDist = () => 0;
 
@@ -645,27 +673,18 @@ import portrait from '../img/portrait-top.webp';
       tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop, ease: 'sine.out' }, 0);
     }
     // The copy rises from below and comes to rest in the middle, beside the
-    // portrait — it stays there, readable, until the whole scene hands over.
+    // portrait.
     tl.fromTo(inner, { y: () => travel() / 2 }, { y: 0, duration: 0.36, ease: 'sine.out' }, develop);
-    // Then it all sinks back into the dark, out of focus.
-    tl.to([photo, body], { opacity: 0, filter: 'blur(36px)', duration: 0.1, ease: 'sine.in', immediateRender: false }, 0.62);
-    // …and in the same place the fire and "Let's build something sharp"
-    // come up out of the dark, from a blur. They live inside the pinned
-    // section, so once the scene ends the page simply carries on to the
-    // footer as it always was.
-    if (cta) {
-      tl.fromTo(cta, { opacity: 0, filter: 'blur(40px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.12, ease: 'sine.out' }, 0.68)
-        .fromTo(cta, { pointerEvents: 'none' }, { pointerEvents: 'auto', duration: 0.001 }, 0.78);
-    }
-
-    tl.to({}, { duration: 0.2 }, 0.8);
+    // …and it stays there, at rest: the pin lets go and the page scrolls
+    // on normally to the closing line.
+    tl.to({}, { duration: 0.12 }, develop + 0.36);
 
     _acST = ScrollTrigger.create({
       animation: tl,
       trigger: section,
       // Pinned: the portrait stays; the scroll plays the picture, then the copy.
       start: 'top top',
-      end: () => `+=${baseDist() + holdDist()}`,
+      end: () => `+=${(baseDist() + holdDist()) * 0.62}`,
       pin: true,
       scrub: 1,
       invalidateOnRefresh: true,
