@@ -550,6 +550,17 @@
 		if (_heroWordTimer !== null) { window.clearInterval(_heroWordTimer); _heroWordTimer = null; }
 	});
 
+	// The soft beam of light from the About scroll, as a mask: --pc is the
+	// beam's centre (% of the width), lit only where the light is, dark
+	// ahead of it and again behind it. Cosine falloff so no edge shows.
+	function beamMask(k = 1): string {
+		const stops: string[] = [];
+		const f = (x: number, a: number) => `rgb(0 0 0 / ${a.toFixed(3)}) calc(var(--pc) * 1% ${x < 0 ? '-' : '+'} ${Math.abs(x * k).toFixed(1)}%)`;
+		for (let i = 0; i <= 12; i++) { const t = i / 12; stops.push(f(-85 + 79 * t, 0.5 - 0.5 * Math.cos(Math.PI * t))); }
+		for (let i = 1; i <= 16; i++) { const t = i / 16; stops.push(f(6 + 90 * t, 0.5 + 0.5 * Math.cos(Math.PI * t))); }
+		return `linear-gradient(90deg, ${stops.join(', ')})`;
+	}
+
 	function initHeroReveal() {
 		_heroParallaxST?.kill();
 		_heroParallaxST = null;
@@ -754,23 +765,19 @@
 				return;
 			}
 
-			// Intro timings: a quick focus, a short hold, and on the logo's
-			// landing the claim comes into focus; the light follows last.
-			const IT = { start: 0.3, focus: [0.7, 1.1, 1.3], stagger: 0.15, fly: 1.55, flight: 0.9 };
+			// Intro timings: one beam of light over the big logo; the claim follows
+			// as the beam leaves it. The corner logo blurs in last (see below).
+			const IT = { start: 0.4, beam: 3.3, dark: 0.4 };
 
 			// ── Opening (first visit, full entrance) ──
-			// A large logo in the middle of the black comes into focus — the
-			// mark out of a soft blur, settling from a hair oversized, the
-			// name's words after it, each the hero claim's own focus pull — then
-			// flies to the corner, shrinking onto the real logo, which takes
-			// over as it lands.
+			// A large logo in the middle of the black, brought out of the dark
+			// by one slow beam of light (the About scroll's, here on a timer),
+			// which leaves it dark again as the real logo blurs in at the
+			// corner.
 			//
 			// The intro logo is its own element, drawn at its large size with a
-			// large font — not the small corner logo scaled up: blurred text in
-			// a scaled-up element is rasterised small and stretched, and when
-			// the blur ends the browser swaps to sharp text at full resolution,
-			// a visible snap (Chrome and Safari both). Shrinking a sharp large
-			// rendering in flight has nothing to snap.
+			// large font — not the small corner logo scaled up, so nothing is
+			// rasterised small and stretched.
 			// Returns when the hero should start.
 			function playIntro(): number {
 				const real = title!;
@@ -778,10 +785,9 @@
 				// on it.
 				gsap.set(logoArms, { opacity: 1, scale: 1, filter: 'none', rotation: (i: number) => [0, 120, 240][i] });
 				gsap.set(logoText, { opacity: 1, filter: 'none', scale: 1 });
-				gsap.set(real, { opacity: 0 });
-				const target = real.getBoundingClientRect();
+				gsap.set(real, { opacity: 0, filter: `blur(${isMobileReveal ? 12 : 16}px)` });
 				const realSvg = real.querySelector('svg')!;
-				const S = isMobileReveal ? 2.3 : 3.4;
+				const S = isMobileReveal ? 1.3 : 1.8;
 				const fontPx = parseFloat(getComputedStyle(real).fontSize) * S;
 				const markPx = realSvg.getBoundingClientRect().height * S;
 
@@ -790,7 +796,13 @@
 				overlay.setAttribute('aria-hidden', 'true');
 				overlay.style.cssText = 'position:fixed;inset:0;z-index:1003;display:flex;align-items:center;justify-content:center;pointer-events:none';
 				const logo = document.createElement('div');
-				logo.style.cssText = `display:flex;align-items:center;gap:0.55em;font-family:var(--f-display);font-weight:700;font-size:${fontPx}px;line-height:1;letter-spacing:0.06em;text-transform:uppercase;color:rgb(var(--c-cream));white-space:nowrap`;
+				logo.style.cssText = `display:flex;align-items:center;gap:0.55em;font-family:var(--f-display);font-weight:700;font-size:${fontPx}px;line-height:1;letter-spacing:0.06em;text-transform:uppercase;color:rgb(var(--c-cream));white-space:nowrap;will-change:mask-image;--pc:-80`;
+				// The beam is measured on the logo itself (not the screen), and
+				// narrower than the About scroll's, so its edge visibly crosses the
+				// mark and the words.
+				const beam = beamMask(0.75);
+				logo.style.setProperty('-webkit-mask-image', beam);
+				logo.style.setProperty('mask-image', beam);
 				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
 				overlay.appendChild(logo);
 				document.body.appendChild(overlay);
@@ -822,47 +834,21 @@
 				// too if it appears while locked.
 				requestAnimationFrame(() => { if (locked) (window as any).__lenis?.stop?.(); });
 
-				const mark = logo.querySelector('svg')!;
-				const words = Array.from(logo.querySelectorAll<HTMLElement>(':scope > div > div'));
-				// The hero claim's own focus pull, on the mark and each word as a
-				// whole: out of a deep blur, settling from a hair oversized, one
-				// after another.
-				const parts = [mark, ...words];
-				const blur = isMobileReveal ? 16 : 24;
-				gsap.set(parts, { opacity: 0, filter: `blur(${blur}px)`, scale: 1.04 });
-				gsap.set(mark, { transformOrigin: '50% 50%' });
-				gsap.set(words, { transformOrigin: '0% 50%' });
-
-				// Where it lands: centre and size of the real logo.
-				const from = logo.getBoundingClientRect();
-				const k = target.width / from.width;
-				const dx = (target.left + target.width / 2) - (from.left + from.width / 2);
-				const dy = (target.top + target.height / 2) - (from.top + from.height / 2);
-
 				const START = IT.start;
-				// Same timings as the claim; the flight sets off just as the last
-				// word comes sharp — no long hold in the middle.
-				const stagger = IT.stagger;
-				const FLY = IT.fly;
-				const LAND = FLY + IT.flight;
 				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
-				tl.to(parts, { opacity: 1, duration: IT.focus[0], ease: 'sine.inOut', stagger }, 0)
-					.to(parts, { filter: 'blur(0px)', duration: IT.focus[1], ease: 'power2.inOut', stagger }, 0)
-					.to(parts, { scale: 1, duration: IT.focus[2], ease: 'power2.out', stagger }, 0)
-					// Flight: shrinks onto the real logo, a touch of motion blur on
-					// the way (the camera following it), gone before it lands.
-					.to(logo, { x: dx, y: dy, scale: k, duration: IT.flight, ease: 'power3.inOut' }, FLY)
-					// The blur is in the logo's own (shrinking) units — 7px here reads
-					// as a few pixels on screen mid-flight.
-					.to(logo, { filter: 'blur(7px)', duration: IT.flight * 0.38, ease: 'power2.in' }, FLY + IT.flight * 0.08)
-					.to(logo, { filter: 'blur(0px)', duration: IT.flight * 0.46, ease: 'power2.out' }, FLY + IT.flight * 0.46)
-					// Landed: the real logo takes over in the same spot.
-					.to(real, { opacity: 1, duration: 0.25, ease: 'none' }, LAND - 0.05)
-					.to(overlay, { opacity: 0, duration: 0.3, ease: 'none' }, LAND)
-					// Landed: the page scrolls again.
-					.add(unlock, LAND);
+				// The beam crosses the logo left to right, on a timer.
+				tl.fromTo(logo, { '--pc': -80 }, { '--pc': 180, duration: IT.beam, ease: 'none' }, 0)
+					// Slow push-in on the whole frame, the camera drifting toward
+					// the mark for as long as the light is on it.
+					.fromTo(overlay, { scale: 1 }, { scale: 1.07, duration: IT.beam + 0.4, ease: 'none' }, 0)
+					// As the light leaves, the logo goes soft with it.
+					.to(overlay, { filter: 'blur(10px)', duration: 1.4, ease: 'power2.in' }, IT.beam - 1.6)
+					// The beam has crossed: the page scrolls again. The real logo
+					// in the corner stays hidden until the very end of the hero's
+					// own timeline.
+					.add(unlock, IT.beam);
 				// Never stay locked (a stalled timeline, a hidden tab).
-				window.setTimeout(unlock, (START + LAND + 1.5) * 1000);
+				window.setTimeout(unlock, (START + IT.beam + 1.5) * 1000);
 
 				// Leaving the page mid-intro: never leave the logo hidden.
 				document.addEventListener('astro:before-swap', () => {
@@ -870,13 +856,12 @@
 					if (!tl.isActive()) return;
 					tl.kill();
 					overlay.remove();
-					gsap.set(real, { opacity: 1 });
+					gsap.set(real, { opacity: 1, filter: 'none' });
 				}, { once: true });
 
-				// The hero starts while the logo is on its way to the corner.
-				// The hero starts a beat before the landing, so the claim arrives
-				// with it.
-				return START + FLY + IT.flight - 0.2;
+				// The hero starts after a beat of pure black, once the big logo
+				// is gone.
+				return START + IT.beam + IT.dark;
 			}
 
 			const claimBlur = isMobileReveal ? 16 : 24;
@@ -1001,6 +986,21 @@
 			// (and the corner logo's arms, when they're part of this entrance).
 			const endAt = hit ? 3.6 : chromeShown || intro ? LIGHT_AT + 2.2 : Math.max(ARMS_AT + 1.1, LIGHT_AT + 2.2);
 			tl.add(startDynamicWord, endAt);
+
+			// The corner logo blurs in where it lives (opacity first, focus
+			// after), a beat before the claim: the brand first, then the message
+			// — no flight from the middle.
+			if (intro && title) {
+				gsap.timeline({ delay: Math.max(0, heroAt - 0.4) })
+				  .to(title, { opacity: 1, duration: 0.7, ease: 'sine.inOut' }, 0)
+				  .to(title, { filter: 'blur(0px)', duration: 1.0, ease: 'power2.inOut', onComplete: () => { gsap.set(title, { filter: 'none' }); } }, 0);
+				// Leaving before it has come in: never carry a hidden logo to
+				// the next page.
+				document.addEventListener('astro:before-swap', () => {
+					gsap.killTweensOf(title);
+					gsap.set(title, { opacity: 1, filter: 'none' });
+				}, { once: true });
+			}
 
 			// Intro over — the CTA's glare sweep may start (global.css).
 			tl.add(() => hero!.classList.add('pt-intro-done'), endAt + 0.4);
