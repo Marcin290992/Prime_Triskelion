@@ -456,6 +456,12 @@ import portrait from '../img/portrait-top.webp';
       .am-brand { font-size: clamp(10px, 2.6vw, 12px); }
       .am-brand__mark { height: 26px; }
     }
+    /* Phones and touch tablets: the scene sits higher, so the dark above
+       the portrait isn't a wasted quarter of the screen (and the logo stays
+       clear of the browser's bottom bar). */
+    @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+      .am-scene { translate: 0 calc(var(--app-stable-vh, 1svh) * -10); }
+    }
     .am-greeting {
       font-family: var(--f-body);
       font-size: clamp(0.6rem, 2.2vw, 0.75rem);
