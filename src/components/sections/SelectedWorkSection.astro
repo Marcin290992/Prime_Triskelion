@@ -30,15 +30,6 @@ const projects = [
 		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
 	</div>
 
-	<!-- Phones/tablets: the same opener as the first slide of the horizontal
-	     scene, but an ordinary screen that scrolls by (not pinned). -->
-	<div class="sw-intro-m">
-		<div class="slide-intro">
-			<h2>What we've<br><em>created.</em></h2>
-			<a href="/projects" class="link-btn no-border">View All Projects</a>
-		</div>
-	</div>
-
 	<div class="scroll-section" id="sw-scroll-section">
 		<div class="sticky-view">
 			<div class="track" id="sw-track">
@@ -217,8 +208,6 @@ const projects = [
 		color: rgb(var(--c-cream));
 	}
 	.sw-header__title em { font-style: normal; color: rgb(var(--c-red)); }
-
-	.sw-intro-m { display: none; }
 
 	/* Horizontal scroll */
 	.scroll-section {
@@ -507,34 +496,15 @@ const projects = [
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.scroll-section {
 			display: block;
+			margin-top: calc(var(--app-stable-vh) * -100);
 			height: calc(var(--app-stable-vh) * 520);
 		}
 		.sticky-view { height: calc(var(--app-stable-vh) * 100); }
-		/* The "What we've created." opener is an ordinary heading that scrolls
-		   by; the pin starts with the first card. */
 		.sw-header { display: none; }
-		.sw-intro-m {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			height: calc(var(--app-stable-vh) * 100);
-		}
-		.track .slide-intro { display: none; }
-		/* Comes out of a blur once it reaches the middle of the screen — a timed
-		   reveal like the manifesto's, not tied to the scroll position. */
-		.sw-intro-m .slide-intro {
-			opacity: 0;
-			filter: blur(14px);
-			transition: opacity 0.9s ease, filter 1.1s cubic-bezier(0.16, 1, 0.3, 1);
-		}
-		.sw-intro-m .slide-intro.is-in { opacity: 1; filter: blur(0); }
-		@media (prefers-reduced-motion: reduce) {
-			.sw-intro-m .slide-intro { opacity: 1; filter: none; transition: none; }
-		}
 		/* The closing title sits mid-screen, so the next section is pulled up
 		   under the empty lower half instead of trailing it by half a screen. */
 		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -40); }
-		.track { gap: 7vw; padding-left: 10vw; }
+		.track { gap: 7vw; }
 		.slide-intro h2 { font-size: clamp(3rem, 15vw, 6rem); }
 		.slide-card { width: 80vw; margin-top: 0; padding: 0.75rem 0.75rem 1rem; }
 		.img-box { aspect-ratio: 4 / 3; }
@@ -734,7 +704,6 @@ const projects = [
 			return touchScene && stable > 0 ? stable : window.innerHeight;
 		};
 		const ss = document.getElementById('sw-scroll-section')!;
-		const introEl = touchScene ? section.querySelector<HTMLElement>('.sw-intro-m .slide-intro') : null;
 		const tr = document.getElementById('sw-track')!;
 		const sv = ss.querySelector<HTMLElement>('.sticky-view')!;
 		const ce = document.getElementById('sw-curtain')!;
@@ -762,7 +731,6 @@ const projects = [
 		let curtainX = 0;
 		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
 		const ENTER_SCREENS = 0.7; // screens of blur-in before the horizontal travel
-		const ENTER_LEAD = 0.6; // touch: screens the blur-in starts ahead of the pin
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
@@ -776,14 +744,9 @@ const projects = [
 			enterFrom = man && manPin
 				? Math.max(sectionTop, man.getBoundingClientRect().bottom + window.scrollY - manPin.offsetHeight)
 				: sectionTop;
-			// Phones/tablets: the scene is not pinned yet while the heading above
-			// it scrolls by, so it starts blurring in a little early, coming up
-			// with the page, rather than leaving a blank screen under the heading.
-			const lead = touchScene ? ENTER_LEAD * H() : 0;
-			enterFrom -= lead;
 			// The travel ends FINAL_HOLD screens before the pin lets go, so the
 			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
-			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS) + lead);
+			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS));
 			curtainX = ce.offsetLeft;
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
@@ -876,17 +839,6 @@ const projects = [
 			scheduleRender();
 		}
 
-		/* Phones/tablets: the "What we've created." opener comes out of a blur
-		   when it reaches the middle band of the screen, and goes back under it
-		   only once scrolled back up out of sight below. */
-		const introIo = introEl ? new IntersectionObserver(entries => {
-			entries.forEach(e => {
-				if (e.isIntersecting) introEl.classList.add('is-in');
-				else if (e.boundingClientRect.top > 0) introEl.classList.remove('is-in');
-			});
-		}, { rootMargin: '-30% 0px -30% 0px' }) : null;
-		if (introEl && introIo) introIo.observe(introEl);
-
 		const ro = new ResizeObserver(() => {
 			onResize();
 		});
@@ -946,7 +898,6 @@ const projects = [
 		const onBeforeSwap = () => {
 			stop();
 			io.disconnect();
-			introIo?.disconnect();
 			ro.disconnect();
 			window.removeEventListener('scroll', onScroll);
 			window.removeEventListener('resize', onResize);
