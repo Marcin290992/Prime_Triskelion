@@ -28,7 +28,15 @@ const projects = [
 
 	<div class="sw-header">
 		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
-		<a href="/projects" class="link-btn no-border sw-header__link">View All Projects</a>
+	</div>
+
+	<!-- Phones/tablets: the same opener as the first slide of the horizontal
+	     scene, but an ordinary screen that scrolls by (not pinned). -->
+	<div class="sw-intro-m">
+		<div class="slide-intro">
+			<h2>What we've<br><em>created.</em></h2>
+			<a href="/projects" class="link-btn no-border">View All Projects</a>
+		</div>
 	</div>
 
 	<div class="scroll-section" id="sw-scroll-section">
@@ -209,6 +217,8 @@ const projects = [
 		color: rgb(var(--c-cream));
 	}
 	.sw-header__title em { font-style: normal; color: rgb(var(--c-red)); }
+
+	.sw-intro-m { display: none; }
 
 	/* Horizontal scroll */
 	.scroll-section {
@@ -502,9 +512,14 @@ const projects = [
 		.sticky-view { height: calc(var(--app-stable-vh) * 100); }
 		/* The "What we've created." opener is an ordinary heading that scrolls
 		   by; the pin starts with the first card. */
-		.sw-header { display: block; }
-		.sw-header__link { display: inline-block; margin-top: 1.4rem; }
-		.slide-intro { display: none; }
+		.sw-header { display: none; }
+		.sw-intro-m {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: calc(var(--app-stable-vh) * 100);
+		}
+		.track .slide-intro { display: none; }
 		/* The closing title sits mid-screen, so the next section is pulled up
 		   under the empty lower half instead of trailing it by half a screen. */
 		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -40); }
