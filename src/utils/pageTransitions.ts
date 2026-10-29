@@ -52,6 +52,7 @@ const IDLE_RUN: RouteRun = {
 let activeRun = { ...IDLE_RUN };
 let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
+let requestedAt = 0;
 let transitionReady: Promise<void> = Promise.resolve();
 let nativeHistoryTransition = false;
 let restoring = false;
@@ -65,6 +66,7 @@ export function reducedMotion(): boolean {
 
 export function cutNextTransition(blurIn = true): void {
 	requestedIncoming = blurIn ? 'blur' : 'none';
+	requestedAt = performance.now();
 	document.documentElement.classList.add('vt-cut');
 }
 
@@ -95,15 +97,19 @@ window.addEventListener('popstate', (event) => {
 
 document.addEventListener('astro:before-preparation', (rawEvent) => {
 	const event = rawEvent as PreparationEvent;
-	const incoming = requestedIncoming;
+	// Astro can dispatch this event twice for one navigation (the first is
+	// aborted), so the menu's request and its veil are kept until the swap.
+	const incoming = performance.now() - requestedAt < 4000 ? requestedIncoming : null;
 	const isNativeSwipe = nativeHistoryTransition;
-	requestedIncoming = null;
 	nativeHistoryTransition = false;
 	// A sweep whose navigation was overtaken (back/forward pressed mid-exit)
 	// would otherwise stay black over the page for good.
-	sweepVeil?.remove();
-	sweepVeil = null;
-	sweepDir = 1;
+	if (!(menuHandoff && incoming !== null)) {
+		sweepVeil?.remove();
+		sweepVeil = null;
+		sweepDir = 1;
+		menuHandoff = false;
+	}
 
 	if (incoming !== null) {
 		activeRun = { kind: 'menu', skipNative: true, incoming, restoreY: null };
@@ -137,44 +143,97 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 // cosine edge), and the same darkness is then lifted off the new page in the
 // same direction. One black veil on <html> survives the body swap, so there is
 // no frame between the two halves.
-const SWEEP_W = 40;
-const SWEEP_EXIT_SECONDS = 0.95;
-const SWEEP_ENTER_SECONDS = 1.15;
+// Soft-edge half-width (% of the width) and times. On a narrow screen a wide
+// edge is mostly a fade, so phones and tablets get a tighter edge and a
+// faster sweep: the dark reads as something crossing the screen, not a slow fade.
+let SWEEP_W = 40;
+let SWEEP_EXIT_SECONDS = 0.95;
+let SWEEP_ENTER_SECONDS = 1.15;
+function tuneSweep(): void {
+	const small = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+	SWEEP_W = small ? 24 : 40;
+	SWEEP_EXIT_SECONDS = small ? 0.7 : 0.95;
+	SWEEP_ENTER_SECONDS = small ? 0.85 : 1.15;
+}
 let sweepVeil: HTMLElement | null = null;
 // 1: the dark travels left to right; -1 (going back): right to left.
 let sweepDir: 1 | -1 = 1;
+// The menu's own sweep, already covering the page when navigate() runs.
+let menuHandoff = false;
 
-function sweepMask(cover: boolean): string {
+// The veil is a full-screen clip holding one wide bar (solid black with the
+// soft cosine edge on one end) that is only ever translated: a composited
+// transform, so it stays smooth on phones, unlike animating a mask.
+const barOf = (veil: HTMLElement) => veil.firstElementChild as HTMLElement;
+
+function makeVeil(z: number): HTMLElement {
+	const veil = document.createElement('div');
+	veil.setAttribute('aria-hidden', 'true');
+	veil.style.cssText = `position:fixed;inset:0;z-index:${z};pointer-events:none;overflow:hidden;${sweepDir === -1 ? 'transform:scaleX(-1);' : ''}`;
+	const bar = document.createElement('div');
+	bar.style.cssText = 'position:absolute;top:0;bottom:0;left:0;will-change:transform';
+	veil.append(bar);
+	document.documentElement.append(veil);
+	return veil;
+}
+
+// cover: solid, then the edge fading out on the right (it comes in from the
+// left). Otherwise the mirror: the edge on the left, solid after it (the dark
+// leaves to the right).
+function paintBar(veil: HTMLElement, cover: boolean): void {
+	const iw = window.innerWidth;
+	const soft = (2 * SWEEP_W) / 100 * iw;
+	const barW = iw + soft;
+	const solid = iw / barW;
 	const steps = 16;
 	const stops: string[] = [];
 	for (let i = 0; i <= steps; i++) {
 		const t = i / steps;
 		const fall = 0.5 + 0.5 * Math.cos(Math.PI * t);
-		const alpha = cover ? fall : 1 - fall;
-		const offset = -SWEEP_W + 2 * SWEEP_W * t;
-		stops.push(`rgb(0 0 0 / ${alpha.toFixed(3)}) calc(var(--pc) * 1% ${offset < 0 ? '-' : '+'} ${Math.abs(offset).toFixed(2)}%)`);
+		stops.push(cover
+			? `rgb(0 0 0 / ${fall.toFixed(3)}) ${((solid + (1 - solid) * t) * 100).toFixed(2)}%`
+			: `rgb(0 0 0 / ${(1 - fall).toFixed(3)}) ${((1 - solid) * t * 100).toFixed(2)}%`);
 	}
-	return `linear-gradient(${sweepDir === 1 ? 90 : 270}deg, ${stops.join(', ')})`;
+	const bar = barOf(veil);
+	bar.style.width = `${barW}px`;
+	bar.style.background = cover
+		? `linear-gradient(90deg, #000 0, #000 ${solid * 100 - 0.01}%, ${stops.join(', ')})`
+		: `linear-gradient(90deg, ${stops.join(', ')}, #000 100%)`;
+	gsap.set(bar, { x: cover ? -barW : -soft });
 }
 
-function setSweepMask(veil: HTMLElement, cover: boolean): void {
-	const mask = sweepMask(cover);
-	veil.style.setProperty('mask-image', mask);
-	veil.style.setProperty('-webkit-mask-image', mask);
-	veil.style.setProperty('--pc', String(-SWEEP_W));
+function sweepIn(veil: HTMLElement): Promise<void> {
+	return Promise.resolve(gsap.to(barOf(veil), { x: 0, duration: SWEEP_EXIT_SECONDS, ease: 'sine.inOut' })).then(() => {});
+}
+
+// Choosing a menu link: the dark sweeps over the open menu itself (above it,
+// the menu is z-index 9100), then the navigation starts under full black.
+export function sweepOverMenu(): Promise<void> {
+	tuneSweep();
+	sweepVeil?.remove();
+	sweepDir = 1;
+	const veil = makeVeil(9200);
+	sweepVeil = veil;
+	menuHandoff = true;
+	if (reducedMotion()) {
+		barOf(veil).style.display = 'none';
+		veil.style.background = '#000';
+		veil.style.opacity = '0';
+		return Promise.resolve(gsap.to(veil, { opacity: 1, duration: 0.25, ease: 'none' })).then(() => {});
+	}
+	paintBar(veil, true);
+	return sweepIn(veil);
 }
 
 function prepareSweepExit(event: PreparationEvent): void {
+	tuneSweep();
 	sweepDir = event.direction === 'back' ? -1 : 1;
 	sweepVeil?.remove();
-	const veil = document.createElement('div');
-	veil.setAttribute('aria-hidden', 'true');
-	veil.style.cssText = 'position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;will-change:mask-image';
-	setSweepMask(veil, true);
-	document.documentElement.append(veil);
+	const veil = makeVeil(1001);
+	paintBar(veil, true);
 	sweepVeil = veil;
 
-	const sweep = gsap.to(veil, { '--pc': 100 + SWEEP_W, duration: SWEEP_EXIT_SECONDS, ease: 'sine.inOut' }).then(() => {});
+	const sweep = sweepIn(veil);
 	const load = event.loader;
 	event.loader = async () => {
 		try {
@@ -255,6 +314,8 @@ function clearCutClassWhenReady(): void {
 document.addEventListener('astro:after-swap', (rawEvent) => {
 	const event = rawEvent as SwapEvent;
 	const run = activeRun;
+	requestedIncoming = null;
+	menuHandoff = false;
 
 	if (run.skipNative) {
 		document.documentElement.classList.add('vt-cut');
@@ -280,12 +341,13 @@ function takeVeil(): HTMLElement {
 	let veil = sweepVeil;
 	sweepVeil = null;
 	if (!veil) {
-		veil = document.createElement('div');
-		veil.setAttribute('aria-hidden', 'true');
-		veil.style.cssText = 'position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;will-change:mask-image';
-		document.documentElement.append(veil);
+		veil = makeVeil(1001);
 	}
-	setSweepMask(veil, false);
+	veil.style.zIndex = '1001';
+	veil.style.opacity = '';
+	barOf(veil).style.display = '';
+	veil.style.background = '';
+	paintBar(veil, false);
 	return veil;
 }
 
@@ -293,11 +355,11 @@ async function liftVeil(veil: HTMLElement): Promise<void> {
 	await nextFrame();
 	await nextFrame();
 	if (reducedMotion()) {
-		veil.style.setProperty('mask-image', 'none');
-		veil.style.setProperty('-webkit-mask-image', 'none');
+		barOf(veil).style.display = 'none';
+		veil.style.background = '#000';
 		await gsap.to(veil, { opacity: 0, duration: 0.2, ease: 'none' });
 	} else {
-		await gsap.to(veil, { '--pc': 100 + SWEEP_W, duration: SWEEP_ENTER_SECONDS, ease: 'sine.inOut' });
+		await gsap.to(barOf(veil), { x: window.innerWidth, duration: SWEEP_ENTER_SECONDS, ease: 'sine.inOut' });
 	}
 	veil.remove();
 }
