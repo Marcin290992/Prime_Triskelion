@@ -520,6 +520,12 @@ const projects = [
 			height: calc(var(--app-stable-vh) * 100);
 		}
 		.track .slide-intro { display: none; }
+		/* Blurs in as it reaches the middle of the screen — the height the cards
+		   sit at — and out again as it leaves; scroll-driven (script below). */
+		.sw-intro-m .slide-intro { opacity: 0; filter: blur(10px); }
+		@media (prefers-reduced-motion: reduce) {
+			.sw-intro-m .slide-intro { opacity: 1; filter: none; }
+		}
 		/* The closing title sits mid-screen, so the next section is pulled up
 		   under the empty lower half instead of trailing it by half a screen. */
 		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -40); }
@@ -723,6 +729,8 @@ const projects = [
 			return touchScene && stable > 0 ? stable : window.innerHeight;
 		};
 		const ss = document.getElementById('sw-scroll-section')!;
+		const introEl = touchScene ? section.querySelector<HTMLElement>('.sw-intro-m .slide-intro') : null;
+		let introMid = 0;
 		const tr = document.getElementById('sw-track')!;
 		const sv = ss.querySelector<HTMLElement>('.sticky-view')!;
 		const ce = document.getElementById('sw-curtain')!;
@@ -773,6 +781,10 @@ const projects = [
 			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
 			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS) + lead);
 			curtainX = ce.offsetLeft;
+			if (introEl) {
+				const r = introEl.getBoundingClientRect();
+				introMid = r.top + window.scrollY + r.height / 2;
+			}
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
 			imgBoxes.length = 0;
@@ -799,6 +811,14 @@ const projects = [
 			sv.style.opacity = e > 0 ? '1' : '0';
 			tr.style.opacity = String(e);
 			tr.style.filter = e < 1 ? `blur(${((1 - e) * 10).toFixed(1)}px)` : '';
+
+			if (introEl) {
+				const d = Math.abs(introMid - (window.scrollY + H() / 2)) / H();
+				const p = 1 - Math.max(0, Math.min(1, (d - 0.12) / 0.38));
+				const e2 = p * p * (3 - 2 * p);
+				introEl.style.opacity = e2.toFixed(3);
+				introEl.style.filter = e2 < 1 ? `blur(${((1 - e2) * 10).toFixed(1)}px)` : '';
+			}
 
 			const vw = window.innerWidth;
 
