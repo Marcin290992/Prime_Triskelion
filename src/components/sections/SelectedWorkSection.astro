@@ -501,6 +501,9 @@ const projects = [
 		}
 		.sticky-view { height: calc(var(--app-stable-vh) * 100); }
 		.sw-header { display: none; }
+		/* The closing title sits mid-screen, so the next section is pulled up
+		   under the empty lower half instead of trailing it by half a screen. */
+		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -33); }
 		.track { gap: 7vw; }
 		.slide-intro h2 { font-size: clamp(3rem, 15vw, 6rem); }
 		.slide-card { width: 80vw; margin-top: 0; padding: 0.75rem 0.75rem 1rem; }
