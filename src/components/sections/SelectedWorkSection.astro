@@ -490,38 +490,14 @@ const projects = [
 		.final-title { font-size: min(11vw, 13.5vh); }
 	}
 
-	/* ── Phones/tablets: the same horizontal scene as desktop, driven by a
-	   finger scroll. Sized off the frozen --app-stable-vh so the browser bar
-	   coming and going does not move it. ── */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.scroll-section {
-			display: block;
-			margin-top: calc(var(--app-stable-vh) * -100);
-			height: calc(var(--app-stable-vh) * 520);
-		}
-		.sticky-view { height: calc(var(--app-stable-vh) * 100); }
-		.sw-header { display: none; }
-		/* The closing title sits mid-screen, so the next section is pulled up
-		   under the empty lower half instead of trailing it by half a screen. */
-		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -40); }
-		.track { gap: 7vw; }
-		.slide-intro h2 { font-size: clamp(3rem, 15vw, 6rem); }
-		.slide-card { width: 80vw; margin-top: 0; padding: 0.75rem 0.75rem 1rem; }
-		.img-box { aspect-ratio: 4 / 3; }
-		.card-info h3 { font-size: clamp(1.25rem, 5.5vw, 1.8rem); }
-		.slide-curtain { height: calc(var(--app-stable-vh) * 100); padding: 0 8vw; }
-		.slide-curtain h2 { font-size: clamp(1.6rem, 7vw, 2.8rem); }
-		.slide-final { height: calc(var(--app-stable-vh) * 100); margin-left: -7vw; }
-		/* Smaller than the hero claim / My Services, and short enough (4 lines)
-		   that the section pulled up under it never covers its lower half. */
-		.final-title { font-size: min(9vw, calc(var(--app-stable-vh) * 9.5)); }
-	}
-
 	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
 	.sw-m { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
-		.sw-m { display: none; }
+		.sw-m {
+			display: block;
+			padding-bottom: clamp(3.5rem, 10vw, 5.5rem);
+		}
 		.sw-m__track {
 			display: flex;
 			gap: 0.75rem;
@@ -696,13 +672,12 @@ const projects = [
 		const section = document.getElementById('selected-work');
 		if (!section) return;
 
-		// The viewport height the scene is sized off: the frozen stable one on
-		// phones/tablets (the browser bar must not move the scroll maths).
-		const touchScene = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-		const H = () => {
-			const stable = parseFloat(document.documentElement.style.getPropertyValue('--app-stable-vh')) * 100;
-			return touchScene && stable > 0 ? stable : window.innerHeight;
-		};
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
+			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
+			initWorkCarousel(section);
+			return;
+		}
+
 		const ss = document.getElementById('sw-scroll-section')!;
 		const tr = document.getElementById('sw-track')!;
 		const sv = ss.querySelector<HTMLElement>('.sticky-view')!;
@@ -746,7 +721,7 @@ const projects = [
 				: sectionTop;
 			// The travel ends FINAL_HOLD screens before the pin lets go, so the
 			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
-			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS));
+			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight * (1 + FINAL_HOLD + ENTER_SCREENS));
 			curtainX = ce.offsetLeft;
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
@@ -759,7 +734,7 @@ const projects = [
 
 		function render(now: number) {
 			rafId = 0;
-			const enterY = ENTER_SCREENS * H();
+			const enterY = ENTER_SCREENS * window.innerHeight;
 			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - enterY) / scrollableH));
 			const targetX = progress * maxScroll;
 			const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.1) : 1 / 60;
@@ -769,7 +744,7 @@ const projects = [
 
 			// Blurs in on the spot, once pinned (the manifesto has just faded
 			// out), before the horizontal travel starts.
-			const t = Math.max(0, Math.min(1, (window.scrollY - enterFrom) / (ENTER_SCREENS * H())));
+			const t = Math.max(0, Math.min(1, (window.scrollY - enterFrom) / (ENTER_SCREENS * window.innerHeight)));
 			const e = 1 - (1 - t) * (1 - t); // comes in at once, then settles
 			sv.style.opacity = e > 0 ? '1' : '0';
 			tr.style.opacity = String(e);
@@ -782,8 +757,7 @@ const projects = [
 				? `translate3d(-${distToEnd * 0.5}px,0,0)`
 				: 'translate3d(0,0,0)';
 
-			// Phones/tablets: the cards stay in one row (no rising in from below).
-			const maxY = touchScene ? 0 : H() * 0.55;
+			const maxY = window.innerHeight * 0.55;
 			cards.forEach((card, i) => {
 				const sp = (cardX[i] - currentX) / vw;
 				const lp = Math.max(0, (sp - 0.5) * 2);
@@ -820,7 +794,7 @@ const projects = [
 		function start() {
 			if (active) return;
 			active = true;
-			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * H()) / scrollableH));
+			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH));
 			currentX = progress * maxScroll;
 			lastTime = 0;
 			scheduleRender();
@@ -846,51 +820,6 @@ const projects = [
 		window.addEventListener('scroll', onScroll, { passive: true });
 		window.addEventListener('resize', onResize, { passive: true });
 
-		/* Phones/tablets: once the finger lets go and the scroll settles inside
-		   the horizontal travel, ease to the nearest stop — the first slide, each
-		   card centred, the closing line-up, the final slide — so a slow scroll
-		   never leaves a card or the last slide half-set. */
-		let snapTimer = 0;
-		let touching = false;
-		function snapToStop() {
-			snapTimer = 0;
-			if (!touchScene || touching || maxScroll <= 0) return;
-			const vw = window.innerWidth;
-			const startY = enterFrom + ENTER_SCREENS * H();
-			const y = window.scrollY;
-			if (y < startY - 2 || y > startY + scrollableH + 2) return;
-			const x = Math.max(0, Math.min(1, (y - startY) / scrollableH)) * maxScroll;
-			// No stop on the opener itself: it is never held in place — the first
-			// card is the first thing that catches.
-			const stops = [Math.min(curtainX, maxScroll), maxScroll];
-			// The first card is a .card-fade, the rest .card-anim — both are stops.
-			cards.forEach((card, i) => stops.push(cardX[i] + card.offsetWidth / 2 - vw / 2));
-			fadeCards.forEach((card, i) => stops.push(fadeX[i] + card.offsetWidth / 2 - vw / 2));
-			const firstStop = Math.max(0, Math.min(...stops));
-			if (x < firstStop * 0.4) return;
-			let best = stops[0];
-			stops.forEach(s => {
-				const c = Math.max(0, Math.min(maxScroll, s));
-				if (Math.abs(c - x) < Math.abs(best - x)) best = c;
-			});
-			const targetY = startY + (best / maxScroll) * scrollableH;
-			if (Math.abs(targetY - y) < 3) return;
-			window.scrollTo({ top: targetY, behavior: 'smooth' });
-		}
-		function armSnap() {
-			if (!touchScene) return;
-			clearTimeout(snapTimer);
-			snapTimer = window.setTimeout(snapToStop, 140);
-		}
-		const onTouchStart = () => { touching = true; clearTimeout(snapTimer); };
-		const onTouchEnd = () => { touching = false; armSnap(); };
-		if (touchScene) {
-			window.addEventListener('scroll', armSnap, { passive: true });
-			window.addEventListener('touchstart', onTouchStart, { passive: true });
-			window.addEventListener('touchend', onTouchEnd, { passive: true });
-			window.addEventListener('touchcancel', onTouchEnd, { passive: true });
-		}
-
 		/* run the loop only while the section (± one viewport) is near view */
 		const io = new IntersectionObserver(entries => {
 			entries.forEach(e => (e.isIntersecting ? start() : stop()));
@@ -907,11 +836,6 @@ const projects = [
 			ro.disconnect();
 			window.removeEventListener('scroll', onScroll);
 			window.removeEventListener('resize', onResize);
-			clearTimeout(snapTimer);
-			window.removeEventListener('scroll', armSnap);
-			window.removeEventListener('touchstart', onTouchStart);
-			window.removeEventListener('touchend', onTouchEnd);
-			window.removeEventListener('touchcancel', onTouchEnd);
 			document.removeEventListener('astro:before-swap', onBeforeSwap);
 		};
 		document.addEventListener('astro:before-swap', onBeforeSwap);

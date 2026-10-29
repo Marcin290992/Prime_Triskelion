@@ -439,66 +439,27 @@ const projects = [
     }
     .proj-header__lead { display: block; }
 
-    /* Same scene as desktop: each project a full screen, its photo and title
-       pinned to the viewport and revealed through the section's window as
-       the page scrolls (the blur-in and parallax run in the script below).
-       Sized off the stable --app-stable-vh so the browser bar can't resize
-       it mid-scroll. */
+    /* Each project = a card sized by its own content, NOT the viewport.
+       Was a full-screen section (height from --app-stable-vh) with the
+       image full-bleed behind it: a landscape shot cover-cropped into a
+       tall phone screen showed only ~1/3 of its width (reads as "way too
+       zoomed in"), and every toolbar-driven re-measure resized every
+       section — and rescaled the photo in view — at once, which was the
+       jump on scroll. A fixed 4:5 image box has nothing to re-measure. */
     .proj-section {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-    }
-    .proj-inner {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-    }
-    .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
-    .proj-img-wrap {
-      width: clamp(240px, 72vw, 680px);
-      height: clamp(180px, 48svh, 480px);
-      height: clamp(180px, calc(var(--app-stable-vh, 1svh) * 48), 480px);
-    }
-    /* Name and year on one line, the tags under — above the bottom MENU button. */
-    .proj-foot {
-      bottom: 6.5rem;
-      grid-template-columns: 1fr auto;
-      align-items: end;
-      gap: 0.6rem 1rem;
-    }
-    .proj-foot__left { grid-column: 1; grid-row: 1; }
-    .proj-foot__name { font-size: clamp(1.9rem, 8.5vw, 3.6rem); }
-    .proj-foot__center {
-      grid-column: 1 / 3;
-      grid-row: 2;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: flex-start;
-      gap: 0.2rem 0.9rem;
-    }
-    .proj-foot__right { grid-column: 2; grid-row: 1; align-items: flex-end; }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 0.9rem; opacity: 0.6; }
-    @media (min-width: 700px) {
-      .proj-img-wrap { width: clamp(420px, 56vw, 680px); }
-      .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
-    }
-
-    /* The first project stays an ordinary card in the flow (its photo, with
-       the info on a glass bar over it); the pinned, masked scene starts with
-       the second. The last one is revealed the same way, then lets go (the
-       script adds .is-released once it fills the screen) so the page scrolls
-       on normally to the end. */
-    .proj-section:last-child.is-released .proj-inner { position: absolute; }
-    .proj-section:first-child {
       height: auto;
       padding: clamp(1.25rem, 4vw, 2rem) var(--site-gutter, 1.5rem);
       background: transparent;
       clip-path: none;
       transition: none;
     }
-    .proj-section:first-child .proj-inner { position: relative; height: auto; display: block; }
-    .proj-section:first-child .proj-bg-text { display: none; }
-    .proj-section:first-child .proj-img-wrap {
+    .proj-inner {
+      position: relative;
+      height: auto;
+      display: block;
+    }
+
+    .proj-img-wrap {
       position: relative;
       width: 100%;
       height: auto;
@@ -506,9 +467,31 @@ const projects = [
       z-index: 1;
       box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
     }
-    .proj-section:first-child .proj-img-wrap img { object-position: center 30%; }
-    .proj-section:first-child .proj-inner::before { content: none; }
-    .proj-section:first-child .proj-inner::after {
+    .proj-img-wrap img { object-position: center 30%; }
+    /* Tablet width: the phone's 4:5 card at a tablet's column width came
+       out taller than the screen. A landscape frame, capped by height. */
+    @media (min-width: 700px) {
+      .proj-img-wrap { aspect-ratio: 3 / 2; }
+      /* The card as a whole (its info bar and gradient sit on .proj-inner). */
+      .proj-inner { width: min(100%, 90vh); margin-inline: auto; }
+    }
+
+    .proj-bg-text { display: none; }
+
+    /* Desktop's own contrast gradient (.proj-inner::before, height: 55%,
+       further up) is never disabled here — ::before and ::after are
+       separate pseudo-elements, so adding this ::after below doesn't
+       replace it, it stacks on top of it. Both are anchored to the same
+       bottom edge and fade the same way, so mobile ends up with two black
+       gradients compounding right where the fixed HUD nav sits — visible
+       as a noticeably darker band right under the menu/contact buttons,
+       independent of browser or OS (reported identically on Android
+       Chrome and iOS Safari — a plain CSS stacking issue, not a rendering
+       quirk). This ::after is mobile's own dedicated replacement for it. */
+    .proj-inner::before { content: none; }
+
+    /* Gradient pod infobarem */
+    .proj-inner::after {
       content: '';
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -517,7 +500,10 @@ const projects = [
       pointer-events: none;
       z-index: 2;
     }
-    .proj-section:first-child .proj-foot {
+
+    /* Info — glass card, bez border-radius; pinned to the image card's
+       own bottom edge now, not the (former full-screen) section's. */
+    .proj-foot {
       bottom: 0.75rem;
       left: 0.75rem;
       right: 0.75rem;
@@ -525,23 +511,37 @@ const projects = [
       grid-template-rows: auto auto;
       align-items: start;
       gap: 0.45rem 1rem;
+      z-index: 3;
       background: rgb(var(--c-bg) / 0.38);
       -webkit-backdrop-filter: blur(20px) saturate(160%);
       backdrop-filter: blur(20px) saturate(160%);
       border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 0;
       padding: clamp(0.9rem, 1.8vh, 1.2rem) 1.2rem;
     }
-    .proj-section:first-child .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); color: rgb(var(--c-cream) / 0.95); }
-    .proj-section:first-child .proj-foot__center { gap: 0.15rem 0.55rem; }
-    .proj-section:first-child .proj-foot__right { grid-column: 2; grid-row: 1 / 3; align-self: center; }
-    .proj-section:first-child .proj-foot__tag + .proj-foot__tag::before { margin-right: 0.55rem; }
-    .proj-section:first-child .proj-foot__year,
-    .proj-section:first-child .proj-foot__tag { color: rgb(var(--c-cream) / 0.72); }
-    @media (min-width: 700px) {
-      .proj-section:first-child .proj-img-wrap { width: 100%; aspect-ratio: 3 / 2; }
-      .proj-section:first-child .proj-inner { width: min(100%, 90vh); margin-inline: auto; }
-      .proj-section:first-child .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); }
+    .proj-foot__left {
+      grid-column: 1;
+      grid-row: 1;
     }
+    .proj-foot__center {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.15rem 0.55rem;
+      grid-column: 1;
+      grid-row: 2;
+    }
+    .proj-foot__right {
+      grid-column: 2;
+      grid-row: 1 / 3;
+      align-self: center;
+    }
+    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 0.55rem; opacity: 0.6; }
+    .proj-foot__name { color: rgb(var(--c-cream) / 0.95); }
+    .proj-foot__year { color: rgb(var(--c-cream) / 0.72); }
+    .proj-foot__tag  { color: rgb(var(--c-cream) / 0.72); }
   }
 </style>
 
@@ -576,13 +576,14 @@ const projects = [
       revealAfterHero();
     });
 
+    // â”€â”€ Mobile / tablet: zwykÅ‚y scroll, zero JS â”€â”€
+    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
+
     // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
     // Cache references once — never query DOM inside the render loop
-    // Phones/tablets: the first project is an ordinary card; the pinned scene
-    // (and its scroll-driven effects) starts with the second.
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.proj-section')
-    ).filter((_, i) => !(isMob && i === 0)).map(sec => ({
+    ).map(sec => ({
       sec,
       bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
       foot:    sec.querySelector<HTMLElement>('.proj-foot'),
@@ -590,7 +591,6 @@ const projects = [
       speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
     }));
 
-    const lastSec = document.querySelector<HTMLElement>('.proj-section:last-child');
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -609,11 +609,6 @@ const projects = [
       for (const { sec, bgText, foot, img, speed } of panels) {
         const rect = sec.getBoundingClientRect();
 
-        // Phones/tablets: the last card, once it fills the screen, stops being
-        // pinned and scrolls on with the page.
-        const released = isMob && sec === lastSec && rect.top <= 0;
-        if (sec === lastSec) sec.classList.toggle('is-released', released);
-
         if (rect.top > vh || rect.bottom < 0) continue;
 
         if (bgText) {
@@ -624,7 +619,7 @@ const projects = [
         if (!reduce) {
           // How much of the screen this card's window covers: 0 → 1 as it
           // opens, 1 → 0 as the next one closes it.
-          const f = released ? 1 : (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
+          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
           if (foot) {
             const t = smooth(0.4, 0.92, f);
             foot.style.opacity = t.toFixed(3);
@@ -645,8 +640,7 @@ const projects = [
     const ctx = canvas.getContext('2d');
 
     if (ctx) {
-      document.querySelectorAll<HTMLElement>('.proj-section').forEach((sec, i) => {
-        if (isMob && i === 0) return;
+      document.querySelectorAll<HTMLElement>('.proj-section').forEach(sec => {
         const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
         if (!img) return;
 

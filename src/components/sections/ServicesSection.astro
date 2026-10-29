@@ -57,10 +57,6 @@ const services = [
 						/>
 					))}
 				</a>
-				<a href="/services" class="svc__btn svc__btn--m" aria-label="View all services">
-					<span class="svc__btn__line"></span>
-					See more
-				</a>
 			</div>
 		</div>
 	</div>
@@ -145,7 +141,7 @@ const services = [
 	/* ── Desktop (mouse): names on the left, one picture on the right ───────
 	   Sized by height too, so title + list + "See more" fit one laptop screen
 	   and none of it sits in the page's soft top/bottom edge zones. */
-	.svc__body, .svc__btn--d, .svc__btn--m { display: none; }
+	.svc__body, .svc__btn--d { display: none; }
 	/* Rolling text, as in the menu: the dimmed name slides up, the red one
 	   comes in from below, in white — red stays the section title's alone. */
 	.svc__roll { position: relative; display: block; overflow: hidden; }
@@ -320,10 +316,6 @@ const services = [
 	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.svc__body { display: none; }
-		/* See more sits in the pinned scene, right under the picture; the footer
-		   keeps only its spacing. */
-		.svc__footer .svc__btn { display: none; }
-		.svc__btn--m { display: inline-flex; align-self: center; flex-shrink: 0; margin-top: 0.4rem; }
 		/* The title stays pinned over the scene, like The Process's; the
 		   scene's pin starts just under it (--svc-head, its measured
 		   height, set by initServicesMobile). Its fade covers what slides
@@ -364,12 +356,11 @@ const services = [
 			   went between the title and the names. */
 			align-items: flex-start;
 			/* Bottom: clear of the fixed MENU button. */
-			padding: 0.5rem var(--site-gutter) 6rem;
+			padding: 0.5rem var(--site-gutter) 5.5rem;
 			box-sizing: border-box;
 		}
 		.svc-m__stage {
 			width: 100%;
-			height: 100%;
 			display: flex;
 			flex-direction: column;
 			gap: clamp(1.25rem, 3vh, 2rem);
@@ -380,20 +371,18 @@ const services = [
 			padding: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 0;
+			gap: 0.16em;
 		}
 		.svc-m__name {
-			position: relative;
 			font-family: var(--f-display);
 			font-weight: 700;
-			/* As on desktop: each name a full-width row between two hairlines,
-			   big dimmed type, the chosen one lit. */
-			font-size: calc(var(--hero-size) * 0.62);
-			padding: clamp(0.3rem, 1vh, 0.7rem) 0;
-			line-height: 1.04;
-			letter-spacing: 0.005em;
+			/* A clear step below the section title, letters and lines apart —
+			   at 70% of it with tight tracking the four ran together. */
+			font-size: calc(var(--hero-size) * 0.5);
+			line-height: 1;
+			letter-spacing: -0.005em;
 			text-transform: uppercase;
-			color: rgb(var(--c-cream) / 0.38);
+			color: rgb(var(--c-cream) / 0.2);
 			cursor: pointer;
 			transition: color 0.45s ease;
 			/* A tap is a choice, not a text selection: no blue tap flash, no
@@ -406,22 +395,7 @@ const services = [
 		}
 		/* The same roll as the desktop list: the dimmed name slides up, the
 		   white one comes in from below. */
-		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.38); }
-		.svc-m__name::before,
-		.svc-m__name::after {
-			content: '';
-			position: absolute;
-			left: 0;
-			right: 0;
-			height: 1px;
-			background: rgb(var(--c-cream) / 0.14);
-			transition: background-color 0.4s ease;
-			pointer-events: none;
-		}
-		.svc-m__name::before { top: 0; }
-		.svc-m__name::after { bottom: 0; }
-		.svc-m__name.is-active::before,
-		.svc-m__name.is-active::after { background: rgb(var(--c-cream) / 0.6); }
+		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.2); }
 		.svc-m__name.is-active .svc__roll__base,
 		.svc-m__name.is-active .svc__roll__red { transform: translateY(-100%); }
 		/* All four lines stacked in one spot; the active one fades up. */
@@ -467,10 +441,7 @@ const services = [
 			-webkit-tap-highlight-color: transparent;
 			-webkit-touch-callout: none;
 			aspect-ratio: 4 / 3;
-			max-height: 28vh;
-			/* Gives way on a short screen so See more below stays in view. */
-			flex-shrink: 1;
-			min-height: 5rem;
+			max-height: 36vh;
 			overflow: hidden;
 			border: 1px solid rgba(255, 255, 255, 0.08);
 			background: #060608;
@@ -495,6 +466,7 @@ const services = [
 		@media (min-width: 700px) {
 			/* Height-capped too, so a landscape tablet's short screen still
 			   fits names, line and picture between the logo and the MENU. */
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
 			.svc-m__desc { font-size: 1.15rem; max-width: 44ch; }
 			.svc-m__media { max-height: 42vh; }
 		}
@@ -502,21 +474,12 @@ const services = [
 		   line and picture scale down to fit under the pinned title and
 		   above the MENU button. */
 		@media (max-width: 699px) and (max-height: 760px) {
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.45); }
 			.svc-m__stage { gap: 1.1rem; }
 			.svc-m__descs { margin-top: 0.6rem; }
 			.svc-m__desc { font-size: 0.88rem; }
 			.svc-m__progress { margin-top: 0.8rem; }
 			.svc-m__media { max-height: 24vh; }
-		}
-		/* Very short phones (iPhone SE class): tighter still, so the picture and
-		   See more both fit above the MENU button. */
-		@media (max-width: 699px) and (max-height: 640px) {
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.48); padding: 0.15rem 0; }
-			.svc-m__stage { gap: 0.7rem; }
-			.svc-m__descs { margin-top: 0.4rem; }
-			.svc-m__desc { font-size: 0.8rem; line-height: 1.45; }
-			.svc-m__progress { margin-top: 0.5rem; }
 		}
 		/* Landscape tablet: names and line on the left, the picture on the
 		   right — the wide, short screen suits two columns better than the
@@ -529,7 +492,7 @@ const services = [
 				align-items: center;
 			}
 			.svc-m__pin { align-items: center; }
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.62); }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.5); }
 			.svc-m__desc { font-size: 1rem; }
 			.svc-m__media { max-height: 52vh; }
 		}
