@@ -621,7 +621,7 @@ function initOxygenMenu() {
       // The chosen link holds while its text roll (OxygenMenu.astro, 0.34s)
       // reads; touch has no hover lead-in, so the roll gets its own beat.
       const noHover = window.matchMedia('(hover: none)').matches;
-      await new Promise(r => setTimeout(r, (noHover ? 400 : 300) + TOUCH_ROLL_LEAD() * 1000));
+      await new Promise(r => setTimeout(r, (noHover ? 300 : 200) + TOUCH_ROLL_LEAD() * 1000));
       // The page transition's dark sweeps over the open menu, then it leaves.
       await sweepOverMenu();
       void closeMenu(true, true); // state housekeeping, hidden under the black

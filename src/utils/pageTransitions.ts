@@ -147,8 +147,8 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 // edge is mostly a fade, so phones and tablets get a tighter edge and a
 // faster sweep: the dark reads as something crossing the screen, not a slow fade.
 let SWEEP_W = 40;
-let SWEEP_EXIT_SECONDS = 0.95;
-let SWEEP_ENTER_SECONDS = 1.15;
+let SWEEP_EXIT_SECONDS = 0.65;
+let SWEEP_ENTER_SECONDS = 0.8;
 // Phones/tablets: a much softer, tilted edge. On a tall narrow screen a
 // vertical edge is over in a blink; a wide slanted penumbra crosses the whole
 // frame diagonally, like the light on the About page.
@@ -156,8 +156,8 @@ let SWEEP_SKEW = 0;
 function tuneSweep(): void {
 	const small = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 	SWEEP_W = small ? 55 : 40;
-	SWEEP_EXIT_SECONDS = small ? 1.0 : 0.95;
-	SWEEP_ENTER_SECONDS = small ? 1.2 : 1.15;
+	SWEEP_EXIT_SECONDS = small ? 0.6 : 0.65;
+	SWEEP_ENTER_SECONDS = small ? 0.75 : 0.8;
 	SWEEP_SKEW = small ? -16 : 0;
 }
 // How far a skewed bar's edge is pushed sideways at the top and bottom.
