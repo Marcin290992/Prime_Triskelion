@@ -383,7 +383,7 @@ const services = [
 			font-weight: 700;
 			/* As on desktop: each name a full-width row between two hairlines,
 			   big dimmed type, the chosen one lit. */
-			font-size: clamp(2.1rem, 10vw, 4.2rem);
+			font-size: calc(var(--hero-size) * 0.62);
 			padding: clamp(0.3rem, 1vh, 0.7rem) 0;
 			line-height: 1.04;
 			letter-spacing: 0.005em;
@@ -497,7 +497,7 @@ const services = [
 		   line and picture scale down to fit under the pinned title and
 		   above the MENU button. */
 		@media (max-width: 699px) and (max-height: 760px) {
-			.svc-m__name { font-size: clamp(1.8rem, 8.5vw, 3rem); }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
 			.svc-m__stage { gap: 1.1rem; }
 			.svc-m__descs { margin-top: 0.6rem; }
 			.svc-m__desc { font-size: 0.88rem; }
@@ -507,7 +507,7 @@ const services = [
 		/* Very short phones (iPhone SE class): tighter still, so the picture and
 		   See more both fit above the MENU button. */
 		@media (max-width: 699px) and (max-height: 640px) {
-			.svc-m__name { font-size: clamp(1.4rem, 6.5vw, 2rem); padding: 0.15rem 0; }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.48); padding: 0.15rem 0; }
 			.svc-m__stage { gap: 0.7rem; }
 			.svc-m__descs { margin-top: 0.4rem; }
 			.svc-m__desc { font-size: 0.8rem; line-height: 1.45; }
@@ -524,7 +524,7 @@ const services = [
 				align-items: center;
 			}
 			.svc-m__pin { align-items: center; }
-			.svc-m__name { font-size: clamp(2.1rem, 5vw, 3.6rem); }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.62); }
 			.svc-m__desc { font-size: 1rem; }
 			.svc-m__media { max-height: 52vh; }
 		}
