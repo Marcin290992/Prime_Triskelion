@@ -36,6 +36,17 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
+	/* Phones and tablets use the same normal section flow and spacing as the rest of the page. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto { height: auto !important; }
+		#manifesto > .sticky {
+			position: static !important;
+			top: auto !important;
+			height: auto !important;
+			min-height: 0 !important;
+			padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom) !important;
+		}
+	}
 	.mw {
 		display: inline-block;
 		margin-right: 0.3em;
@@ -60,11 +71,36 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		const content = section.querySelector<HTMLElement>(':scope > div');
 		if (!content) return;
 
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches
+			|| navigator.maxTouchPoints > 0
+			|| window.matchMedia('(pointer: coarse)').matches;
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
 		const heading = section.querySelector<HTMLElement>('h2');
 
 		_manifestoST?.kill();
 		_manifestoST = null;
+		if (isMobile) {
+			// Same word-by-word focus as desktop, but no pin and no extra scroll
+			// height: the section stays in normal flow and the reveal is scrubbed
+			// while it travels up through the viewport.
+			gsap.registerPlugin(ScrollTrigger);
+			gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
+			const mtl = gsap.timeline();
+			mtl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+			const mPicked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
+			const mRed = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
+			if (mPicked.length && mRed) mtl.to(mPicked, { color: `rgb(${mRed})`, duration: 0.5, stagger: 0.3, ease: 'none' }, '-=1.4');
+			_manifestoST = ScrollTrigger.create({
+				animation: mtl,
+				trigger: section,
+				start: 'top 68%',
+				end: 'bottom 56%',
+				scrub: true,
+			});
+			gsap.set(content, { clearProps: 'opacity' });
+			return;
+		}
+
 		gsap.registerPlugin(ScrollTrigger);
 		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
 
