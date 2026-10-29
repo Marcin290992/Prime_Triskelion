@@ -860,8 +860,14 @@ const projects = [
 			const y = window.scrollY;
 			if (y < startY - 2 || y > startY + scrollableH + 2) return;
 			const x = Math.max(0, Math.min(1, (y - startY) / scrollableH)) * maxScroll;
-			const stops = [0, Math.min(curtainX, maxScroll), maxScroll];
+			// No stop on the opener itself: it is never held in place — the first
+			// card is the first thing that catches.
+			const stops = [Math.min(curtainX, maxScroll), maxScroll];
+			// The first card is a .card-fade, the rest .card-anim — both are stops.
 			cards.forEach((card, i) => stops.push(cardX[i] + card.offsetWidth / 2 - vw / 2));
+			fadeCards.forEach((card, i) => stops.push(fadeX[i] + card.offsetWidth / 2 - vw / 2));
+			const firstStop = Math.max(0, Math.min(...stops));
+			if (x < firstStop * 0.4) return;
 			let best = stops[0];
 			stops.forEach(s => {
 				const c = Math.max(0, Math.min(maxScroll, s));
