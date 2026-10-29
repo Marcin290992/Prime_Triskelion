@@ -395,16 +395,19 @@ const projects = [
 
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
-    /* Like desktop: a full screen, the title low in it, the first card only on
-       scroll. Sized off the stable --app-stable-vh (set once in Layout.astro)
-       so the URL bar can't resize it mid-scroll. */
+    /* Cinematic first screen: the title alone, vertically centred, the
+       cards only on scroll. Sized off the stable --app-stable-vh (set once
+       in Layout.astro) so the URL bar can't resize it mid-scroll. */
     .proj-header {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
+      /* About two thirds of the screen, not all of it: the title keeps its
+         moment, and the first card already peeks in below — that invites
+         the scroll, so the "scroll" hint goes. */
+      height: 68svh;
+      height: calc(var(--app-stable-vh, 1svh) * 68);
       min-height: unset;
-      justify-content: flex-end;
+      justify-content: center;
       padding-top: 5rem;
-      padding-bottom: 8.5rem;
+      padding-bottom: 1.5rem;
     }
     .proj-header__scroll { display: none; }
     /* Vertical, centred under the text: "scroll" label on top, a red
@@ -450,16 +453,6 @@ const projects = [
       height: calc(var(--app-stable-vh, 1svh) * 100);
     }
     .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
-    /* The closing "Let's build something sharp." takes a whole screen too, so
-       the last card's window shuts completely as it comes in (a short CTA
-       left a strip of the card showing above it). */
-    :global(#contact-cta) {
-      min-height: 100svh;
-      min-height: calc(var(--app-stable-vh, 1svh) * 100);
-      display: flex;
-      align-items: center;
-      box-sizing: border-box;
-    }
     .proj-img-wrap {
       width: clamp(240px, 72vw, 680px);
       height: clamp(180px, 48svh, 480px);
