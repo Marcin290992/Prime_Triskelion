@@ -846,6 +846,45 @@ const projects = [
 		window.addEventListener('scroll', onScroll, { passive: true });
 		window.addEventListener('resize', onResize, { passive: true });
 
+		/* Phones/tablets: once the finger lets go and the scroll settles inside
+		   the horizontal travel, ease to the nearest stop — the first slide, each
+		   card centred, the closing line-up, the final slide — so a slow scroll
+		   never leaves a card or the last slide half-set. */
+		let snapTimer = 0;
+		let touching = false;
+		function snapToStop() {
+			snapTimer = 0;
+			if (!touchScene || touching || maxScroll <= 0) return;
+			const vw = window.innerWidth;
+			const startY = enterFrom + ENTER_SCREENS * H();
+			const y = window.scrollY;
+			if (y < startY - 2 || y > startY + scrollableH + 2) return;
+			const x = Math.max(0, Math.min(1, (y - startY) / scrollableH)) * maxScroll;
+			const stops = [0, Math.min(curtainX, maxScroll), maxScroll];
+			cards.forEach((card, i) => stops.push(cardX[i] + card.offsetWidth / 2 - vw / 2));
+			let best = stops[0];
+			stops.forEach(s => {
+				const c = Math.max(0, Math.min(maxScroll, s));
+				if (Math.abs(c - x) < Math.abs(best - x)) best = c;
+			});
+			const targetY = startY + (best / maxScroll) * scrollableH;
+			if (Math.abs(targetY - y) < 3) return;
+			window.scrollTo({ top: targetY, behavior: 'smooth' });
+		}
+		function armSnap() {
+			if (!touchScene) return;
+			clearTimeout(snapTimer);
+			snapTimer = window.setTimeout(snapToStop, 140);
+		}
+		const onTouchStart = () => { touching = true; clearTimeout(snapTimer); };
+		const onTouchEnd = () => { touching = false; armSnap(); };
+		if (touchScene) {
+			window.addEventListener('scroll', armSnap, { passive: true });
+			window.addEventListener('touchstart', onTouchStart, { passive: true });
+			window.addEventListener('touchend', onTouchEnd, { passive: true });
+			window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+		}
+
 		/* run the loop only while the section (± one viewport) is near view */
 		const io = new IntersectionObserver(entries => {
 			entries.forEach(e => (e.isIntersecting ? start() : stop()));
@@ -862,6 +901,11 @@ const projects = [
 			ro.disconnect();
 			window.removeEventListener('scroll', onScroll);
 			window.removeEventListener('resize', onResize);
+			clearTimeout(snapTimer);
+			window.removeEventListener('scroll', armSnap);
+			window.removeEventListener('touchstart', onTouchStart);
+			window.removeEventListener('touchend', onTouchEnd);
+			window.removeEventListener('touchcancel', onTouchEnd);
 			document.removeEventListener('astro:before-swap', onBeforeSwap);
 		};
 		document.addEventListener('astro:before-swap', onBeforeSwap);
