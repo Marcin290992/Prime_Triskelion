@@ -57,6 +57,10 @@ const services = [
 						/>
 					))}
 				</a>
+				<a href="/services" class="svc__btn svc__btn--m" aria-label="View all services">
+					<span class="svc__btn__line"></span>
+					See more
+				</a>
 			</div>
 		</div>
 	</div>
@@ -141,7 +145,7 @@ const services = [
 	/* ── Desktop (mouse): names on the left, one picture on the right ───────
 	   Sized by height too, so title + list + "See more" fit one laptop screen
 	   and none of it sits in the page's soft top/bottom edge zones. */
-	.svc__body, .svc__btn--d { display: none; }
+	.svc__body, .svc__btn--d, .svc__btn--m { display: none; }
 	/* Rolling text, as in the menu: the dimmed name slides up, the red one
 	   comes in from below, in white — red stays the section title's alone. */
 	.svc__roll { position: relative; display: block; overflow: hidden; }
@@ -316,9 +320,10 @@ const services = [
 	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.svc__body { display: none; }
-		/* See more rides up into the pin's empty bottom: it shows right under the
-		   picture, above the MENU button, when the scene lets go. */
-		.svc__footer { margin-top: -7rem; position: relative; z-index: 1; }
+		/* See more sits in the pinned scene, right under the picture; the footer
+		   keeps only its spacing. */
+		.svc__footer .svc__btn { display: none; }
+		.svc__btn--m { display: inline-flex; align-self: center; flex-shrink: 0; margin-top: 0.4rem; }
 		/* The title stays pinned over the scene, like The Process's; the
 		   scene's pin starts just under it (--svc-head, its measured
 		   height, set by initServicesMobile). Its fade covers what slides
@@ -359,7 +364,7 @@ const services = [
 			   went between the title and the names. */
 			align-items: flex-start;
 			/* Bottom: clear of the fixed MENU button. */
-			padding: 0.5rem var(--site-gutter) 9rem;
+			padding: 0.5rem var(--site-gutter) 6rem;
 			box-sizing: border-box;
 		}
 		.svc-m__stage {
