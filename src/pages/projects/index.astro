@@ -483,19 +483,19 @@ const projects = [
       .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
     }
 
-    /* The first project stays an ordinary card in the flow (its photo, with
-       the info on a glass bar over it); the pinned, masked scene starts with
-       the second. */
-    .proj-section:first-child {
+    /* The first and the last project are ordinary cards in the flow (the photo,
+       with the info on a glass bar over it); the pinned, masked scene runs
+       between them, and the page scrolls normally to the end. */
+    .proj-section:is(:first-child, :last-child) {
       height: auto;
       padding: clamp(1.25rem, 4vw, 2rem) var(--site-gutter, 1.5rem);
       background: transparent;
       clip-path: none;
       transition: none;
     }
-    .proj-section:first-child .proj-inner { position: relative; height: auto; display: block; }
-    .proj-section:first-child .proj-bg-text { display: none; }
-    .proj-section:first-child .proj-img-wrap {
+    .proj-section:is(:first-child, :last-child) .proj-inner { position: relative; height: auto; display: block; }
+    .proj-section:is(:first-child, :last-child) .proj-bg-text { display: none; }
+    .proj-section:is(:first-child, :last-child) .proj-img-wrap {
       position: relative;
       width: 100%;
       height: auto;
@@ -503,9 +503,9 @@ const projects = [
       z-index: 1;
       box-shadow: 0 0 0 1px rgba(255,255,255,0.05);
     }
-    .proj-section:first-child .proj-img-wrap img { object-position: center 30%; }
-    .proj-section:first-child .proj-inner::before { content: none; }
-    .proj-section:first-child .proj-inner::after {
+    .proj-section:is(:first-child, :last-child) .proj-img-wrap img { object-position: center 30%; }
+    .proj-section:is(:first-child, :last-child) .proj-inner::before { content: none; }
+    .proj-section:is(:first-child, :last-child) .proj-inner::after {
       content: '';
       position: absolute;
       bottom: 0; left: 0; right: 0;
@@ -514,7 +514,7 @@ const projects = [
       pointer-events: none;
       z-index: 2;
     }
-    .proj-section:first-child .proj-foot {
+    .proj-section:is(:first-child, :last-child) .proj-foot {
       bottom: 0.75rem;
       left: 0.75rem;
       right: 0.75rem;
@@ -528,16 +528,16 @@ const projects = [
       border: 1px solid rgba(255,255,255,0.1);
       padding: clamp(0.9rem, 1.8vh, 1.2rem) 1.2rem;
     }
-    .proj-section:first-child .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); color: rgb(var(--c-cream) / 0.95); }
-    .proj-section:first-child .proj-foot__center { gap: 0.15rem 0.55rem; }
-    .proj-section:first-child .proj-foot__right { grid-column: 2; grid-row: 1 / 3; align-self: center; }
-    .proj-section:first-child .proj-foot__tag + .proj-foot__tag::before { margin-right: 0.55rem; }
-    .proj-section:first-child .proj-foot__year,
-    .proj-section:first-child .proj-foot__tag { color: rgb(var(--c-cream) / 0.72); }
+    .proj-section:is(:first-child, :last-child) .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); color: rgb(var(--c-cream) / 0.95); }
+    .proj-section:is(:first-child, :last-child) .proj-foot__center { gap: 0.15rem 0.55rem; }
+    .proj-section:is(:first-child, :last-child) .proj-foot__right { grid-column: 2; grid-row: 1 / 3; align-self: center; }
+    .proj-section:is(:first-child, :last-child) .proj-foot__tag + .proj-foot__tag::before { margin-right: 0.55rem; }
+    .proj-section:is(:first-child, :last-child) .proj-foot__year,
+    .proj-section:is(:first-child, :last-child) .proj-foot__tag { color: rgb(var(--c-cream) / 0.72); }
     @media (min-width: 700px) {
-      .proj-section:first-child .proj-img-wrap { width: 100%; aspect-ratio: 3 / 2; }
-      .proj-section:first-child .proj-inner { width: min(100%, 90vh); margin-inline: auto; }
-      .proj-section:first-child .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); }
+      .proj-section:is(:first-child, :last-child) .proj-img-wrap { width: 100%; aspect-ratio: 3 / 2; }
+      .proj-section:is(:first-child, :last-child) .proj-inner { width: min(100%, 90vh); margin-inline: auto; }
+      .proj-section:is(:first-child, :last-child) .proj-foot__name { font-size: clamp(2.4rem, 4.5vw, 6rem); }
     }
   }
 </style>
@@ -575,11 +575,11 @@ const projects = [
 
     // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
     // Cache references once — never query DOM inside the render loop
-    // Phones/tablets: the first project is an ordinary card; the pinned scene
-    // (and its scroll-driven effects) starts with the second.
+    // Phones/tablets: the first and last projects are ordinary cards; the
+    // pinned scene (and its scroll-driven effects) runs between them.
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.proj-section')
-    ).filter((_, i) => !(isMob && i === 0)).map(sec => ({
+    ).filter((_, i, all) => !(isMob && (i === 0 || i === all.length - 1))).map(sec => ({
       sec,
       bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
       foot:    sec.querySelector<HTMLElement>('.proj-foot'),
@@ -636,8 +636,9 @@ const projects = [
     const ctx = canvas.getContext('2d');
 
     if (ctx) {
-      document.querySelectorAll<HTMLElement>('.proj-section').forEach((sec, i) => {
-        if (isMob && i === 0) return;
+      const allSecs = document.querySelectorAll<HTMLElement>('.proj-section');
+      allSecs.forEach((sec, i) => {
+        if (isMob && (i === 0 || i === allSecs.length - 1)) return;
         const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
         if (!img) return;
 
