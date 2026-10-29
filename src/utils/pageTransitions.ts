@@ -149,12 +149,19 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 let SWEEP_W = 40;
 let SWEEP_EXIT_SECONDS = 0.95;
 let SWEEP_ENTER_SECONDS = 1.15;
+// Phones/tablets: a much softer, tilted edge. On a tall narrow screen a
+// vertical edge is over in a blink; a wide slanted penumbra crosses the whole
+// frame diagonally, like the light on the About page.
+let SWEEP_SKEW = 0;
 function tuneSweep(): void {
 	const small = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-	SWEEP_W = small ? 24 : 40;
-	SWEEP_EXIT_SECONDS = small ? 0.7 : 0.95;
-	SWEEP_ENTER_SECONDS = small ? 0.85 : 1.15;
+	SWEEP_W = small ? 55 : 40;
+	SWEEP_EXIT_SECONDS = small ? 1.0 : 0.95;
+	SWEEP_ENTER_SECONDS = small ? 1.2 : 1.15;
+	SWEEP_SKEW = small ? -16 : 0;
 }
+// How far a skewed bar's edge is pushed sideways at the top and bottom.
+const skewPad = () => Math.ceil(Math.abs(Math.tan(SWEEP_SKEW * Math.PI / 180)) * window.innerHeight / 2) + 4;
 let sweepVeil: HTMLElement | null = null;
 // 1: the dark travels left to right; -1 (going back): right to left.
 let sweepDir: 1 | -1 = 1;
@@ -182,9 +189,11 @@ function makeVeil(z: number): HTMLElement {
 // leaves to the right).
 function paintBar(veil: HTMLElement, cover: boolean): void {
 	const iw = window.innerWidth;
+	const pad = skewPad();
 	const soft = (2 * SWEEP_W) / 100 * iw;
-	const barW = iw + soft;
-	const solid = iw / barW;
+	const solidPx = iw + 2 * pad;
+	const barW = solidPx + soft;
+	const solid = solidPx / barW;
 	const steps = 16;
 	const stops: string[] = [];
 	for (let i = 0; i <= steps; i++) {
@@ -199,20 +208,23 @@ function paintBar(veil: HTMLElement, cover: boolean): void {
 	bar.style.background = cover
 		? `linear-gradient(90deg, #000 0, #000 ${solid * 100 - 0.01}%, ${stops.join(', ')})`
 		: `linear-gradient(90deg, ${stops.join(', ')}, #000 100%)`;
-	gsap.set(bar, { x: cover ? -barW : -soft });
+	// Cover: starts wholly off to the left, ends with its solid part over the
+	// screen. Reveal: starts with the solid part over the screen.
+	gsap.set(bar, { x: cover ? -barW - pad : -soft - pad, skewX: SWEEP_SKEW });
 }
 
 function sweepIn(veil: HTMLElement): Promise<void> {
-	return Promise.resolve(gsap.to(barOf(veil), { x: 0, duration: SWEEP_EXIT_SECONDS, ease: 'sine.inOut' })).then(() => {});
+	return Promise.resolve(gsap.to(barOf(veil), { x: -skewPad(), duration: SWEEP_EXIT_SECONDS, ease: 'sine.inOut' })).then(() => {});
 }
 
-// Choosing a menu link: the dark sweeps over the open menu itself (above it,
-// the menu is z-index 9100), then the navigation starts under full black.
+// Choosing a menu link: the dark sweeps over the open menu itself (the menu
+// overlay is z-index 999; the logo and top-bar CTA, 1002, stay above the
+// veil on every page and in the menu), then the navigation starts under full black.
 export function sweepOverMenu(): Promise<void> {
 	tuneSweep();
 	sweepVeil?.remove();
 	sweepDir = 1;
-	const veil = makeVeil(9200);
+	const veil = makeVeil(1001);
 	sweepVeil = veil;
 	menuHandoff = true;
 	if (reducedMotion()) {
@@ -359,7 +371,7 @@ async function liftVeil(veil: HTMLElement): Promise<void> {
 		veil.style.background = '#000';
 		await gsap.to(veil, { opacity: 0, duration: 0.2, ease: 'none' });
 	} else {
-		await gsap.to(barOf(veil), { x: window.innerWidth, duration: SWEEP_ENTER_SECONDS, ease: 'sine.inOut' });
+		await gsap.to(barOf(veil), { x: window.innerWidth + skewPad(), duration: SWEEP_ENTER_SECONDS, ease: 'sine.inOut' });
 	}
 	veil.remove();
 }
