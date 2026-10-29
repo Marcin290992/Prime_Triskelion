@@ -777,7 +777,8 @@ const projects = [
 				? `translate3d(-${distToEnd * 0.5}px,0,0)`
 				: 'translate3d(0,0,0)';
 
-			const maxY = H() * 0.55;
+			// Phones/tablets: the cards stay in one row (no rising in from below).
+			const maxY = touchScene ? 0 : H() * 0.55;
 			cards.forEach((card, i) => {
 				const sp = (cardX[i] - currentX) / vw;
 				const lp = Math.max(0, (sp - 0.5) * 2);

@@ -371,18 +371,20 @@ const services = [
 			padding: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 0.16em;
+			gap: 0;
 		}
 		.svc-m__name {
+			position: relative;
 			font-family: var(--f-display);
 			font-weight: 700;
-			/* A clear step below the section title, letters and lines apart —
-			   at 70% of it with tight tracking the four ran together. */
-			font-size: calc(var(--hero-size) * 0.5);
-			line-height: 1;
-			letter-spacing: -0.005em;
+			/* As on desktop: each name a full-width row between two hairlines,
+			   big dimmed type, the chosen one lit. */
+			font-size: clamp(2.1rem, 10vw, 4.2rem);
+			padding: clamp(0.3rem, 1vh, 0.7rem) 0;
+			line-height: 1.04;
+			letter-spacing: 0.005em;
 			text-transform: uppercase;
-			color: rgb(var(--c-cream) / 0.2);
+			color: rgb(var(--c-cream) / 0.38);
 			cursor: pointer;
 			transition: color 0.45s ease;
 			/* A tap is a choice, not a text selection: no blue tap flash, no
@@ -395,7 +397,22 @@ const services = [
 		}
 		/* The same roll as the desktop list: the dimmed name slides up, the
 		   white one comes in from below. */
-		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.2); }
+		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.38); }
+		.svc-m__name::before,
+		.svc-m__name::after {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			height: 1px;
+			background: rgb(var(--c-cream) / 0.14);
+			transition: background-color 0.4s ease;
+			pointer-events: none;
+		}
+		.svc-m__name::before { top: 0; }
+		.svc-m__name::after { bottom: 0; }
+		.svc-m__name.is-active::before,
+		.svc-m__name.is-active::after { background: rgb(var(--c-cream) / 0.6); }
 		.svc-m__name.is-active .svc__roll__base,
 		.svc-m__name.is-active .svc__roll__red { transform: translateY(-100%); }
 		/* All four lines stacked in one spot; the active one fades up. */
@@ -441,7 +458,7 @@ const services = [
 			-webkit-tap-highlight-color: transparent;
 			-webkit-touch-callout: none;
 			aspect-ratio: 4 / 3;
-			max-height: 36vh;
+			max-height: 28vh;
 			overflow: hidden;
 			border: 1px solid rgba(255, 255, 255, 0.08);
 			background: #060608;
@@ -466,7 +483,6 @@ const services = [
 		@media (min-width: 700px) {
 			/* Height-capped too, so a landscape tablet's short screen still
 			   fits names, line and picture between the logo and the MENU. */
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
 			.svc-m__desc { font-size: 1.15rem; max-width: 44ch; }
 			.svc-m__media { max-height: 42vh; }
 		}
@@ -474,7 +490,7 @@ const services = [
 		   line and picture scale down to fit under the pinned title and
 		   above the MENU button. */
 		@media (max-width: 699px) and (max-height: 760px) {
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.45); }
+			.svc-m__name { font-size: clamp(1.8rem, 8.5vw, 3rem); }
 			.svc-m__stage { gap: 1.1rem; }
 			.svc-m__descs { margin-top: 0.6rem; }
 			.svc-m__desc { font-size: 0.88rem; }
@@ -492,7 +508,7 @@ const services = [
 				align-items: center;
 			}
 			.svc-m__pin { align-items: center; }
-			.svc-m__name { font-size: calc(var(--hero-size) * 0.5); }
+			.svc-m__name { font-size: clamp(2.1rem, 5vw, 3.6rem); }
 			.svc-m__desc { font-size: 1rem; }
 			.svc-m__media { max-height: 52vh; }
 		}
