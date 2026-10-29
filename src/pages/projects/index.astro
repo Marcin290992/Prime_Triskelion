@@ -450,6 +450,16 @@ const projects = [
       height: calc(var(--app-stable-vh, 1svh) * 100);
     }
     .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
+    /* The closing "Let's build something sharp." takes a whole screen too, so
+       the last card's window shuts completely as it comes in (a short CTA
+       left a strip of the card showing above it). */
+    :global(#contact-cta) {
+      min-height: 100svh;
+      min-height: calc(var(--app-stable-vh, 1svh) * 100);
+      display: flex;
+      align-items: center;
+      box-sizing: border-box;
+    }
     .proj-img-wrap {
       width: clamp(240px, 72vw, 680px);
       height: clamp(180px, 48svh, 480px);
