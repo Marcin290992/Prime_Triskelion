@@ -28,6 +28,7 @@ const projects = [
 
 	<div class="sw-header">
 		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
+		<a href="/projects" class="link-btn no-border sw-header__link">View All Projects</a>
 	</div>
 
 	<div class="scroll-section" id="sw-scroll-section">
@@ -496,15 +497,18 @@ const projects = [
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.scroll-section {
 			display: block;
-			margin-top: calc(var(--app-stable-vh) * -100);
 			height: calc(var(--app-stable-vh) * 520);
 		}
 		.sticky-view { height: calc(var(--app-stable-vh) * 100); }
-		.sw-header { display: none; }
+		/* The "What we've created." opener is an ordinary heading that scrolls
+		   by; the pin starts with the first card. */
+		.sw-header { display: block; }
+		.sw-header__link { display: inline-block; margin-top: 1.4rem; }
+		.slide-intro { display: none; }
 		/* The closing title sits mid-screen, so the next section is pulled up
 		   under the empty lower half instead of trailing it by half a screen. */
 		#selected-work { margin-bottom: calc(var(--app-stable-vh) * -40); }
-		.track { gap: 7vw; }
+		.track { gap: 7vw; padding-left: 10vw; }
 		.slide-intro h2 { font-size: clamp(3rem, 15vw, 6rem); }
 		.slide-card { width: 80vw; margin-top: 0; padding: 0.75rem 0.75rem 1rem; }
 		.img-box { aspect-ratio: 4 / 3; }
@@ -731,6 +735,7 @@ const projects = [
 		let curtainX = 0;
 		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
 		const ENTER_SCREENS = 0.7; // screens of blur-in before the horizontal travel
+		const ENTER_LEAD = 0.6; // touch: screens the blur-in starts ahead of the pin
 
 		function measure() {
 			maxScroll = tr.scrollWidth - window.innerWidth;
@@ -744,9 +749,14 @@ const projects = [
 			enterFrom = man && manPin
 				? Math.max(sectionTop, man.getBoundingClientRect().bottom + window.scrollY - manPin.offsetHeight)
 				: sectionTop;
+			// Phones/tablets: the scene is not pinned yet while the heading above
+			// it scrolls by, so it starts blurring in a little early, coming up
+			// with the page, rather than leaving a blank screen under the heading.
+			const lead = touchScene ? ENTER_LEAD * H() : 0;
+			enterFrom -= lead;
 			// The travel ends FINAL_HOLD screens before the pin lets go, so the
 			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
-			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS));
+			scrollableH = Math.max(1, ss.offsetHeight - H() * (1 + FINAL_HOLD + ENTER_SCREENS) + lead);
 			curtainX = ce.offsetLeft;
 			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
 			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
