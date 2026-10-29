@@ -42,6 +42,10 @@ declare global {
 	}
 }
 
+const CASE_OPEN_SECONDS = 1.2;
+const CASE_MIDPOINT_PUSH = 0.12;
+const CASE_SCRIM_OPACITY = 0.4;
+
 const IDLE_RUN: RouteRun = {
 	kind: 'idle',
 	skipNative: false,
@@ -50,6 +54,8 @@ const IDLE_RUN: RouteRun = {
 };
 
 let activeRun = { ...IDLE_RUN };
+let caseShot: HTMLElement | null = null;
+const preloadedCaseImages = new Set<string>();
 let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
 let requestedAt = 0;
@@ -102,6 +108,8 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	const incoming = performance.now() - requestedAt < 4000 ? requestedIncoming : null;
 	const isNativeSwipe = nativeHistoryTransition;
 	nativeHistoryTransition = false;
+	caseShot?.remove();
+	caseShot = null;
 	// A sweep whose navigation was overtaken (back/forward pressed mid-exit)
 	// would otherwise stay black over the page for good.
 	if (!(menuHandoff && incoming !== null)) {
@@ -131,7 +139,8 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		} else {
 			activeRun = { kind: 'standard', skipNative: true, incoming: 'blur', restoreY: null };
 			document.documentElement.classList.add('vt-cut');
-			prepareSweepExit(event);
+			// A project card first grows its photo to full screen, then sweeps.
+			if (!prepareCaseStudy(event)) prepareSweepExit(event);
 		}
 	}
 
@@ -147,8 +156,8 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 // edge is mostly a fade, so phones and tablets get a tighter edge and a
 // faster sweep: the dark reads as something crossing the screen, not a slow fade.
 let SWEEP_W = 40;
-let SWEEP_EXIT_SECONDS = 0.45;
-let SWEEP_ENTER_SECONDS = 0.55;
+let SWEEP_EXIT_SECONDS = 0.6;
+let SWEEP_ENTER_SECONDS = 0.75;
 // Phones/tablets: a much softer, tilted edge. On a tall narrow screen a
 // vertical edge is over in a blink; a wide slanted penumbra crosses the whole
 // frame diagonally, like the light on the About page.
@@ -156,8 +165,8 @@ let SWEEP_SKEW = 0;
 function tuneSweep(): void {
 	const small = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 	SWEEP_W = small ? 55 : 40;
-	SWEEP_EXIT_SECONDS = small ? 0.45 : 0.45;
-	SWEEP_ENTER_SECONDS = small ? 0.55 : 0.55;
+	SWEEP_EXIT_SECONDS = small ? 0.6 : 0.6;
+	SWEEP_ENTER_SECONDS = small ? 0.75 : 0.75;
 	SWEEP_SKEW = small ? -16 : 0;
 }
 // How far a skewed bar's edge is pushed sideways at the top and bottom.
@@ -237,27 +246,153 @@ export function sweepOverMenu(): Promise<void> {
 	return sweepIn(veil);
 }
 
-function prepareSweepExit(event: PreparationEvent): void {
+function startSweepCover(back: boolean): Promise<void> {
 	tuneSweep();
-	sweepDir = event.direction === 'back' ? -1 : 1;
+	sweepDir = back ? -1 : 1;
 	sweepVeil?.remove();
 	const veil = makeVeil(1001);
 	paintBar(veil, true);
 	sweepVeil = veil;
+	return sweepIn(veil);
+}
 
-	const sweep = sweepIn(veil);
+// Navigation failed or was overtaken: don't leave the page dark.
+function dropSweep(): void {
+	sweepVeil?.remove();
+	sweepVeil = null;
+}
+
+function prepareSweepExit(event: PreparationEvent): void {
+	const sweep = startSweepCover(event.direction === 'back');
 	const load = event.loader;
 	event.loader = async () => {
 		try {
 			await Promise.all([load(), sweep]);
 		} catch (error) {
-			// Navigation failed: don't leave the page dark.
-			veil.remove();
-			if (sweepVeil === veil) sweepVeil = null;
+			dropSweep();
 			throw error;
 		}
 	};
 }
+
+function prepareCaseStudy(event: PreparationEvent): boolean {
+	const link = event.sourceElement?.closest('[data-case]');
+	const image = link?.querySelector<HTMLImageElement>('img');
+	if (!link || !image || reducedMotion() || matchMedia('(pointer: coarse)').matches) return false;
+
+	const media = image.closest<HTMLElement>('[data-case-media]') ?? image;
+	if (!media.offsetWidth || !media.offsetHeight || !image.naturalWidth) return false;
+
+	caseShot?.remove();
+	const shot = document.createElement('div');
+	shot.setAttribute('aria-hidden', 'true');
+	shot.style.cssText = 'position:fixed;inset:0;z-index:1000;pointer-events:none;visibility:hidden';
+	document.documentElement.append(shot);
+	caseShot = shot;
+
+	const screen = shot.getBoundingClientRect();
+	const imageRect = image.getBoundingClientRect();
+	const mediaRect = media.getBoundingClientRect();
+	const imageWidth = image.naturalWidth;
+	const imageHeight = image.naturalHeight;
+	const cover = (width: number, height: number) => Math.max(width / imageWidth, height / imageHeight);
+	const screenScale = cover(screen.width, screen.height);
+	const cardScale = cover(imageRect.width, imageRect.height);
+	const initialScale = cardScale / screenScale;
+	const [positionX, positionY] = getComputedStyle(image).objectPosition.split(' ');
+	const offset = (position: string | undefined, free: number) =>
+		!position ? free / 2 : position.endsWith('%') ? free * parseFloat(position) / 100 : parseFloat(position) || 0;
+	const cropX = offset(positionX, imageRect.width - imageWidth * cardScale);
+	const cropY = offset(positionY ?? positionX, imageRect.height - imageHeight * cardScale);
+	const moveX = imageRect.left - screen.left + cropX + (imageWidth * cardScale) / 2 - screen.width / 2;
+	const moveY = imageRect.top - screen.top + cropY + (imageHeight * cardScale) / 2 - screen.height / 2;
+	const inset = [
+		mediaRect.top - screen.top,
+		screen.right - mediaRect.right,
+		screen.bottom - mediaRect.bottom,
+		mediaRect.left - screen.left,
+	];
+	const radius = parseFloat(getComputedStyle(media).borderTopLeftRadius) || 0;
+
+	shot.innerHTML = [
+		'<div style="position:absolute;inset:0;overflow:hidden;will-change:clip-path">',
+		`<div style="position:absolute;left:${(screen.width - imageWidth * screenScale) / 2}px;top:${(screen.height - imageHeight * screenScale) / 2}px;width:${imageWidth * screenScale}px;height:${imageHeight * screenScale}px;will-change:transform"></div>`,
+		'<div style="position:absolute;inset:0;opacity:0;background:linear-gradient(to top,rgb(0 0 0 / .75),rgb(0 0 0 / .1) 45%,rgb(0 0 0 / .35))"></div>',
+		'</div>',
+	].join('');
+	const frame = shot.firstElementChild as HTMLElement;
+	const stage = frame.firstElementChild as HTMLElement;
+	const scrim = frame.lastElementChild as HTMLElement;
+
+	const addImage = (src: string) => {
+		const element = document.createElement('img');
+		element.src = src;
+		element.alt = '';
+		element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block';
+		stage.append(element);
+		return element;
+	};
+	const thumbnail = addImage(image.currentSrc || image.src);
+	const fullSource = link.getAttribute('data-case-src');
+	if (fullSource) {
+		const fullImage = addImage(fullSource);
+		fullImage.style.opacity = '0';
+		void fullImage.decode().then(
+			() => gsap.to(fullImage, { opacity: 1, duration: 0.25, ease: 'none' }),
+			(error) => console.warn('[pageTransitions] Could not decode the full case-study image.', error),
+		);
+	}
+
+	const paint = (progress: number) => {
+		const remaining = 1 - progress;
+		frame.style.clipPath = `inset(${inset.map((value) => `${(value * remaining).toFixed(1)}px`).join(' ')} round ${(radius * remaining).toFixed(1)}px)`;
+		const push = (initialScale + (1 - initialScale) * progress) * (1 + CASE_MIDPOINT_PUSH * Math.sin(Math.PI * progress));
+		stage.style.transform = `translate3d(${(moveX * remaining).toFixed(1)}px,${(moveY * remaining).toFixed(1)}px,0) scale(${push.toFixed(4)})`;
+		scrim.style.opacity = String(CASE_SCRIM_OPACITY * progress);
+		shot.style.backgroundColor = `rgb(0 0 0 / ${Math.min(1, progress * 1.6).toFixed(3)})`;
+	};
+
+	paint(0);
+	const progress = { value: 0 };
+	const open = Promise.race([
+		thumbnail.decode().catch((error) => {
+			console.warn('[pageTransitions] Could not decode the case-study thumbnail.', error);
+		}),
+		delay(250),
+	]).then(() => {
+		shot.style.visibility = '';
+		return gsap.to(progress, {
+			value: 1,
+			duration: CASE_OPEN_SECONDS,
+			ease: 'power2.inOut',
+			onUpdate: () => paint(progress.value),
+		}).then(() => {});
+	});
+
+	// Once the photo has grown to fill the screen, the dark sweep carries the
+	// navigation (the same transition as every other page).
+	const load = event.loader;
+	event.loader = async () => {
+		try {
+			await Promise.all([load(), open.then(() => startSweepCover(false))]);
+		} catch (error) {
+			dropSweep();
+			caseShot?.remove();
+			caseShot = null;
+			throw error;
+		}
+	};
+	return true;
+}
+
+const preloadCaseImage = (event: Event) => {
+	const source = (event.target as Element | null)?.closest('[data-case]')?.getAttribute('data-case-src');
+	if (!source || preloadedCaseImages.has(source)) return;
+	preloadedCaseImages.add(source);
+	new Image().src = source;
+};
+document.addEventListener('pointerover', preloadCaseImage, { passive: true });
+
 
 function inlineNewStylesheets(event: PreparationEvent): void {
 	const load = event.loader;
@@ -328,6 +463,10 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 	const run = activeRun;
 	requestedIncoming = null;
 	menuHandoff = false;
+
+	// The grown project photo (if any) is under the full-black veil by now.
+	caseShot?.remove();
+	caseShot = null;
 
 	if (run.skipNative) {
 		document.documentElement.classList.add('vt-cut');
