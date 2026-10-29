@@ -3,7 +3,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-type RouteKind = 'idle' | 'standard' | 'menu' | 'history' | 'native-history';
+type RouteKind = 'idle' | 'standard' | 'menu' | 'case-study' | 'history' | 'native-history';
 type IncomingEffect = 'blur' | 'none';
 
 interface RouteRun {
@@ -18,7 +18,6 @@ interface PreparationEvent extends Event {
 	newDocument?: Document;
 	navigationType?: string;
 	sourceElement?: Element;
-	direction?: string;
 }
 
 interface TransitionView {
@@ -54,17 +53,16 @@ const IDLE_RUN: RouteRun = {
 };
 
 let activeRun = { ...IDLE_RUN };
-let caseShot: HTMLElement | null = null;
-const preloadedCaseImages = new Set<string>();
 let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
-let requestedAt = 0;
 let transitionReady: Promise<void> = Promise.resolve();
+let caseShot: HTMLElement | null = null;
 let nativeHistoryTransition = false;
 let restoring = false;
 let cutSwapComplete = false;
 let cutTransitionComplete = false;
 const restoreHolds: Promise<void>[] = [];
+const preloadedCaseImages = new Set<string>();
 
 export function reducedMotion(): boolean {
 	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -72,7 +70,6 @@ export function reducedMotion(): boolean {
 
 export function cutNextTransition(blurIn = true): void {
 	requestedIncoming = blurIn ? 'blur' : 'none';
-	requestedAt = performance.now();
 	document.documentElement.classList.add('vt-cut');
 }
 
@@ -103,21 +100,12 @@ window.addEventListener('popstate', (event) => {
 
 document.addEventListener('astro:before-preparation', (rawEvent) => {
 	const event = rawEvent as PreparationEvent;
-	// Astro can dispatch this event twice for one navigation (the first is
-	// aborted), so the menu's request and its veil are kept until the swap.
-	const incoming = performance.now() - requestedAt < 4000 ? requestedIncoming : null;
+	const incoming = requestedIncoming;
 	const isNativeSwipe = nativeHistoryTransition;
+	requestedIncoming = null;
 	nativeHistoryTransition = false;
 	caseShot?.remove();
 	caseShot = null;
-	// A sweep whose navigation was overtaken (back/forward pressed mid-exit)
-	// would otherwise stay black over the page for good.
-	if (!(menuHandoff && incoming !== null)) {
-		sweepVeil?.remove();
-		sweepVeil = null;
-		sweepDir = 1;
-		menuHandoff = false;
-	}
 
 	if (incoming !== null) {
 		activeRun = { kind: 'menu', skipNative: true, incoming, restoreY: null };
@@ -131,16 +119,19 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		};
 		if (!isNativeSwipe) {
 			document.documentElement.classList.add('vt-cut');
-			if (!reducedMotion()) prepareSweepExit(event);
+			if (!reducedMotion()) preparePageExit(event);
 		}
 	} else {
-		if (reducedMotion()) {
+		const caseTransition = prepareCaseStudy(event);
+		if (caseTransition) {
+			activeRun = { kind: 'case-study', skipNative: true, incoming: 'none', restoreY: null };
+			document.documentElement.classList.add('vt-cut');
+		} else if (reducedMotion()) {
 			activeRun = { ...IDLE_RUN };
 		} else {
 			activeRun = { kind: 'standard', skipNative: true, incoming: 'blur', restoreY: null };
 			document.documentElement.classList.add('vt-cut');
-			// A project card first grows its photo to full screen, then sweeps.
-			if (!prepareCaseStudy(event)) prepareSweepExit(event);
+			preparePageExit(event);
 		}
 	}
 
@@ -148,131 +139,44 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	inlineNewStylesheets(event);
 });
 
-// Darkness sweeps over the old page left to right (the About scroll's soft
-// cosine edge), and the same darkness is then lifted off the new page in the
-// same direction. One black veil on <html> survives the body swap, so there is
-// no frame between the two halves.
-// Soft-edge half-width (% of the width) and times. On a narrow screen a wide
-// edge is mostly a fade, so phones and tablets get a tighter edge and a
-// faster sweep: the dark reads as something crossing the screen, not a slow fade.
-let SWEEP_W = 40;
-let SWEEP_EXIT_SECONDS = 0.6;
-let SWEEP_ENTER_SECONDS = 0.75;
-// Phones/tablets: a much softer, tilted edge. On a tall narrow screen a
-// vertical edge is over in a blink; a wide slanted penumbra crosses the whole
-// frame diagonally, like the light on the About page.
-let SWEEP_SKEW = 0;
-function tuneSweep(): void {
-	const small = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-	SWEEP_W = small ? 55 : 40;
-	SWEEP_EXIT_SECONDS = small ? 0.6 : 0.6;
-	SWEEP_ENTER_SECONDS = small ? 0.75 : 0.75;
-	SWEEP_SKEW = small ? -16 : 0;
-}
-// How far a skewed bar's edge is pushed sideways at the top and bottom.
-const skewPad = () => Math.ceil(Math.abs(Math.tan(SWEEP_SKEW * Math.PI / 180)) * window.innerHeight / 2) + 4;
-let sweepVeil: HTMLElement | null = null;
-// 1: the dark travels left to right; -1 (going back): right to left.
-let sweepDir: 1 | -1 = 1;
-// The menu's own sweep, already covering the page when navigate() runs.
-let menuHandoff = false;
+function preparePageExit(event: PreparationEvent): void {
+	const content = Array.from(document.querySelectorAll<HTMLElement>(
+		'body > :not(#oxygen-menu-root):not(#h-title):not(#site-cta-wrap):not(#hero-nav-cta-wrap):not(.edge-tint):not(.film-grain):not([data-leave-keep])'
+	));
+	const keptContent = Array.from(document.querySelectorAll<HTMLElement>('[data-leave-keep] > *'));
+	const ctas = ['site-cta-wrap', 'hero-nav-cta-wrap']
+		.map((id) => document.getElementById(id))
+		.filter((element): element is HTMLElement => element !== null);
 
-// The veil is a full-screen clip holding one wide bar (solid black with the
-// soft cosine edge on one end) that is only ever translated: a composited
-// transform, so it stays smooth on phones, unlike animating a mask.
-const barOf = (veil: HTMLElement) => veil.firstElementChild as HTMLElement;
+	fadeAndBlur(keptContent, 14);
+	prepareCtas(ctas);
+	fadeAndBlur(ctas, 10);
 
-function makeVeil(z: number): HTMLElement {
-	const veil = document.createElement('div');
-	veil.setAttribute('aria-hidden', 'true');
-	veil.style.cssText = `position:fixed;inset:0;z-index:${z};pointer-events:none;overflow:hidden;${sweepDir === -1 ? 'transform:scaleX(-1);' : ''}`;
-	const bar = document.createElement('div');
-	bar.style.cssText = 'position:absolute;top:0;bottom:0;left:0;will-change:transform';
-	veil.append(bar);
-	document.documentElement.append(veil);
-	return veil;
-}
+	const exit = content.length
+		? gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut' }).then(() => {})
+		: Promise.resolve();
+	if (content.length) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
 
-// cover: solid, then the edge fading out on the right (it comes in from the
-// left). Otherwise the mirror: the edge on the left, solid after it (the dark
-// leaves to the right).
-function paintBar(veil: HTMLElement, cover: boolean): void {
-	const iw = window.innerWidth;
-	const pad = skewPad();
-	const soft = (2 * SWEEP_W) / 100 * iw;
-	const solidPx = iw + 2 * pad;
-	const barW = solidPx + soft;
-	const solid = solidPx / barW;
-	const steps = 16;
-	const stops: string[] = [];
-	for (let i = 0; i <= steps; i++) {
-		const t = i / steps;
-		const fall = 0.5 + 0.5 * Math.cos(Math.PI * t);
-		stops.push(cover
-			? `rgb(0 0 0 / ${fall.toFixed(3)}) ${((solid + (1 - solid) * t) * 100).toFixed(2)}%`
-			: `rgb(0 0 0 / ${(1 - fall).toFixed(3)}) ${((1 - solid) * t * 100).toFixed(2)}%`);
-	}
-	const bar = barOf(veil);
-	bar.style.width = `${barW}px`;
-	bar.style.background = cover
-		? `linear-gradient(90deg, #000 0, #000 ${solid * 100 - 0.01}%, ${stops.join(', ')})`
-		: `linear-gradient(90deg, ${stops.join(', ')}, #000 100%)`;
-	// Cover: starts wholly off to the left, ends with its solid part over the
-	// screen. Reveal: starts with the solid part over the screen.
-	gsap.set(bar, { x: cover ? -barW - pad : -soft - pad, skewX: SWEEP_SKEW });
-}
-
-function sweepIn(veil: HTMLElement): Promise<void> {
-	return Promise.resolve(gsap.to(barOf(veil), { x: -skewPad(), duration: SWEEP_EXIT_SECONDS, ease: 'sine.inOut' })).then(() => {});
-}
-
-// Choosing a menu link: the dark sweeps over the open menu itself (the menu
-// overlay is z-index 999; the logo and top-bar CTA, 1002, stay above the
-// veil on every page and in the menu), then the navigation starts under full black.
-export function sweepOverMenu(): Promise<void> {
-	tuneSweep();
-	sweepVeil?.remove();
-	sweepDir = 1;
-	const veil = makeVeil(1001);
-	sweepVeil = veil;
-	menuHandoff = true;
-	if (reducedMotion()) {
-		barOf(veil).style.display = 'none';
-		veil.style.background = '#000';
-		veil.style.opacity = '0';
-		return Promise.resolve(gsap.to(veil, { opacity: 1, duration: 0.25, ease: 'none' })).then(() => {});
-	}
-	paintBar(veil, true);
-	return sweepIn(veil);
-}
-
-function startSweepCover(back: boolean): Promise<void> {
-	tuneSweep();
-	sweepDir = back ? -1 : 1;
-	sweepVeil?.remove();
-	const veil = makeVeil(1001);
-	paintBar(veil, true);
-	sweepVeil = veil;
-	return sweepIn(veil);
-}
-
-// Navigation failed or was overtaken: don't leave the page dark.
-function dropSweep(): void {
-	sweepVeil?.remove();
-	sweepVeil = null;
-}
-
-function prepareSweepExit(event: PreparationEvent): void {
-	const sweep = startSweepCover(event.direction === 'back');
 	const load = event.loader;
-	event.loader = async () => {
-		try {
-			await Promise.all([load(), sweep]);
-		} catch (error) {
-			dropSweep();
-			throw error;
-		}
-	};
+	event.loader = async () => { await Promise.all([load(), exit]); };
+}
+
+function fadeAndBlur(elements: HTMLElement[], radius: number): void {
+	if (!elements.length) return;
+	gsap.to(elements, { opacity: 0, duration: 0.75, ease: 'power2.inOut' });
+	gsap.to(elements, { filter: `blur(${radius}px)`, duration: 0.6, delay: 0.15, ease: 'power2.in' });
+}
+
+function prepareCtas(ctas: HTMLElement[]): void {
+	ctas.forEach((cta) => {
+		const style = getComputedStyle(cta);
+		cta.style.transition = 'none';
+		cta.style.pointerEvents = 'none';
+		cta.style.opacity = style.opacity;
+		cta.style.filter = style.filter;
+		cta.style.transform = style.transform === 'none' ? 'none' : style.transform;
+		if (cta.parentElement !== document.body) document.body.append(cta);
+	});
 }
 
 function prepareCaseStudy(event: PreparationEvent): boolean {
@@ -369,19 +273,8 @@ function prepareCaseStudy(event: PreparationEvent): boolean {
 		}).then(() => {});
 	});
 
-	// Once the photo has grown to fill the screen, the dark sweep carries the
-	// navigation (the same transition as every other page).
 	const load = event.loader;
-	event.loader = async () => {
-		try {
-			await Promise.all([load(), open.then(() => startSweepCover(false))]);
-		} catch (error) {
-			dropSweep();
-			caseShot?.remove();
-			caseShot = null;
-			throw error;
-		}
-	};
+	event.loader = async () => { await Promise.all([load(), open]); };
 	return true;
 }
 
@@ -392,7 +285,6 @@ const preloadCaseImage = (event: Event) => {
 	new Image().src = source;
 };
 document.addEventListener('pointerover', preloadCaseImage, { passive: true });
-
 
 function inlineNewStylesheets(event: PreparationEvent): void {
 	const load = event.loader;
@@ -461,12 +353,6 @@ function clearCutClassWhenReady(): void {
 document.addEventListener('astro:after-swap', (rawEvent) => {
 	const event = rawEvent as SwapEvent;
 	const run = activeRun;
-	requestedIncoming = null;
-	menuHandoff = false;
-
-	// The grown project photo (if any) is under the full-black veil by now.
-	caseShot?.remove();
-	caseShot = null;
 
 	if (run.skipNative) {
 		document.documentElement.classList.add('vt-cut');
@@ -479,52 +365,100 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 		ScrollTrigger.update();
 	}
 
-	if (run.kind === 'history') beginHistoryTransition(run.restoreY);
+	if (run.kind === 'case-study') finishCaseStudyTransition();
+	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();
 	activeRun = { ...IDLE_RUN };
 });
 
-// The veil that is lifted off the new page: the one the exit sweep left on
-// <html>, or (menu close, a cut) a fresh one that starts fully dark.
-function takeVeil(): HTMLElement {
-	let veil = sweepVeil;
-	sweepVeil = null;
-	if (!veil) {
-		veil = makeVeil(1001);
-	}
-	veil.style.zIndex = '1001';
-	veil.style.opacity = '';
-	barOf(veil).style.display = '';
-	veil.style.background = '';
-	paintBar(veil, false);
-	return veil;
-}
+function finishCaseStudyTransition(): void {
+	const shot = caseShot;
+	if (!shot) return;
 
-async function liftVeil(veil: HTMLElement): Promise<void> {
-	await nextFrame();
-	await nextFrame();
-	if (reducedMotion()) {
-		barOf(veil).style.display = 'none';
-		veil.style.background = '#000';
-		await gsap.to(veil, { opacity: 0, duration: 0.2, ease: 'none' });
-	} else {
-		await gsap.to(barOf(veil), { x: window.innerWidth + skewPad(), duration: SWEEP_ENTER_SECONDS, ease: 'sine.inOut' });
+	const frame = shot.firstElementChild;
+	if (!frame) {
+		shot.remove();
+		if (caseShot === shot) caseShot = null;
+		transitionReady = Promise.resolve();
+		return;
 	}
-	veil.remove();
+
+	const fade = frame.animate([{ opacity: 1 }, { opacity: 0 }], {
+		duration: 700,
+		easing: 'ease-in-out',
+		fill: 'forwards',
+	});
+	transitionReady = new Promise<void>((resolve) => {
+		const finish = () => {
+			shot.remove();
+			if (caseShot === shot) caseShot = null;
+			resolve();
+		};
+		fade.addEventListener('finish', finish, { once: true });
+		fade.addEventListener('cancel', finish, { once: true });
+	});
 }
 
 function beginBlurIn(): void {
-	const veil = takeVeil();
-	void Promise.all([transitionReady, oncePageLoad()]).then(() => liftVeil(veil));
+	const blur = reducedMotion() ? 0 : 18;
+	const veil = document.createElement('div');
+	veil.setAttribute('aria-hidden', 'true');
+	veil.style.cssText = `position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;opacity:1;will-change:opacity,backdrop-filter;-webkit-backdrop-filter:blur(${blur}px);backdrop-filter:blur(${blur}px)`;
+	document.documentElement.append(veil);
+
+	const loaded = oncePageLoad();
+	const ready = transitionReady;
+	void Promise.all([ready, loaded]).then(async () => {
+		await nextFrame();
+		await nextFrame();
+		const value = { opacity: 1 };
+		const paint = () => {
+			veil.style.opacity = String(value.opacity);
+			const filter = `blur(${(blur * value.opacity).toFixed(1)}px)`;
+			veil.style.backdropFilter = filter;
+			veil.style.setProperty('-webkit-backdrop-filter', filter);
+		};
+		await gsap.to(value, {
+			opacity: 0,
+			duration: blur ? 0.55 : 0.2,
+			ease: 'power2.out',
+			onUpdate: paint,
+		});
+		veil.remove();
+	});
 }
 
 function beginHistoryTransition(scrollY: number | null): void {
-	// Lifted once the restored page is settled (scroll back in place, inits run).
-	const veil = takeVeil();
+	const veil = document.createElement('div');
+	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
+	document.body.append(veil);
+
+	const blur = reducedMotion() ? 0 : 8;
+	const value = { opacity: 1 };
+	const paint = () => {
+		veil.style.opacity = String(value.opacity);
+		if (blur) {
+			const filter = `blur(${(blur * value.opacity).toFixed(2)}px)`;
+			veil.style.backdropFilter = filter;
+			veil.style.setProperty('-webkit-backdrop-filter', filter);
+		}
+	};
+	paint();
+
 	const settled = settleRestoredPage(scrollY);
-	void Promise.all([transitionReady, settled]).then(() => liftVeil(veil));
+	void Promise.all([transitionReady, settled]).then(async () => {
+		await nextFrame();
+		await nextFrame();
+		await gsap.to(value, {
+			opacity: 0,
+			duration: blur ? 0.8 : 0.3,
+			ease: 'power2.out',
+			onUpdate: paint,
+		});
+		veil.remove();
+	});
 }
 
 function settleRestoredPage(scrollY: number | null): Promise<void> {
