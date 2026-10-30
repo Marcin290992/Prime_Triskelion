@@ -155,6 +155,21 @@ function preparePageExit(event: PreparationEvent): void {
 	// The About portrait (filter + mask) can't be re-blurred smoothly: fade
 	// that page to black with opacity only.
 	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo');
+
+	// On phones and tablets fading the live masked/filtered portrait layers
+	// stutters and the page cuts away halfway. One black layer fading in over
+	// the untouched page is a single cheap composite instead.
+	if (heavy && matchMedia('(max-width: 1024px), (pointer: coarse)').matches) {
+		const veil = document.createElement('div');
+		veil.setAttribute('aria-hidden', 'true');
+		veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000;opacity:0;will-change:opacity';
+		document.body.append(veil);
+		const cover = gsap.to(veil, { opacity: 1, duration: 0.5, ease: 'sine.inOut' }).then(() => {});
+		const loadPage = event.loader;
+		event.loader = async () => { await Promise.all([loadPage(), cover]); };
+		return;
+	}
+
 	const exit = content.length
 		? gsap.to(content, { opacity: 0, duration: heavy ? 0.6 : 0.75, ease: heavy ? 'sine.inOut' : 'power2.inOut' }).then(() => {})
 		: Promise.resolve();
