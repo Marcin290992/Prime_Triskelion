@@ -152,10 +152,15 @@ function preparePageExit(event: PreparationEvent): void {
 	prepareCtas(ctas);
 	fadeAndBlur(ctas, 10);
 
+	// About on a touch device: a whole-screen portrait and the pinned scene are
+	// on screen, and blurring them as well as fading is more than a phone
+	// renders smoothly (the picture then just cuts out). Fade only, a touch
+	// longer, there.
+	const fadeOnly = !!document.getElementById('about-mobile') && matchMedia('(pointer: coarse)').matches;
 	const exit = content.length
-		? gsap.to(content, { opacity: 0, duration: 0.75, ease: 'power2.inOut' }).then(() => {})
+		? gsap.to(content, { opacity: 0, duration: fadeOnly ? 0.95 : 0.75, ease: 'power2.inOut' }).then(() => {})
 		: Promise.resolve();
-	if (content.length) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
+	if (content.length && !fadeOnly) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
 
 	const load = event.loader;
 	event.loader = async () => { await Promise.all([load(), exit]); };
