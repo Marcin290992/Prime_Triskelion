@@ -1249,7 +1249,20 @@ import { createLightRays } from '../../utils/lightRays';
 		let heroIO: IntersectionObserver | null = null;
 
 		function stopRaysAnimation() { if (rafId) { cancelAnimationFrame(rafId); rafId = 0; } }
-		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible) rafId = requestAnimationFrame(loop); }
+		function startRaysAnimation() { if (!rafId && !document.hidden && isHeroVisible && !menuOpen) rafId = requestAnimationFrame(loop); }
+
+		// The menu covers the hero: keep the shader from competing with the
+		// menu's own animations for the GPU while it opens (the last frame
+		// stays on the canvas underneath), and pick it up again on close.
+		let menuOpen = document.body.classList.contains('oxygen-menu-open');
+		const menuObserver = new MutationObserver(() => {
+			const open = document.body.classList.contains('oxygen-menu-open');
+			if (open === menuOpen) return;
+			menuOpen = open;
+			if (open) stopRaysAnimation();
+			else startRaysAnimation();
+		});
+		menuObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 		// Lit only while the hero is really in view (same as the subpages'
 		// light, sideRays.js): once most of it has been scrolled past, the
@@ -1285,6 +1298,7 @@ import { createLightRays } from '../../utils/lightRays';
 
 		document.addEventListener('astro:before-swap', () => {
 			cancelAnimationFrame(rafId);
+			menuObserver.disconnect();
 			clearTimeout(raysStopTimer);
 			heroIO?.disconnect();
 			window.removeEventListener('mousemove', onMouseMove as EventListener);
