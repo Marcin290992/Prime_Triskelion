@@ -172,14 +172,16 @@ const deskVars = [
 						</div>
 					</div>
 				</div>
-
-				<div class="sw-mob__slot">
-					<div class="sw-panel sw-panel--final">
-						<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
-					</div>
-				</div>
 			</div>
 
+		</div>
+	</div>
+
+	<!-- Phones and tablets: after the last card the scroll turns downward again
+	     and the closing title rises over the pinned strip from below. -->
+	<div class="sw-mob__final">
+		<div class="sw-panel sw-panel--final">
+			<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 		</div>
 	</div>
 </section>
@@ -193,7 +195,8 @@ const deskVars = [
 
 	/* Exactly one layout is on at a time (the script uses the same query). */
 	.sw-desk,
-	.sw-mob { display: none; }
+	.sw-mob,
+	.sw-mob__final { display: none; }
 
 	/* ═══ Shared pieces ═══ */
 
@@ -567,10 +570,26 @@ const deskVars = [
 			   where the manifesto's pin ends: the row blurs in on the spot,
 			   then travels. */
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-			/* The last panel's text sits mid-screen, so its lower half is empty
+		}
+		.sw-mob__final {
+			--panel-pad: 8vw;
+			--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
+			display: block;
+			position: relative;
+			z-index: 2;
+			/* The closing panel's text sits mid-screen, so its lower half is empty
 			   black: Services (stacked above, z-index 46) is tucked up over it
 			   instead of waiting below. */
 			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
+		}
+		.sw-mob__final .sw-panel {
+			height: 100svh;
+			height: calc(var(--app-stable-vh, 1svh) * 100);
+		}
+		/* Pinned strip: the closing panel is pulled up over its last screen, so
+		   it rises over the pinned cover the moment the travel ends. */
+		.sw-mob.is-active + .sw-mob__final {
+			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
 		}
 	}
 	.sw-mob__sticky {
@@ -594,23 +613,10 @@ const deskVars = [
 		gap: var(--gap);
 		width: max-content;
 		height: 100%;
-		padding-inline: 0 var(--gap);
 	}
 	.sw-mob__track > * { scroll-snap-align: center; }
 	.sw-mob .sw-intro,
 	.sw-mob .sw-panel { align-self: stretch; }
-	.sw-mob__slot {
-		flex: 0 0 100vw;
-		width: 100vw;
-		align-self: stretch;
-		display: flex;
-		position: relative;
-		z-index: 1;
-		/* Cancels the track's right padding: the last slide ends flush. */
-		margin-right: calc(var(--gap) * -1);
-	}
-	.sw-mob__slot .sw-panel { width: 100%; }
-
 
 	/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
 	.sw-mob.is-active .sw-mob__sticky {
@@ -619,21 +625,19 @@ const deskVars = [
 		overflow: hidden;
 		scroll-snap-type: none;
 	}
-	.sw-mob.is-active .sw-mob__track,
-	.sw-mob.is-active .sw-mob__slot .sw-panel { will-change: transform; }
+	.sw-mob.is-active .sw-mob__track { will-change: transform; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
-	   measures: --dist is how far the strip travels, the others where the last
-	   two panels sit). The strip travels 1px per px of scroll. */
+	   measures: --dist is how far the strip travels, --cover-left where the
+	   cover sits). The strip travels 1px per px of scroll. */
 	@supports (animation-timeline: view()) {
 		.sw-mob.is-driven {
 			--enter: calc(var(--app-stable-vh, 1svh) * 70);
 			view-timeline: --swm block;
 		}
 		.sw-mob.is-driven .sw-mob__track,
-		.sw-mob.is-driven .sw-panel__in,
-		.sw-mob.is-driven .sw-mob__slot .sw-panel {
+		.sw-mob.is-driven .sw-panel__in {
 			animation-duration: 1ms;
 			animation-fill-mode: both;
 			animation-timeline: --swm;
@@ -644,25 +648,29 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
-		/* The cover's text drifts as its panel comes in. */
+		/* The cover's text drifts as its panel comes in and settles when the strip ends. */
 		.sw-mob.is-driven .sw-panel--cover .sw-panel__in {
 			animation-name: sw-drift-out;
 			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left) + 100vw);
+			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left));
 		}
-		/* The last panel starts hidden exactly under the cover and ends in its own place. */
-		.sw-mob.is-driven .sw-mob__slot .sw-panel {
-			animation-name: sw-slot-in;
-			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--slot-left) - 100vw) contain calc(var(--enter) + var(--slot-left));
+		/* The closing title rises into place faster than the panel itself
+		   (parallax from below) while the panel covers the pinned strip. */
+		.sw-mob.is-driven + .sw-mob__final {
+			view-timeline: --swf block;
+		}
+		.sw-mob.is-driven + .sw-mob__final .sw-panel--final h2 {
+			animation: sw-final-rise 1ms linear both;
+			animation-timeline: --swf;
+			animation-range: entry 0% entry 100%;
 		}
 	}
 	@keyframes sw-drift-out {
 		from { transform: translate3d(240px, 0, 0); }
-		to { transform: translate3d(-200px, 0, 0); }
+		to { transform: translate3d(0, 0, 0); }
 	}
-	@keyframes sw-slot-in {
-		from { transform: translate3d(calc(-100vw - var(--gap)), 0, 0); }
+	@keyframes sw-final-rise {
+		from { transform: translate3d(0, 38vh, 0); }
 		to { transform: translate3d(0, 0, 0); }
 	}
 </style>
@@ -678,8 +686,8 @@ const deskVars = [
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
 	// The strip is pinned by position: sticky (no pin spacer, no jump) and
-	// moved horizontally by a scrubbed ScrollTrigger; the last panel slides
-	// out from behind the one before it. Without this the strip is a natively
+	// moved horizontally by a scrubbed ScrollTrigger; once it ends, the closing
+	// panel rises over it from below (title parallax). Without this the strip is a natively
 	// swiped, snapping row (see the CSS).
 	let stripMm: gsap.MatchMedia | null = null;
 
@@ -690,11 +698,11 @@ const deskVars = [
 		const root = section.querySelector<HTMLElement>('.sw-mob');
 		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
 		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
-		const slot = root?.querySelector<HTMLElement>('.sw-mob__slot');
-		const last = slot?.querySelector<HTMLElement>('.sw-panel');
+		const final = section.querySelector<HTMLElement>('.sw-mob__final');
+		const finalTitle = final?.querySelector<HTMLElement>('.sw-panel--final h2');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		if (!root || !sticky || !track || !slot || !last || !cover || !coverIn) return;
+		if (!root || !sticky || !track || !final || !finalTitle || !cover || !coverIn) return;
 
 		ScrollTrigger.config({ ignoreMobileResize: true });
 
@@ -704,13 +712,12 @@ const deskVars = [
 			sticky.scrollLeft = 0;
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
-			// The strip stays pinned a little after it ends, so the last panel
-			// does not run off on a quick scroll — kept short: it is dead
-			// scroll between this section and Services.
-			const hold = () => sticky.offsetHeight * 0.15;
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
+			// After the travel the strip stays pinned for one more screen: the
+			// closing panel (pulled up over it, see the CSS) rises over it in
+			// that scroll, so nothing is dead.
+			const setHeight = () => { root.style.height = `${enter() + distance() + sticky.offsetHeight * 2}px`; };
 
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
@@ -720,14 +727,13 @@ const deskVars = [
 					setHeight();
 					root.style.setProperty('--dist', `${distance()}px`);
 					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
-					root.style.setProperty('--slot-left', `${slot.offsetLeft}px`);
 				};
 				place();
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
 					ScrollTrigger.removeEventListener('refreshInit', place);
-					['--dist', '--cover-left', '--slot-left'].forEach((v) => root.style.removeProperty(v));
+					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
 					root.classList.remove('is-driven', 'is-active');
 				};
@@ -782,20 +788,18 @@ const deskVars = [
 			});
 			parallax();
 
-			// The last panel starts hidden exactly under the cover and ends in
-			// its own place.
-			const offset = () => slot.offsetLeft - cover.offsetLeft;
-			gsap.fromTo(last,
-				{ x: () => -offset() },
+			// The closing title rises into place faster than its panel, which
+			// covers the pinned strip from below.
+			gsap.fromTo(finalTitle,
+				{ y: () => window.innerHeight * 0.38 },
 				{
-					x: 0,
+					y: 0,
 					ease: 'none',
 					force3D: true,
 					scrollTrigger: {
-						trigger: slot,
-						containerAnimation: travel,
-						start: 'left right',
-						end: 'center center',
+						trigger: final,
+						start: 'top bottom',
+						end: 'top top',
 						scrub: true,
 						invalidateOnRefresh: true,
 					},
