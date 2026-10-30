@@ -119,7 +119,10 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		};
 		if (!isNativeSwipe) {
 			document.documentElement.classList.add('vt-cut');
-			if (!reducedMotion()) preparePageExit(event);
+			// On touch the browser has already played its own back animation
+			// (the edge swipe): fading the page out on top of it froze the
+			// gesture halfway and then cut hard. Just swap.
+			if (!reducedMotion() && !matchMedia('(pointer: coarse)').matches) preparePageExit(event);
 		}
 	} else {
 		const caseTransition = prepareCaseStudy(event);
@@ -447,8 +450,11 @@ function beginHistoryTransition(scrollY: number | null): void {
 	// Same as beginBlurIn: the About portrait can't be re-blurred behind a
 	// backdrop-filter every frame, so coming back to it is a plain fade.
 	const heavyPage = !!document.querySelector('.am-portrait-img, .ac-photo');
-	const blur = reducedMotion() || heavyPage ? 0 : 8;
-	const value = { opacity: 1 };
+	// On touch the browser's own back animation has just played, so the veil
+	// only softens the swap: starts part-way, short, no blur.
+	const touch = matchMedia('(pointer: coarse)').matches;
+	const blur = reducedMotion() || heavyPage || touch ? 0 : 8;
+	const value = { opacity: touch ? 0.6 : 1 };
 	const paint = () => {
 		veil.style.opacity = String(value.opacity);
 		if (blur) {
@@ -465,9 +471,9 @@ function beginHistoryTransition(scrollY: number | null): void {
 		await nextFrame();
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 1.3 : 0.3,
+			duration: touch ? 0.3 : blur ? 0.8 : heavyPage && !reducedMotion() ? 1.3 : 0.3,
 			// Starts gently: power2.out opened the portrait in the first frames.
-			ease: heavyPage ? 'sine.inOut' : 'power2.out',
+			ease: touch ? 'none' : heavyPage ? 'sine.inOut' : 'power2.out',
 			onUpdate: paint,
 		});
 		veil.remove();
