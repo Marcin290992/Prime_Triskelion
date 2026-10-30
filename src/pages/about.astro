@@ -540,6 +540,11 @@ import portrait from '../img/portrait-top.webp';
     .am-item { font-size: clamp(1.1rem, 1.8vw, 2rem); }
   }
 
+
+  /* The pins here (and their spacers) change the page's height as they open
+     and close; with scroll anchoring on, Chrome nudges scrollTop to "keep
+     its place" and the page jumps when scrolling back up. */
+  :global(html), :global(body) { overflow-anchor: none; }
 </style>
 
 <script>
@@ -549,6 +554,19 @@ import portrait from '../img/portrait-top.webp';
   import { isSafari } from '../utils/isSafari';
 
   gsap.registerPlugin(ScrollTrigger);
+  // The browser's toolbar sliding in/out (it comes back as soon as you scroll
+  // up) resizes the window by a few dozen px. Without this ScrollTrigger
+  // refreshes on that resize — pins and their spacers are measured again
+  // mid-scroll and the page jumps. (Home sets it too, but a visit that starts
+  // on About never ran that code.)
+  ScrollTrigger.config({ ignoreMobileResize: true });
+
+  // The frozen viewport height (px per 1vh, set once in Layout.astro), so a
+  // toolbar-driven resize can't change a pin's length either.
+  const stableVh = () => {
+    const v = parseFloat(document.documentElement.style.getPropertyValue('--app-stable-vh'));
+    return v > 0 ? v * 100 : window.innerHeight;
+  };
 
   // The intro, every device: the title fades out and the black veil lifts
   // off the (black & white) portrait — scrubbed by scroll over .am-reveal
@@ -645,7 +663,7 @@ import portrait from '../img/portrait-top.webp';
         animation: mtl,
         trigger: photo,
         start: 'top top',
-        end: () => `+=${window.innerHeight * 0.7}`,
+        end: () => `+=${stableVh() * 0.7}`,
         pin: true,
         scrub: 1,
         invalidateOnRefresh: true,

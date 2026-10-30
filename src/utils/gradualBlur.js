@@ -52,6 +52,7 @@ export function createGradualBlur(options = {}) {
 
   const root = document.createElement('div');
   root.className = 'gradual-blur';
+  root.dataset.edge = c.position;
   root.setAttribute('aria-hidden', 'true');
   const s = root.style;
   s.zIndex = String(c.zIndex);
@@ -87,8 +88,10 @@ export function createGradualBlur(options = {}) {
     const layer = document.createElement('div');
     layer.className = 'gradual-blur__layer';
     const l = layer.style;
-    l.maskImage = mask;
-    l.webkitMaskImage = mask;
+    // Two masks, picked by CSS (global.css): the soft band, and one that
+    // stays on to the edge for when the outer layers are dropped.
+    l.setProperty('--mask', mask);
+    l.setProperty('--mask-solid', `linear-gradient(${direction}, transparent ${p1}%, black ${p2}%)`);
     l.backdropFilter = filter;
     l.webkitBackdropFilter = filter;
     l.opacity = String(c.opacity);
