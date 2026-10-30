@@ -370,6 +370,9 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 
 	if (run.kind === 'case-study') finishCaseStudyTransition();
 	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
+	// The browser's own swipe-back animation has no veil, but the restored
+	// page still needs its scroll and scrubbed scenes put back in place.
+	else if (run.kind === 'native-history') void settleRestoredPage(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();
