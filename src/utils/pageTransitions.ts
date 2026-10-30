@@ -490,6 +490,11 @@ function settleRestoredPage(scrollY: number | null): Promise<void> {
 			window.scrollTo(0, scrollY);
 		}
 		ScrollTrigger.update();
+		// scrub: 1 would otherwise replay the scene from the start while the
+		// veil lifts, so the restored page looks dark and unfinished.
+		ScrollTrigger.getAll().forEach((st) => {
+			if (st.vars.scrub && st.animation) st.animation.progress(st.progress);
+		});
 	};
 
 	const ready = (async () => {
