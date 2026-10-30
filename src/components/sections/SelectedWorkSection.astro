@@ -146,31 +146,33 @@ const projects = [
 	<div class="hs" id="sw-hs">
 		<div class="hs__sticky">
 			<div class="hs__track">
-				{projects.map((p, i) => {
-					const Tag = p.href ? 'a' : 'div';
-					return (
-						<Tag class:list={['hs__card', i === 0 && 'hs__card--first']} href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
-							<div class="hs__media" data-case-media={p.caseSrc ? '' : undefined}>
-								{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
-								<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 480px, 72vw" loading="eager" decoding="async" />
+				{projects.map((p, i) => (
+					<div class:list={['hs__card', i === 0 && 'hs__card--first']} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
+						<a href={p.href ?? '#'} class="hs__media" data-case-media={p.caseSrc ? '' : undefined}>
+							{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
+							<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 520px, 80vw" loading="eager" decoding="async" />
+						</a>
+						<div class="hs__info">
+							<div>
+								<a href={p.href ?? '#'} class="hs__title-link"><h3>{p.title}</h3></a>
+								<p>{p.desc}</p>
 							</div>
-							<div class="hs__cap">
-								<h3>{p.title}</h3>
-								<span>{p.tags.join(' · ')}</span>
-							</div>
-						</Tag>
-					);
-				})}
+							<a href={p.href ?? '#'} class="link-btn no-border">Explore</a>
+						</div>
+					</div>
+				))}
 
 				<div class="hs__panel hs__panel--cover">
-					<h3>Discover my complete collection of digital experiences, brands, and platforms.</h3>
-					<div class="h-hero-cta-wrap hs__cta">
-						<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-						<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-						<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
-							<span class="hud-spin-border"></span>
-							<span class="h-hero-cta__text">Explore more projects</span>
-						</a>
+					<div class="hs__cover-in">
+						<h3>Discover my complete collection of digital experiences, brands, and platforms.</h3>
+						<div class="h-hero-cta-wrap hs__cta">
+							<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+							<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+							<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
+								<span class="hud-spin-border"></span>
+								<span class="h-hero-cta__text">Explore more projects</span>
+							</a>
+						</div>
 					</div>
 				</div>
 
@@ -497,16 +499,16 @@ const projects = [
 	}
 
 	/* ── Phones/tablets: one horizontal strip, pinned with position: sticky and
-	   moved by the scroll (script below). Desktop has the scene above. ── */
+	   moved by the scroll (script below); the cards are laid out like the desktop
+	   ones (frame, picture with its parallax, title / line / Explore). ── */
 	.hs { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
 		.hs {
 			display: block;
 			position: relative;
-			--hs-gap: clamp(12px, 3vw, 32px);
-			--hs-card-w: min(72vw, calc(var(--app-stable-vh, 1svh) * 52), 480px);
-			--hs-cap-h: 3.5rem;
+			--hs-gap: clamp(12px, 4vw, 32px);
+			--hs-card-w: min(80vw, 520px);
 			/* Side margin that centres the first card and the last panel. */
 			--hs-side: max(0px, calc((100vw - var(--hs-card-w)) / 2 - var(--hs-gap)));
 		}
@@ -533,66 +535,71 @@ const projects = [
 			width: max-content;
 		}
 
+		/* Desktop's card: a frame, the picture, title + line + Explore. */
 		.hs__card {
 			flex: 0 0 var(--hs-card-w);
 			width: var(--hs-card-w);
-			display: block;
-			color: inherit;
-			text-decoration: none;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			gap: 1.1rem;
+			padding: 0.75rem 0.75rem 1.1rem;
+			border: 1px solid rgba(255,255,255,0.06);
+			background: rgba(255,255,255,0.018);
 			scroll-snap-align: center;
-			-webkit-tap-highlight-color: transparent;
 		}
 		.hs__card--first { margin-left: var(--hs-side); }
 		.hs__media {
-			aspect-ratio: 4 / 5;
+			display: block;
+			width: 100%;
+			aspect-ratio: 4 / 3;
 			overflow: hidden;
-			background: #0b0b0d;
-			border: 1px solid rgb(var(--c-cream) / 0.1);
-			contain: paint;
+			background-color: #0d0d0f;
+			border: 1px solid rgba(255,255,255,0.08);
+			box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+			-webkit-tap-highlight-color: transparent;
 		}
-		.hs__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
-		.hs__cap {
-			height: var(--hs-cap-h);
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 1rem;
+		.hs__media img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			transform: scale(1.2);
 		}
-		.hs__cap h3 {
-			margin: 0;
+		.hs__info { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+		.hs__title-link { text-decoration: none; display: block; }
+		.hs__info h3 {
+			margin: 0 0 0.45rem;
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.1rem, 5vw, 1.5rem);
-			line-height: 1;
-			letter-spacing: -0.01em;
+			font-size: clamp(1.25rem, 5.4vw, 1.9rem);
+			letter-spacing: -0.02em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
-		.hs__cap span {
-			flex-shrink: 0;
+		.hs__info p {
+			margin: 0;
 			font-family: var(--f-body);
-			font-size: 10px;
-			font-weight: 500;
-			letter-spacing: 0.28em;
-			text-transform: uppercase;
-			color: rgb(var(--c-cream) / 0.65);
+			font-size: 0.88rem;
+			font-weight: 300;
+			line-height: 1.55;
+			color: rgb(var(--c-cream) / 0.82);
+			max-width: 320px;
 		}
 
-		/* Closing panels: same footprint as a picture, lined up with the pictures'
-		   top edge (the caption's height goes under them). */
+		/* Closing panels: as tall as a card. */
 		.hs__panel {
 			flex: 0 0 var(--hs-card-w);
 			width: var(--hs-card-w);
-			aspect-ratio: 4 / 5;
+			align-self: stretch;
 			box-sizing: border-box;
-			margin-bottom: var(--hs-cap-h);
 			display: flex;
 			flex-direction: column;
-			justify-content: flex-end;
-			gap: 1.25rem;
+			justify-content: center;
+			overflow: hidden;
 			padding: clamp(18px, 5vw, 32px);
 			background: #0b0b0d;
-			border: 1px solid rgb(var(--c-cream) / 0.1);
+			border: 1px solid rgba(255,255,255,0.06);
 			scroll-snap-align: center;
 		}
 		.hs__panel h3 {
@@ -602,22 +609,25 @@ const projects = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
-		/* The panel that covers the last one. */
+		/* The panel that covers the last one; its text drifts (parallax) like the desktop curtain. */
 		.hs__panel--cover { position: relative; z-index: 2; }
-		.hs__panel--cover h3 { font-size: calc(var(--hs-card-w) * 0.075); line-height: 1.1; letter-spacing: -0.01em; }
+		.hs__cover-in { display: flex; flex-direction: column; gap: 1.5rem; will-change: transform; }
+		.hs__panel--cover h3 { font-size: clamp(1.15rem, 5.2vw, 1.7rem); line-height: 1.1; letter-spacing: -0.02em; }
 		.hs__cta { width: auto !important; margin: 0; }
 		/* The last one slides out from behind it. The slot keeps its place. */
 		.hs__slot {
 			flex: 0 0 var(--hs-card-w);
 			width: var(--hs-card-w);
+			align-self: stretch;
+			display: flex;
 			margin-inline: var(--hs-side);
 			position: relative;
 			z-index: 1;
 			scroll-snap-align: center;
 		}
-		.hs__slot .hs__panel { width: 100%; justify-content: center; align-items: center; }
+		.hs__slot .hs__panel { width: 100%; align-items: center; }
 		.hs__panel--final h3 {
-			font-size: calc(var(--hs-card-w) * 0.105);
+			font-size: calc(var(--hs-card-w) * 0.115);
 			line-height: 0.88;
 			letter-spacing: -0.04em;
 			text-align: center;
@@ -693,10 +703,45 @@ const projects = [
 			setHeight();
 			ScrollTrigger.addEventListener('refreshInit', setHeight);
 
+			// Offsets for the parallax are measured here (init + refresh), not per frame.
+			const cards = Array.from(hs.querySelectorAll<HTMLElement>('.hs__card')).map(el => ({
+				img: el.querySelector<HTMLElement>('.hs__media img')!,
+				left: 0,
+				width: 0,
+				el,
+			}));
+			const coverIn = cover.querySelector<HTMLElement>('.hs__cover-in');
+			let coverLeft = 0;
+			const measure = () => {
+				cards.forEach(c => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
+				coverLeft = cover.offsetLeft;
+			};
+			measure();
+			ScrollTrigger.addEventListener('refreshInit', measure);
+
+			// Same moves as the desktop scene: each picture drifts inside its frame,
+			// the closing text drifts as its panel comes in.
+			const parallax = () => {
+				const x = -(gsap.getProperty(track, 'x') as number);
+				const vw = window.innerWidth;
+				cards.forEach(c => {
+					const left = c.left - x;
+					if (left < vw && left + c.width > 0) {
+						const ip = (left + c.width / 2 - vw / 2) / vw;
+						c.img.style.transform = `scale(1.2) translate3d(${(ip * 8).toFixed(2)}%,0,0)`;
+					}
+				});
+				if (coverIn) {
+					const cp = (coverLeft - x) / vw;
+					if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 120).toFixed(1)}px,0,0)`;
+				}
+			};
+
 			const tween = gsap.to(track, {
 				x: () => -distance(),
 				ease: 'none',
 				force3D: true,
+				onUpdate: parallax,
 				scrollTrigger: {
 					trigger: hs,
 					start: 'top top',
@@ -706,6 +751,7 @@ const projects = [
 					onUpdate: self => setBar(self.progress),
 				},
 			});
+			parallax();
 
 			// Start hidden exactly under the cover panel; end in its own place.
 			const offset = () => slot.offsetLeft - cover.offsetLeft;
@@ -727,6 +773,7 @@ const projects = [
 
 			return () => {
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
+				ScrollTrigger.removeEventListener('refreshInit', measure);
 				hs.style.height = '';
 				hs.classList.remove('is-active');
 			};
