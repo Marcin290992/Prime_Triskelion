@@ -465,8 +465,9 @@ function beginHistoryTransition(scrollY: number | null): void {
 		await nextFrame();
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 0.7 : 0.3,
-			ease: 'power2.out',
+			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 1.3 : 0.3,
+			// Starts gently: power2.out opened the portrait in the first frames.
+			ease: heavyPage ? 'sine.inOut' : 'power2.out',
 			onUpdate: paint,
 		});
 		veil.remove();
