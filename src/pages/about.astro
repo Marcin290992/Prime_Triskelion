@@ -92,6 +92,7 @@ import portrait from '../img/portrait-top.webp';
     padding-right: var(--site-gutter, 2rem);
   }
   .ac-photo {
+    position: relative;
     grid-column: 1;
     grid-row: 1;
     height: 100svh;
@@ -127,6 +128,18 @@ import portrait from '../img/portrait-top.webp';
     mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
   }
   .ac-scroll { will-change: transform; }
+  /* Pre-blurred twin of the portrait (added by script on phones/tablets). */
+  .ac-photo__blur {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 72%;
+    filter: grayscale(1) contrast(1.1) brightness(0.9) blur(26px);
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
   /* The fire and the closing line: in the page's flow, under the scene. */
   .ac-after {
     position: relative;
@@ -613,9 +626,22 @@ import portrait from '../img/portrait-top.webp';
     // under it, and the page scrolls on normally.
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
       const mtl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
-      // No blur on phones: a 48px blur on the masked portrait janks and snaps on back.
-      mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 1, ease: 'sine.out' }, 0);
-      if (img) mtl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: 1, ease: 'sine.out' }, 0);
+      // Animating a CSS blur on the masked portrait janks on phones. Instead a
+      // second copy is blurred once, statically (one cached raster), and only
+      // its opacity/scale are scrubbed — a cross-fade from soft to sharp.
+      mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'sine.out' }, 0);
+      if (img) {
+        photo.querySelector('.ac-photo__blur')?.remove();
+        const soft = img.cloneNode(false) as HTMLImageElement;
+        soft.classList.add('ac-photo__blur');
+        soft.removeAttribute('id');
+        soft.setAttribute('aria-hidden', 'true');
+        soft.alt = '';
+        soft.loading = 'eager';
+        photo.appendChild(soft);
+        mtl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: 1, ease: 'sine.out' }, 0);
+        mtl.fromTo(soft, { opacity: 1, scale: 1.3 }, { opacity: 0, scale: 1.1, duration: 1, ease: 'sine.inOut' }, 0);
+      }
       _acST = ScrollTrigger.create({
         animation: mtl,
         trigger: photo,
