@@ -567,6 +567,10 @@ const deskVars = [
 			   where the manifesto's pin ends: the row blurs in on the spot,
 			   then travels. */
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			/* The last panel's text sits mid-screen, so its lower half is empty
+			   black: Services (stacked above, z-index 46) is tucked up over it
+			   instead of waiting below. */
+			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
 		}
 	}
 	.sw-mob__sticky {
