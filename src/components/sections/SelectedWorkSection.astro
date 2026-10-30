@@ -528,6 +528,7 @@ const projects = [
 		}
 		.hs__sticky::-webkit-scrollbar { display: none; }
 		.hs__track {
+			height: 100%;
 			display: flex;
 			align-items: center;
 			gap: var(--hs-gap);
@@ -587,19 +588,22 @@ const projects = [
 			max-width: 320px;
 		}
 
-		/* Closing panels: as tall as a card. */
+		/* The last two slides work as on the desktop: a whole screen each, in the
+		   page's own background (no frame). The first one's text drifts as it comes
+		   in; the second slides out from behind it. */
 		.hs__panel {
-			flex: 0 0 var(--hs-card-w);
-			width: var(--hs-card-w);
+			flex: 0 0 100vw;
+			width: 100vw;
 			align-self: stretch;
 			box-sizing: border-box;
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
+			align-items: center;
+			text-align: center;
 			overflow: hidden;
-			padding: clamp(18px, 5vw, 32px);
-			background: #0b0b0d;
-			border: 1px solid rgba(255,255,255,0.06);
+			padding: 0 8vw;
+			background: rgb(var(--c-bg));
 			scroll-snap-align: center;
 		}
 		.hs__panel h3 {
@@ -609,28 +613,26 @@ const projects = [
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
-		/* The panel that covers the last one; its text drifts (parallax) like the desktop curtain. */
 		.hs__panel--cover { position: relative; z-index: 2; }
-		.hs__cover-in { display: flex; flex-direction: column; gap: 1.5rem; will-change: transform; }
-		.hs__panel--cover h3 { font-size: clamp(1.15rem, 5.2vw, 1.7rem); line-height: 1.1; letter-spacing: -0.02em; }
+		.hs__cover-in { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; will-change: transform; }
+		.hs__panel--cover h3 { font-size: clamp(1.5rem, 6.8vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
 		.hs__cta { width: auto !important; margin: 0; }
-		/* The last one slides out from behind it. The slot keeps its place. */
 		.hs__slot {
-			flex: 0 0 var(--hs-card-w);
-			width: var(--hs-card-w);
+			flex: 0 0 100vw;
+			width: 100vw;
 			align-self: stretch;
 			display: flex;
-			margin-inline: var(--hs-side);
+			/* Cancels the track's right padding: the last slide ends flush. */
+			margin-right: calc(var(--hs-gap) * -1);
 			position: relative;
 			z-index: 1;
 			scroll-snap-align: center;
 		}
-		.hs__slot .hs__panel { width: 100%; align-items: center; }
+		.hs__slot .hs__panel { width: 100%; }
 		.hs__panel--final h3 {
-			font-size: calc(var(--hs-card-w) * 0.115);
-			line-height: 0.88;
+			font-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
+			line-height: 0.85;
 			letter-spacing: -0.04em;
-			text-align: center;
 		}
 
 		.hs__progress {
@@ -733,7 +735,7 @@ const projects = [
 				});
 				if (coverIn) {
 					const cp = (coverLeft - x) / vw;
-					if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 120).toFixed(1)}px,0,0)`;
+					if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 				}
 			};
 
