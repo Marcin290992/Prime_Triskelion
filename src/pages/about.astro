@@ -632,9 +632,20 @@ import portrait from '../img/portrait-top.webp';
         scrub: 1,
         invalidateOnRefresh: true,
       });
+      // The copy stays in the flow: as the page scrolls on, each paragraph and
+      // line of the list comes out of the dark in place, one after another from
+      // the top (the desktop scene's version of the same).
+      const lines = Array.from(inner.querySelectorAll<HTMLElement>('.ac-body, .am-item'));
+      gsap.set(lines, { opacity: 0, filter: 'blur(12px)' });
+      const copyST = ScrollTrigger.batch(lines, {
+        start: 'top 90%',
+        once: true,
+        onEnter: (batch) => gsap.to(batch, { opacity: 1, filter: 'blur(0px)', duration: 1.1, ease: 'sine.out', stagger: 0.14, overwrite: true }),
+      });
       document.addEventListener('astro:before-swap', () => {
         _acST?.kill();
         _acST = null;
+        copyST.forEach((st) => st.kill());
       }, { once: true });
       return;
     }
