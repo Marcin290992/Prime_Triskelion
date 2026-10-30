@@ -39,9 +39,9 @@ const projects = [
 					<a href="/projects" class="link-btn no-border">View All Projects</a>
 				</div>
 
-				<div class="slide slide-card card-fade" data-case data-case-src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2400&auto=format&fit=crop">
+				<div class="slide slide-card card-fade" data-case data-case-src={deeer2Full.src}>
 					<a href="/winds-of-sinai" class="img-box" data-case-media>
-						<img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Winds Of Sinai">
+						<Image src={deeer2} class="img-parallax" alt="Winds Of Sinai" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -54,7 +54,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/unfallfix24" class="img-box">
-						<img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="UnfallFix24">
+						<Image src={deeer2} class="img-parallax" alt="UnfallFix24" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -67,7 +67,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="/work/mousa-export" class="img-box">
-						<img src="https://images.unsplash.com/photo-1494412574643-ff11b0a5c1c3?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Mousa Export">
+						<Image src={deeer2} class="img-parallax" alt="Mousa Export" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -80,7 +80,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Steak Club">
+						<Image src={deeer2} class="img-parallax" alt="Steak Club" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -93,7 +93,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Josh Jabs">
+						<Image src={deeer2} class="img-parallax" alt="Josh Jabs" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -106,7 +106,7 @@ const projects = [
 
 				<div class="slide slide-card card-anim">
 					<a href="#" class="img-box">
-						<img src="https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=1200&auto=format&fit=crop" class="img-parallax" alt="Umzugsservice">
+						<Image src={deeer2} class="img-parallax" alt="Umzugsservice" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
 					</a>
 					<div class="card-info">
 						<div>
@@ -250,7 +250,8 @@ const projects = [
 		gap: 10vw;
 		will-change: transform;
 	}
-	.slide { flex-shrink: 0; will-change: transform, opacity; }
+	.slide { flex-shrink: 0; }
+	.img-parallax { will-change: transform; backface-visibility: hidden; }
 
 	/* Intro */
 	.slide-intro { width: 100vw; text-align: center; }
@@ -919,7 +920,6 @@ const projects = [
 			const e = 1 - (1 - t) * (1 - t); // comes in at once, then settles
 			sv.style.opacity = e > 0 ? '1' : '0';
 			tr.style.opacity = String(e);
-			tr.style.filter = e < 1 ? `blur(${((1 - e) * 10).toFixed(1)}px)` : '';
 
 			const vw = window.innerWidth;
 
