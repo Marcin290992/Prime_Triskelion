@@ -126,7 +126,8 @@ import portrait from '../img/portrait-top.webp';
     -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
     mask-image: linear-gradient(180deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
   }
-  .ac-scroll { will-change: transform; }
+  .ac-scroll .ac-body,
+  .ac-scroll .am-item { will-change: opacity, filter; }
   /* The fire and the closing line: in the page's flow, under the scene. */
   .ac-after {
     position: relative;
@@ -631,15 +632,26 @@ import portrait from '../img/portrait-top.webp';
         scrub: 1,
         invalidateOnRefresh: true,
       });
+      // The copy stays in the flow: as the page scrolls on, each paragraph and
+      // line of the list comes out of the dark in place, one after another from
+      // the top (the desktop scene's version of the same).
+      const lines = Array.from(inner.querySelectorAll<HTMLElement>('.ac-body, .am-item'));
+      gsap.set(lines, { opacity: 0, filter: 'blur(12px)' });
+      const copyST = ScrollTrigger.batch(lines, {
+        start: 'top 90%',
+        once: true,
+        onEnter: (batch) => gsap.to(batch, { opacity: 1, filter: 'blur(0px)', duration: 1.1, ease: 'sine.out', stagger: 0.14, overwrite: true }),
+      });
       document.addEventListener('astro:before-swap', () => {
         _acST?.kill();
         _acST = null;
+        copyST.forEach((st) => st.kill());
       }, { once: true });
       return;
     }
 
-    // Scroll distance: the portrait develops first, then the copy rises
-    // from below the screen to its place beside it.
+    // Scroll distance: the portrait develops first, then the copy comes out
+    // of the dark beside it.
     const travel = () => window.innerHeight + inner.offsetHeight;
     const develop = 0.14;
     // The scene's own length (the pin holds for 62% of it, see `end`).
@@ -653,9 +665,13 @@ import portrait from '../img/portrait-top.webp';
     if (img) {
       tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop, ease: 'sine.out' }, 0);
     }
-    // The copy rises from below and comes to rest in the middle, beside the
-    // portrait.
-    tl.fromTo(inner, { y: () => travel() / 2 }, { y: 0, duration: 0.36, ease: 'sine.out' }, develop);
+    // The copy doesn't move: each paragraph and line of the list comes up out
+    // of the dark in place, from a blur, one after the other from top to
+    // bottom.
+    tl.fromTo(inner.querySelectorAll('.ac-body, .am-item'),
+      { opacity: 0, filter: 'blur(14px)' },
+      { opacity: 1, filter: 'blur(0px)', duration: 0.14, ease: 'sine.out', stagger: { amount: 0.22 } },
+      develop);
     // …and it stays there, at rest: the pin lets go and the page scrolls
     // on normally to the closing line.
     tl.to({}, { duration: 0.12 }, develop + 0.36);
