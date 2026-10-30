@@ -613,7 +613,8 @@ import portrait from '../img/portrait-top.webp';
     // under it, and the page scrolls on normally.
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
       const mtl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
-      mtl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: 1, ease: 'power2.out' }, 0);
+      // No blur on phones: a 48px blur on the masked portrait janks and snaps on back.
+      mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 1, ease: 'sine.out' }, 0);
       if (img) mtl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: 1, ease: 'sine.out' }, 0);
       _acST = ScrollTrigger.create({
         animation: mtl,
