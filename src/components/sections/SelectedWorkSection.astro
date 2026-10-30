@@ -139,43 +139,49 @@ const projects = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the work as a carousel you swipe — native
-	     horizontal scroll that snaps card to card (no script per frame),
-	     the next card peeking in. Desktop keeps the horizontal scene above. -->
-	<div class="sw-m">
-		<div class="sw-m__track" aria-label="Selected work">
-			{projects.map((p) => {
-				const Tag = p.href ? 'a' : 'div';
-				return (
-					<Tag class="sw-m__card" href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
-						<div class="sw-m__media" data-case-media={p.caseSrc ? '' : undefined}>
-							{/* Eager, not lazy: Safari only starts a lazy image once it's
-							    nearly in view, so swiping showed the next card empty and its
-							    picture popping in. Six card-sized images, loaded with the page. */}
-							<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 78vw, 82vw" loading="eager" decoding="async" />
-						</div>
-						<div class="sw-m__bar">
-							<div class="sw-m__text">
-								<h3 class="sw-m__title">{p.title}</h3>
-								<p class="sw-m__desc">{p.desc}</p>
-								<span class="sw-m__tags">{p.tags.join(' · ')}</span>
+	<!-- Phones and tablets: the work as one horizontal strip. The section is
+	     pinned with position: sticky and the strip is moved by the scroll
+	     (initWorkHs); without the script (or with reduced motion) it is a
+	     natively swiped, snapping row. Desktop keeps the scene above. -->
+	<div class="hs" id="sw-hs">
+		<div class="hs__sticky">
+			<div class="hs__track">
+				{projects.map((p, i) => {
+					const Tag = p.href ? 'a' : 'div';
+					return (
+						<Tag class:list={['hs__card', i === 0 && 'hs__card--first']} href={p.href} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
+							<div class="hs__media" data-case-media={p.caseSrc ? '' : undefined}>
+								{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
+								<Image src={p.img} alt="" widths={[480, 800, 1200]} sizes="(min-width: 700px) 480px, 72vw" loading="eager" decoding="async" />
 							</div>
-						</div>
-					</Tag>
-				);
-			})}
-		</div>
-		<div class="sw-m__foot">
-			<div class="sw-m__progress" aria-hidden="true"><span></span></div>
-			<span class="sw-m__count" aria-hidden="true">01 / {String(projects.length).padStart(2, '0')}</span>
-		</div>
-		<div class="h-hero-cta-wrap sw-m__cta">
-			<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-			<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-			<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
-				<span class="hud-spin-border"></span>
-				<span class="h-hero-cta__text">View all projects</span>
-			</a>
+							<div class="hs__cap">
+								<h3>{p.title}</h3>
+								<span>{p.tags.join(' · ')}</span>
+							</div>
+						</Tag>
+					);
+				})}
+
+				<div class="hs__panel hs__panel--cover">
+					<h3>Discover my complete collection of digital experiences, brands, and platforms.</h3>
+					<div class="h-hero-cta-wrap hs__cta">
+						<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+						<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+						<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
+							<span class="hud-spin-border"></span>
+							<span class="h-hero-cta__text">Explore more projects</span>
+						</a>
+					</div>
+				</div>
+
+				<div class="hs__slot">
+					<div class="hs__panel hs__panel--final">
+						<h3>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h3>
+					</div>
+				</div>
+			</div>
+
+			<div class="hs__progress" aria-hidden="true"><span></span></div>
 		</div>
 	</div>
 </section>
@@ -490,182 +496,246 @@ const projects = [
 		.final-title { font-size: min(11vw, 13.5vh); }
 	}
 
-	/* ── Phones/tablets carousel (desktop has the horizontal scene) ── */
-	.sw-m { display: none; }
+	/* ── Phones/tablets: one horizontal strip, pinned with position: sticky and
+	   moved by the scroll (script below). Desktop has the scene above. ── */
+	.hs { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-header__title { font-size: clamp(2.4rem, 10vw, 5rem); }
-		.sw-m {
+		.hs {
 			display: block;
-			padding-bottom: clamp(3.5rem, 10vw, 5.5rem);
-		}
-		.sw-m__track {
-			display: flex;
-			gap: 0.75rem;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: var(--site-gutter);
-			padding: 0 var(--site-gutter);
-			scrollbar-width: none;
-			-webkit-overflow-scrolling: touch;
-		}
-		.sw-m__track::-webkit-scrollbar { display: none; }
-		.sw-m__card {
 			position: relative;
-			flex: 0 0 82%;
-			scroll-snap-align: start;
-			aspect-ratio: 4 / 5;
-			max-height: 66vh;
-			overflow: hidden;
+			--hs-gap: clamp(12px, 3vw, 32px);
+			--hs-card-w: min(72vw, calc(var(--app-stable-vh, 1svh) * 52), 480px);
+			--hs-cap-h: 3.5rem;
+			/* Side margin that centres the first card and the last panel. */
+			--hs-side: max(0px, calc((100vw - var(--hs-card-w)) / 2 - var(--hs-gap)));
+		}
+		.hs__sticky {
+			height: 100svh;
+			height: calc(var(--app-stable-vh, 1svh) * 100);
+			box-sizing: border-box;
+			padding-bottom: 4rem;
+			display: flex;
+			align-items: center;
+			/* No script / reduced motion: a natively swiped row that snaps. */
+			overflow-x: auto;
+			overflow-y: hidden;
+			scroll-snap-type: x mandatory;
+			overscroll-behavior-x: contain;
+			scrollbar-width: none;
+		}
+		.hs__sticky::-webkit-scrollbar { display: none; }
+		.hs__track {
+			display: flex;
+			align-items: center;
+			gap: var(--hs-gap);
+			padding-inline: var(--hs-gap);
+			width: max-content;
+		}
+
+		.hs__card {
+			flex: 0 0 var(--hs-card-w);
+			width: var(--hs-card-w);
 			display: block;
 			color: inherit;
 			text-decoration: none;
-			background: #0b0b0d;
-			border: 1px solid rgb(var(--c-cream) / 0.1);
+			scroll-snap-align: center;
 			-webkit-tap-highlight-color: transparent;
 		}
-		.sw-m__media { position: absolute; inset: 0; }
-		.sw-m__media img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			display: block;
+		.hs__card--first { margin-left: var(--hs-side); }
+		.hs__media {
+			aspect-ratio: 4 / 5;
+			overflow: hidden;
+			background: #0b0b0d;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			contain: paint;
 		}
-		/* Legibility for the bar at the foot. */
-		.sw-m__media::after {
-			content: '';
-			position: absolute;
-			inset: 0;
-			background: linear-gradient(to top, rgb(0 0 0 / 0.75) 0%, rgb(0 0 0 / 0.15) 45%, transparent 70%);
-		}
-		/* Same glass info bar as the Projects page cards. */
-		.sw-m__bar {
-			position: absolute;
-			left: 0.75rem;
-			right: 0.75rem;
-			bottom: 0.75rem;
+		.hs__media img { display: block; width: 100%; height: 100%; object-fit: cover; }
+		.hs__cap {
+			height: var(--hs-cap-h);
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
 			gap: 1rem;
-			padding: 1rem 1.1rem;
-			background: rgb(var(--c-bg) / 0.38);
-			-webkit-backdrop-filter: blur(20px) saturate(160%);
-			backdrop-filter: blur(20px) saturate(160%);
-			border: 1px solid rgb(255 255 255 / 0.1);
 		}
-		.sw-m__text { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
-		.sw-m__title {
+		.hs__cap h3 {
 			margin: 0;
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.35rem, 6vw, 1.9rem);
+			font-size: clamp(1.1rem, 5vw, 1.5rem);
 			line-height: 1;
 			letter-spacing: -0.01em;
 			text-transform: uppercase;
 			color: rgb(var(--c-cream));
 		}
-		.sw-m__desc {
-			margin: 0;
-			font-family: var(--f-body);
-			font-size: 0.82rem;
-			font-weight: 300;
-			line-height: 1.45;
-			color: rgb(var(--c-cream) / 0.75);
-		}
-		.sw-m__tags {
+		.hs__cap span {
+			flex-shrink: 0;
 			font-family: var(--f-body);
 			font-size: 10px;
 			font-weight: 500;
-			letter-spacing: 0.32em;
+			letter-spacing: 0.28em;
 			text-transform: uppercase;
-			color: rgb(var(--c-cream) / 0.7);
+			color: rgb(var(--c-cream) / 0.65);
 		}
-		/* Where in the row you are. */
-		.sw-m__foot {
+
+		/* Closing panels: same footprint as a picture, lined up with the pictures'
+		   top edge (the caption's height goes under them). */
+		.hs__panel {
+			flex: 0 0 var(--hs-card-w);
+			width: var(--hs-card-w);
+			aspect-ratio: 4 / 5;
+			box-sizing: border-box;
+			margin-bottom: var(--hs-cap-h);
 			display: flex;
-			align-items: center;
-			gap: 1rem;
-			padding: 1.25rem var(--site-gutter) 0;
+			flex-direction: column;
+			justify-content: flex-end;
+			gap: 1.25rem;
+			padding: clamp(18px, 5vw, 32px);
+			background: #0b0b0d;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			scroll-snap-align: center;
 		}
-		.sw-m__progress {
-			flex: 1 1 auto;
+		.hs__panel h3 {
+			margin: 0;
+			font-family: var(--f-display);
+			font-weight: 600;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream));
+		}
+		/* The panel that covers the last one. */
+		.hs__panel--cover { position: relative; z-index: 2; }
+		.hs__panel--cover h3 { font-size: calc(var(--hs-card-w) * 0.075); line-height: 1.1; letter-spacing: -0.01em; }
+		.hs__cta { width: auto !important; margin: 0; }
+		/* The last one slides out from behind it. The slot keeps its place. */
+		.hs__slot {
+			flex: 0 0 var(--hs-card-w);
+			width: var(--hs-card-w);
+			margin-inline: var(--hs-side);
+			position: relative;
+			z-index: 1;
+			scroll-snap-align: center;
+		}
+		.hs__slot .hs__panel { width: 100%; justify-content: center; align-items: center; }
+		.hs__panel--final h3 {
+			font-size: calc(var(--hs-card-w) * 0.105);
+			line-height: 0.88;
+			letter-spacing: -0.04em;
+			text-align: center;
+		}
+
+		.hs__progress {
+			position: absolute;
+			left: var(--site-gutter);
+			right: var(--site-gutter);
+			bottom: 6.5rem;
 			height: 1px;
 			background: rgb(var(--c-cream) / 0.14);
-			overflow: hidden;
+			display: none;
 		}
-		.sw-m__progress span {
+		.hs__progress span {
 			display: block;
 			height: 100%;
 			background: rgb(var(--c-red));
+			transform: scaleX(0);
 			transform-origin: left center;
-			transform: scaleX(var(--p, 0.1667));
-			transition: transform 0.2s linear;
 		}
-		.sw-m__count {
-			font-family: var(--f-body);
-			font-size: 11px;
-			font-weight: 500;
-			letter-spacing: 0.28em;
-			font-variant-numeric: tabular-nums;
-			color: rgb(var(--c-cream) / 0.6);
+
+		/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
+		.hs.is-active .hs__sticky {
+			position: sticky;
+			top: 0;
+			overflow: hidden;
+			scroll-snap-type: none;
 		}
-		.sw-m__cta { margin: 1.75rem var(--site-gutter) 0; width: auto !important; }
-		/* Tablet width: still one main card with the next peeking in (as on
-		   a phone), in a landscape frame — 4:5 at this width ran taller
-		   than the screen. */
-		@media (min-width: 700px) {
-			.sw-m__card { flex-basis: 78%; aspect-ratio: 3 / 2; max-height: 70vh; }
-			.sw-m__cta { margin-inline: var(--site-gutter) auto; }
-		}
+		.hs.is-active .hs__track { will-change: transform; }
+		.hs.is-active .hs__slot .hs__panel { will-change: transform; }
+		.hs.is-active .hs__progress { display: block; }
 	}
 </style>
 
 <script>
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
 
-	// Phones/tablets: the carousel scrolls natively; this only keeps the
-	// counter and the progress hairline in step (on scroll, a frame at most).
-	let _workCarouselOff: (() => void) | null = null;
-	function initWorkCarousel(section: HTMLElement) {
-		_workCarouselOff?.();
-		_workCarouselOff = null;
-		const track = section.querySelector<HTMLElement>('.sw-m__track');
-		const cards = Array.from(section.querySelectorAll<HTMLElement>('.sw-m__card'));
-		const bar = section.querySelector<HTMLElement>('.sw-m__progress');
-		const count = section.querySelector<HTMLElement>('.sw-m__count');
-		if (!track || cards.length < 2) return;
-		const total = String(cards.length).padStart(2, '0');
-		let ticking = false;
-		let shown = -1;
-		const update = () => {
-			ticking = false;
-			// The card nearest the start edge; the last one once the row is
-			// scrolled to its end (on a tablet a few are in view at once).
-			const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
-			const atEnd = track.scrollLeft >= track.scrollWidth - track.clientWidth - 2;
-			let i = cards.length - 1;
-			if (!atEnd) {
-				let best = Infinity;
-				cards.forEach((c, k) => {
-					const d = Math.abs(c.offsetLeft - pad - track.scrollLeft);
-					if (d < best) { best = d; i = k; }
+	// Phones/tablets: the strip is pinned by position: sticky (no pin spacer, no
+	// jump) and moved horizontally by a scrubbed ScrollTrigger; the last panel
+	// slides out from behind the one before it. Without this the strip is a
+	// natively swiped, snapping row (see the CSS).
+	let _hsMm: gsap.MatchMedia | null = null;
+	function initWorkHs(section: HTMLElement) {
+		_hsMm?.revert();
+		_hsMm = null;
+		const hs = section.querySelector<HTMLElement>('#sw-hs');
+		const sticky = hs?.querySelector<HTMLElement>('.hs__sticky');
+		const track = hs?.querySelector<HTMLElement>('.hs__track');
+		const bar = hs?.querySelector<HTMLElement>('.hs__progress span');
+		const slot = hs?.querySelector<HTMLElement>('.hs__slot');
+		const slide = slot?.querySelector<HTMLElement>('.hs__panel');
+		const cover = hs?.querySelector<HTMLElement>('.hs__panel--cover');
+		if (!hs || !sticky || !track || !bar || !slot || !slide || !cover) return;
+
+		gsap.registerPlugin(ScrollTrigger);
+		ScrollTrigger.config({ ignoreMobileResize: true });
+		const setBar = gsap.quickSetter(bar, 'scaleX');
+
+		const mm = gsap.matchMedia();
+		_hsMm = mm;
+		mm.add('(prefers-reduced-motion: no-preference)', () => {
+			hs.classList.add('is-active');
+			sticky.scrollLeft = 0;
+
+			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
+			// The strip stays pinned a little after it ends, so the last panel
+			// does not run off on a quick scroll.
+			const hold = () => sticky.offsetHeight * 0.5;
+			const setHeight = () => { hs.style.height = distance() + hold() + sticky.offsetHeight + 'px'; };
+			setHeight();
+			ScrollTrigger.addEventListener('refreshInit', setHeight);
+
+			const tween = gsap.to(track, {
+				x: () => -distance(),
+				ease: 'none',
+				force3D: true,
+				scrollTrigger: {
+					trigger: hs,
+					start: 'top top',
+					end: () => '+=' + distance(),
+					scrub: 0.3,
+					invalidateOnRefresh: true,
+					onUpdate: self => setBar(self.progress),
+				},
+			});
+
+			// Start hidden exactly under the cover panel; end in its own place.
+			const offset = () => slot.offsetLeft - cover.offsetLeft;
+			gsap.fromTo(slide,
+				{ x: () => -offset() },
+				{
+					x: 0,
+					ease: 'none',
+					force3D: true,
+					scrollTrigger: {
+						trigger: slot,
+						containerAnimation: tween,
+						start: 'left right',
+						end: 'center center',
+						scrub: true,
+						invalidateOnRefresh: true,
+					},
 				});
-			}
-			bar?.style.setProperty('--p', ((i + 1) / cards.length).toFixed(4));
-			if (i !== shown && count) {
-				shown = i;
-				count.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
-			}
-		};
-		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-		track.addEventListener('scroll', onScroll, { passive: true });
-		update();
-		_workCarouselOff = () => track.removeEventListener('scroll', onScroll);
+
+			return () => {
+				ScrollTrigger.removeEventListener('refreshInit', setHeight);
+				hs.style.height = '';
+				hs.classList.remove('is-active');
+			};
+		});
+		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
 	document.addEventListener('astro:before-swap', () => {
-		_workCarouselOff?.();
-		_workCarouselOff = null;
+		_hsMm?.revert();
+		_hsMm = null;
 	});
 
 	function initSelectedWork() {
@@ -674,7 +744,7 @@ const projects = [
 
 		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
 			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
-			initWorkCarousel(section);
+			initWorkHs(section);
 			return;
 		}
 
