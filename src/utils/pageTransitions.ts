@@ -152,15 +152,13 @@ function preparePageExit(event: PreparationEvent): void {
 	prepareCtas(ctas);
 	fadeAndBlur(ctas, 10);
 
-	// About on a touch device: a whole-screen portrait and the pinned scene are
-	// on screen, and blurring them as well as fading is more than a phone
-	// renders smoothly (the picture then just cuts out). Fade only, a touch
-	// longer, there.
-	const fadeOnly = !!document.getElementById('about-mobile') && matchMedia('(pointer: coarse)').matches;
+	// The About portrait (filter + mask) can't be re-blurred smoothly: fade
+	// that page to black with opacity only.
+	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo');
 	const exit = content.length
-		? gsap.to(content, { opacity: 0, duration: fadeOnly ? 0.95 : 0.75, ease: 'power2.inOut' }).then(() => {})
+		? gsap.to(content, { opacity: 0, duration: heavy ? 0.6 : 0.75, ease: heavy ? 'sine.inOut' : 'power2.inOut' }).then(() => {})
 		: Promise.resolve();
-	if (content.length && !fadeOnly) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
+	if (content.length && !heavy) gsap.to(content, { filter: 'blur(14px)', duration: 0.6, delay: 0.15, ease: 'power2.in' });
 
 	const load = event.loader;
 	event.loader = async () => { await Promise.all([load(), exit]); };
@@ -407,10 +405,15 @@ function finishCaseStudyTransition(): void {
 }
 
 function beginBlurIn(): void {
-	const blur = reducedMotion() ? 0 : 18;
+	// The About portrait (CSS filter + animated mask) is too heavy to be
+	// re-blurred every frame behind a backdrop-filter: that page gets a plain
+	// opacity fade into the dark instead, which stays smooth.
+	const heavyPage = !!document.querySelector('.am-portrait-img, .ac-photo');
+	const blur = reducedMotion() || heavyPage ? 0 : 18;
 	const veil = document.createElement('div');
 	veil.setAttribute('aria-hidden', 'true');
-	veil.style.cssText = `position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;opacity:1;will-change:opacity,backdrop-filter;-webkit-backdrop-filter:blur(${blur}px);backdrop-filter:blur(${blur}px)`;
+	const backdrop = blur ? `will-change:opacity,backdrop-filter;-webkit-backdrop-filter:blur(${blur}px);backdrop-filter:blur(${blur}px)` : 'will-change:opacity';
+	veil.style.cssText = `position:fixed;inset:0;z-index:1001;pointer-events:none;background:#000;opacity:1;${backdrop}`;
 	document.documentElement.append(veil);
 
 	const loaded = oncePageLoad();
@@ -421,13 +424,14 @@ function beginBlurIn(): void {
 		const value = { opacity: 1 };
 		const paint = () => {
 			veil.style.opacity = String(value.opacity);
+			if (!blur) return;
 			const filter = `blur(${(blur * value.opacity).toFixed(1)}px)`;
 			veil.style.backdropFilter = filter;
 			veil.style.setProperty('-webkit-backdrop-filter', filter);
 		};
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.55 : 0.2,
+			duration: blur ? 0.55 : heavyPage && !reducedMotion() ? 0.7 : 0.2,
 			ease: 'power2.out',
 			onUpdate: paint,
 		});
