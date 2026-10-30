@@ -46,13 +46,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		   softens whatever is behind it) comes up first, the black after. */
 		#hero-blur { z-index: 19; }
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
-		@media ((min-width: 1025px) and (hover: hover)) or ((min-width: 1025px) and (pointer: fine)) {
-			@media (prefers-reduced-motion: no-preference) {
-				#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
-				#hero-pin > #hero { position: sticky; top: 0; }
-				#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
-				#manifesto > .sticky { opacity: 0; }
-			}
+		/* Same on desktop, tablets and phones (a finger scroll drives it). */
+		@media (prefers-reduced-motion: no-preference) {
+			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
+			#hero-pin > #hero { position: sticky; top: 0; }
+			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
+			#manifesto > .sticky { opacity: 0; }
 		}
 	</style>
 
@@ -72,8 +71,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const man = document.getElementById('manifesto');
 			const stage = man?.querySelector<HTMLElement>(':scope > .sticky');
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
-			const desktop = window.matchMedia('(min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine)').matches;
-			if (!desktop || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
