@@ -370,6 +370,9 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 
 	if (run.kind === 'case-study') finishCaseStudyTransition();
 	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
+	// The browser's own swipe-back animation has no veil, but the restored
+	// page still needs its scroll and scrubbed scenes put back in place.
+	else if (run.kind === 'native-history') void settleRestoredPage(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();
@@ -465,8 +468,9 @@ function beginHistoryTransition(scrollY: number | null): void {
 		await nextFrame();
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 0.7 : 0.3,
-			ease: 'power2.out',
+			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 1.3 : 0.3,
+			// Starts gently: power2.out opened the portrait in the first frames.
+			ease: heavyPage ? 'sine.inOut' : 'power2.out',
 			onUpdate: paint,
 		});
 		veil.remove();
@@ -489,6 +493,11 @@ function settleRestoredPage(scrollY: number | null): Promise<void> {
 			window.scrollTo(0, scrollY);
 		}
 		ScrollTrigger.update();
+		// scrub: 1 would otherwise replay the scene from the start while the
+		// veil lifts, so the restored page looks dark and unfinished.
+		ScrollTrigger.getAll().forEach((st) => {
+			if (st.vars.scrub && st.animation) st.animation.progress(st.progress);
+		});
 	};
 
 	const ready = (async () => {
