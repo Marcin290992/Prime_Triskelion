@@ -65,10 +65,6 @@ const projects = [
         <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
       </h1>
       <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
-      <div class="proj-header__scroll">
-        <span class="proj-header__line"></span>
-        <span class="proj-header__scroll-text">scroll</span>
-      </div>
     </header>
 
     <!-- Mask reveal sections -->
@@ -164,34 +160,6 @@ const projects = [
     transform: translateY(10px);
   }
 
-  .proj-header__scroll {
-    position: absolute;
-    bottom: clamp(5.5rem, 11vh, 8rem);
-    right: var(--site-gutter);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    opacity: 0;
-    transition: opacity 0.8s ease 1.1s;
-  }
-  .proj-header__scroll.visible { opacity: 1; }
-  .proj-header__line {
-    width: 36px;
-    height: 1px;
-    background: rgb(var(--c-red) / 0.6);
-    animation: scrollPulse 2s ease-in-out infinite;
-  }
-  .proj-header__scroll-text {
-    font-family: var(--f-body);
-    font-size: 10px;
-    letter-spacing: 0.45em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.45);
-  }
-  @keyframes scrollPulse {
-    0%, 100% { opacity: 0.5; transform: scaleX(1); }
-    50%       { opacity: 1;   transform: scaleX(1.3); }
-  }
 
   /* â•â• MASK SECTION â•â• */
   .proj-section {
@@ -407,33 +375,6 @@ const projects = [
       padding-top: 5rem;
       padding-bottom: 1.5rem;
     }
-    /* Vertical, centred under the text: "scroll" label on top, a red
-       hairline pulsing downward below it. In flow (not pinned to the
-       screen bottom) so it travels with the centred title/lead block and
-       can never end up under the bottom menu button, which covered it on
-       iOS Safari when it was bottom-anchored. No CSS delay on top of the JS
-       one here (see hintDelay). */
-    .proj-header__scroll {
-      position: static;
-      align-self: center;
-      margin-top: 3rem;
-      flex-direction: column-reverse;
-      gap: 0.7rem;
-      transition-delay: 0s;
-    }
-    .proj-header__line {
-      width: 1px;
-      height: 40px;
-      transform-origin: top center;
-      animation-name: scrollPulseY;
-    }
-    /* letter-spacing trails after the last letter — pad the front to match
-       so the label sits truly centred over the line. */
-    .proj-header__scroll-text { padding-left: 0.45em; }
-    @keyframes scrollPulseY {
-      0%, 100% { opacity: 0.5; transform: scaleY(0.6); }
-      50%       { opacity: 1;   transform: scaleY(1); }
-    }
     .proj-header__lead { display: block; }
 
     /* Each project = a card sized by its own content, NOT the viewport.
@@ -614,7 +555,6 @@ const projects = [
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
-  import { trackLeaving } from '../../utils/leavingPage';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -622,23 +562,14 @@ const projects = [
     // â”€â”€ Header entrance â”€â”€
     const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
     const lead = document.querySelector<HTMLElement>('.proj-header__lead');
-    const scrollHint = document.querySelector<HTMLElement>('.proj-header__scroll');
-    // Mobile: the hint comes in once title and lead have landed; desktop
-    // keeps its own cue.
-    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-    // Repeat / back visits (subpageMode) skip the choreography, so no wait.
     const mode = subpageMode();
-    const hintDelay = mode === 'none' ? 0 : mode === 'short' ? 700 : isMob ? 2400 : 1100;
-    // Don't bring the hint in on a page that's already being left (see
-    // trackLeaving) — it flashed in just ahead of the next page's hero.
-    const isLeaving = trackLeaving();
+    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 
     afterPageTransition(() => {
       const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
       titleIn(tl, titleWords);
       if (isMob || mode !== 'full') supportIn(tl, lead, 1.3);
       else if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      setTimeout(() => { if (!isLeaving()) scrollHint?.classList.add('visible'); }, hintDelay);
       revealAfterHero();
     });
 
