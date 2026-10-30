@@ -224,20 +224,25 @@ const deskVars = [
 
 	/* Desktop: the opener comes in out of blur once the scene is pinned, the
 	   same time-based entrance as the other sections' headings (.visible in
-	   Services); the script adds .in (see hideBandsWhilePinned). */
+	   Services); the script adds .in (see hideBandsWhilePinned, which also runs for the phone strip). */
 	.sw-desk .sw-intro .sw-title,
-	.sw-desk .sw-intro .sw-link {
+	.sw-desk .sw-intro .sw-link,
+	.sw-mob.is-active .sw-intro .sw-title,
+	.sw-mob.is-active .sw-intro .sw-link {
 		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
 	}
 	/* Leaving (scrolling back up to the section above) is quicker. */
 	.sw-desk .sw-intro:not(.in) .sw-title,
-	.sw-desk .sw-intro:not(.in) .sw-link {
+	.sw-desk .sw-intro:not(.in) .sw-link,
+	.sw-mob.is-active .sw-intro:not(.in) .sw-title,
+	.sw-mob.is-active .sw-intro:not(.in) .sw-link {
 		opacity: 0;
 		filter: blur(14px);
 		transform: translateY(14px);
 		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease;
 	}
-	.sw-desk .sw-intro.in .sw-link { transition-delay: 0.15s; }
+	.sw-desk .sw-intro.in .sw-link,
+	.sw-mob.is-active .sw-intro.in .sw-link { transition-delay: 0.15s; }
 
 	/* Card: a frame, the picture, then title / line / Explore. */
 	.sw-card {
@@ -642,7 +647,6 @@ const deskVars = [
 			view-timeline: --swm block;
 		}
 		.sw-mob.is-driven .sw-mob__track,
-		.sw-mob.is-driven .sw-card,
 		.sw-mob.is-driven .sw-mob__progress,
 		.sw-mob.is-driven .sw-mob__progress span,
 		.sw-mob.is-driven .sw-panel__in,
@@ -651,19 +655,11 @@ const deskVars = [
 			animation-fill-mode: both;
 			animation-timeline: --swm;
 		}
-		/* Comes up out of the dark once pinned, then travels. */
+		/* The opener blurs in on the spot (script), then the strip travels. */
 		.sw-mob.is-driven .sw-mob__track {
-			animation-name: sw-slide, sw-fade-in;
-			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
-			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist)), contain 0% contain var(--enter);
-		}
-		/* A card rises from below while its left edge travels from the right
-		   edge of the screen to its middle, as on the desktop. */
-		.sw-mob.is-driven .sw-card {
-			animation-name: sw-rise;
+			animation-name: sw-slide;
 			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--left) - 100vw) contain calc(var(--enter) + var(--left) - 50vw);
-			will-change: transform;
+			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
 		.sw-mob.is-driven .sw-mob__progress {
 			animation-name: sw-fade-in;
@@ -757,7 +753,6 @@ const deskVars = [
 					root.style.setProperty('--dist', `${distance()}px`);
 					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
 					root.style.setProperty('--slot-left', `${slot.offsetLeft}px`);
-					root.querySelectorAll<HTMLElement>('.sw-card').forEach((el) => el.style.setProperty('--left', `${el.offsetLeft}px`));
 				};
 				place();
 				ScrollTrigger.addEventListener('refreshInit', place);
@@ -765,7 +760,6 @@ const deskVars = [
 				return () => {
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left', '--slot-left'].forEach((v) => root.style.removeProperty(v));
-					root.querySelectorAll<HTMLElement>('.sw-card').forEach((el) => el.style.removeProperty('--left'));
 					root.style.height = '';
 					root.classList.remove('is-driven', 'is-active');
 				};
@@ -799,20 +793,17 @@ const deskVars = [
 					if (left < vw && left + c.width > 0) {
 						const ip = (left + c.width / 2 - vw / 2) / vw;
 						c.img.style.transform = `scale(1.2) translate3d(${(ip * 8).toFixed(2)}%,0,0)`;
-						const rise = Math.min(1, Math.max(0, (vw - left) / (vw * 0.5)));
-						c.el.style.transform = `translate3d(0,${((1 - rise) * 0.55 * window.innerHeight).toFixed(1)}px,0)`;
 					}
 				});
 				const cp = (coverLeft - x) / vw;
 				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 			};
 
-			// Comes out of a blur once pinned (the manifesto has just faded out).
-			gsap.fromTo([track, bar.parentElement!],
-				{ opacity: 0, filter: 'blur(10px)' },
+			// The progress line comes in once pinned; the opener blurs in itself (introGate).
+			gsap.fromTo(bar.parentElement!,
+				{ opacity: 0 },
 				{
 					opacity: 1,
-					filter: 'blur(0px)',
 					ease: 'power2.out',
 					scrollTrigger: {
 						trigger: root,
@@ -989,7 +980,7 @@ const deskVars = [
 	// moving pictures (the one thing that dropped frames here): they are hidden
 	// (html.sw-hscroll, see global.css) while the desktop scene fills the screen.
 	let hideBandsOff: (() => void) | null = null;
-	function hideBandsWhilePinned(scene: HTMLElement) {
+	function hideBandsWhilePinned(scene: HTMLElement, bands: boolean) {
 		hideBandsOff?.();
 		const root = document.documentElement;
 		let top = 0;
@@ -1002,7 +993,7 @@ const deskVars = [
 		let last = window.scrollY;
 		const update = () => {
 			const y = window.scrollY;
-			root.classList.toggle('sw-hscroll', y >= top && y <= bottom);
+			if (bands) root.classList.toggle('sw-hscroll', y >= top && y <= bottom);
 			// In once the scene is pinned. Scrolling back up it goes out in blur
 			// while the pinned view is still on screen (it is hidden at `top`),
 			// so the way out is seen.
@@ -1030,10 +1021,15 @@ const deskVars = [
 	onReady(() => {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
-		if (!window.matchMedia(MOBILE).matches) hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-desk')!);
-		if (window.matchMedia(MOBILE).matches) initStrip(section);
+		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
+		if (window.matchMedia(MOBILE).matches) {
+			initStrip(section);
+			hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-mob')!, false);
+			return;
+		}
+		hideBandsWhilePinned(scene, true);
 		// The desktop scene is driven by CSS where scroll-driven animations
 		// exist (see the styles); this is the same scene for the rest.
-		else if (!CSS.supports('animation-timeline: view()')) initScene(section);
+		if (!CSS.supports('animation-timeline: view()')) initScene(section);
 	});
 </script>
