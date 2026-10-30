@@ -609,3 +609,16 @@ html body .hud-menu-btn::after {
 @supports not (backdrop-filter: blur(1px)) {
   .gradual-blur__layer { background: rgba(0, 0, 0, 0.3); opacity: 0.5 !important; }
 }
+
+/* While the Projects strip fills the screen the edge bands run light: the two
+   outermost layers (36px / 48px backdrop blur) are what drops frames over the
+   moving pictures. The third layer reaches to the edge in their place. */
+html.sw-hscroll .gradual-blur__layer:nth-child(n+4) { display: none; }
+html.sw-hscroll .gradual-blur[data-edge='top'] .gradual-blur__layer:nth-child(3) {
+  -webkit-mask-image: linear-gradient(to top, transparent 40%, black 60%);
+  mask-image: linear-gradient(to top, transparent 40%, black 60%);
+}
+html.sw-hscroll .gradual-blur[data-edge='bottom'] .gradual-blur__layer:nth-child(3) {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 40%, black 60%);
+  mask-image: linear-gradient(to bottom, transparent 40%, black 60%);
+}

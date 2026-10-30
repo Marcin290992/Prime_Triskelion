@@ -941,7 +941,9 @@ const deskVars = [
 			trigger: scene,
 			start: 'top top',
 			end: 'bottom bottom',
-			scrub: 0.3,
+			// Lenis already smooths the scroll; any extra smoothing here would stack
+			// a second lag on top and make the travel feel rubbery.
+			scrub: true,
 			invalidateOnRefresh: true,
 		});
 		apply();
@@ -954,9 +956,39 @@ const deskVars = [
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
 
+	// The edge blur bands are backdrop-filters, re-blurred every frame over the
+	// moving pictures (the one thing that dropped frames here): they are hidden
+	// (html.sw-hscroll, see global.css) while the desktop scene fills the screen.
+	let hideBandsOff: (() => void) | null = null;
+	function hideBandsWhilePinned(scene: HTMLElement) {
+		hideBandsOff?.();
+		const root = document.documentElement;
+		let top = 0;
+		let bottom = 0;
+		const measure = () => {
+			top = scene.getBoundingClientRect().top + window.scrollY;
+			bottom = top + scene.offsetHeight - window.innerHeight;
+		};
+		const update = () => root.classList.toggle('sw-hscroll', window.scrollY >= top && window.scrollY <= bottom);
+		measure();
+		update();
+		const onResize = () => { measure(); update(); };
+		window.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('resize', onResize, { passive: true });
+		window.addEventListener('load', onResize, { once: true });
+		hideBandsOff = () => {
+			window.removeEventListener('scroll', update);
+			window.removeEventListener('resize', onResize);
+			root.classList.remove('sw-hscroll');
+			hideBandsOff = null;
+		};
+	}
+	document.addEventListener('astro:before-swap', () => hideBandsOff?.());
+
 	onReady(() => {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
+		if (!window.matchMedia(MOBILE).matches) hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-desk')!);
 		if (window.matchMedia(MOBILE).matches) initStrip(section);
 		// The desktop scene is driven by CSS where scroll-driven animations
 		// exist (see the styles); this is the same scene for the rest.

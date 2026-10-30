@@ -52,6 +52,7 @@ export function createGradualBlur(options = {}) {
 
   const root = document.createElement('div');
   root.className = 'gradual-blur';
+  root.dataset.edge = c.position;
   root.setAttribute('aria-hidden', 'true');
   const s = root.style;
   s.zIndex = String(c.zIndex);
