@@ -155,6 +155,21 @@ function preparePageExit(event: PreparationEvent): void {
 	// The About portrait (filter + mask) can't be re-blurred smoothly: fade
 	// that page to black with opacity only.
 	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo');
+
+	// On phones and tablets fading the live masked/filtered portrait layers
+	// stutters and the page cuts away halfway. One black layer fading in over
+	// the untouched page is a single cheap composite instead.
+	if (heavy && matchMedia('(max-width: 1024px), (pointer: coarse)').matches) {
+		const veil = document.createElement('div');
+		veil.setAttribute('aria-hidden', 'true');
+		veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000;opacity:0;will-change:opacity';
+		document.body.append(veil);
+		const cover = gsap.to(veil, { opacity: 1, duration: 0.5, ease: 'sine.inOut' }).then(() => {});
+		const loadPage = event.loader;
+		event.loader = async () => { await Promise.all([loadPage(), cover]); };
+		return;
+	}
+
 	const exit = content.length
 		? gsap.to(content, { opacity: 0, duration: heavy ? 0.6 : 0.75, ease: heavy ? 'sine.inOut' : 'power2.inOut' }).then(() => {})
 		: Promise.resolve();
@@ -370,6 +385,9 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 
 	if (run.kind === 'case-study') finishCaseStudyTransition();
 	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
+	// The browser's own swipe-back animation has no veil, but the restored
+	// page still needs its scroll and scrubbed scenes put back in place.
+	else if (run.kind === 'native-history') void settleRestoredPage(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();
@@ -444,7 +462,10 @@ function beginHistoryTransition(scrollY: number | null): void {
 	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
 	document.body.append(veil);
 
-	const blur = reducedMotion() ? 0 : 8;
+	// Same as beginBlurIn: the About portrait can't be re-blurred behind a
+	// backdrop-filter every frame, so coming back to it is a plain fade.
+	const heavyPage = !!document.querySelector('.am-portrait-img, .ac-photo');
+	const blur = reducedMotion() || heavyPage ? 0 : 8;
 	const value = { opacity: 1 };
 	const paint = () => {
 		veil.style.opacity = String(value.opacity);
@@ -462,8 +483,9 @@ function beginHistoryTransition(scrollY: number | null): void {
 		await nextFrame();
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.8 : 0.3,
-			ease: 'power2.out',
+			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 1.3 : 0.3,
+			// Starts gently: power2.out opened the portrait in the first frames.
+			ease: heavyPage ? 'sine.inOut' : 'power2.out',
 			onUpdate: paint,
 		});
 		veil.remove();
@@ -486,6 +508,11 @@ function settleRestoredPage(scrollY: number | null): Promise<void> {
 			window.scrollTo(0, scrollY);
 		}
 		ScrollTrigger.update();
+		// scrub: 1 would otherwise replay the scene from the start while the
+		// veil lifts, so the restored page looks dark and unfinished.
+		ScrollTrigger.getAll().forEach((st) => {
+			if (st.vars.scrub && st.animation) st.animation.progress(st.progress);
+		});
 	};
 
 	const ready = (async () => {

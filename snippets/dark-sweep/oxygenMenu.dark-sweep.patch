@@ -1,0 +1,86 @@
+diff --git a/src/utils/oxygenMenu.ts b/src/utils/oxygenMenu.ts
+index 8c69ef5..b606c04 100644
+--- a/src/utils/oxygenMenu.ts
++++ b/src/utils/oxygenMenu.ts
+@@ -8,7 +8,7 @@
+ import gsap from 'gsap';
+ import { navigate } from 'astro:transitions/client';
+ import { SpecularButton } from './specularButtonFx';
+-import { cutNextTransition, reducedMotion } from './afterPageTransition';
++import { cutNextTransition, reducedMotion, sweepOverMenu } from './afterPageTransition';
+ import { warmPages } from './pageCache';
+ 
+ // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
+@@ -572,34 +572,6 @@ function initOxygenMenu() {
+   // Seconds the dissolve waits on touch so the chosen link's roll plays alone.
+   const TOUCH_ROLL_LEAD = () => (window.matchMedia('(hover: none)').matches && !reducedMotion() ? 0.3 : 0);
+ 
+-  // Cinematic exit: everything but the chosen link racks out of focus and
+-  // dissolves, all together (a stepped, one-after-another dissolve read
+-  // as stutter); the chosen link is left alone on black for a beat, then
+-  // goes out of focus itself as the menu fades (the reverse of the new
+-  // page's title focusing in after the cut).
+-  // Blur only on single lines of text (each <li> — its own overflow:hidden
+-  // would clip a blur on anything inside it) and the thin top/bottom
+-  // bars; the right panel just fades, a filter on that block steps on
+-  // touch Safari.
+-  // `chosen`: the menu item that stays (none: they all go). `wholePanel`:
+-  // the right panel goes with everything else, featured project included —
+-  // otherwise only its info block does. `lead`: seconds to wait first.
+-  function dissolveMenu(chosen: HTMLElement | null, wholePanel: boolean, lead: number) {
+-    const overlay = document.getElementById('ox-menu-overlay');
+-    if (!overlay) return;
+-    const others = Array.from(overlay.querySelectorAll<HTMLElement>('.ox-menu-item'))
+-      .filter((el) => el !== chosen);
+-    // Reduce motion: a plain fade, no blur.
+-    const out = reducedMotion()
+-      ? { opacity: 0, duration: 0.4, ease: 'none' }
+-      : { opacity: 0, filter: 'blur(10px)', duration: 0.45, ease: 'power2.inOut' };
+-    gsap.to(others, { ...out, delay: lead });
+-    gsap.to(overlay.querySelectorAll('.ox-menu-topbar, .ox-menu-bottom'), { ...out, delay: lead + 0.12 });
+-    const aside = overlay.querySelector<HTMLElement>('aside');
+-    const panelOut = wholePanel ? aside : aside?.firstElementChild;
+-    if (panelOut) gsap.to(panelOut, { opacity: 0, duration: 0.45, ease: 'power2.inOut', delay: lead + 0.12 });
+-  }
+-
+   // The logo while the menu is open: it still goes Home, but by the same
+   // exit as choosing a link — the whole menu dissolves, fades to black, and
+   // only then the cut — instead of the page jumping to the hero out of the
+@@ -615,9 +587,8 @@ function initOxygenMenu() {
+     leavingViaLogo = true;
+     void (async () => {
+       while (state.menuAnimating) await new Promise((r) => setTimeout(r, 40));
+-      dissolveMenu(null, true, 0);
+-      await new Promise((r) => setTimeout(r, 300));
+-      await closeMenu(true, true); // keep the black overlay up while it fades out
++      await sweepOverMenu();
++      void closeMenu(true, true);
+       cutNextTransition();
+       await navigate(href); // the View Transition starts from black
+       leavingViaLogo = false;
+@@ -647,18 +618,14 @@ function initOxygenMenu() {
+       // on the big menu text has to be re-rasterized every frame — run
+       // together, Android dropped frames in the roll. Let the roll (0.34s)
+       // play on its own first. A mouse has rolled it on hover.
+-      dissolveMenu(chosen, !!chosen, TOUCH_ROLL_LEAD());
+-      // Hold on the chosen link while the rest dissolves around it and its
+-      // text roll (OxygenMenu.astro, 0.34s) reads, then leave — short: the
+-      // whole choose-to-cut runs about a second (it was ~1.5s, which read
+-      // as waiting by the fifth time). Touch has no hover lead-in — the
+-      // roll only starts at the tap — so it gets the roll first.
++      // The chosen link holds while its text roll (OxygenMenu.astro, 0.34s)
++      // reads; touch has no hover lead-in, so the roll gets its own beat.
+       const noHover = window.matchMedia('(hover: none)').matches;
+-      await new Promise(r => setTimeout(r, (noHover ? 400 : 300) + TOUCH_ROLL_LEAD() * 1000));
+-      // The chosen link racks out of focus as the menu fades to black.
+-      if (!reducedMotion()) gsap.to(link.closest('.ox-menu-item') ?? link, { filter: 'blur(10px)', duration: 0.32, ease: 'power2.in' });
+-      await closeMenu(true, true);  // keep black overlay visible, fade out
+-      if (href) { cutNextTransition(); navigate(href); } // View Transition starts from black screen
++      await new Promise(r => setTimeout(r, (noHover ? 300 : 200) + TOUCH_ROLL_LEAD() * 1000));
++      // The page transition's dark sweeps over the open menu, then it leaves.
++      await sweepOverMenu();
++      void closeMenu(true, true); // state housekeeping, hidden under the black
++      if (href) { cutNextTransition(); navigate(href); }
+     }
+ 
+     link.addEventListener('touchstart', (e) => {
