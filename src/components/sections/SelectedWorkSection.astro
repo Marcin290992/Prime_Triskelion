@@ -54,8 +54,6 @@ function plan({ card, gap }: { card: number; gap: number }) {
 		// The final slide slides out from behind the cover over the last 150vw.
 		final: at(maxScroll - 150),
 		cover: at(coverX - 120),
-		// The opener leaves in blur over the first 45vw of the travel.
-		out: at(45),
 		drift: `${2 * (coverX - maxScroll)}px`,
 	};
 }
@@ -70,8 +68,6 @@ const deskVars = [
 	`--card-w-narrow:${LAYOUTS.narrow.card}vw`,
 	`--gap-wide:${LAYOUTS.wide.gap}vw`,
 	`--gap-narrow:${LAYOUTS.narrow.gap}vw`,
-	`--out-wide:${wide.out}`,
-	`--out-narrow:${narrow.out}`,
 	`--final-wide:${wide.final}`,
 	`--final-narrow:${narrow.final}`,
 	`--cover-wide:${wide.cover}`,
@@ -364,7 +360,6 @@ const deskVars = [
 		--intro-gap: 2.5rem;
 		--card-w: var(--card-w-wide);
 		--track-gap: var(--gap-wide);
-		--out-at: var(--out-wide);
 		--final-at: var(--final-wide);
 		--cover-at: var(--cover-wide);
 		--drift-to: var(--drift-wide);
@@ -438,7 +433,6 @@ const deskVars = [
 		.sw-desk {
 			--card-w: var(--card-w-narrow);
 			--track-gap: var(--gap-narrow);
-			--out-at: var(--out-narrow);
 			--final-at: var(--final-narrow);
 			--cover-at: var(--cover-narrow);
 			--drift-to: var(--drift-narrow);
@@ -470,7 +464,6 @@ const deskVars = [
 
 		.sw-desk__view,
 		.sw-desk__track,
-		.sw-desk .sw-intro,
 		.sw-card--rise,
 		.sw-card--fade,
 		.sw-desk .sw-panel--cover .sw-panel__in,
@@ -492,12 +485,6 @@ const deskVars = [
 			animation-name: sw-slide;
 			animation-timing-function: linear;
 			animation-range: contain var(--e) contain var(--t);
-		}
-		/* Scrolling on, the opener goes out the way it came: into blur and dark. */
-		.sw-desk .sw-intro {
-			animation-name: sw-blur-out;
-			animation-timing-function: cubic-bezier(0.5, 0, 0.75, 0);
-			animation-range: contain var(--e) contain var(--out-at);
 		}
 		.sw-card--rise {
 			animation-name: sw-rise;
@@ -531,10 +518,6 @@ const deskVars = [
 	@keyframes sw-fade-in {
 		from { opacity: 0; }
 		to { opacity: 1; }
-	}
-	@keyframes sw-blur-out {
-		from { opacity: 1; filter: blur(0); }
-		to { opacity: 0; filter: blur(14px); }
 	}
 	@keyframes sw-rise {
 		from { transform: translate3d(0, 55vh, 0); }
@@ -967,11 +950,6 @@ const deskVars = [
 				modifiers: { x: (v: string) => `${Math.round(parseFloat(v) * dpr()) / dpr()}px` },
 			},
 			ENTER);
-		const opener = scene.querySelector<HTMLElement>('.sw-intro');
-		if (opener) {
-			tl.fromTo(opener, { opacity: 1, filter: 'blur(0px)' },
-				{ opacity: 0, filter: 'blur(14px)', duration: () => TRAVEL * 0.45 * window.innerWidth / maxScroll, ease: 'power2.in' }, ENTER);
-		}
 		tl.to({}, { duration: HOLD }, ENTER + TRAVEL);
 
 		const st = ScrollTrigger.create({

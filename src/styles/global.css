@@ -614,11 +614,18 @@ html body .hud-menu-btn::after {
    outermost layers (36px / 48px backdrop blur) are what drops frames over the
    moving pictures. The third layer reaches to the edge in their place. */
 html.sw-hscroll .gradual-blur__layer:nth-child(n+4) { display: none; }
-html.sw-hscroll .gradual-blur[data-edge='top'] .gradual-blur__layer:nth-child(3) {
-  -webkit-mask-image: linear-gradient(to top, transparent 40%, black 60%);
-  mask-image: linear-gradient(to top, transparent 40%, black 60%);
+html.sw-hscroll .gradual-blur[data-edge='top'] .gradual-blur__layer {
+  --m: linear-gradient(to top, transparent var(--from), black var(--to));
+  -webkit-mask-image: var(--m) !important;
+  mask-image: var(--m) !important;
 }
-html.sw-hscroll .gradual-blur[data-edge='bottom'] .gradual-blur__layer:nth-child(3) {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 40%, black 60%);
-  mask-image: linear-gradient(to bottom, transparent 40%, black 60%);
+html.sw-hscroll .gradual-blur[data-edge='bottom'] .gradual-blur__layer {
+  --m: linear-gradient(to bottom, transparent var(--from), black var(--to));
+  -webkit-mask-image: var(--m) !important;
+  mask-image: var(--m) !important;
 }
+/* Each remaining layer stays on to the edge (as the dropped ones did), so the
+   blur only ever grows towards it instead of easing off in the last stretch. */
+html.sw-hscroll .gradual-blur__layer:nth-child(1) { --from: 0%; --to: 40%; }
+html.sw-hscroll .gradual-blur__layer:nth-child(2) { --from: 20%; --to: 60%; }
+html.sw-hscroll .gradual-blur__layer:nth-child(3) { --from: 40%; --to: 80%; }
