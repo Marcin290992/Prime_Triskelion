@@ -576,7 +576,6 @@ const deskVars = [
 			--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
 			display: block;
 			position: relative;
-			z-index: 2;
 			/* The closing panel's text sits mid-screen, so its lower half is empty
 			   black: Services (stacked above, z-index 46) is tucked up over it
 			   instead of waiting below. */
@@ -586,10 +585,16 @@ const deskVars = [
 			height: 100svh;
 			height: calc(var(--app-stable-vh, 1svh) * 100);
 		}
-		/* Pinned strip: the closing panel is pulled up over its last screen, so
-		   it rises over the pinned cover the moment the travel ends. */
+		/* Pinned strip: the closing panel waits behind it, in its last screen.
+		   When the travel ends the strip scrolls up and off (direction change)
+		   and the closing panel, held in place for that screen, is uncovered. */
 		.sw-mob.is-active + .sw-mob__final {
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			height: calc(var(--app-stable-vh, 1svh) * 200);
+		}
+		.sw-mob.is-active + .sw-mob__final .sw-panel--final {
+			position: sticky;
+			top: 0;
 		}
 	}
 	.sw-mob__sticky {
@@ -622,6 +627,8 @@ const deskVars = [
 	.sw-mob.is-active .sw-mob__sticky {
 		position: sticky;
 		top: 0;
+		/* Above the closing panel waiting behind it. */
+		z-index: 2;
 		overflow: hidden;
 		scroll-snap-type: none;
 	}
@@ -632,6 +639,8 @@ const deskVars = [
 	   measures: --dist is how far the strip travels, --cover-left where the
 	   cover sits). The strip travels 1px per px of scroll. */
 	@supports (animation-timeline: view()) {
+		/* So the closing panel (a sibling) can read the strip's timeline. */
+		#selected-work { timeline-scope: --swm; }
 		.sw-mob.is-driven {
 			--enter: calc(var(--app-stable-vh, 1svh) * 70);
 			view-timeline: --swm block;
@@ -648,30 +657,29 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
-		/* The cover's text drifts as its panel comes in and settles when the strip ends. */
+		/* The cover's text drifts as its panel comes in and settles when the strip
+		   ends; then, as the strip scrolls up and off (`exit`: the last screen of
+		   the section), it drifts on upward (`translate`, so it does not fight
+		   the sideways `transform`). */
 		.sw-mob.is-driven .sw-panel--cover .sw-panel__in {
-			animation-name: sw-drift-out;
+			animation-name: sw-drift-out, sw-lift;
 			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left));
+			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left)), exit 0% exit 100%;
 		}
-		/* The closing title rises into place faster than the panel itself
-		   (parallax from below) while the panel covers the pinned strip. */
-		.sw-mob.is-driven + .sw-mob__final {
-			view-timeline: --swf block;
-		}
-		.sw-mob.is-driven + .sw-mob__final .sw-panel--final h2 {
-			animation: sw-final-rise 1ms linear both;
-			animation-timeline: --swf;
-			animation-range: entry 0% entry 100%;
+		/* The closing panel is hidden until the strip starts to leave. */
+		.sw-mob.is-driven + .sw-mob__final .sw-panel--final {
+			animation: sw-show 1ms linear both;
+			animation-timeline: --swm;
+			animation-range: exit 0% exit 100%;
 		}
 	}
 	@keyframes sw-drift-out {
 		from { transform: translate3d(240px, 0, 0); }
 		to { transform: translate3d(0, 0, 0); }
 	}
-	@keyframes sw-final-rise {
-		from { transform: translate3d(0, 38vh, 0); }
-		to { transform: translate3d(0, 0, 0); }
+	@keyframes sw-lift {
+		from { translate: 0 0; }
+		to { translate: 0 -200px; }
 	}
 </style>
 
@@ -686,9 +694,9 @@ const deskVars = [
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
 	// The strip is pinned by position: sticky (no pin spacer, no jump) and
-	// moved horizontally by a scrubbed ScrollTrigger; once it ends, the closing
-	// panel rises over it from below (title parallax). Without this the strip is a natively
-	// swiped, snapping row (see the CSS).
+	// moved horizontally by a scrubbed ScrollTrigger; once it ends it scrolls
+	// up and off, uncovering the closing panel held in place behind it.
+	// Without this the strip is a natively swiped, snapping row (see the CSS).
 	let stripMm: gsap.MatchMedia | null = null;
 
 	function initStrip(section: HTMLElement) {
@@ -699,10 +707,10 @@ const deskVars = [
 		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
 		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
 		const final = section.querySelector<HTMLElement>('.sw-mob__final');
-		const finalTitle = final?.querySelector<HTMLElement>('.sw-panel--final h2');
+		const finalPanel = final?.querySelector<HTMLElement>('.sw-panel--final');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		if (!root || !sticky || !track || !final || !finalTitle || !cover || !coverIn) return;
+		if (!root || !sticky || !track || !finalPanel || !cover || !coverIn) return;
 
 		ScrollTrigger.config({ ignoreMobileResize: true });
 
@@ -714,10 +722,9 @@ const deskVars = [
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-			// After the travel the strip stays pinned for one more screen: the
-			// closing panel (pulled up over it, see the CSS) rises over it in
-			// that scroll, so nothing is dead.
-			const setHeight = () => { root.style.height = `${enter() + distance() + sticky.offsetHeight * 2}px`; };
+			// The strip is pinned through the travel; its last screen is the one
+			// it scrolls up and off in, uncovering the closing panel (see the CSS).
+			const setHeight = () => { root.style.height = `${enter() + distance() + sticky.offsetHeight}px`; };
 
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
@@ -788,24 +795,23 @@ const deskVars = [
 			});
 			parallax();
 
-			// The closing title rises into place faster than its panel, which
-			// covers the pinned strip from below.
-			gsap.fromTo(finalTitle,
-				{ y: () => window.innerHeight * 0.38 },
-				{
-					y: 0,
-					ease: 'none',
-					force3D: true,
-					scrollTrigger: {
-						trigger: final,
-						start: 'top bottom',
-						end: 'top top',
-						scrub: true,
-						invalidateOnRefresh: true,
-					},
-				});
+			// The strip scrolls up and off over its last screen: the cover's text
+			// drifts on upward and the closing panel, hidden until now, is uncovered.
+			finalPanel.style.visibility = 'hidden';
+			const leave = ScrollTrigger.create({
+				trigger: root,
+				start: 'bottom bottom',
+				end: 'bottom top',
+				onUpdate: (self) => {
+					coverIn.style.translate = `0 ${(-200 * self.progress).toFixed(1)}px`;
+					finalPanel.style.visibility = self.progress > 0 ? '' : 'hidden';
+				},
+			});
 
 			return () => {
+				leave.kill();
+				coverIn.style.translate = '';
+				finalPanel.style.visibility = '';
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
