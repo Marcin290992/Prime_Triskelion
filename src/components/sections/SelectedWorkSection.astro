@@ -233,13 +233,15 @@ const deskVars = [
 	.sw-desk .sw-intro .sw-link {
 		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
 	}
+	/* Leaving (scrolling back up to the section above) is quicker. */
 	.sw-desk .sw-intro:not(.in) .sw-title,
 	.sw-desk .sw-intro:not(.in) .sw-link {
 		opacity: 0;
 		filter: blur(14px);
 		transform: translateY(14px);
+		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease;
 	}
-	.sw-desk .sw-intro .sw-link { transition-delay: 0.15s; }
+	.sw-desk .sw-intro.in .sw-link { transition-delay: 0.15s; }
 
 	/* Card: a frame, the picture, then title / line / Explore. */
 	.sw-card {
@@ -1006,10 +1008,17 @@ const deskVars = [
 			bottom = top + scene.offsetHeight - window.innerHeight;
 		};
 		const intro = scene.querySelector<HTMLElement>('.sw-intro');
+		let last = window.scrollY;
 		const update = () => {
-			root.classList.toggle('sw-hscroll', window.scrollY >= top && window.scrollY <= bottom);
-			// Stays in once shown; resets when the scroll goes back above the scene.
-			intro?.classList.toggle('in', window.scrollY >= top);
+			const y = window.scrollY;
+			root.classList.toggle('sw-hscroll', y >= top && y <= bottom);
+			// In once the scene is pinned. Scrolling back up it goes out in blur
+			// while the pinned view is still on screen (it is hidden at `top`),
+			// so the way out is seen.
+			const up = y < last;
+			if (y < top + window.innerHeight * 0.4 && (up || y < top)) intro?.classList.remove('in');
+			else if (y >= top) intro?.classList.add('in');
+			last = y;
 		};
 		measure();
 		update();
