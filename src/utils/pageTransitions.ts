@@ -444,7 +444,10 @@ function beginHistoryTransition(scrollY: number | null): void {
 	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
 	document.body.append(veil);
 
-	const blur = reducedMotion() ? 0 : 8;
+	// Same as beginBlurIn: the About portrait can't be re-blurred behind a
+	// backdrop-filter every frame, so coming back to it is a plain fade.
+	const heavyPage = !!document.querySelector('.am-portrait-img, .ac-photo');
+	const blur = reducedMotion() || heavyPage ? 0 : 8;
 	const value = { opacity: 1 };
 	const paint = () => {
 		veil.style.opacity = String(value.opacity);
@@ -462,7 +465,7 @@ function beginHistoryTransition(scrollY: number | null): void {
 		await nextFrame();
 		await gsap.to(value, {
 			opacity: 0,
-			duration: blur ? 0.8 : 0.3,
+			duration: blur ? 0.8 : heavyPage && !reducedMotion() ? 0.7 : 0.3,
 			ease: 'power2.out',
 			onUpdate: paint,
 		});
