@@ -222,6 +222,21 @@ const deskVars = [
 	}
 	.sw-title em { font-style: normal; color: rgb(var(--c-red)); }
 
+	/* Desktop: the opener comes in out of blur once the scene is pinned, the
+	   same time-based entrance as the other sections' headings (.visible in
+	   Services); the script adds .in (see hideBandsWhilePinned). */
+	.sw-desk .sw-intro .sw-title,
+	.sw-desk .sw-intro .sw-link {
+		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+	}
+	.sw-desk .sw-intro:not(.in) .sw-title,
+	.sw-desk .sw-intro:not(.in) .sw-link {
+		opacity: 0;
+		filter: blur(14px);
+		transform: translateY(14px);
+	}
+	.sw-desk .sw-intro .sw-link { transition-delay: 0.15s; }
+
 	/* Card: a frame, the picture, then title / line / Explore. */
 	.sw-card {
 		flex: 0 0 var(--card-w);
@@ -447,7 +462,6 @@ const deskVars = [
 
 		.sw-desk__view,
 		.sw-desk__track,
-		.sw-desk .sw-intro,
 		.sw-card--rise,
 		.sw-card--fade,
 		.sw-desk .sw-panel--cover .sw-panel__in,
@@ -464,18 +478,11 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain 0% contain 0.01%;
 		}
-		/* Blur-in on the spot (a fade), then the horizontal travel. */
+		/* The title blurs in on the spot (script, see playIntro), then the horizontal travel. */
 		.sw-desk__track {
-			animation-name: sw-slide, sw-fade-in;
-			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
-			animation-range: contain var(--e) contain var(--t), contain 0% contain var(--e);
-		}
-		/* The opening title comes into focus with that fade (only it is blurred:
-		   blurring the whole track would be far too heavy). */
-		.sw-desk .sw-intro {
-			animation-name: sw-focus;
-			animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1);
-			animation-range: contain 0% contain var(--e);
+			animation-name: sw-slide;
+			animation-timing-function: linear;
+			animation-range: contain var(--e) contain var(--t);
 		}
 		.sw-card--rise {
 			animation-name: sw-rise;
@@ -509,10 +516,6 @@ const deskVars = [
 	@keyframes sw-fade-in {
 		from { opacity: 0; }
 		to { opacity: 1; }
-	}
-	@keyframes sw-focus {
-		from { filter: blur(18px); }
-		to { filter: blur(0); }
 	}
 	@keyframes sw-rise {
 		from { transform: translate3d(0, 55vh, 0); }
@@ -935,9 +938,6 @@ const deskVars = [
 		// One scrubbed timeline spans the whole pinned scroll.
 		const tl = gsap.timeline({ defaults: { ease: 'none' }, onUpdate: apply });
 		tl.fromTo(view, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.001, immediateRender: true }, 0);
-		tl.fromTo(track, { opacity: 0 }, { opacity: 1, duration: ENTER, ease: 'power1.out' }, 0);
-		const intro = scene.querySelector<HTMLElement>('.sw-intro');
-		if (intro) tl.fromTo(intro, { filter: 'blur(18px)' }, { filter: 'blur(0px)', duration: ENTER, ease: 'power1.out', clearProps: 'filter' }, 0);
 		tl.fromTo(track,
 			{ x: 0 },
 			{
@@ -983,7 +983,12 @@ const deskVars = [
 			top = scene.getBoundingClientRect().top + window.scrollY;
 			bottom = top + scene.offsetHeight - window.innerHeight;
 		};
-		const update = () => root.classList.toggle('sw-hscroll', window.scrollY >= top && window.scrollY <= bottom);
+		const intro = scene.querySelector<HTMLElement>('.sw-intro');
+		const update = () => {
+			root.classList.toggle('sw-hscroll', window.scrollY >= top && window.scrollY <= bottom);
+			// Stays in once shown; resets when the scroll goes back above the scene.
+			intro?.classList.toggle('in', window.scrollY >= top);
+		};
 		measure();
 		update();
 		const onResize = () => { measure(); update(); };
@@ -994,6 +999,7 @@ const deskVars = [
 			window.removeEventListener('scroll', update);
 			window.removeEventListener('resize', onResize);
 			root.classList.remove('sw-hscroll');
+			intro?.classList.add('in');
 			hideBandsOff = null;
 		};
 	}
