@@ -164,11 +164,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// an extra rAF loop alongside native scroll on mobile.
 				(window as any).__lenisHandled = true;
 							} else {
+				// A continuous lerp, not a timed ease: a timed ease restarts on every
+				// wheel/trackpad event, which made the horizontal work section
+				// stutter.
 				lenisInstance = new Lenis({
-					duration: 2.4,
-					easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+					lerp: 0.1,
 					smoothWheel: true,
-					wheelMultiplier: 0.65,
 				});
 				(window as any).__lenis = lenisInstance;
 				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);

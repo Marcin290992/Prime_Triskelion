@@ -1,126 +1,117 @@
 ---
 import { Image, getImage } from 'astro:assets';
 import deeer2 from '../../img/deeer2.webp';
-// deeer2.webp is a huge source file (7360px wide) — <Image> generates
-// properly-downscaled assets instead of shipping the original (heavy
-// enough to jank scroll on iOS Safari).
-// Full-screen version for the case-study entrance (data-case-src, see
-// afterPageTransition.ts) — a card-sized image blows up soft.
-const deeer2Full = await getImage({ src: deeer2, width: 2400 });
-// Phones/tablets carousel. Placeholder pictures (stored locally — the
-// site's CSP blocks remote images) for all but Winds of Sinai; swap the
-// img for each project's own shot.
 import imgUnfall from '../../img/services/websites.jpg';
 import imgMousa from '../../img/process/development.jpg';
-import imgSteak from '../../img/process/launch.jpg';
-import imgJosh from '../../img/process/support.jpg';
-import imgUmzug from '../../img/process/discovery.jpg';
+
+// deeer2.webp is a huge source file (7360px wide) — <Image> generates
+// properly-downscaled assets instead of shipping the original (heavy enough
+// to jank scroll on iOS Safari). The 2400px version is the full-screen image
+// the case-study entrance grows into (data-case-src, see pageTransitions.ts)
+// — a card-sized image blows up soft.
+const deeer2Full = await getImage({ src: deeer2, width: 2400 });
+
+// One list drives both layouts. Pictures are stored locally (the site's CSP
+// blocks remote images). `img` is the phone/tablet strip's picture; the
+// desktop scene still shows `deeer2` everywhere — swap each for the
+// project's own shot.
 const projects = [
-	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', tags: ['Branding', 'Web'], img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
-	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', tags: ['Web', 'Software'], img: imgUnfall, href: '/work/unfallfix24' },
-	{ title: 'Mousa Export', desc: 'International export logistics platform', tags: ['Web'], img: imgMousa, href: '/work/mousa-export' },
-	{ title: 'Steak Club', desc: 'Premium steakhouse brand with booking system', tags: ['Web', 'Branding'], img: imgSteak },
-	{ title: 'Josh Jabs', desc: 'Personal brand & portfolio for a musician', tags: ['Web', 'Branding'], img: imgJosh },
-	{ title: 'Umzugsservice', desc: 'Moving service with SEO & lead generation', tags: ['Web', 'SEO'], img: imgUmzug },
+	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', img: deeer2, href: '/winds-of-sinai', caseSrc: deeer2Full.src },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', img: imgUnfall, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', img: imgMousa, href: '/work/mousa-export' },
 ];
+
+// Desktop scroll length, in screens: a blur-in on the spot, the horizontal
+// travel, a hold on the last slide, and the pinned view itself (1 screen).
+// The script reads these back from data attributes.
+const ENTER = 0.7;
+const HOLD = 0.4;
+// The travel keeps one pace however many projects there are: 6.6 screens
+// for the 540vw the track moved with six cards.
+const TRAVEL_PER_VW = 6.6 / 540;
+const trackTravel = (cards: number) => 100 + 10 + cards * 55 + 100; // wide layout, vw
+const TRAVEL = Math.round(TRAVEL_PER_VW * trackTravel(projects.length) * 10) / 10;
+const TOTAL = ENTER + TRAVEL + HOLD;
+const deskHeight = Math.round((TOTAL + 1) * 100);
+
+// Where everything sits on the desktop track, in vw, for the two widths the
+// CSS switches between (--card-w / --track-gap). The scroll-driven
+// animations are timed from these: a position along the track becomes a
+// point in the scroll range.
+const LAYOUTS = { wide: { card: 45, gap: 10 }, narrow: { card: 42, gap: 5 } };
+const OVERLAP = 10; // the final slide is tucked this far under the cover
+const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
+function plan({ card, gap }: { card: number; gap: number }) {
+	const cardX = projects.map((_, i) => 100 + gap + i * (card + gap));
+	const coverX = 100 + gap + projects.length * (card + gap);
+	const maxScroll = coverX + 100 + gap - OVERLAP; // track width minus one screen
+	// Scroll position at which the track has moved `x` vw.
+	const at = (x: number) => pct((ENTER + (TRAVEL * x) / maxScroll) / TOTAL);
+	return {
+		// A card comes in while its left edge travels from the right edge of
+		// the screen to its middle.
+		cards: cardX.map((x) => ({ from: at(x - 100), to: at(x - 50) })),
+		// The final slide slides out from behind the cover over the last 150vw.
+		final: at(maxScroll - 150),
+		cover: at(coverX - 120),
+		drift: `${2 * (coverX - maxScroll)}px`,
+	};
+}
+const wide = plan(LAYOUTS.wide);
+const narrow = plan(LAYOUTS.narrow);
+const deskVars = [
+	`height:${deskHeight}vh`,
+	`--e:${pct(ENTER / TOTAL)}`,
+	`--t:${pct((ENTER + TRAVEL) / TOTAL)}`,
+	`--overlap:${OVERLAP}vw`,
+	`--card-w-wide:${LAYOUTS.wide.card}vw`,
+	`--card-w-narrow:${LAYOUTS.narrow.card}vw`,
+	`--gap-wide:${LAYOUTS.wide.gap}vw`,
+	`--gap-narrow:${LAYOUTS.narrow.gap}vw`,
+	`--final-wide:${wide.final}`,
+	`--final-narrow:${narrow.final}`,
+	`--cover-wide:${wide.cover}`,
+	`--cover-narrow:${narrow.cover}`,
+	`--drift-wide:${wide.drift}`,
+	`--drift-narrow:${narrow.drift}`,
+].join(';');
 ---
 <section id="selected-work">
 
-	<div class="sw-header">
-		<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
-	</div>
+	<!-- Desktop: one pinned view; the scroll slides the track sideways. -->
+	<div class="sw-desk" id="sw-scroll-section" style={deskVars} data-enter={ENTER} data-travel={TRAVEL} data-hold={HOLD}>
+		<div class="sw-desk__view">
+			<div class="sw-desk__track">
 
-	<div class="scroll-section" id="sw-scroll-section">
-		<div class="sticky-view">
-			<div class="track" id="sw-track">
-
-				<div class="slide slide-intro">
-					<h2>What we've<br><em>created.</em></h2>
-					<a href="/projects" class="link-btn no-border">View All Projects</a>
+				<div class="sw-intro">
+					<h2 class="sw-title">What we've<br><em>created.</em></h2>
+					<a href="/projects" class="link-btn sw-link">View All Projects</a>
 				</div>
 
-				<div class="slide slide-card card-fade" data-case data-case-src={deeer2Full.src}>
-					<a href="/winds-of-sinai" class="img-box" data-case-media>
-						<Image src={deeer2} class="img-parallax" alt="Winds Of Sinai" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="/winds-of-sinai" class="card-title-link"><h3>Winds Of Sinai</h3></a>
-							<p>Luxury travel brand identity &amp; digital presence</p>
+				{projects.map((p, i) => (
+					<div
+						class:list={['sw-card', i === 0 ? 'sw-card--fade' : 'sw-card--rise']}
+						style={`--from-wide:${wide.cards[i].from};--to-wide:${wide.cards[i].to};--from-narrow:${narrow.cards[i].from};--to-narrow:${narrow.cards[i].to}`}
+						data-case={p.caseSrc ? '' : undefined}
+						data-case-src={p.caseSrc}
+					>
+						<a href={p.href ?? '#'} class="sw-media" data-case-media={p.caseSrc ? '' : undefined}>
+							<Image src={deeer2} alt={p.title} widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
+						</a>
+						<div class="sw-card__info">
+							<div>
+								<a href={p.href ?? '#'} class="sw-card__title"><h3>{p.title}</h3></a>
+								<p>{p.desc}</p>
+							</div>
+							<a href={p.href ?? '#'} class="link-btn sw-link">Explore</a>
 						</div>
-						<a href="/winds-of-sinai" class="link-btn no-border">Explore</a>
 					</div>
-				</div>
+				))}
 
-				<div class="slide slide-card card-anim">
-					<a href="/work/unfallfix24" class="img-box">
-						<Image src={deeer2} class="img-parallax" alt="UnfallFix24" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="/work/unfallfix24" class="card-title-link"><h3>UnfallFix24</h3></a>
-							<p>Accident reporting &amp; claims management platform</p>
-						</div>
-						<a href="/work/unfallfix24" class="link-btn no-border">Explore</a>
-					</div>
-				</div>
-
-				<div class="slide slide-card card-anim">
-					<a href="/work/mousa-export" class="img-box">
-						<Image src={deeer2} class="img-parallax" alt="Mousa Export" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="/work/mousa-export" class="card-title-link"><h3>Mousa Export</h3></a>
-							<p>International export logistics platform</p>
-						</div>
-						<a href="/work/mousa-export" class="link-btn no-border">Explore</a>
-					</div>
-				</div>
-
-				<div class="slide slide-card card-anim">
-					<a href="#" class="img-box">
-						<Image src={deeer2} class="img-parallax" alt="Steak Club" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="#" class="card-title-link"><h3>Steak Club</h3></a>
-							<p>Premium steakhouse brand with booking system</p>
-						</div>
-						<a href="#" class="link-btn no-border">Explore</a>
-					</div>
-				</div>
-
-				<div class="slide slide-card card-anim">
-					<a href="#" class="img-box">
-						<Image src={deeer2} class="img-parallax" alt="Josh Jabs" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="#" class="card-title-link"><h3>Josh Jabs</h3></a>
-							<p>Personal brand &amp; portfolio for a musician</p>
-						</div>
-						<a href="#" class="link-btn no-border">Explore</a>
-					</div>
-				</div>
-
-				<div class="slide slide-card card-anim">
-					<a href="#" class="img-box">
-						<Image src={deeer2} class="img-parallax" alt="Umzugsservice" widths={[800, 1200, 1800]} sizes="(min-width: 1024px) 50vw, 100vw" loading="eager" decoding="async" />
-					</a>
-					<div class="card-info">
-						<div>
-							<a href="#" class="card-title-link"><h3>Umzugsservice</h3></a>
-							<p>Moving service with SEO &amp; lead generation</p>
-						</div>
-						<a href="#" class="link-btn no-border">Explore</a>
-					</div>
-				</div>
-
-				<div class="slide slide-curtain" id="sw-curtain">
-					<div class="parallax-text" id="sw-curtain-text">
+				<div class="sw-panel sw-panel--cover">
+					<div class="sw-panel__in">
 						<h2>Discover my complete collection of digital experiences, brands, and platforms.</h2>
-						<div class="h-hero-cta-wrap slide-curtain__cta">
+						<div class="h-hero-cta-wrap sw-panel__cta">
 							<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
 							<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
 							<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
@@ -131,46 +122,47 @@ const projects = [
 					</div>
 				</div>
 
-				<div class="slide slide-final" id="sw-final-slide">
-					<h2 class="final-title">A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
+				<div class="sw-panel sw-panel--final">
+					<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 				</div>
 
 			</div>
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the work as one horizontal strip. The section is
+	<!-- Phones and tablets: the same work as one horizontal strip. The view is
 	     pinned with position: sticky and the strip is moved by the scroll
-	     (initWorkHs); without the script (or with reduced motion) it is a
-	     natively swiped, snapping row. Desktop keeps the scene above. -->
-	<div class="hs" id="sw-hs">
-		<div class="hs__sticky">
-			<div class="hs__track">
-				<div class="hs__intro">
-					<h2>What we've<br><em>created.</em></h2>
-					<a href="/projects" class="link-btn no-border">View All Projects</a>
+	     (initStrip); without the script (or with reduced motion) it is a
+	     natively swiped, snapping row. -->
+	<div class="sw-mob" id="sw-hs">
+		<div class="sw-mob__sticky">
+			<div class="sw-mob__track">
+
+				<div class="sw-intro">
+					<h2 class="sw-title">What we've<br><em>created.</em></h2>
+					<a href="/projects" class="link-btn sw-link">View All Projects</a>
 				</div>
 
-				{projects.map((p, i) => (
-					<div class:list={['hs__card', i === 0 && 'hs__card--first']} data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
-						<a href={p.href ?? '#'} class="hs__media" data-case-media={p.caseSrc ? '' : undefined}>
+				{projects.map((p) => (
+					<div class="sw-card" data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
+						<a href={p.href ?? '#'} class="sw-media" data-case-media={p.caseSrc ? '' : undefined}>
 							{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
 							<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 520px, 80vw" loading="eager" decoding="async" />
 						</a>
-						<div class="hs__info">
+						<div class="sw-card__info">
 							<div>
-								<a href={p.href ?? '#'} class="hs__title-link"><h3>{p.title}</h3></a>
+								<a href={p.href ?? '#'} class="sw-card__title"><h3>{p.title}</h3></a>
 								<p>{p.desc}</p>
 							</div>
-							<a href={p.href ?? '#'} class="link-btn no-border">Explore</a>
+							<a href={p.href ?? '#'} class="link-btn sw-link">Explore</a>
 						</div>
 					</div>
 				))}
 
-				<div class="hs__panel hs__panel--cover">
-					<div class="hs__cover-in">
-						<h3>Discover my complete collection of digital experiences, brands, and platforms.</h3>
-						<div class="h-hero-cta-wrap hs__cta">
+				<div class="sw-panel sw-panel--cover">
+					<div class="sw-panel__in">
+						<h2>Discover my complete collection of digital experiences, brands, and platforms.</h2>
+						<div class="h-hero-cta-wrap sw-panel__cta">
 							<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
 							<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
 							<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
@@ -181,14 +173,14 @@ const projects = [
 					</div>
 				</div>
 
-				<div class="hs__slot">
-					<div class="hs__panel hs__panel--final">
-						<h3>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h3>
+				<div class="sw-mob__slot">
+					<div class="sw-panel sw-panel--final">
+						<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 					</div>
 				</div>
 			</div>
 
-			<div class="hs__progress" aria-hidden="true"><span></span></div>
+			<div class="sw-mob__progress" aria-hidden="true"><span></span></div>
 		</div>
 	</div>
 </section>
@@ -200,170 +192,103 @@ const projects = [
 		color: rgb(var(--c-cream));
 	}
 
-	/* Header — mobile only */
-	.sw-header {
-		width: 100%;
-		padding: var(--section-space-top) var(--site-gutter) clamp(1.8rem, 3.8vh, 3.5rem);
+	/* Exactly one layout is on at a time (the script uses the same query). */
+	.sw-desk,
+	.sw-mob { display: none; }
+
+	/* ═══ Shared pieces ═══ */
+
+	/* Opener: a whole screen, the title alone in the middle of it. */
+	.sw-intro {
+		flex: 0 0 100vw;
+		width: 100vw;
 		box-sizing: border-box;
-		opacity: 0;
-		filter: blur(8px);
-		transform: translateY(14px);
-		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
-	}
-	.sw-header.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
-	.sw-header__title {
-		font-family: var(--f-display);
-		font-weight: 600;
-		font-size: clamp(3.5rem, 8vw, 8.5rem);
-		letter-spacing: -0.02em;
-		text-transform: uppercase;
-		line-height: 0.9;
-		color: rgb(var(--c-cream));
-	}
-	.sw-header__title em { font-style: normal; color: rgb(var(--c-red)); }
-
-	/* Horizontal scroll */
-	.scroll-section {
-		/* 70vh for the blur-in (ENTER_SCREENS in the script) + ~660vh of
-		   horizontal travel + a 40vh hold on the final slide (FINAL_HOLD) +
-		   the 100vh of the pinned view. */
-		height: 870vh;
-		position: relative;
-		display: none;
-	}
-	.sticky-view {
-		position: sticky;
-		top: 0;
-		height: 100vh;
-		width: 100%;
-		overflow: hidden;
-		background-color: rgb(var(--c-bg));
-	}
-	.track {
-		display: flex;
-		height: 100%;
-		align-items: center;
-		/* No lead-in space: the intro is a whole screen wide (below), so the title
-		   stands alone in the middle of it at the start and the first project is a
-		   screen away, out of sight, until the scroll brings it in. */
-		padding-left: 0;
-		gap: 10vw;
-		will-change: transform;
-	}
-	.slide { flex-shrink: 0; }
-	.img-parallax { will-change: transform; backface-visibility: hidden; }
-
-	/* Intro */
-	.slide-intro { width: 100vw; text-align: center; }
-	.slide-intro h2 {
-		font-family: var(--f-display);
-		font-weight: 600;
-		font-size: clamp(3.5rem, 8vw, 8.5rem);
-		line-height: 0.9;
-		letter-spacing: -0.02em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream));
-		/* No white-space:nowrap — .slide-intro has flex-shrink:0 (needed for
-		   the horizontal-scroll track's width math), so at laptop widths the
-		   vw-scaled font-size can render wider than the fixed-width column;
-		   nowrap then let it spill straight onto the neighboring image
-		   instead of wrapping to a 3rd line like a normal heading would. */
-		margin-bottom: 2.5rem;
-	}
-	.slide-intro h2 em { font-style: normal; color: rgb(var(--c-red)); }
-
-	/* Cards */
-	.slide-card {
-		width: 45vw;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
-		margin-top: 2.5rem;
-		padding: 1rem 1rem 1.4rem;
+		justify-content: center;
+		align-items: center;
+		text-align: center;
+		padding: 0 var(--intro-pad, 0);
+	}
+	.sw-title {
+		margin: 0 0 var(--intro-gap);
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: var(--intro-size);
+		line-height: 0.9;
+		letter-spacing: -0.02em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream));
+	}
+	.sw-title em { font-style: normal; color: rgb(var(--c-red)); }
+
+	/* Card: a frame, the picture, then title / line / Explore. */
+	.sw-card {
+		flex: 0 0 var(--card-w);
+		width: var(--card-w);
+		box-sizing: border-box;
+		display: flex;
+		flex-direction: column;
+		gap: var(--card-gap);
+		margin-top: var(--card-offset);
+		padding: var(--card-pad);
 		border: 1px solid rgba(255,255,255,0.06);
 		background: rgba(255,255,255,0.018);
 	}
-	.img-box {
+	.sw-media {
 		display: block;
 		width: 100%;
-		aspect-ratio: 16 / 10;
+		aspect-ratio: var(--media-ratio);
 		overflow: hidden;
 		background-color: #0d0d0f;
 		border: 1px solid rgba(255,255,255,0.08);
 		box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
+		-webkit-tap-highlight-color: transparent;
 	}
-	.img-box img {
+	.sw-media img {
+		display: block;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		transform: scale(1.2);
+		transform: scale(1.2); /* the parallax moves it inside the frame */
 	}
-	.card-info { display: flex; justify-content: space-between; align-items: flex-start; }
-	.card-title-link { text-decoration: none; display: block; }
-	.card-info h3 {
+	.sw-card__info { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+	.sw-card__title { display: block; text-decoration: none; }
+	.sw-card h3 {
+		margin: 0 0 0.5rem;
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+		font-size: var(--title-size);
 		letter-spacing: -0.02em;
 		text-transform: uppercase;
 		color: rgb(var(--c-cream));
-		margin-bottom: 0.5rem;
 	}
-	.card-info p {
-		font-family: var(--f-body);
-		font-size: 0.9rem;
-		font-weight: 300;
-		line-height: 1.6;
-		color: rgb(var(--c-cream) / 0.82);
+	.sw-card p {
+		margin: 0;
 		max-width: 320px;
+		font-family: var(--f-body);
+		font-size: var(--text-size);
+		font-weight: 300;
+		line-height: var(--text-lh);
+		color: rgb(var(--c-cream) / 0.82);
 	}
 
-	.link-btn {
+	/* Text link whose underline draws in on hover. (Size and tracking come
+	   from the global .link-btn rule.) */
+	.sw-link {
+		position: relative;
+		padding-bottom: 3px;
 		font-family: var(--f-body);
-		font-size: 0.68rem;
-		font-weight: 600;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
 		color: rgb(var(--c-cream) / 0.65);
 		text-decoration: none;
-		position: relative;
-		padding-bottom: 4px;
 		white-space: nowrap;
 		transition: color 0.3s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1);
 	}
-	.link-btn::after {
+	.sw-link::after {
 		content: '';
 		position: absolute;
-		bottom: 0;
 		left: 0;
-		width: 100%;
-		height: 1px;
-		background: rgb(var(--c-cream) / 0.25);
-		transform: scaleX(1);
-		transform-origin: left;
-		transition: background 0.3s ease;
-	}
-	@media (hover: hover) {
-		.link-btn:hover {
-			color: rgb(var(--c-cream));
-			transform: translateX(5px);
-		}
-		.link-btn:hover::after {
-			background: rgb(var(--c-cream));
-		}
-	}
-
-	.link-btn.no-border {
-		border: none;
-		position: relative;
-		padding-bottom: 3px;
-		transition: color 0.3s ease, transform 0.35s cubic-bezier(0.25,1,0.5,1);
-	}
-	.link-btn.no-border::after {
-		content: '';
-		position: absolute;
 		bottom: 0;
-		left: 0;
 		width: 100%;
 		height: 1px;
 		background: rgb(var(--c-cream));
@@ -372,331 +297,382 @@ const projects = [
 		transition: transform 0.4s cubic-bezier(0.25,1,0.5,1);
 	}
 	@media (hover: hover) {
-		.link-btn.no-border:hover {
-			color: rgb(var(--c-cream));
-			transform: translateX(5px);
-		}
-		.link-btn.no-border:hover::after {
-			transform: scaleX(1);
-		}
+		.sw-link:hover { color: rgb(var(--c-cream)); transform: translateX(5px); }
+		.sw-link:hover::after { transform: scaleX(1); }
 	}
 
-	/* Desktop: the whole card answers to the cursor, not only its small link —
-	   the same as the cards on the Projects page. The frame leans in a touch
-	   and its edge lights, the description comes to full strength and the
-	   Explore link does what it does under the cursor (shifts, underline draws
-	   in). The frame (not the <img>, which the parallax moves) is what scales. */
-	@media (hover: hover) and (pointer: fine) {
-		.img-box {
-			transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s ease;
-		}
-		.card-info p { transition: color 0.5s ease; }
-		.slide-card:hover .img-box {
-			transform: scale(1.02);
-			border-color: rgba(255,255,255,0.2);
-		}
-		.slide-card:hover .card-info p { color: rgb(var(--c-cream) / 0.95); }
-		.slide-card:hover .link-btn.no-border {
-			color: rgb(var(--c-cream));
-			transform: translateX(5px);
-		}
-		.slide-card:hover .link-btn.no-border::after { transform: scaleX(1); }
-	}
-
-	/* Curtain */
-	.slide-curtain {
+	/* The last two slides: a whole screen each, in the page's own background
+	   (no frame). The cover's text drifts as it comes in; the final one slides
+	   out from behind it. */
+	.sw-panel {
+		flex: 0 0 100vw;
 		width: 100vw;
-		height: 100vh;
-		background-color: rgb(var(--c-bg));
+		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		text-align: center;
-		padding: 0 12vw;
-		position: relative;
-		z-index: 5;
 		overflow: hidden;
+		padding: 0 var(--panel-pad);
+		background: rgb(var(--c-bg));
+		color: rgb(var(--c-cream));
 	}
-	.parallax-text { will-change: transform; display: flex; flex-direction: column; align-items: center; }
-	.slide-curtain__cta { width: auto !important; margin-top: 0.5rem; }
-	.slide-curtain h2 {
+	.sw-panel h2 {
+		margin: 0;
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(2rem, 3.8vw, 4rem);
-		letter-spacing: -0.02em;
 		text-transform: uppercase;
-		line-height: 1.05;
-		color: rgb(var(--c-cream));
-		margin-bottom: 2rem;
 	}
-
-	/* Final slide */
-	.slide-final {
-		width: 100vw;
-		height: 100vh;
-		background-color: rgb(var(--c-bg));
+	.sw-panel--cover { position: relative; z-index: 2; }
+	.sw-panel__in {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
 		align-items: center;
-		position: relative;
-		z-index: 1;
-		margin-left: -10vw;
+		gap: var(--cover-gap);
 		will-change: transform;
 	}
-	.final-title {
-		font-family: var(--f-display);
-		font-weight: 600;
-		/* Capped by height too, so it never outgrows the hero on a tall screen. */
-		font-size: min(11vw, 13.5vh);
-		line-height: 0.85;
-		letter-spacing: -0.04em;
-		text-transform: uppercase;
-		text-align: center;
-		color: rgb(var(--c-cream));
-	}
-	.final-footer {
-		position: absolute;
-		bottom: 10%;
-		width: 90%;
-		font-family: var(--f-body);
-		font-size: 0.75rem;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		color: rgb(var(--c-cream) / 0.72);
-	}
+	.sw-panel--cover h2 { font-size: var(--cover-size); line-height: 1.05; letter-spacing: -0.02em; }
+	.sw-panel__cta { width: auto !important; margin: 0; }
+	.sw-panel--final { position: relative; z-index: 1; }
+	.sw-panel--final h2 { font-size: var(--final-size); line-height: 0.85; letter-spacing: -0.04em; }
 
+	/* ═══ Desktop ═══ */
+	.sw-desk {
+		--intro-size: clamp(3.5rem, 8vw, 8.5rem);
+		--intro-gap: 2.5rem;
+		--card-w: var(--card-w-wide);
+		--track-gap: var(--gap-wide);
+		--final-at: var(--final-wide);
+		--cover-at: var(--cover-wide);
+		--drift-to: var(--drift-wide);
+		--card-gap: 1.25rem;
+		--card-offset: 2.5rem;
+		--card-pad: 1rem 1rem 1.4rem;
+		--media-ratio: 16 / 10;
+		--title-size: clamp(1.4rem, 2.2vw, 2.2rem);
+		--text-size: 0.9rem;
+		--text-lh: 1.6;
+		--panel-pad: 12vw;
+		--cover-gap: 2.5rem;
+		--cover-size: clamp(2rem, 3.8vw, 4rem);
+		/* Capped by height too, so it never outgrows the screen. */
+		--final-size: min(11vw, 13.5vh);
+		position: relative;
+	}
+	.sw-desk__view {
+		position: sticky;
+		top: 0;
+		width: 100%;
+		height: 100vh;
+		overflow: hidden;
+		background-color: rgb(var(--c-bg));
+	}
+	/* No lead-in space: the intro is a whole screen wide, so the title stands
+	   alone in the middle at the start and the first project is a screen away
+	   until the scroll brings it in. */
+	.sw-desk__track {
+		display: flex;
+		align-items: center;
+		gap: var(--track-gap);
+		/* As wide as its content, so translateX(100vw - 100%) is exactly the
+		   distance to the end of the track. */
+		width: max-content;
+		height: 100%;
+		will-change: transform;
+	}
+	/* Each moving card gets its own compositor layer, so moving it never
+	   repaints the frame, shadow and picture. */
+	.sw-desk .sw-card--rise { will-change: transform; }
+	.sw-desk .sw-card--fade { will-change: opacity; }
+	.sw-desk .sw-panel { height: 100vh; }
+	/* The final slide is pulled under the cover and slides out from behind it
+	   (the script). */
+	.sw-desk .sw-panel--final { margin-left: calc(var(--overlap) * -1); will-change: transform; }
+
+	/* Pulled up by one screen, so the pinned view takes over exactly where the
+	   manifesto's pin ends: it blurs in on the spot (nothing slides in from
+	   below), then the horizontal travel starts. */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
-		/* Pulled up by one screen, so the pinned view takes over exactly where the
-		   manifesto's pin ends: it blurs in on the spot (nothing slides in from
-		   below), then the horizontal travel starts. */
-		.scroll-section { display: block; margin-top: -100vh; }
-		.sw-header { display: none; }
+		.sw-desk { display: block; margin-top: -100vh; }
 	}
 
-	@media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
-		.track { gap: 5vw; }
-		.slide-card { width: 42vw; }
-		.slide-intro h2 { font-size: clamp(3rem, 6vw, 8rem); }
+	.sw-card--rise,
+	.sw-card--fade { --from: var(--from-wide); --to: var(--to-wide); }
+
+	/* Desktop: the whole card answers to the cursor, not only its small link —
+	   the same as the cards on the Projects page. The frame (not the <img>,
+	   which the parallax moves) leans in a touch and its edge lights. */
+	@media (hover: hover) and (pointer: fine) {
+		.sw-desk .sw-media { transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.8s ease; }
+		.sw-desk .sw-card p { transition: color 0.5s ease; }
+		.sw-desk .sw-card:hover .sw-media { transform: scale(1.02); border-color: rgba(255,255,255,0.2); }
+		.sw-desk .sw-card:hover p { color: rgb(var(--c-cream) / 0.95); }
+		.sw-desk .sw-card:hover .sw-link { color: rgb(var(--c-cream)); transform: translateX(5px); }
+		.sw-desk .sw-card:hover .sw-link::after { transform: scaleX(1); }
 	}
 
-	/* Laptop-height viewports: the card (16/10 image + info block + the
-	   decorative margin-top) is tall enough that, vertically centred in the
-	   sticky 100vh view, its footer runs into the fixed MENU button. Keep
-	   the card WIDTH untouched (it drives the horizontal-scroll track math
-	   and the final-slide reveal) — only drop the decorative offset and
-	   flatten the image to a cinematic crop to reclaim the height. */
-	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
-		.slide-card { margin-top: 0; }
-		.img-box { aspect-ratio: 2 / 1; }
+	@media (max-width: 1600px) {
+		.sw-desk {
+			--card-w: var(--card-w-narrow);
+			--track-gap: var(--gap-narrow);
+			--final-at: var(--final-narrow);
+			--cover-at: var(--cover-narrow);
+			--drift-to: var(--drift-narrow);
+			--intro-size: clamp(3rem, 6vw, 8rem);
+		}
+		.sw-card--rise,
+		.sw-card--fade { --from: var(--from-narrow); --to: var(--to-narrow); }
+	}
+	/* Laptop-height screens: the card is tall enough that its footer would run
+	   into the fixed MENU button. The card WIDTH stays (it drives the scroll
+	   math and the final-slide reveal) — only the decorative offset goes and
+	   the picture flattens to a cinematic crop. */
+	@media (max-height: 1000px) {
+		.sw-desk { --card-offset: 0; --media-ratio: 2 / 1; }
+	}
+	@media (max-height: 820px) {
+		.sw-desk { --media-ratio: 21 / 9; }
 	}
 
-	@media (min-width: 1025px) and (hover: hover) and (max-height: 820px), (min-width: 1025px) and (pointer: fine) and (max-height: 820px) {
-		.img-box { aspect-ratio: 21 / 9; }
+	/* ═══ Desktop motion: scroll-driven CSS animations ═══
+	   The whole scene is driven by the page's scroll position and runs on the
+	   compositor, off the main thread, so it cannot stutter the way a
+	   per-frame script does. One timeline (--sw) spans the pinned scroll;
+	   every move below is a slice of it. (`contain` on a subject taller than
+	   the screen is exactly the span it stays pinned for.) Browsers without
+	   this get the same scene from the script instead. */
+	@supports (animation-timeline: view()) {
+		.sw-desk { view-timeline: --sw block; }
+
+		.sw-desk__view,
+		.sw-desk__track,
+		.sw-card--rise,
+		.sw-card--fade,
+		.sw-desk .sw-panel--cover .sw-panel__in,
+		.sw-desk .sw-panel--final {
+			animation-duration: 1ms;
+			animation-fill-mode: both;
+			animation-timeline: --sw;
+		}
+
+		/* The pinned view is invisible until the scroll reaches it (it would
+		   cover the manifesto's last screen). */
+		.sw-desk__view {
+			animation-name: sw-show;
+			animation-timing-function: linear;
+			animation-range: contain 0% contain 0.01%;
+		}
+		/* Blur-in on the spot (a fade), then the horizontal travel. */
+		.sw-desk__track {
+			animation-name: sw-slide, sw-fade-in;
+			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
+			animation-range: contain var(--e) contain var(--t), contain 0% contain var(--e);
+		}
+		.sw-card--rise {
+			animation-name: sw-rise;
+			animation-timing-function: linear;
+			animation-range: contain var(--from) contain var(--to);
+		}
+		.sw-card--fade {
+			animation-name: sw-appear;
+			animation-timing-function: linear;
+			animation-range: contain var(--from) contain var(--to);
+		}
+		.sw-desk .sw-panel--cover .sw-panel__in {
+			animation-name: sw-drift;
+			animation-timing-function: linear;
+			animation-range: contain var(--cover-at) contain var(--t);
+		}
+		.sw-desk .sw-panel--final {
+			animation-name: sw-slide-out;
+			animation-timing-function: linear;
+			animation-range: contain var(--final-at) contain var(--t);
+		}
+	}
+	@keyframes sw-show {
+		from { visibility: hidden; }
+		to { visibility: visible; }
+	}
+	@keyframes sw-slide {
+		from { transform: translate3d(0, 0, 0); }
+		to { transform: translate3d(calc(100vw - 100%), 0, 0); }
+	}
+	@keyframes sw-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes sw-rise {
+		from { transform: translate3d(0, 55vh, 0); }
+		to { transform: translate3d(0, 0, 0); }
+	}
+	@keyframes sw-appear {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes sw-drift {
+		from { transform: translate3d(240px, 0, 0); }
+		to { transform: translate3d(var(--drift-to), 0, 0); }
+	}
+	/* Tucked half a step behind the cover, then slid out to its own place. */
+	@keyframes sw-slide-out {
+		from { transform: translate3d(-75vw, 0, 0); }
+		to { transform: translate3d(0, 0, 0); }
 	}
 
-	/* Final slide headline had only a vw size — on short laptops the four
-	   lines overflowed the viewport top/bottom (and the wide words bled off
-	   the sides), so the closing reveal looked broken. Cap it against height
-	   too. */
-	@media (min-width: 1025px) and (hover: hover) and (max-height: 1000px), (min-width: 1025px) and (pointer: fine) and (max-height: 1000px) {
-		.final-title { font-size: min(11vw, 13.5vh); }
+	/* ═══ Phones and tablets ═══ */
+	.sw-mob {
+		--gap: clamp(12px, 4vw, 32px);
+		--intro-size: clamp(3rem, 15vw, 6rem);
+		--intro-gap: 2rem;
+		--intro-pad: 6vw;
+		--card-w: min(80vw, 520px);
+		--card-gap: 1.1rem;
+		--card-offset: 0;
+		--card-pad: 0.75rem 0.75rem 1.1rem;
+		--media-ratio: 4 / 3;
+		--title-size: clamp(1.25rem, 5.4vw, 1.9rem);
+		--text-size: 0.88rem;
+		--text-lh: 1.55;
+		--panel-pad: 8vw;
+		--cover-gap: 1.75rem;
+		--cover-size: clamp(1.5rem, 6.8vw, 3rem);
+		--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
 	}
-
-	/* ── Phones/tablets: one horizontal strip, pinned with position: sticky and
-	   moved by the scroll (script below); the cards are laid out like the desktop
-	   ones (frame, picture with its parallax, title / line / Explore). ── */
-	.hs { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		/* The opener is the first slide of the row now. */
-		.sw-header { display: none; }
-		.hs {
+		.sw-mob {
 			display: block;
 			position: relative;
-			/* Pulled up by one screen, so the pinned view takes over exactly where
-			   the manifesto's pin ends: the row blurs in on the spot, then travels. */
+			/* Pulled up by one screen, so the pinned view takes over exactly
+			   where the manifesto's pin ends: the row blurs in on the spot,
+			   then travels. */
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-			--hs-gap: clamp(12px, 4vw, 32px);
-			--hs-card-w: min(80vw, 520px);
-			/* Side margin that centres the first card and the last panel. */
-			--hs-side: max(0px, calc((100vw - var(--hs-card-w)) / 2 - var(--hs-gap)));
 		}
-		.hs__sticky {
-			height: 100svh;
-			height: calc(var(--app-stable-vh, 1svh) * 100);
-			box-sizing: border-box;
-			padding-bottom: 4rem;
-			display: flex;
-			align-items: center;
-			/* No script / reduced motion: a natively swiped row that snaps. */
-			overflow-x: auto;
-			overflow-y: hidden;
-			scroll-snap-type: x mandatory;
-			overscroll-behavior-x: contain;
-			scrollbar-width: none;
-		}
-		.hs__sticky::-webkit-scrollbar { display: none; }
-		.hs__track {
-			height: 100%;
-			display: flex;
-			align-items: center;
-			gap: var(--hs-gap);
-			padding-inline: 0 var(--hs-gap);
-			width: max-content;
-		}
+	}
+	.sw-mob__sticky {
+		height: 100svh;
+		height: calc(var(--app-stable-vh, 1svh) * 100);
+		box-sizing: border-box;
+		padding-bottom: 4rem;
+		display: flex;
+		align-items: center;
+		/* No script / reduced motion: a natively swiped row that snaps. */
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x mandatory;
+		overscroll-behavior-x: contain;
+		scrollbar-width: none;
+	}
+	.sw-mob__sticky::-webkit-scrollbar { display: none; }
+	.sw-mob__track {
+		display: flex;
+		align-items: center;
+		gap: var(--gap);
+		width: max-content;
+		height: 100%;
+		padding-inline: 0 var(--gap);
+	}
+	.sw-mob__track > * { scroll-snap-align: center; }
+	.sw-mob .sw-intro,
+	.sw-mob .sw-panel { align-self: stretch; }
+	.sw-mob__slot {
+		flex: 0 0 100vw;
+		width: 100vw;
+		align-self: stretch;
+		display: flex;
+		position: relative;
+		z-index: 1;
+		/* Cancels the track's right padding: the last slide ends flush. */
+		margin-right: calc(var(--gap) * -1);
+	}
+	.sw-mob__slot .sw-panel { width: 100%; }
 
-		/* Opener: a whole screen, the title alone in the middle of it. */
-		.hs__intro {
-			flex: 0 0 100vw;
-			width: 100vw;
-			align-self: stretch;
-			box-sizing: border-box;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			text-align: center;
-			padding: 0 6vw;
-			scroll-snap-align: center;
-		}
-		.hs__intro h2 {
-			margin: 0 0 2rem;
-			font-family: var(--f-display);
-			font-weight: 600;
-			font-size: clamp(3rem, 15vw, 6rem);
-			line-height: 0.9;
-			letter-spacing: -0.02em;
-			text-transform: uppercase;
-			color: rgb(var(--c-cream));
-		}
-		.hs__intro h2 em { font-style: normal; color: rgb(var(--c-red)); }
+	.sw-mob__progress {
+		position: absolute;
+		left: var(--site-gutter);
+		right: var(--site-gutter);
+		bottom: 6.5rem;
+		height: 1px;
+		background: rgb(var(--c-cream) / 0.14);
+		display: none;
+	}
+	.sw-mob__progress span {
+		display: block;
+		height: 100%;
+		background: rgb(var(--c-red));
+		transform: scaleX(0);
+		transform-origin: left center;
+	}
 
-		/* Desktop's card: a frame, the picture, title + line + Explore. */
-		.hs__card {
-			flex: 0 0 var(--hs-card-w);
-			width: var(--hs-card-w);
-			box-sizing: border-box;
-			display: flex;
-			flex-direction: column;
-			gap: 1.1rem;
-			padding: 0.75rem 0.75rem 1.1rem;
-			border: 1px solid rgba(255,255,255,0.06);
-			background: rgba(255,255,255,0.018);
-			scroll-snap-align: center;
-		}
-		.hs__media {
-			display: block;
-			width: 100%;
-			aspect-ratio: 4 / 3;
-			overflow: hidden;
-			background-color: #0d0d0f;
-			border: 1px solid rgba(255,255,255,0.08);
-			box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
-			-webkit-tap-highlight-color: transparent;
-		}
-		.hs__media img {
-			display: block;
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			transform: scale(1.2);
-		}
-		.hs__info { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
-		.hs__title-link { text-decoration: none; display: block; }
-		.hs__info h3 {
-			margin: 0 0 0.45rem;
-			font-family: var(--f-display);
-			font-weight: 600;
-			font-size: clamp(1.25rem, 5.4vw, 1.9rem);
-			letter-spacing: -0.02em;
-			text-transform: uppercase;
-			color: rgb(var(--c-cream));
-		}
-		.hs__info p {
-			margin: 0;
-			font-family: var(--f-body);
-			font-size: 0.88rem;
-			font-weight: 300;
-			line-height: 1.55;
-			color: rgb(var(--c-cream) / 0.82);
-			max-width: 320px;
-		}
+	/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
+	.sw-mob.is-active .sw-mob__sticky {
+		position: sticky;
+		top: 0;
+		overflow: hidden;
+		scroll-snap-type: none;
+	}
+	.sw-mob.is-active .sw-mob__track,
+	.sw-mob.is-active .sw-mob__slot .sw-panel { will-change: transform; }
+	.sw-mob.is-active .sw-mob__progress { display: block; }
 
-		/* The last two slides work as on the desktop: a whole screen each, in the
-		   page's own background (no frame). The first one's text drifts as it comes
-		   in; the second slides out from behind it. */
-		.hs__panel {
-			flex: 0 0 100vw;
-			width: 100vw;
-			align-self: stretch;
-			box-sizing: border-box;
-			display: flex;
-			flex-direction: column;
-			justify-content: center;
-			align-items: center;
-			text-align: center;
-			overflow: hidden;
-			padding: 0 8vw;
-			background: rgb(var(--c-bg));
-			scroll-snap-align: center;
+	/* Same idea as the desktop scene: where scroll-driven animations exist the
+	   strip is moved by the page's scroll on the compositor (the script only
+	   measures: --dist is how far the strip travels, the others where the last
+	   two panels sit). The strip travels 1px per px of scroll. */
+	@supports (animation-timeline: view()) {
+		.sw-mob.is-driven {
+			--enter: calc(var(--app-stable-vh, 1svh) * 70);
+			view-timeline: --swm block;
 		}
-		.hs__panel h3 {
-			margin: 0;
-			font-family: var(--f-display);
-			font-weight: 600;
-			text-transform: uppercase;
-			color: rgb(var(--c-cream));
+		.sw-mob.is-driven .sw-mob__track,
+		.sw-mob.is-driven .sw-mob__progress,
+		.sw-mob.is-driven .sw-mob__progress span,
+		.sw-mob.is-driven .sw-panel__in,
+		.sw-mob.is-driven .sw-mob__slot .sw-panel {
+			animation-duration: 1ms;
+			animation-fill-mode: both;
+			animation-timeline: --swm;
 		}
-		.hs__panel--cover { position: relative; z-index: 2; }
-		.hs__cover-in { display: flex; flex-direction: column; align-items: center; gap: 1.75rem; will-change: transform; }
-		.hs__panel--cover h3 { font-size: clamp(1.5rem, 6.8vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
-		.hs__cta { width: auto !important; margin: 0; }
-		.hs__slot {
-			flex: 0 0 100vw;
-			width: 100vw;
-			align-self: stretch;
-			display: flex;
-			/* Cancels the track's right padding: the last slide ends flush. */
-			margin-right: calc(var(--hs-gap) * -1);
-			position: relative;
-			z-index: 1;
-			scroll-snap-align: center;
+		/* Comes up out of the dark once pinned, then travels. */
+		.sw-mob.is-driven .sw-mob__track {
+			animation-name: sw-slide, sw-fade-in;
+			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
+			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist)), contain 0% contain var(--enter);
 		}
-		.hs__slot .hs__panel { width: 100%; }
-		.hs__panel--final h3 {
-			font-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
-			line-height: 0.85;
-			letter-spacing: -0.04em;
+		.sw-mob.is-driven .sw-mob__progress {
+			animation-name: sw-fade-in;
+			animation-timing-function: linear;
+			animation-range: contain 0% contain var(--enter);
 		}
-
-		.hs__progress {
-			position: absolute;
-			left: var(--site-gutter);
-			right: var(--site-gutter);
-			bottom: 6.5rem;
-			height: 1px;
-			background: rgb(var(--c-cream) / 0.14);
-			display: none;
+		.sw-mob.is-driven .sw-mob__progress span {
+			animation-name: sw-bar;
+			animation-timing-function: linear;
+			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
-		.hs__progress span {
-			display: block;
-			height: 100%;
-			background: rgb(var(--c-red));
-			transform: scaleX(0);
-			transform-origin: left center;
+		/* The cover's text drifts as its panel comes in. */
+		.sw-mob.is-driven .sw-panel--cover .sw-panel__in {
+			animation-name: sw-drift-out;
+			animation-timing-function: linear;
+			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left) + 100vw);
 		}
-
-		/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
-		.hs.is-active .hs__sticky {
-			position: sticky;
-			top: 0;
-			overflow: hidden;
-			scroll-snap-type: none;
+		/* The last panel starts hidden exactly under the cover and ends in its own place. */
+		.sw-mob.is-driven .sw-mob__slot .sw-panel {
+			animation-name: sw-slot-in;
+			animation-timing-function: linear;
+			animation-range: contain calc(var(--enter) + var(--slot-left) - 100vw) contain calc(var(--enter) + var(--slot-left));
 		}
-		.hs.is-active .hs__track { will-change: transform; }
-		.hs.is-active .hs__slot .hs__panel { will-change: transform; }
-		.hs.is-active .hs__progress { display: block; }
+	}
+	@keyframes sw-bar {
+		from { transform: scaleX(0); }
+		to { transform: scaleX(1); }
+	}
+	@keyframes sw-drift-out {
+		from { transform: translate3d(240px, 0, 0); }
+		to { transform: translate3d(-200px, 0, 0); }
+	}
+	@keyframes sw-slot-in {
+		from { transform: translate3d(calc(-100vw - var(--gap)), 0, 0); }
+		to { transform: translate3d(0, 0, 0); }
 	}
 </style>
 
@@ -705,31 +681,37 @@ const projects = [
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
 
-	// Phones/tablets: the strip is pinned by position: sticky (no pin spacer, no
-	// jump) and moved horizontally by a scrubbed ScrollTrigger; the last panel
-	// slides out from behind the one before it. Without this the strip is a
-	// natively swiped, snapping row (see the CSS).
-	let _hsMm: gsap.MatchMedia | null = null;
-	function initWorkHs(section: HTMLElement) {
-		_hsMm?.revert();
-		_hsMm = null;
-		const hs = section.querySelector<HTMLElement>('#sw-hs');
-		const sticky = hs?.querySelector<HTMLElement>('.hs__sticky');
-		const track = hs?.querySelector<HTMLElement>('.hs__track');
-		const bar = hs?.querySelector<HTMLElement>('.hs__progress span');
-		const slot = hs?.querySelector<HTMLElement>('.hs__slot');
-		const slide = slot?.querySelector<HTMLElement>('.hs__panel');
-		const cover = hs?.querySelector<HTMLElement>('.hs__panel--cover');
-		if (!hs || !sticky || !track || !bar || !slot || !slide || !cover) return;
+	gsap.registerPlugin(ScrollTrigger);
 
-		gsap.registerPlugin(ScrollTrigger);
+	const MOBILE = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
+
+	// ── Phones/tablets ─────────────────────────────────────────────────────
+	// The strip is pinned by position: sticky (no pin spacer, no jump) and
+	// moved horizontally by a scrubbed ScrollTrigger; the last panel slides
+	// out from behind the one before it. Without this the strip is a natively
+	// swiped, snapping row (see the CSS).
+	let stripMm: gsap.MatchMedia | null = null;
+
+	function initStrip(section: HTMLElement) {
+		stripMm?.revert();
+		stripMm = null;
+
+		const root = section.querySelector<HTMLElement>('.sw-mob');
+		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
+		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
+		const bar = root?.querySelector<HTMLElement>('.sw-mob__progress span');
+		const slot = root?.querySelector<HTMLElement>('.sw-mob__slot');
+		const last = slot?.querySelector<HTMLElement>('.sw-panel');
+		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
+		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
+		if (!root || !sticky || !track || !bar || !slot || !last || !cover || !coverIn) return;
+
 		ScrollTrigger.config({ ignoreMobileResize: true });
 		const setBar = gsap.quickSetter(bar, 'scaleX');
 
-		const mm = gsap.matchMedia();
-		_hsMm = mm;
-		mm.add('(prefers-reduced-motion: no-preference)', () => {
-			hs.classList.add('is-active');
+		stripMm = gsap.matchMedia();
+		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
+			root.classList.add('is-active');
 			sticky.scrollLeft = 0;
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
@@ -738,42 +720,61 @@ const projects = [
 			const hold = () => sticky.offsetHeight * 0.5;
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-			const setHeight = () => { hs.style.height = enter() + distance() + hold() + sticky.offsetHeight + 'px'; };
-			setHeight();
-			ScrollTrigger.addEventListener('refreshInit', setHeight);
+			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
 
-			// Offsets for the parallax are measured here (init + refresh), not per frame.
-			const cards = Array.from(hs.querySelectorAll<HTMLElement>('.hs__card')).map(el => ({
-				img: el.querySelector<HTMLElement>('.hs__media img')!,
+			// Where scroll-driven animations exist, CSS moves the strip (see the
+			// styles) and the script only measures — here and on every refresh,
+			// never per frame.
+			if (CSS.supports('animation-timeline: view()')) {
+				const place = () => {
+					setHeight();
+					root.style.setProperty('--dist', `${distance()}px`);
+					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
+					root.style.setProperty('--slot-left', `${slot.offsetLeft}px`);
+				};
+				place();
+				ScrollTrigger.addEventListener('refreshInit', place);
+				root.classList.add('is-driven');
+				return () => {
+					ScrollTrigger.removeEventListener('refreshInit', place);
+					['--dist', '--cover-left', '--slot-left'].forEach((v) => root.style.removeProperty(v));
+					root.style.height = '';
+					root.classList.remove('is-driven', 'is-active');
+				};
+			}
+
+			// Offsets for the parallax are measured at init and refresh, not per frame.
+			const cards = Array.from(root.querySelectorAll<HTMLElement>('.sw-card')).map((el) => ({
+				el,
+				img: el.querySelector<HTMLElement>('.sw-media img')!,
 				left: 0,
 				width: 0,
-				el,
 			}));
-			const coverIn = cover.querySelector<HTMLElement>('.hs__cover-in');
 			let coverLeft = 0;
 			const measure = () => {
-				cards.forEach(c => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
+				cards.forEach((c) => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
 				coverLeft = cover.offsetLeft;
 			};
+
+			setHeight();
 			measure();
+			ScrollTrigger.addEventListener('refreshInit', setHeight);
 			ScrollTrigger.addEventListener('refreshInit', measure);
 
-			// Same moves as the desktop scene: each picture drifts inside its frame,
-			// the closing text drifts as its panel comes in.
+			// Same moves as the desktop scene: each picture drifts inside its
+			// frame, the closing text drifts as its panel comes in.
 			const parallax = () => {
 				const x = -(gsap.getProperty(track, 'x') as number);
 				const vw = window.innerWidth;
-				cards.forEach(c => {
+				cards.forEach((c) => {
 					const left = c.left - x;
 					if (left < vw && left + c.width > 0) {
 						const ip = (left + c.width / 2 - vw / 2) / vw;
 						c.img.style.transform = `scale(1.2) translate3d(${(ip * 8).toFixed(2)}%,0,0)`;
 					}
 				});
-				if (coverIn) {
-					const cp = (coverLeft - x) / vw;
-					if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
-				}
+				const cp = (coverLeft - x) / vw;
+				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 			};
 
 			// Comes out of a blur once pinned (the manifesto has just faded out).
@@ -784,33 +785,34 @@ const projects = [
 					filter: 'blur(0px)',
 					ease: 'power2.out',
 					scrollTrigger: {
-						trigger: hs,
+						trigger: root,
 						start: 'top top',
-						end: () => '+=' + enter(),
+						end: () => `+=${enter()}`,
 						scrub: true,
 						invalidateOnRefresh: true,
 					},
 				});
 
-			const tween = gsap.to(track, {
+			const travel = gsap.to(track, {
 				x: () => -distance(),
 				ease: 'none',
 				force3D: true,
 				onUpdate: parallax,
 				scrollTrigger: {
-					trigger: hs,
-					start: () => 'top+=' + enter() + ' top',
-					end: () => '+=' + distance(),
+					trigger: root,
+					start: () => `top+=${enter()} top`,
+					end: () => `+=${distance()}`,
 					scrub: 0.3,
 					invalidateOnRefresh: true,
-					onUpdate: self => setBar(self.progress),
+					onUpdate: (self) => setBar(self.progress),
 				},
 			});
 			parallax();
 
-			// Start hidden exactly under the cover panel; end in its own place.
+			// The last panel starts hidden exactly under the cover and ends in
+			// its own place.
 			const offset = () => slot.offsetLeft - cover.offsetLeft;
-			gsap.fromTo(slide,
+			gsap.fromTo(last,
 				{ x: () => -offset() },
 				{
 					x: 0,
@@ -818,7 +820,7 @@ const projects = [
 					force3D: true,
 					scrollTrigger: {
 						trigger: slot,
-						containerAnimation: tween,
+						containerAnimation: travel,
 						start: 'left right',
 						end: 'center center',
 						scrub: true,
@@ -829,188 +831,135 @@ const projects = [
 			return () => {
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
-				hs.style.height = '';
-				hs.classList.remove('is-active');
+				root.style.height = '';
+				root.classList.remove('is-active');
 			};
 		});
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
+
 	document.addEventListener('astro:before-swap', () => {
-		_hsMm?.revert();
-		_hsMm = null;
+		stripMm?.revert();
+		stripMm = null;
 	});
 
-	function initSelectedWork() {
-		const section = document.getElementById('selected-work');
-		if (!section) return;
+	// ── Desktop ────────────────────────────────────────────────────────────
+	function initScene(section: HTMLElement) {
+		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
+		const view = scene.querySelector<HTMLElement>('.sw-desk__view')!;
+		const track = scene.querySelector<HTMLElement>('.sw-desk__track')!;
+		const cover = scene.querySelector<HTMLElement>('.sw-panel--cover')!;
+		const coverIn = cover.querySelector<HTMLElement>('.sw-panel__in')!;
+		const last = scene.querySelector<HTMLElement>('.sw-panel--final')!;
+		const rising = Array.from(scene.querySelectorAll<HTMLElement>('.sw-card--rise'));
+		const fading = Array.from(scene.querySelectorAll<HTMLElement>('.sw-card--fade'));
+		const pictures = Array.from(scene.querySelectorAll<HTMLElement>('.sw-media img'))
+			.map((el) => ({ el, box: el.parentElement!, left: 0, width: 0 }));
 
-		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-			section.querySelector<HTMLElement>('.sw-header')?.classList.add('visible');
-			initWorkHs(section);
-			return;
-		}
+		// The scroll's length, in screens (set in the frontmatter, which also
+		// sizes the scene): blur-in on the spot, the horizontal travel, then a
+		// hold on the last slide.
+		const ENTER = Number(scene.dataset.enter);
+		const TRAVEL = Number(scene.dataset.travel);
+		const HOLD = Number(scene.dataset.hold);
 
-		const ss = document.getElementById('sw-scroll-section')!;
-		const tr = document.getElementById('sw-track')!;
-		const sv = ss.querySelector<HTMLElement>('.sticky-view')!;
-		const ce = document.getElementById('sw-curtain')!;
-		const ct = document.getElementById('sw-curtain-text')!;
-		const fs = document.getElementById('sw-final-slide')!;
-		const cards      = Array.from(section.querySelectorAll<HTMLElement>('.card-anim'));
-		const fadeCards  = Array.from(section.querySelectorAll<HTMLElement>('.card-fade'));
-		const images = Array.from(section.querySelectorAll<HTMLElement>('.img-parallax'));
-
-		/* All layout reads happen in measure() (init + resize only); render() works
-		   off cached offsets + window.scrollY so scroll frames never force a reflow. */
-		const EASE_PER_SECOND = 8;
-		let currentX = 0;
 		let maxScroll = 0;
-		let sectionTop = 0;
-		let enterFrom = 0; // scrollY where the manifesto's pin really ends
-		let scrollableH = 1;
-		let rafId = 0;
-		let active = false;
-		let lastTime = 0;
+		let risingX: number[] = [];
+		const risenY: number[] = [];
+		let fadingX: number[] = [];
+		let coverX = 0;
+		const dpr = () => window.devicePixelRatio || 1;
 
-		const cardX = new Array<number>(cards.length);
-		const fadeX = new Array<number>(fadeCards.length);
-		const imgBoxes: { el: HTMLElement; left: number; width: number }[] = [];
-		let curtainX = 0;
-		const FINAL_HOLD = 0.4; // screens — keep in step with .scroll-section's height
-		const ENTER_SCREENS = 0.7; // screens of blur-in before the horizontal travel
+		// Layout reads happen here only (init + refresh), never per frame.
+		const measure = () => {
+			maxScroll = Math.max(0, track.scrollWidth - window.innerWidth);
+			risingX = rising.map((c) => c.offsetLeft);
+			fadingX = fading.map((c) => c.offsetLeft);
+			coverX = cover.offsetLeft;
+			pictures.forEach((p) => { p.left = p.box.offsetLeft; p.width = p.box.offsetWidth; });
+		};
+		measure();
+		ScrollTrigger.addEventListener('refreshInit', measure);
 
-		function measure() {
-			maxScroll = tr.scrollWidth - window.innerWidth;
-			sectionTop = ss.getBoundingClientRect().top + window.scrollY;
-			// Measured, not assumed (the manifesto sizes off a frozen --app-stable-vh,
-			// this off the live viewport; they differ once the window is resized):
-			// the blur-in must start only when the manifesto's pin has ended
-			// and this view is pinned itself.
-			const man = document.getElementById('manifesto');
-			const manPin = man?.firstElementChild as HTMLElement | null;
-			enterFrom = man && manPin
-				? Math.max(sectionTop, man.getBoundingClientRect().bottom + window.scrollY - manPin.offsetHeight)
-				: sectionTop;
-			// The travel ends FINAL_HOLD screens before the pin lets go, so the
-			// last slide ("A.I. / Design / …"), once revealed, holds a moment.
-			scrollableH = Math.max(1, ss.offsetHeight - window.innerHeight * (1 + FINAL_HOLD + ENTER_SCREENS));
-			curtainX = ce.offsetLeft;
-			cards.forEach((card, i) => { cardX[i] = card.offsetLeft; });
-			fadeCards.forEach((card, i) => { fadeX[i] = card.offsetLeft; });
-			imgBoxes.length = 0;
-			images.forEach(img => {
-				const box = img.parentElement!;
-				imgBoxes.push({ el: img, left: box.offsetLeft, width: box.offsetWidth });
-			});
-		}
-
-		function render(now: number) {
-			rafId = 0;
-			const enterY = ENTER_SCREENS * window.innerHeight;
-			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - enterY) / scrollableH));
-			const targetX = progress * maxScroll;
-			const dt = lastTime ? Math.min((now - lastTime) / 1000, 0.1) : 1 / 60;
-			lastTime = now;
-			currentX += (targetX - currentX) * (1 - Math.exp(-EASE_PER_SECOND * dt));
-			tr.style.transform = `translate3d(-${currentX}px,0,0)`;
-
-			// Blurs in on the spot, once pinned (the manifesto has just faded
-			// out), before the horizontal travel starts.
-			const t = Math.max(0, Math.min(1, (window.scrollY - enterFrom) / (ENTER_SCREENS * window.innerHeight)));
-			const e = 1 - (1 - t) * (1 - t); // comes in at once, then settles
-			sv.style.opacity = e > 0 ? '1' : '0';
-			tr.style.opacity = String(e);
-
+		// Everything that rides on the track's position.
+		const apply = () => {
+			const x = -(gsap.getProperty(track, 'x') as number);
 			const vw = window.innerWidth;
+			const vh = window.innerHeight;
 
-			const distToEnd = maxScroll - currentX;
-			fs.style.transform = distToEnd < vw * 1.5
-				? `translate3d(-${distToEnd * 0.5}px,0,0)`
-				: 'translate3d(0,0,0)';
+			// The last slide slides out from behind the cover.
+			const toEnd = maxScroll - x;
+			last.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 
-			const maxY = window.innerHeight * 0.55;
-			cards.forEach((card, i) => {
-				const sp = (cardX[i] - currentX) / vw;
-				const lp = Math.max(0, (sp - 0.5) * 2);
-				card.style.transform = `translate3d(0,${Math.min(lp * maxY, maxY)}px,0)`;
-			});
-
-			fadeCards.forEach((card, i) => {
-				const sp = (fadeX[i] - currentX) / vw;
-				card.style.opacity = String(Math.max(0, Math.min(1, (1 - sp) * 2)));
-			});
-
-			const cp = (curtainX - currentX) / vw;
-			if (cp < 1.2 && cp > -1) ct.style.transform = `translate3d(${cp * 200}px,0,0)`;
-
-			imgBoxes.forEach(d => {
-				const left = d.left - currentX;
-				if (left < vw && left + d.width > 0) {
-					const ip = (left - vw / 2) / vw;
-					d.el.style.transform = `scale(1.2) translate3d(${ip * 8}%,0,0)`;
+			// Cards rise into place as they come in; the first one just fades.
+			// Only a value that changed is written: cards still waiting below
+			// the screen (clamped at maxY) or already in place cost nothing.
+			const maxY = vh * 0.55;
+			rising.forEach((card, i) => {
+				const lp = Math.max(0, ((risingX[i] - x) / vw - 0.5) * 2);
+				// Not rounded: whole-pixel steps made the card's speed uneven
+				// frame to frame (a visible crunch). It still lands on exactly 0.
+				const y = Math.round(Math.min(lp * maxY, maxY) * 100) / 100;
+				if (y !== risenY[i]) {
+					risenY[i] = y;
+					card.style.transform = `translate3d(0,${y}px,0)`;
 				}
 			});
+			fading.forEach((card, i) => {
+				card.style.opacity = Math.max(0, Math.min(1, (1 - (fadingX[i] - x) / vw) * 2)).toFixed(3);
+			});
 
-			if (Math.abs(targetX - currentX) > 0.25) scheduleRender();
-		}
+			const cp = (coverX - x) / vw;
+			if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 
-		function scheduleRender() {
-			if (active && !rafId) rafId = requestAnimationFrame(render);
-		}
-
-		function onScroll() {
-			scheduleRender();
-		}
-
-		function start() {
-			if (active) return;
-			active = true;
-			const progress = Math.max(0, Math.min(1, (window.scrollY - enterFrom - ENTER_SCREENS * window.innerHeight) / scrollableH));
-			currentX = progress * maxScroll;
-			lastTime = 0;
-			scheduleRender();
-		}
-
-		function stop() {
-			active = false;
-			if (rafId) {
-				cancelAnimationFrame(rafId);
-				rafId = 0;
-			}
-		}
-
-		function onResize() {
-			measure();
-			scheduleRender();
-		}
-
-		const ro = new ResizeObserver(() => {
-			onResize();
-		});
-		ro.observe(tr);
-		window.addEventListener('scroll', onScroll, { passive: true });
-		window.addEventListener('resize', onResize, { passive: true });
-
-		/* run the loop only while the section (± one viewport) is near view */
-		const io = new IntersectionObserver(entries => {
-			entries.forEach(e => (e.isIntersecting ? start() : stop()));
-		}, { rootMargin: '100% 0px 100% 0px' });
-		io.observe(ss);
-
-		/* On Astro navigation the whole #__astro tree is swapped out, so the
-		   element-scoped observers above may never fire a final "out of view".
-		   Tear down the loop + observers explicitly the moment the page swap
-		   begins, and remove the listener again on exit (once:true). */
-		const onBeforeSwap = () => {
-			stop();
-			io.disconnect();
-			ro.disconnect();
-			window.removeEventListener('scroll', onScroll);
-			window.removeEventListener('resize', onResize);
-			document.removeEventListener('astro:before-swap', onBeforeSwap);
+			pictures.forEach((p) => {
+				const left = p.left - x;
+				if (left < vw && left + p.width > 0) {
+					p.el.style.transform = `scale(1.2) translate3d(${(((left - vw / 2) / vw) * 8).toFixed(2)}%,0,0)`;
+				}
+			});
 		};
-		document.addEventListener('astro:before-swap', onBeforeSwap);
+
+		// One scrubbed timeline spans the whole pinned scroll.
+		const tl = gsap.timeline({ defaults: { ease: 'none' }, onUpdate: apply });
+		tl.fromTo(view, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.001, immediateRender: true }, 0);
+		tl.fromTo(track, { opacity: 0 }, { opacity: 1, duration: ENTER, ease: 'power1.out' }, 0);
+		tl.fromTo(track,
+			{ x: 0 },
+			{
+				x: () => -maxScroll,
+				duration: TRAVEL,
+				force3D: true,
+				// Whole device pixels: fractional offsets resample the big layers.
+				modifiers: { x: (v: string) => `${Math.round(parseFloat(v) * dpr()) / dpr()}px` },
+			},
+			ENTER);
+		tl.to({}, { duration: HOLD }, ENTER + TRAVEL);
+
+		const st = ScrollTrigger.create({
+			animation: tl,
+			trigger: scene,
+			start: 'top top',
+			end: 'bottom bottom',
+			scrub: 0.3,
+			invalidateOnRefresh: true,
+		});
+		apply();
+
+		document.addEventListener('astro:before-swap', () => {
+			st.kill();
+			tl.kill();
+			ScrollTrigger.removeEventListener('refreshInit', measure);
+		}, { once: true });
+		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
 
-	onReady(initSelectedWork);
+	onReady(() => {
+		const section = document.getElementById('selected-work');
+		if (!section) return;
+		if (window.matchMedia(MOBILE).matches) initStrip(section);
+		// The desktop scene is driven by CSS where scroll-driven animations
+		// exist (see the styles); this is the same scene for the rest.
+		else if (!CSS.supports('animation-timeline: view()')) initScene(section);
+	});
 </script>
