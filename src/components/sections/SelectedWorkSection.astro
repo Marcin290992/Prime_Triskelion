@@ -147,7 +147,7 @@ const deskVars = [
 					<div class="sw-card" data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
 						<a href={p.href ?? '#'} class="sw-media" data-case-media={p.caseSrc ? '' : undefined}>
 							{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
-							<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 520px, 80vw" loading="eager" decoding="async" />
+							<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 580px, 88vw" loading="eager" decoding="async" />
 						</a>
 						<div class="sw-card__info">
 							<div>
@@ -180,7 +180,6 @@ const deskVars = [
 				</div>
 			</div>
 
-			<div class="sw-mob__progress" aria-hidden="true"><span></span></div>
 		</div>
 	</div>
 </section>
@@ -292,6 +291,9 @@ const deskVars = [
 		font-size: var(--text-size);
 		font-weight: 300;
 		line-height: var(--text-lh);
+		/* Two lines reserved, so a one-line description doesn't make its card
+		   shorter than the others (the cards are centred on the track). */
+		min-height: calc(var(--text-size) * var(--text-lh) * 2);
 		color: rgb(var(--c-cream) / 0.82);
 	}
 
@@ -520,10 +522,6 @@ const deskVars = [
 		from { transform: translate3d(0, 0, 0); }
 		to { transform: translate3d(calc(100vw - 100%), 0, 0); }
 	}
-	@keyframes sw-fade-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
-	}
 	@keyframes sw-rise {
 		from { transform: translate3d(0, 55vh, 0); }
 		to { transform: translate3d(0, 0, 0); }
@@ -548,7 +546,7 @@ const deskVars = [
 		--intro-size: clamp(3rem, 15vw, 6rem);
 		--intro-gap: 2rem;
 		--intro-pad: 6vw;
-		--card-w: min(80vw, 520px);
+		--card-w: min(88vw, 580px);
 		--card-gap: 1.1rem;
 		--card-offset: 0;
 		--card-pad: 0.75rem 0.75rem 1.1rem;
@@ -575,7 +573,7 @@ const deskVars = [
 		height: 100svh;
 		height: calc(var(--app-stable-vh, 1svh) * 100);
 		box-sizing: border-box;
-		padding-bottom: 4rem;
+		padding-bottom: 1.5rem;
 		display: flex;
 		align-items: center;
 		/* No script / reduced motion: a natively swiped row that snaps. */
@@ -609,22 +607,6 @@ const deskVars = [
 	}
 	.sw-mob__slot .sw-panel { width: 100%; }
 
-	.sw-mob__progress {
-		position: absolute;
-		left: var(--site-gutter);
-		right: var(--site-gutter);
-		bottom: 6.5rem;
-		height: 1px;
-		background: rgb(var(--c-cream) / 0.14);
-		display: none;
-	}
-	.sw-mob__progress span {
-		display: block;
-		height: 100%;
-		background: rgb(var(--c-red));
-		transform: scaleX(0);
-		transform-origin: left center;
-	}
 
 	/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
 	.sw-mob.is-active .sw-mob__sticky {
@@ -635,7 +617,6 @@ const deskVars = [
 	}
 	.sw-mob.is-active .sw-mob__track,
 	.sw-mob.is-active .sw-mob__slot .sw-panel { will-change: transform; }
-	.sw-mob.is-active .sw-mob__progress { display: block; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
@@ -647,8 +628,6 @@ const deskVars = [
 			view-timeline: --swm block;
 		}
 		.sw-mob.is-driven .sw-mob__track,
-		.sw-mob.is-driven .sw-mob__progress,
-		.sw-mob.is-driven .sw-mob__progress span,
 		.sw-mob.is-driven .sw-panel__in,
 		.sw-mob.is-driven .sw-mob__slot .sw-panel {
 			animation-duration: 1ms;
@@ -658,16 +637,6 @@ const deskVars = [
 		/* The opener blurs in on the spot (script), then the strip travels. */
 		.sw-mob.is-driven .sw-mob__track {
 			animation-name: sw-slide;
-			animation-timing-function: linear;
-			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
-		}
-		.sw-mob.is-driven .sw-mob__progress {
-			animation-name: sw-fade-in;
-			animation-timing-function: linear;
-			animation-range: contain 0% contain var(--enter);
-		}
-		.sw-mob.is-driven .sw-mob__progress span {
-			animation-name: sw-bar;
 			animation-timing-function: linear;
 			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
@@ -683,10 +652,6 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain calc(var(--enter) + var(--slot-left) - 100vw) contain calc(var(--enter) + var(--slot-left));
 		}
-	}
-	@keyframes sw-bar {
-		from { transform: scaleX(0); }
-		to { transform: scaleX(1); }
 	}
 	@keyframes sw-drift-out {
 		from { transform: translate3d(240px, 0, 0); }
@@ -721,15 +686,13 @@ const deskVars = [
 		const root = section.querySelector<HTMLElement>('.sw-mob');
 		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
 		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
-		const bar = root?.querySelector<HTMLElement>('.sw-mob__progress span');
 		const slot = root?.querySelector<HTMLElement>('.sw-mob__slot');
 		const last = slot?.querySelector<HTMLElement>('.sw-panel');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		if (!root || !sticky || !track || !bar || !slot || !last || !cover || !coverIn) return;
+		if (!root || !sticky || !track || !slot || !last || !cover || !coverIn) return;
 
 		ScrollTrigger.config({ ignoreMobileResize: true });
-		const setBar = gsap.quickSetter(bar, 'scaleX');
 
 		stripMm = gsap.matchMedia();
 		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
@@ -799,21 +762,6 @@ const deskVars = [
 				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 			};
 
-			// The progress line comes in once pinned; the opener blurs in itself (introGate).
-			gsap.fromTo(bar.parentElement!,
-				{ opacity: 0 },
-				{
-					opacity: 1,
-					ease: 'power2.out',
-					scrollTrigger: {
-						trigger: root,
-						start: 'top top',
-						end: () => `+=${enter()}`,
-						scrub: true,
-						invalidateOnRefresh: true,
-					},
-				});
-
 			const travel = gsap.to(track, {
 				x: () => -distance(),
 				ease: 'none',
@@ -825,7 +773,6 @@ const deskVars = [
 					end: () => `+=${distance()}`,
 					scrub: 0.3,
 					invalidateOnRefresh: true,
-					onUpdate: (self) => setBar(self.progress),
 				},
 			});
 			parallax();
