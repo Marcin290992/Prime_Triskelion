@@ -447,6 +447,7 @@ const deskVars = [
 
 		.sw-desk__view,
 		.sw-desk__track,
+		.sw-desk .sw-intro,
 		.sw-card--rise,
 		.sw-card--fade,
 		.sw-desk .sw-panel--cover .sw-panel__in,
@@ -468,6 +469,13 @@ const deskVars = [
 			animation-name: sw-slide, sw-fade-in;
 			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
 			animation-range: contain var(--e) contain var(--t), contain 0% contain var(--e);
+		}
+		/* The opening title comes into focus with that fade (only it is blurred:
+		   blurring the whole track would be far too heavy). */
+		.sw-desk .sw-intro {
+			animation-name: sw-focus;
+			animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1);
+			animation-range: contain 0% contain var(--e);
 		}
 		.sw-card--rise {
 			animation-name: sw-rise;
@@ -501,6 +509,10 @@ const deskVars = [
 	@keyframes sw-fade-in {
 		from { opacity: 0; }
 		to { opacity: 1; }
+	}
+	@keyframes sw-focus {
+		from { filter: blur(18px); }
+		to { filter: blur(0); }
 	}
 	@keyframes sw-rise {
 		from { transform: translate3d(0, 55vh, 0); }
@@ -924,6 +936,8 @@ const deskVars = [
 		const tl = gsap.timeline({ defaults: { ease: 'none' }, onUpdate: apply });
 		tl.fromTo(view, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.001, immediateRender: true }, 0);
 		tl.fromTo(track, { opacity: 0 }, { opacity: 1, duration: ENTER, ease: 'power1.out' }, 0);
+		const intro = scene.querySelector<HTMLElement>('.sw-intro');
+		if (intro) tl.fromTo(intro, { filter: 'blur(18px)' }, { filter: 'blur(0px)', duration: ENTER, ease: 'power1.out', clearProps: 'filter' }, 0);
 		tl.fromTo(track,
 			{ x: 0 },
 			{
