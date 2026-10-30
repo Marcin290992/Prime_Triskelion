@@ -567,6 +567,10 @@ const deskVars = [
 			   where the manifesto's pin ends: the row blurs in on the spot,
 			   then travels. */
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			/* The last panel's text sits mid-screen, so its lower half is empty
+			   black: Services (stacked above, z-index 46) is tucked up over it
+			   instead of waiting below. */
+			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
 		}
 	}
 	.sw-mob__sticky {
@@ -701,8 +705,9 @@ const deskVars = [
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// The strip stays pinned a little after it ends, so the last panel
-			// does not run off on a quick scroll.
-			const hold = () => sticky.offsetHeight * 0.5;
+			// does not run off on a quick scroll — kept short: it is dead
+			// scroll between this section and Services.
+			const hold = () => sticky.offsetHeight * 0.15;
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
 			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
