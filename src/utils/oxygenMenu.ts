@@ -14,6 +14,9 @@ import { warmPages } from './pageCache';
 // Mobile menu chip's fully-shrunk scale (iOS Safari toolbar-style
 // compacting on scroll, see handleScroll() below).
 const MENU_SHRINK_SCALE = 0.68;
+// Phones and tablets (also drives the matching @media in OxygenMenu.astro).
+const TOUCH_MENU_QUERY = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
+const isTouchMenu = () => window.matchMedia(TOUCH_MENU_QUERY).matches;
 
 // The chip's shrink progress (0..1) outlives page navigations: it only grows
 // back when the user scrolls up, not because a new page loaded.
@@ -184,7 +187,6 @@ function initOxygenMenu() {
   // itself once the overlay has fully faded in: the strips then show
   // <html>'s own black background. visibility (not display) keeps layout
   // and scroll position untouched.
-  const TOUCH_MENU_QUERY = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
   let coverTimer: ReturnType<typeof setTimeout> | null = null;
   function setPageCovered(covered: boolean) {
     if (coverTimer) { clearTimeout(coverTimer); coverTimer = null; }
@@ -192,15 +194,14 @@ function initOxygenMenu() {
       document.documentElement.classList.remove('ox-menu-covered');
       return;
     }
-    // Matches .ox-menu-overlay's 0.6s opacity transition — hiding earlier
-    // would snap the page to black instead of letting the overlay fade over it.
-    // On phones the overlay fades faster (OxygenMenu.astro) and the page is
-    // hidden as soon as it's opaque, *before* the link text starts to rise —
-    // hiding a heavy hero mid-animation was the hitch under the words.
+    // Matches .ox-menu-overlay's opacity transition (0.6s, 0.4s on phones) —
+    // hiding earlier would snap the page to black instead of letting the
+    // overlay fade over it. On phones that also lands before the link text
+    // starts to rise, so hiding the page doesn't hitch the animation.
     coverTimer = setTimeout(() => {
       coverTimer = null;
       if (state.isMenuOpen) document.documentElement.classList.add('ox-menu-covered');
-    }, window.matchMedia(TOUCH_MENU_QUERY).matches ? 400 : 600);
+    }, isTouchMenu() ? 400 : 600);
   }
 
   function lockBodyScroll() {
@@ -313,7 +314,7 @@ function initOxygenMenu() {
     }
   }
 
-  const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+  const isMobile = isTouchMenu();
 
   // HUD swap: one class on the shared #ox-hud-mobile ancestor, driving both
   // buttons purely via CSS (see .hud-scroll-hidden in OxygenMenu.astro).
@@ -461,10 +462,10 @@ function initOxygenMenu() {
     if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 0, duration: 0.2 });
     const hudTimeHide = document.getElementById('hud-time');
     if (hudTimeHide) gsap.to(hudTimeHide, { opacity: 0, duration: 0.2 });
-    gsap.set('.ox-menu-link', { y: '100%', opacity: 0, force3D: true });
+    gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
     gsap.timeline({ onComplete: () => { state.menuAnimating = false; } })
       .to('.ox-menu-topbar', { y: 0, opacity: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
-      .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out', force3D: true }, window.matchMedia(TOUCH_MENU_QUERY).matches ? '-=0.1' : '-=0.2')
+      .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out' }, isTouchMenu() ? '-=0.1' : '-=0.2')
       .to('.ox-menu-bottom', { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.3');
   }
 
