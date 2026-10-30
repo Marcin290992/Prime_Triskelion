@@ -461,12 +461,7 @@ function initOxygenMenu() {
     if (hudEl) gsap.to(hudEl.querySelectorAll('.hud-side'), { opacity: 0, duration: 0.2 });
     const hudTimeHide = document.getElementById('hud-time');
     if (hudTimeHide) gsap.to(hudTimeHide, { opacity: 0, duration: 0.2 });
-    // On touch the words only slide up out of their clipped row (the row's
-    // overflow:hidden is the mask): no opacity on top, so each frame is a
-    // plain transform of already-rasterised text instead of an alpha blend
-    // of two large layers per link.
-    const slideOnly = window.matchMedia(TOUCH_MENU_QUERY).matches && !reducedMotion();
-    gsap.set('.ox-menu-link', { y: '100%', opacity: slideOnly ? 1 : 0, force3D: true });
+    gsap.set('.ox-menu-link', { y: '100%', opacity: 0, force3D: true });
     gsap.timeline({ onComplete: () => { state.menuAnimating = false; } })
       .to('.ox-menu-topbar', { y: 0, opacity: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
       .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out', force3D: true }, window.matchMedia(TOUCH_MENU_QUERY).matches ? '-=0.1' : '-=0.2')
