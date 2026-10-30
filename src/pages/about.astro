@@ -443,6 +443,10 @@ import portrait from '../img/portrait-top.webp';
       padding: 0 max(var(--site-gutter, 1.5rem), calc((100% - var(--site-max-width, 100%)) / 2));
       pointer-events: none;
     }
+    /* Desktop: the top bar's logo is already on screen, so no second one. */
+    @media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+      .am-closing { display: none; }
+    }
     /* Same lock-up as the top bar (Logo.astro), same sizes */
     .am-brand {
       display: flex;
