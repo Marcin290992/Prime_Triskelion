@@ -184,6 +184,7 @@ function initOxygenMenu() {
   // itself once the overlay has fully faded in: the strips then show
   // <html>'s own black background. visibility (not display) keeps layout
   // and scroll position untouched.
+  const TOUCH_MENU_QUERY = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
   let coverTimer: ReturnType<typeof setTimeout> | null = null;
   function setPageCovered(covered: boolean) {
     if (coverTimer) { clearTimeout(coverTimer); coverTimer = null; }
@@ -193,10 +194,13 @@ function initOxygenMenu() {
     }
     // Matches .ox-menu-overlay's 0.6s opacity transition — hiding earlier
     // would snap the page to black instead of letting the overlay fade over it.
+    // On phones the overlay fades faster (OxygenMenu.astro) and the page is
+    // hidden as soon as it's opaque, *before* the link text starts to rise —
+    // hiding a heavy hero mid-animation was the hitch under the words.
     coverTimer = setTimeout(() => {
       coverTimer = null;
       if (state.isMenuOpen) document.documentElement.classList.add('ox-menu-covered');
-    }, 600);
+    }, window.matchMedia(TOUCH_MENU_QUERY).matches ? 400 : 600);
   }
 
   function lockBodyScroll() {
@@ -460,7 +464,7 @@ function initOxygenMenu() {
     gsap.set('.ox-menu-link', { y: '100%', opacity: 0 });
     gsap.timeline({ onComplete: () => { state.menuAnimating = false; } })
       .to('.ox-menu-topbar', { y: 0, opacity: 1, duration: 0.45, ease: 'power3.out', delay: 0.05 })
-      .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out' }, '-=0.2')
+      .to('.ox-menu-link', { y: 0, opacity: 1, duration: 0.75, stagger: 0.07, ease: 'power4.out' }, window.matchMedia(TOUCH_MENU_QUERY).matches ? '-=0.1' : '-=0.2')
       .to('.ox-menu-bottom', { y: 0, opacity: 1, duration: 0.4, ease: 'power2.out' }, '-=0.3');
   }
 
