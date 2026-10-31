@@ -130,54 +130,53 @@ const deskVars = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the same work as one horizontal strip. The view is
-	     pinned with position: sticky and the strip is moved by the scroll
-	     (initStrip); without the script (or with reduced motion) it is a
-	     natively swiped row. -->
+	<!-- Phones and tablets: the title takes over on the spot where the manifesto
+	     ends and comes up out of the dark; then the cards are a plain, natively
+	     swiped row (overflow-x + scroll-snap, not pinned and not driven by the
+	     page's scroll — so it is as smooth as any scroller, Safari included),
+	     and the closing lines follow. The spacing is the same as every other
+	     section's (--section-space-*, --site-gutter). -->
 	<div class="sw-mob" id="sw-hs">
-		<div class="sw-mob__sticky">
-			<div class="sw-mob__track">
-
+		<div class="sw-intro-wrap">
+			<span class="sw-sentinel" aria-hidden="true"></span>
+			<div class="sw-intro-pin">
 				<div class="sw-intro">
 					<h2 class="sw-title">What we've<br><em>created.</em></h2>
 					<a href="/projects" class="link-btn sw-link">View All Projects</a>
 				</div>
-
-				{projects.map((p) => (
-					<div class="sw-card" data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
-						<a href={p.href ?? '#'} class="sw-media" data-case-media={p.caseSrc ? '' : undefined}>
-							{/* Eager: a lazy image only starts near the viewport, so the strip would show empty cards. */}
-							<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 580px, 88vw" loading="eager" decoding="async" />
-						</a>
-						<div class="sw-card__info">
-							<div>
-								<a href={p.href ?? '#'} class="sw-card__title"><h3>{p.title}</h3></a>
-								<p>{p.desc}</p>
-							</div>
-							<a href={p.href ?? '#'} class="link-btn sw-link">Explore</a>
-						</div>
-					</div>
-				))}
-
-				<div class="sw-panel sw-panel--cover">
-					<div class="sw-panel__in">
-						<h2>Discover my complete collection of digital experiences, brands, and platforms.</h2>
-						<div class="h-hero-cta-wrap sw-panel__cta">
-							<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-							<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-							<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
-								<span class="hud-spin-border"></span>
-								<span class="h-hero-cta__text">Explore more projects</span>
-							</a>
-						</div>
-					</div>
-				</div>
-
-				<div class="sw-panel sw-panel--final">
-					<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
-				</div>
 			</div>
+		</div>
 
+		<div class="sw-list">
+			{projects.map((p) => (
+				<div class="sw-card" data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
+					<a href={p.href ?? '#'} class="sw-media" data-case-media={p.caseSrc ? '' : undefined}>
+						{/* Eager: a lazy image only starts near the viewport, so a card could show empty. */}
+						<Image src={p.img} alt={p.title} widths={[480, 800, 1200]} sizes="(min-width: 700px) 520px, 80vw" loading="eager" decoding="async" />
+					</a>
+					<div class="sw-card__info">
+						<div>
+							<a href={p.href ?? '#'} class="sw-card__title"><h3>{p.title}</h3></a>
+							<p>{p.desc}</p>
+						</div>
+						<a href={p.href ?? '#'} class="link-btn sw-link">Explore</a>
+					</div>
+				</div>
+			))}
+		</div>
+		<p class="sw-hint" aria-hidden="true">Swipe <span>→</span></p>
+
+		<div class="sw-close">
+			<h2 class="sw-close__text">Discover my complete collection of digital experiences, brands, and platforms.</h2>
+			<div class="h-hero-cta-wrap sw-panel__cta">
+				<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+				<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+				<a href="/projects" class="h-hero-cta h-hero-cta--fixed">
+					<span class="hud-spin-border"></span>
+					<span class="h-hero-cta__text">Explore more projects</span>
+				</a>
+			</div>
+			<h2 class="sw-close__final">A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 		</div>
 	</div>
 </section>
@@ -219,28 +218,6 @@ const deskVars = [
 	}
 	.sw-title em { font-style: normal; color: rgb(var(--c-red)); }
 
-	/* Desktop: the opener comes in out of blur once the scene is pinned, the
-	   same time-based entrance as the other sections' headings (.visible in
-	   Services); the script adds .in (see hideBandsWhilePinned, which also runs for the phone strip). */
-	.sw-desk .sw-intro .sw-title,
-	.sw-desk .sw-intro .sw-link,
-	.sw-mob.is-active .sw-intro .sw-title,
-	.sw-mob.is-active .sw-intro .sw-link {
-		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
-	}
-	/* Leaving (scrolling back up to the section above) is quicker. */
-	.sw-desk .sw-intro:not(.in) .sw-title,
-	.sw-desk .sw-intro:not(.in) .sw-link,
-	.sw-mob.is-active .sw-intro:not(.in) .sw-title,
-	.sw-mob.is-active .sw-intro:not(.in) .sw-link {
-		opacity: 0;
-		filter: blur(14px);
-		transform: translateY(14px);
-		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease;
-	}
-	.sw-desk .sw-intro.in .sw-link,
-	.sw-mob.is-active .sw-intro.in .sw-link { transition-delay: 0.15s; }
-
 	/* Card: a frame, the picture, then title / line / Explore. */
 	.sw-card {
 		flex: 0 0 var(--card-w);
@@ -263,16 +240,8 @@ const deskVars = [
 		border: 1px solid rgba(255,255,255,0.08);
 		box-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3);
 		-webkit-tap-highlight-color: transparent;
-		/* No iOS long-press preview / callout lifting the picture out of its frame. */
-		-webkit-touch-callout: none;
-		-webkit-user-select: none;
-		user-select: none;
-		isolation: isolate;
 	}
 	.sw-media img {
-		-webkit-touch-callout: none;
-		-webkit-user-drag: none;
-		pointer-events: none;
 		display: block;
 		width: 100%;
 		height: 100%;
@@ -297,9 +266,6 @@ const deskVars = [
 		font-size: var(--text-size);
 		font-weight: 300;
 		line-height: var(--text-lh);
-		/* Two lines reserved, so a one-line description doesn't make its card
-		   shorter than the others (the cards are centred on the track). */
-		min-height: calc(var(--text-size) * var(--text-lh) * 2);
 		color: rgb(var(--c-cream) / 0.82);
 	}
 
@@ -332,7 +298,7 @@ const deskVars = [
 	}
 
 	/* The last two slides: a whole screen each, in the page's own background
-	   (no frame). The cover's text drifts as it comes in and the final one slides
+	   (no frame). The cover's text drifts as it comes in; the final one slides
 	   out from behind it. */
 	.sw-panel {
 		flex: 0 0 100vw;
@@ -493,11 +459,11 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain 0% contain 0.01%;
 		}
-		/* The title blurs in on the spot (script, see playIntro), then the horizontal travel. */
+		/* Blur-in on the spot (a fade), then the horizontal travel. */
 		.sw-desk__track {
-			animation-name: sw-slide;
-			animation-timing-function: linear;
-			animation-range: contain var(--e) contain var(--t);
+			animation-name: sw-slide, sw-fade-in;
+			animation-timing-function: linear, cubic-bezier(0.5, 1, 0.89, 1);
+			animation-range: contain var(--e) contain var(--t), contain 0% contain var(--e);
 		}
 		.sw-card--rise {
 			animation-name: sw-rise;
@@ -528,6 +494,10 @@ const deskVars = [
 		from { transform: translate3d(0, 0, 0); }
 		to { transform: translate3d(calc(100vw - 100%), 0, 0); }
 	}
+	@keyframes sw-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
 	@keyframes sw-rise {
 		from { transform: translate3d(0, 55vh, 0); }
 		to { transform: translate3d(0, 0, 0); }
@@ -546,13 +516,17 @@ const deskVars = [
 		to { transform: translate3d(0, 0, 0); }
 	}
 
-	/* ═══ Phones and tablets ═══ */
+	/* ═══ Phones and tablets: a plain vertical stack ═══
+	   The opener is pulled up one screen so it takes over exactly where the
+	   manifesto ends: a whole screen, pinned for a moment while it comes up
+	   out of the dark. Then the cards rise from below, one under another, and
+	   the closing lines follow. The cards pad like every other section
+	   (--section-space-bottom, --site-gutter). */
 	.sw-mob {
-		--gap: clamp(12px, 4vw, 32px);
 		--intro-size: clamp(3rem, 15vw, 6rem);
 		--intro-gap: 2rem;
 		--intro-pad: 6vw;
-		--card-w: min(88vw, 580px);
+		--card-w: min(80vw, 520px);
 		--card-gap: 1.1rem;
 		--card-offset: 0;
 		--card-pad: 0.75rem 0.75rem 1.1rem;
@@ -560,102 +534,89 @@ const deskVars = [
 		--title-size: clamp(1.25rem, 5.4vw, 1.9rem);
 		--text-size: 0.88rem;
 		--text-lh: 1.55;
-		--panel-pad: 8vw;
-		--cover-gap: 1.75rem;
-		--cover-size: clamp(1.5rem, 6.8vw, 3rem);
-		--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
 	}
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-mob {
 			display: block;
-			position: relative;
-			/* Pulled up by one screen, so the pinned view takes over exactly
-			   where the manifesto's pin ends: the row blurs in on the spot,
-			   then travels. */
 			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-			/* The closing title's text sits mid-screen, so the lower half of the
-			   last screen is empty black: Services (stacked above, z-index 46) is
-			   tucked up over it instead of waiting below. */
-			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
+			padding-bottom: var(--section-space-bottom);
 		}
 	}
-	.sw-mob__sticky {
-		height: 100svh;
-		height: calc(var(--app-stable-vh, 1svh) * 100);
-		box-sizing: border-box;
-		padding-bottom: 1.5rem;
-		display: flex;
-		align-items: center;
-		/* No script / reduced motion: use native free horizontal scrolling. */
-		overflow-x: auto;
-		overflow-y: hidden;
-		scroll-snap-type: none;
-		-webkit-overflow-scrolling: touch;
-		overscroll-behavior-x: contain;
-		scrollbar-width: none;
-	}
-	.sw-mob__sticky::-webkit-scrollbar { display: none; }
-	.sw-mob__track {
-		display: flex;
-		align-items: center;
-		gap: var(--gap);
-		width: max-content;
-		height: 100%;
-	}
-	.sw-mob .sw-intro,
-	.sw-mob .sw-panel { align-self: stretch; }
-
-	/* Script on: the browser pins the strip (sticky) and the scroll moves it. */
-	.sw-mob.is-active .sw-mob__sticky {
+	/* One screen pinned for 70% of a screen of scroll, while it fades in. */
+	.sw-intro-wrap { position: relative; height: calc(var(--app-stable-vh, 1svh) * 170); }
+	/* Marks the top of the wrapper for the opener's observer. */
+	.sw-sentinel { position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; }
+	.sw-intro-pin {
 		position: sticky;
 		top: 0;
-		overflow: hidden;
+		height: calc(var(--app-stable-vh, 1svh) * 100);
 	}
-	.sw-mob.is-active .sw-mob__track { will-change: transform; }
-
-	/* The last slide is tucked under the cover and slides out from behind it
-	   sideways, as on desktop (CSS animation below, script fallback). */
-	.sw-mob .sw-panel--final { margin-left: -10vw; will-change: transform; }
-
-	/* Same idea as the desktop scene: where scroll-driven animations exist the
-	   strip is moved by the page's scroll on the compositor (the script only
-	   measures: --dist is how far the strip travels). The strip travels 1px per
-	   px of scroll. */
-	@supports (animation-timeline: view()) {
-		.sw-mob.is-driven {
-			--enter: calc(var(--app-stable-vh, 1svh) * 70);
-			view-timeline: --swm block;
-		}
-		.sw-mob.is-driven .sw-mob__track,
-		.sw-mob.is-driven .sw-panel__in,
-		.sw-mob.is-driven .sw-panel--final {
-			animation-duration: 1ms;
-			animation-fill-mode: both;
-			animation-timeline: --swm;
-		}
-		/* The opener blurs in on the spot (script), then the strip travels. */
-		.sw-mob.is-driven .sw-mob__track {
-			animation-name: sw-slide;
-			animation-timing-function: linear;
-			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
-		}
-		/* The final slide slides out from behind the cover over the last 150vw. */
-		.sw-mob.is-driven .sw-panel--final {
-			animation-name: sw-slide-out;
-			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--dist) - 150vw) contain calc(var(--enter) + var(--dist));
-		}
-		/* The cover's text drifts as its panel comes in and settles when it is in place. */
-		.sw-mob.is-driven .sw-panel--cover .sw-panel__in {
-			animation-name: sw-drift-out;
-			animation-timing-function: linear;
-			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left));
-		}
+	.sw-mob .sw-intro { width: 100%; height: 100%; }
+	/* The title comes into focus out of a blur, on a timer (not tied to the
+	   scroll, which flickered on iOS), once it is pinned: the script arms it
+	   and flips .is-in. Without the script it is simply there. */
+	.sw-mob .sw-intro {
+		transition: opacity 0.9s ease, filter 1.1s cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	@keyframes sw-drift-out {
-		from { transform: translate3d(240px, 0, 0); }
-		to { transform: translate3d(0, 0, 0); }
+	.sw-mob.is-armed .sw-intro { opacity: 0; filter: blur(14px); }
+	.sw-mob.is-armed.is-in .sw-intro { opacity: 1; filter: blur(0); }
+	@media (prefers-reduced-motion: reduce) {
+		.sw-mob .sw-intro { transition: none; }
 	}
+	/* The row: a native horizontal scroller that snaps card by card. */
+	.sw-list {
+		display: flex;
+		gap: clamp(12px, 4vw, 32px);
+		padding-inline: var(--site-gutter);
+		scroll-padding-inline: var(--site-gutter);
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		overscroll-behavior-x: contain;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+	.sw-list::-webkit-scrollbar { display: none; }
+	.sw-list .sw-card { scroll-snap-align: start; }
+	.sw-hint {
+		margin: 1.25rem 0 0;
+		padding-inline: var(--site-gutter);
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 0.7em;
+		font-family: var(--f-body);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.55);
+	}
+	.sw-hint span { display: inline-block; animation: sw-nudge 1.8s ease-in-out infinite; }
+	@keyframes sw-nudge {
+		0%, 100% { transform: translateX(0); }
+		50% { transform: translateX(6px); }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sw-hint span { animation: none; }
+	}
+	.sw-close {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.75rem;
+		margin-top: 3rem;
+		padding-inline: var(--site-gutter);
+		text-align: center;
+	}
+	.sw-close h2 {
+		margin: 0;
+		font-family: var(--f-display);
+		font-weight: 600;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream));
+	}
+	.sw-close__text { font-size: clamp(1.5rem, 6.8vw, 3rem); line-height: 1.05; letter-spacing: -0.02em; }
+	.sw-close__final { margin-top: 1.5rem !important; font-size: clamp(2.4rem, 12vw, 4.5rem); line-height: 0.85; letter-spacing: -0.04em; }
 </style>
 
 <script>
@@ -666,163 +627,6 @@ const deskVars = [
 	gsap.registerPlugin(ScrollTrigger);
 
 	const MOBILE = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
-
-	// ── Phones/tablets ─────────────────────────────────────────────────────
-	// The strip is pinned by position: sticky (no pin spacer, no jump) and
-	// moved horizontally by a scrubbed ScrollTrigger; once it ends it scrolls
-	// up and off like any other block, with the closing screen below it.
-	// Without this the strip is a natively swiped, snapping row (see the CSS).
-	let stripMm: gsap.MatchMedia | null = null;
-
-	function initStrip(section: HTMLElement) {
-		stripMm?.revert();
-		stripMm = null;
-
-		const root = section.querySelector<HTMLElement>('.sw-mob');
-		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
-		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
-		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
-		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		const final = root?.querySelector<HTMLElement>('.sw-panel--final');
-		if (!root || !sticky || !track || !cover || !coverIn || !final) return;
-
-		ScrollTrigger.config({ ignoreMobileResize: true });
-
-		stripMm = gsap.matchMedia();
-		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
-			root.classList.add('is-active');
-			sticky.scrollLeft = 0;
-
-			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
-			// Screens of blur-in on the spot before the row starts to travel.
-			const enter = () => sticky.offsetHeight * 0.7;
-			// After the travel the last slide is held for a while (the strip stays
-			// pinned), so it can be read before Services comes up.
-			const hold = () => sticky.offsetHeight * 0.7;
-			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
-
-			// Snap: when the scroll stops, the strip settles on the nearest slide's
-			// centre (the opener, each card, the cover), so nothing can be left
-			// half-way or skipped. It acts only over the horizontal travel.
-			const centres = () => Array.from(track.children).map((el) => {
-				const slide = el as HTMLElement;
-				const x = slide.offsetLeft + slide.offsetWidth / 2 - sticky.clientWidth / 2;
-				return Math.min(1, Math.max(0, x / (distance() || 1)));
-			});
-			ScrollTrigger.create({
-				trigger: root,
-				start: () => `top+=${enter()} top`,
-				end: () => `+=${distance()}`,
-				invalidateOnRefresh: true,
-				snap: {
-					snapTo: (v: number) => centres().reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a)),
-					delay: 0.12,
-					duration: { min: 0.25, max: 0.7 },
-					ease: 'power2.inOut',
-				},
-			});
-
-			// Where scroll-driven animations exist, CSS moves the strip (see the
-			// styles) and the script only measures — here and on every refresh,
-			// never per frame.
-			// Not on iOS: Safari runs scroll-driven animations on the main thread,
-			// so after a finger stops the momentum the strip jitters left/right.
-			const ios = CSS.supports('-webkit-touch-callout: none');
-			if (!ios && CSS.supports('animation-timeline: view()')) {
-				const place = () => {
-					setHeight();
-					root.style.setProperty('--dist', `${distance()}px`);
-					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
-				};
-				place();
-				ScrollTrigger.addEventListener('refreshInit', place);
-				root.classList.add('is-driven');
-				return () => {
-					ScrollTrigger.removeEventListener('refreshInit', place);
-					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
-					root.style.height = '';
-					root.classList.remove('is-driven', 'is-active');
-				};
-			}
-
-			// Offsets for the parallax are measured at init and refresh, not per frame.
-			const cards = Array.from(root.querySelectorAll<HTMLElement>('.sw-card')).map((el) => ({
-				el,
-				img: el.querySelector<HTMLElement>('.sw-media img')!,
-				left: 0,
-				width: 0,
-			}));
-			let coverLeft = 0;
-			const measure = () => {
-				cards.forEach((c) => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
-				coverLeft = cover.offsetLeft;
-			};
-
-			// iOS: sticky is placed on the scrolling thread and the strip's
-			// transform on the main one, so they drift apart during momentum.
-			// Scrolling driven by the script keeps both in the same frame.
-			if (ios) ScrollTrigger.normalizeScroll({
-				type: 'touch',
-				allowNestedScroll: true,
-				// A longer glide after the finger lifts (the default stops short,
-				// which reads as braking).
-				momentum: (self: { velocityY: number }) => Math.min(4, Math.abs(self.velocityY) / 450),
-			});
-
-			setHeight();
-			measure();
-			ScrollTrigger.addEventListener('refreshInit', setHeight);
-			ScrollTrigger.addEventListener('refreshInit', measure);
-
-			// Same moves as the desktop scene: each picture drifts inside its
-			// frame, the closing text drifts as its panel comes in.
-			const parallax = () => {
-				const x = -(gsap.getProperty(track, 'x') as number);
-				const vw = window.innerWidth;
-				cards.forEach((c) => {
-					const left = c.left - x;
-					if (left < vw && left + c.width > 0) {
-						const ip = (left + c.width / 2 - vw / 2) / vw;
-						c.img.style.transform = `scale(1.2) translate3d(${(ip * 8).toFixed(2)}%,0,0)`;
-					}
-				});
-				const cp = (coverLeft - x) / vw;
-				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
-				const toEnd = distance() - x;
-				final.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
-			};
-
-			const travel = gsap.to(track, {
-				x: () => -distance(),
-				ease: 'none',
-				force3D: true,
-				onUpdate: parallax,
-				scrollTrigger: {
-					trigger: root,
-					start: () => `top+=${enter()} top`,
-					end: () => `+=${distance()}`,
-					scrub: ios ? true : 0.3,
-					invalidateOnRefresh: true,
-				},
-			});
-
-			parallax();
-
-			return () => {
-				if (ios) ScrollTrigger.normalizeScroll(false);
-				ScrollTrigger.removeEventListener('refreshInit', setHeight);
-				ScrollTrigger.removeEventListener('refreshInit', measure);
-				root.style.height = '';
-				root.classList.remove('is-active');
-			};
-		});
-		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
-	}
-
-	document.addEventListener('astro:before-swap', () => {
-		stripMm?.revert();
-		stripMm = null;
-	});
 
 	// ── Desktop ────────────────────────────────────────────────────────────
 	function initScene(section: HTMLElement) {
@@ -904,6 +708,7 @@ const deskVars = [
 		// One scrubbed timeline spans the whole pinned scroll.
 		const tl = gsap.timeline({ defaults: { ease: 'none' }, onUpdate: apply });
 		tl.fromTo(view, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.001, immediateRender: true }, 0);
+		tl.fromTo(track, { opacity: 0 }, { opacity: 1, duration: ENTER, ease: 'power1.out' }, 0);
 		tl.fromTo(track,
 			{ x: 0 },
 			{
@@ -921,9 +726,7 @@ const deskVars = [
 			trigger: scene,
 			start: 'top top',
 			end: 'bottom bottom',
-			// Lenis already smooths the scroll; any extra smoothing here would stack
-			// a second lag on top and make the travel feel rubbery.
-			scrub: true,
+			scrub: 0.3,
 			invalidateOnRefresh: true,
 		});
 		apply();
@@ -936,64 +739,57 @@ const deskVars = [
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
 
-	// The edge blur bands are backdrop-filters, re-blurred every frame over the
-	// moving pictures (the one thing that dropped frames here): they are hidden
-	// (html.sw-hscroll, see global.css) while the desktop scene fills the screen.
-	let hideBandsOff: (() => void) | null = null;
-	function hideBandsWhilePinned(scene: HTMLElement, bands: boolean, hideBefore?: HTMLElement) {
-		hideBandsOff?.();
-		const root = document.documentElement;
-		let top = 0;
-		let bottom = 0;
-		const measure = () => {
-			top = scene.getBoundingClientRect().top + window.scrollY;
-			bottom = top + scene.offsetHeight - window.innerHeight;
+	// ── Phones/tablets: the opener's timed blur-in ─────────────────────────
+	// Armed (hidden) up front, then flipped in once the opener is pinned (the
+	// top of its wrapper has passed 10% of the screen); flipped back out only
+	// when the wrapper is fully below the screen again, so a small correction
+	// never replays it. An IntersectionObserver, not a scroll listener: iOS
+	// Safari does not deliver scroll events while a finger is down, so a
+	// scroll-based trigger fired late, after the finger lifted.
+	let openerOff: (() => void) | null = null;
+	function initOpener(section: HTMLElement) {
+		openerOff?.();
+		const root = section.querySelector<HTMLElement>('.sw-mob');
+		const mark = root?.querySelector<HTMLElement>('.sw-sentinel');
+		if (!root || !mark || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		root.classList.add('is-armed');
+		const set = (pinned: boolean | null) => {
+			if (pinned === true) root.classList.add('is-in');
+			else if (pinned === false) root.classList.remove('is-in');
 		};
-		const intro = scene.querySelector<HTMLElement>('.sw-intro');
-		let last = window.scrollY;
-		const update = () => {
-			const y = window.scrollY;
-			if (bands) root.classList.toggle('sw-hscroll', y >= top && y <= bottom);
-			// Phone strip: before its pin starts it is hidden, like the desktop view,
-			// so scrolling back up it doesn't slide down off the screen while the
-			// title is blurring out (the manifesto is what shows there).
-			if (hideBefore) hideBefore.style.visibility = hideBefore.classList.contains('is-active') && y < top ? 'hidden' : '';
-			// In once the scene is pinned. Scrolling back up it goes out in blur
-			// while the pinned view is still on screen (it is hidden at `top`),
-			// so the way out is seen.
-			const up = y < last;
-			if (y < top + window.innerHeight * 0.4 && (up || y < top)) intro?.classList.remove('in');
-			else if (y >= top) intro?.classList.add('in');
-			last = y;
+		// Live, while a finger is down.
+		const io = new IntersectionObserver((entries) => {
+			const e = entries[entries.length - 1];
+			if (e.isIntersecting || !e.rootBounds) return;
+			set(e.boundingClientRect.top < e.rootBounds.top);
+		}, { rootMargin: '-10% 0px 0px 0px' });
+		io.observe(mark);
+		// A backstop for jumps that skip past the marker in one frame (a restored
+		// scroll position, an anchor): the same rule, read from the scroll.
+		let ticking = false;
+		const sync = () => {
+			ticking = false;
+			const top = mark.getBoundingClientRect().top;
+			const vh = window.innerHeight;
+			set(top < vh * 0.1 ? true : top > vh ? false : null);
 		};
-		measure();
-		update();
-		const onResize = () => { measure(); update(); };
-		window.addEventListener('scroll', update, { passive: true });
-		window.addEventListener('resize', onResize, { passive: true });
-		window.addEventListener('load', onResize, { once: true });
-		hideBandsOff = () => {
-			window.removeEventListener('scroll', update);
-			window.removeEventListener('resize', onResize);
-			root.classList.remove('sw-hscroll');
-			intro?.classList.add('in');
-			if (hideBefore) hideBefore.style.visibility = '';
-			hideBandsOff = null;
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(sync); } };
+		window.addEventListener('scroll', onScroll, { passive: true });
+		openerOff = () => {
+			io.disconnect();
+			window.removeEventListener('scroll', onScroll);
+			root.classList.remove('is-armed', 'is-in');
+			openerOff = null;
 		};
 	}
-	document.addEventListener('astro:before-swap', () => hideBandsOff?.());
+	document.addEventListener('astro:before-swap', () => openerOff?.());
 
 	onReady(() => {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
-		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
-		if (window.matchMedia(MOBILE).matches) {
-			initStrip(section);
-			const strip = section.querySelector<HTMLElement>('.sw-mob')!;
-			hideBandsWhilePinned(strip, true, strip);
-			return;
-		}
-		hideBandsWhilePinned(scene, true);
+		// Phones and tablets are a plain vertical stack; only the opener's
+		// blur-in needs a nudge.
+		if (window.matchMedia(MOBILE).matches) { initOpener(section); return; }
 		// The desktop scene is driven by CSS where scroll-driven animations
 		// exist (see the styles); this is the same scene for the rest.
 		if (!CSS.supports('animation-timeline: view()')) initScene(section);
