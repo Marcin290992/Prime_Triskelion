@@ -177,16 +177,12 @@ const deskVars = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: the closing screen is pinned while its four lines
-	     come out of masks, then Services rises over it like a curtain. -->
+	<!-- Phones and tablets: the closing screen waits behind the pinned strip; when
+	     the strip scrolls up and off it is uncovered, held in place, and
+	     Services then rises over it like a curtain. -->
 	<div class="sw-mob-end" id="sw-end">
 		<div class="sw-mob-end__pin sw-panel sw-panel--final">
-			<h2>
-				<span class="sw-line"><span>A.I.</span></span>
-				<span class="sw-line"><span>DESIGN</span></span>
-				<span class="sw-line"><span>DEVELOPMENT</span></span>
-				<span class="sw-line"><span>BRANDING</span></span>
-			</h2>
+			<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 		</div>
 	</div>
 </section>
@@ -615,9 +611,10 @@ const deskVars = [
 	}
 	.sw-mob.is-active .sw-mob__track { will-change: transform; }
 
-	/* The closing screen (phones and tablets only): pinned for the reveal of
-	   its lines (0.6 screen), then for the curtain (1 screen) — Services is
-	   pulled up by that screen (margin-bottom) so it rises over this one. */
+	/* The closing screen (phones and tablets only). Pinned strip: it waits
+	   behind the strip's last screen (pulled up by one screen) and is
+	   uncovered when the strip scrolls up and off; it then holds for half a
+	   screen, and Services (pulled up by a screen) rises over it. */
 	.sw-mob-end { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-mob-end {
@@ -625,8 +622,13 @@ const deskVars = [
 			display: block;
 			position: relative;
 			z-index: 1;
-			height: calc(var(--vh) * 260);
+			height: calc(var(--vh) * 250);
 			margin-bottom: calc(var(--vh) * -100);
+		}
+		.sw-mob.is-active { z-index: 2; }
+		.sw-mob.is-active + .sw-mob-end {
+			margin-top: calc(var(--vh) * -100);
+			height: calc(var(--vh) * 350);
 		}
 		.sw-mob-end__pin {
 			--panel-pad: 8vw;
@@ -637,10 +639,6 @@ const deskVars = [
 			height: calc(var(--vh) * 100);
 			box-sizing: border-box;
 		}
-		.sw-mob-end h2 { display: flex; flex-direction: column; align-items: center; }
-		/* Each line is a mask; the script slides its text up out of it. */
-		.sw-mob-end .sw-line { display: block; overflow: hidden; padding: 0.04em 0.06em; margin: -0.04em -0.06em; }
-		.sw-mob-end .sw-line > span { display: block; will-change: transform, filter; }
 	}
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
@@ -737,6 +735,27 @@ const deskVars = [
 				},
 			});
 
+			// The strip scrolls up and off over its last screen: the cover's text
+			// drifts on upward and the closing screen, hidden until now, is
+			// uncovered.
+			const endBox = section.querySelector<HTMLElement>('.sw-mob-end__pin');
+			if (endBox) endBox.style.visibility = 'hidden';
+			const leave = ScrollTrigger.create({
+				trigger: root,
+				start: 'bottom bottom',
+				end: 'bottom top',
+				onUpdate: (self) => {
+					coverIn.style.translate = `0 ${(-200 * self.progress).toFixed(1)}px`;
+					if (endBox) endBox.style.visibility = self.progress > 0 ? '' : 'hidden';
+				},
+			});
+
+			const undoLeave = () => {
+				leave.kill();
+				coverIn.style.translate = '';
+				if (endBox) endBox.style.visibility = '';
+			};
+
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
 			// never per frame.
@@ -750,6 +769,7 @@ const deskVars = [
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
+					undoLeave();
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
@@ -807,27 +827,8 @@ const deskVars = [
 
 			parallax();
 
-			// The closing screen: its lines come out of their masks one after
-			// another while it is pinned (scrubbed over the first 0.6 screen).
-			const endBox = section.querySelector<HTMLElement>('.sw-mob-end');
-			const lines = endBox ? Array.from(endBox.querySelectorAll<HTMLElement>('.sw-line > span')) : [];
-			if (endBox && lines.length) {
-				const reveal = gsap.timeline({
-					defaults: { ease: 'none' },
-					scrollTrigger: {
-						trigger: endBox,
-						start: 'top top',
-						end: () => `+=${sticky.offsetHeight * 0.6}`,
-						scrub: true,
-						invalidateOnRefresh: true,
-					},
-				});
-				reveal.fromTo(lines,
-					{ yPercent: 110, opacity: 0, filter: 'blur(10px)' },
-					{ yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.28, duration: 1 }, 0);
-			}
-
 			return () => {
+				undoLeave();
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
