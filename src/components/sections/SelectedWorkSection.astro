@@ -133,7 +133,7 @@ const deskVars = [
 	<!-- Phones and tablets: the same work as one horizontal strip. The view is
 	     pinned with position: sticky and the strip is moved by the scroll
 	     (initStrip); without the script (or with reduced motion) it is a
-	     natively swiped, snapping row. -->
+	     natively swiped row. -->
 	<div class="sw-mob" id="sw-hs">
 		<div class="sw-mob__sticky">
 			<div class="sw-mob__track">
@@ -578,13 +578,11 @@ const deskVars = [
 		padding-bottom: 1.5rem;
 		display: flex;
 		align-items: center;
-		/* No script / reduced motion: a natively swiped row that snaps. */
+		/* No script / reduced motion: use native free horizontal scrolling. */
 		overflow-x: auto;
 		overflow-y: hidden;
-		/* Avoid Safari pulling the row back when a touch interrupts momentum. */
-		scroll-snap-type: x proximity;
+		scroll-snap-type: none;
 		-webkit-overflow-scrolling: touch;
-		touch-action: pan-x pan-y;
 		overscroll-behavior-x: contain;
 		scrollbar-width: none;
 	}
@@ -596,7 +594,6 @@ const deskVars = [
 		width: max-content;
 		height: 100%;
 	}
-	.sw-mob__track > * { scroll-snap-align: center; scroll-snap-stop: normal; }
 	.sw-mob .sw-intro,
 	.sw-mob .sw-panel { align-self: stretch; }
 
@@ -605,7 +602,6 @@ const deskVars = [
 		position: sticky;
 		top: 0;
 		overflow: hidden;
-		scroll-snap-type: none;
 	}
 	.sw-mob.is-active .sw-mob__track { will-change: transform; }
 
