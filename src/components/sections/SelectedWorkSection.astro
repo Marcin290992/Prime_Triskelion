@@ -130,13 +130,20 @@ const deskVars = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: a plain vertical stack — the title, the cards one
-	     under another, then the closing lines. No pin, no horizontal scroll,
-	     no script; the spacing is the same as every other section's
-	     (--section-space-*, --site-gutter). -->
+	<!-- Phones and tablets: a plain vertical stack. The title takes over on the
+	     spot where the manifesto ends and comes up out of the dark; then the
+	     cards ride in from below, one under another, and the closing lines
+	     follow. No horizontal scroll, no script; the spacing between the rest
+	     is the same as every other section's (--section-space-*,
+	     --site-gutter). -->
 	<div class="sw-mob" id="sw-hs">
-		<div class="sw-header">
-			<h2 class="sw-header__title">What we've<br><em>created.</em></h2>
+		<div class="sw-intro-wrap">
+			<div class="sw-intro-pin">
+				<div class="sw-intro">
+					<h2 class="sw-title">What we've<br><em>created.</em></h2>
+					<a href="/projects" class="link-btn sw-link">View All Projects</a>
+				</div>
+			</div>
 		</div>
 
 		<div class="sw-list">
@@ -508,10 +515,15 @@ const deskVars = [
 	}
 
 	/* ═══ Phones and tablets: a plain vertical stack ═══
-	   Title, the cards one under another, the closing lines. The section pads
-	   like every other one (--section-space-top / -bottom, --site-gutter), so
-	   the gaps match the rest of the page. */
+	   The opener is pulled up one screen so it takes over exactly where the
+	   manifesto ends: a whole screen, pinned for a moment while it comes up
+	   out of the dark. Then the cards rise from below, one under another, and
+	   the closing lines follow. The cards pad like every other section
+	   (--section-space-bottom, --site-gutter). */
 	.sw-mob {
+		--intro-size: clamp(3rem, 15vw, 6rem);
+		--intro-gap: 2rem;
+		--intro-pad: 6vw;
 		--card-w: 100%;
 		--card-gap: 1.1rem;
 		--card-offset: 0;
@@ -524,30 +536,36 @@ const deskVars = [
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.sw-mob {
 			display: block;
-			padding: 0 var(--site-gutter) var(--section-space-bottom);
-			box-sizing: border-box;
+			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			padding-bottom: var(--section-space-bottom);
 		}
 	}
-	.sw-header { padding: var(--section-space-top) 0 clamp(1.8rem, 3.8vh, 3.5rem); }
-	.sw-header__title {
-		margin: 0;
-		font-family: var(--f-display);
-		font-weight: 600;
-		/* The global mobile rule sets the same size as every other section title. */
-		font-size: clamp(3.2rem, 9.5vw, 5rem);
-		letter-spacing: -0.02em;
-		text-transform: uppercase;
-		line-height: 0.9;
-		color: rgb(var(--c-cream));
+	/* One screen pinned for 70% of a screen of scroll, while it fades in. */
+	.sw-intro-wrap { height: calc(var(--app-stable-vh, 1svh) * 170); }
+	.sw-intro-pin {
+		position: sticky;
+		top: 0;
+		height: calc(var(--app-stable-vh, 1svh) * 100);
 	}
-	.sw-header__title em { font-style: normal; color: rgb(var(--c-red)); }
-	.sw-list { display: grid; gap: 1.5rem; }
+	.sw-mob .sw-intro { width: 100%; height: 100%; }
+	@supports (animation-timeline: view()) {
+		@media (prefers-reduced-motion: no-preference) {
+			.sw-intro-wrap { view-timeline: --swi block; }
+			.sw-mob .sw-intro {
+				animation: sw-fade-in 1ms cubic-bezier(0.5, 1, 0.89, 1) both;
+				animation-timeline: --swi;
+				animation-range: contain 0% contain calc(var(--app-stable-vh, 1svh) * 70);
+			}
+		}
+	}
+	.sw-list { display: grid; gap: 1.5rem; padding-inline: var(--site-gutter); }
 	.sw-close {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 1.75rem;
 		margin-top: 3rem;
+		padding-inline: var(--site-gutter);
 		text-align: center;
 	}
 	.sw-close h2 {
