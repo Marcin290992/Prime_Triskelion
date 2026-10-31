@@ -134,16 +134,14 @@ const deskVars = [
 	     pinned with position: sticky and the strip is moved by the scroll
 	     (initStrip); without the script (or with reduced motion) it is a
 	     natively swiped, snapping row. -->
-	<div class="sw-mob-intro">
-		<div class="sw-intro">
-			<h2 class="sw-title">What we've<br><em>created.</em></h2>
-			<a href="/projects" class="link-btn sw-link">View All Projects</a>
-		</div>
-	</div>
-
 	<div class="sw-mob" id="sw-hs">
 		<div class="sw-mob__sticky">
 			<div class="sw-mob__track">
+
+				<div class="sw-intro">
+					<h2 class="sw-title">What we've<br><em>created.</em></h2>
+					<a href="/projects" class="link-btn sw-link">View All Projects</a>
+				</div>
 
 				{projects.map((p) => (
 					<div class="sw-card" data-case={p.caseSrc ? '' : undefined} data-case-src={p.caseSrc}>
@@ -202,8 +200,7 @@ const deskVars = [
 
 	/* Exactly one layout is on at a time (the script uses the same query). */
 	.sw-desk,
-	.sw-mob,
-	.sw-mob-intro { display: none; }
+	.sw-mob { display: none; }
 
 	/* ═══ Shared pieces ═══ */
 
@@ -236,22 +233,22 @@ const deskVars = [
 	   Services); the script adds .in (see hideBandsWhilePinned, which also runs for the phone strip). */
 	.sw-desk .sw-intro .sw-title,
 	.sw-desk .sw-intro .sw-link,
-	.sw-mob-intro.is-active .sw-intro .sw-title,
-	.sw-mob-intro.is-active .sw-intro .sw-link {
+	.sw-mob.is-active .sw-intro .sw-title,
+	.sw-mob.is-active .sw-intro .sw-link {
 		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
 	}
 	/* Leaving (scrolling back up to the section above) is quicker. */
 	.sw-desk .sw-intro:not(.in) .sw-title,
 	.sw-desk .sw-intro:not(.in) .sw-link,
-	.sw-mob-intro.is-active .sw-intro:not(.in) .sw-title,
-	.sw-mob-intro.is-active .sw-intro:not(.in) .sw-link {
+	.sw-mob.is-active .sw-intro:not(.in) .sw-title,
+	.sw-mob.is-active .sw-intro:not(.in) .sw-link {
 		opacity: 0;
 		filter: blur(14px);
 		transform: translateY(14px);
 		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease;
 	}
 	.sw-desk .sw-intro.in .sw-link,
-	.sw-mob-intro.is-active .sw-intro.in .sw-link { transition-delay: 0.15s; }
+	.sw-mob.is-active .sw-intro.in .sw-link { transition-delay: 0.15s; }
 
 	/* Card: a frame, the picture, then title / line / Explore. */
 	.sw-card {
@@ -551,13 +548,11 @@ const deskVars = [
 	}
 
 	/* ═══ Phones and tablets ═══ */
-	.sw-mob-intro {
+	.sw-mob {
+		--gap: clamp(12px, 4vw, 32px);
 		--intro-size: clamp(3rem, 15vw, 6rem);
 		--intro-gap: 2rem;
 		--intro-pad: 6vw;
-	}
-	.sw-mob {
-		--gap: clamp(12px, 4vw, 32px);
 		--card-w: min(88vw, 580px);
 		--card-gap: 1.1rem;
 		--card-offset: 0;
@@ -572,20 +567,17 @@ const deskVars = [
 		--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
 	}
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		/* The title is an ordinary screen, pulled up by one screen so it takes
-		   over exactly where the manifesto's pin ends (it blurs in on the spot).
-		   The pin starts after it, on the first card. */
-		.sw-mob-intro {
-			display: block;
-			position: relative;
-			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-		}
-		.sw-mob-intro .sw-intro {
-			height: calc(var(--app-stable-vh, 1svh) * 100);
-		}
 		.sw-mob {
 			display: block;
 			position: relative;
+			/* Pulled up by one screen, so the pinned view takes over exactly
+			   where the manifesto's pin ends: the row blurs in on the spot,
+			   then travels. */
+			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			/* The closing title's text sits mid-screen, so the lower half of the
+			   last screen is empty black: Services (stacked above, z-index 46) is
+			   tucked up over it instead of waiting below. */
+			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
 		}
 	}
 	.sw-mob__sticky {
@@ -657,7 +649,7 @@ const deskVars = [
 	   px of scroll. */
 	@supports (animation-timeline: view()) {
 		.sw-mob.is-driven {
-			--enter: 0px;
+			--enter: calc(var(--app-stable-vh, 1svh) * 70);
 			view-timeline: --swm block;
 		}
 		.sw-mob.is-driven .sw-mob__track,
@@ -708,7 +700,6 @@ const deskVars = [
 		const root = section.querySelector<HTMLElement>('.sw-mob');
 		const sticky = root?.querySelector<HTMLElement>('.sw-mob__sticky');
 		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
-		const introBox = section.querySelector<HTMLElement>('.sw-mob-intro');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
 		if (!root || !sticky || !track || !cover || !coverIn) return;
@@ -718,12 +709,11 @@ const deskVars = [
 		stripMm = gsap.matchMedia();
 		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
 			root.classList.add('is-active');
-			introBox?.classList.add('is-active');
 			sticky.scrollLeft = 0;
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
-			// The pin starts on the first card: no lead-in scroll.
-			const enter = () => 0;
+			// Screens of blur-in on the spot before the row starts to travel.
+			const enter = () => sticky.offsetHeight * 0.7;
 			const setHeight = () => { root.style.height = `${enter() + distance() + sticky.offsetHeight}px`; };
 
 			// Where scroll-driven animations exist, CSS moves the strip (see the
@@ -743,7 +733,6 @@ const deskVars = [
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
 					root.classList.remove('is-driven', 'is-active');
-					introBox?.classList.remove('is-active');
 				};
 			}
 
@@ -822,7 +811,6 @@ const deskVars = [
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
 				root.classList.remove('is-active');
-				introBox?.classList.remove('is-active');
 			};
 		});
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
@@ -993,7 +981,7 @@ const deskVars = [
 		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
 		if (window.matchMedia(MOBILE).matches) {
 			initStrip(section);
-			hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-mob-intro')!, false);
+			hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-mob')!, false);
 			return;
 		}
 		hideBandsWhilePinned(scene, true);
