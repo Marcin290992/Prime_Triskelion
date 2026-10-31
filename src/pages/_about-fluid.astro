@@ -1825,13 +1825,14 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
     _lenis = new Lenis(isTouch ? {
-      duration: 0.7,
-      easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
-    } : {
-      duration: 2.4,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      wheelMultiplier: 0.65,
-    });
+        lerp: 0.01,
+        syncTouch: true,
+        syncTouchLerp: 0.01,
+      } : {
+        lerp: 0.01,
+        smoothWheel: true,
+        wheelMultiplier: 0.5,
+      });
     (window as any).__lenis = _lenis;
     _lenis.on('scroll', ScrollTrigger.update);
     _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
