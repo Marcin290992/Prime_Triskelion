@@ -761,7 +761,13 @@ const deskVars = [
 			// iOS: sticky is placed on the scrolling thread and the strip's
 			// transform on the main one, so they drift apart during momentum.
 			// Scrolling driven by the script keeps both in the same frame.
-			if (ios) ScrollTrigger.normalizeScroll({ type: 'touch', allowNestedScroll: true });
+			if (ios) ScrollTrigger.normalizeScroll({
+				type: 'touch',
+				allowNestedScroll: true,
+				// A longer glide after the finger lifts (the default stops short,
+				// which reads as braking).
+				momentum: (self: { velocityY: number }) => Math.min(4, Math.abs(self.velocityY) / 450),
+			});
 
 			setHeight();
 			measure();
