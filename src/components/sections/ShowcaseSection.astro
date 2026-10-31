@@ -586,6 +586,7 @@ const steps = [
 		   Android and Safari 26+. Elsewhere the cards simply stack. */
 		@supports (animation-timeline: view()) {
 			.pstack { timeline-scope: --pm1, --pm2, --pm3, --pm4; }
+			.pstack__card,
 			.pstack__dim {
 				animation-duration: 1ms;
 				animation-timing-function: linear;
@@ -593,8 +594,12 @@ const steps = [
 				animation-timeline: var(--next);
 				animation-range: cover 12% cover 76%;
 			}
+			.pstack__card { animation-name: pstack-recede; }
 			.pstack__dim { animation-name: pstack-dark; }
 		}
+	}
+	@keyframes pstack-recede {
+		to { transform: translateY(-3px) scale(0.97); }
 	}
 	@keyframes pstack-dark {
 		to { opacity: 0.72; }
