@@ -5,6 +5,11 @@
 // Another click sends the wave back the other way — grey again, colour under
 // the cursor again.
 //
+// Leaving the photo resets it: once more than half of it has scrolled out of
+// view (down to the text, up to the next section) the colour fades away to
+// grey, so whenever you come back it is grey again. Scrolling back to the
+// photo's entrance resets it at once.
+//
 // Plain Canvas 2D, no dependencies: a colour copy of the photo is drawn on a
 // canvas laid over the <img>, cut by a soft mask that is redrawn from scratch
 // every frame (the base state, the wave, and the cursor's stamps XOR-ed on
@@ -81,6 +86,9 @@ export function initColorReveal(host: HTMLElement, img: HTMLImageElement, opts: 
 	// colour photo (grey under the cursor). A click's wave flips it.
 	let colored = false;
 	let wave: { x: number; y: number; t: number } | null = null;
+	let inView = true;                       // more than half of the photo on screen
+	let fadeTimer = 0;                       // a reset fading out is under way
+	const FADE_MS = 700;
 
 	const load = () => {
 		const src = img.currentSrc || img.src;
@@ -124,19 +132,32 @@ export function initColorReveal(host: HTMLElement, img: HTMLImageElement, opts: 
 
 	const clear = () => ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+	// Back to grey, now.
+	const hardReset = () => {
+		window.clearTimeout(fadeTimer);
+		fadeTimer = 0;
+		colored = false;
+		wave = null;
+		stamps.length = 0;
+		canvas.style.transition = 'none';
+		canvas.style.opacity = '1';
+		clear();
+	};
+	// Back to grey, fading out (the photo is scrolling away). Runs to the end
+	// whatever the scroll does meanwhile, so it is grey on return.
+	const softReset = () => {
+		if (fadeTimer || (!colored && !wave)) return;
+		canvas.style.transition = `opacity ${FADE_MS}ms ease`;
+		canvas.style.opacity = '0';
+		fadeTimer = window.setTimeout(hardReset, FADE_MS + 30);
+	};
+
 	const frame = (now: number) => {
 		raf = 0;
 		const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
 		last = now;
 
-		if (!isReady() || !color) {
-			clear();
-			stamps.length = 0;
-			// Colour stays while the photo is not settled (scrolled back to its
-			// entrance): keep checking so it comes back once it has.
-			if (colored && visible) raf = requestAnimationFrame(frame);
-			return;
-		}
+		if (!isReady() || !color) { hardReset(); return; }
 
 		presence += ((pointer.inside ? 1 : 0) - presence) * (1 - Math.exp(-dt / 0.16));
 		if (pointer.fresh) { head.x = pointer.x; head.y = pointer.y; pointer.fresh = false; }
@@ -234,7 +255,7 @@ export function initColorReveal(host: HTMLElement, img: HTMLImageElement, opts: 
 	// without having moved): swiping across the photo is scrolling, not a click.
 	let tap: { x: number; y: number; t: number } | null = null;
 	const onDown = (e: PointerEvent) => {
-		if (!isReady()) return;
+		if (!isReady() || !inView) return;
 		if (e.pointerType === 'touch') {
 			tap = { x: e.clientX, y: e.clientY, t: performance.now() };
 			return;
@@ -246,7 +267,7 @@ export function initColorReveal(host: HTMLElement, img: HTMLImageElement, opts: 
 	const onUp = (e: PointerEvent) => {
 		const down = tap;
 		tap = null;
-		if (!down || e.pointerType !== 'touch' || !isReady()) return;
+		if (!down || e.pointerType !== 'touch' || !isReady() || !inView) return;
 		if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 10 || performance.now() - down.t > 500) return;
 		locate(e);
 		startWave();
@@ -263,12 +284,20 @@ export function initColorReveal(host: HTMLElement, img: HTMLImageElement, opts: 
 	resizeObserver.observe(host);
 	const intersectionObserver = new IntersectionObserver(([entry]) => {
 		visible = entry.isIntersecting;
+		inView = entry.intersectionRatio >= 0.5;
+		if (!inView) softReset();
 		if (visible) wake();
-	});
+	}, { threshold: [0, 0.25, 0.5, 0.75, 1] });
 	intersectionObserver.observe(host);
+	// Scrolled back to the photo's entrance (it scales and fades in there): the
+	// colour layer would not line up, so it goes at once.
+	const onScroll = () => { if ((colored || wave) && !fadeTimer && !isReady()) hardReset(); };
+	window.addEventListener('scroll', onScroll, { passive: true });
 	layout();
 
 	return () => {
+		window.clearTimeout(fadeTimer);
+		window.removeEventListener('scroll', onScroll);
 		cancelAnimationFrame(raf);
 		resizeObserver.disconnect();
 		intersectionObserver.disconnect();
