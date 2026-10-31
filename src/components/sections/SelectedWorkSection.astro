@@ -177,9 +177,17 @@ const deskVars = [
 		</div>
 	</div>
 
-	<!-- Phones and tablets: after the strip, an ordinary screen of the page, then Services. -->
-	<div class="sw-mob-end sw-panel sw-panel--final">
-		<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
+	<!-- Phones and tablets: the closing screen is pinned while its four lines
+	     come out of masks, then Services rises over it like a curtain. -->
+	<div class="sw-mob-end" id="sw-end">
+		<div class="sw-mob-end__pin sw-panel sw-panel--final">
+			<h2>
+				<span class="sw-line"><span>A.I.</span></span>
+				<span class="sw-line"><span>DESIGN</span></span>
+				<span class="sw-line"><span>DEVELOPMENT</span></span>
+				<span class="sw-line"><span>BRANDING</span></span>
+			</h2>
+		</div>
 	</div>
 </section>
 
@@ -609,20 +617,32 @@ const deskVars = [
 	}
 	.sw-mob.is-active .sw-mob__track { will-change: transform; }
 
-	/* The closing title: an ordinary screen after the strip (phones and tablets only). */
-	.sw-mob-end.sw-panel { display: none; }
+	/* The closing screen (phones and tablets only): pinned for the reveal of
+	   its lines (0.6 screen), then for the curtain (1 screen) — Services is
+	   pulled up by that screen (margin-bottom) so it rises over this one. */
+	.sw-mob-end { display: none; }
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.sw-mob-end.sw-panel {
-			--panel-pad: 8vw;
-			--final-size: min(9vw, calc(var(--app-stable-vh, 1svh) * 9.5));
-			display: flex;
+		.sw-mob-end {
+			--vh: var(--app-stable-vh, 1svh);
+			display: block;
 			position: relative;
 			z-index: 1;
-			width: 100%;
-			/* Sized by its text and the site's usual section spacing, not a screen. */
-			justify-content: flex-start;
-			padding: var(--section-space-top) var(--panel-pad) 0;
+			height: calc(var(--vh) * 260);
+			margin-bottom: calc(var(--vh) * -100);
 		}
+		.sw-mob-end__pin {
+			--panel-pad: 8vw;
+			--final-size: min(9vw, calc(var(--vh) * 9.5));
+			position: sticky;
+			top: 0;
+			width: 100%;
+			height: calc(var(--vh) * 100);
+			box-sizing: border-box;
+		}
+		.sw-mob-end h2 { display: flex; flex-direction: column; align-items: center; }
+		/* Each line is a mask; the script slides its text up out of it. */
+		.sw-mob-end .sw-line { display: block; overflow: hidden; padding: 0.04em 0.06em; margin: -0.04em -0.06em; }
+		.sw-mob-end .sw-line > span { display: block; will-change: transform, filter; }
 	}
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
@@ -719,6 +739,26 @@ const deskVars = [
 					invalidateOnRefresh: true,
 				},
 			});
+
+			// The closing screen: its lines come out of their masks one after
+			// another while it is pinned (scrubbed over the first 0.6 screen).
+			const endBox = section.querySelector<HTMLElement>('.sw-mob-end');
+			const lines = endBox ? Array.from(endBox.querySelectorAll<HTMLElement>('.sw-line > span')) : [];
+			if (endBox && lines.length) {
+				const reveal = gsap.timeline({
+					defaults: { ease: 'none' },
+					scrollTrigger: {
+						trigger: endBox,
+						start: 'top top',
+						end: () => `+=${sticky.offsetHeight * 0.6}`,
+						scrub: true,
+						invalidateOnRefresh: true,
+					},
+				});
+				reveal.fromTo(lines,
+					{ yPercent: 110, opacity: 0, filter: 'blur(10px)' },
+					{ yPercent: 0, opacity: 1, filter: 'blur(0px)', stagger: 0.28, duration: 1 }, 0);
+			}
 
 			return () => {
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);

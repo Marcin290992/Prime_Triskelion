@@ -315,6 +315,8 @@ const services = [
 	.svc__btn:hover .svc__btn__line { width: 56px; }
 	/* Phones and tablets: the pinned scene replaces the hover list. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		/* Opaque, so it covers the closing screen of Selected work like a curtain. */
+		#services { background: rgb(var(--c-bg)); }
 		.svc__body { display: none; }
 		/* The title stays pinned over the scene, like The Process's; the
 		   scene's pin starts just under it (--svc-head, its measured

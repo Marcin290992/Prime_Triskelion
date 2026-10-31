@@ -1825,9 +1825,8 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
     const isTouch = window.matchMedia('(pointer: coarse)').matches;
     _lenis = new Lenis(isTouch ? {
-        lerp: 0.01,
-        syncTouch: true,
-        syncTouchLerp: 0.01,
+      duration: 0.7,
+      easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
       } : {
         lerp: 0.01,
         smoothWheel: true,

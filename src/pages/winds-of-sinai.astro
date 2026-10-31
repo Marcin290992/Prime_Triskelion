@@ -1372,9 +1372,10 @@ const screens = [
     // page specifically.
     if (!(isTouch && isSafari())) {
       _lenis = new Lenis(isTouch ? {
-        lerp: 0.01,
-        syncTouch: true,
-        syncTouchLerp: 0.01,
+        duration: 1.2,
+        easing: (t: number) => 1 - Math.pow(1 - t, 3),
+        smoothWheel: false,
+        touchMultiplier: 1.1,
       } : {
         lerp: 0.01,
         smoothWheel: true,
