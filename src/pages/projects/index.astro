@@ -59,7 +59,7 @@ const projects = [
   <main id="projects-page">
 
     <!-- Brief header -->
-    <header class="proj-header" data-side-rays>
+    <header class="proj-header" data-side-rays data-rays-pin>
       <h1 class="proj-title">
         <span class="proj-title__line"><span class="proj-title__word">My</span></span>
         <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
@@ -469,14 +469,16 @@ const projects = [
     // page colour on that section), so the CTA arrives on a dark screen.
     const sink = document.createElement('div');
     sink.setAttribute('aria-hidden', 'true');
-    sink.style.cssText = 'position:absolute;inset:-1px 0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
-    lastSec?.appendChild(sink);
+    sink.style.cssText = 'position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
+    // (in the pinned panel, the same layer as the photo — in the section they
+    // rounded differently and a 1px sliver of the photo showed at the edge)
+    lastSec?.querySelector('.proj-inner')?.appendChild(sink);
     // The first project is the mirror of that: it comes up out of the dark as
     // its window opens under the header.
     const firstSec = document.querySelector<HTMLElement>('.proj-section');
     const rise = sink.cloneNode() as HTMLElement;
     rise.style.opacity = '1';
-    firstSec?.appendChild(rise);
+    firstSec?.querySelector('.proj-inner')?.appendChild(rise);
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -503,7 +505,7 @@ const projects = [
 
         if (sec === firstSec && !reduce) {
           const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
-          const d = rect.top > 0 ? 1 - smooth(0.0, 0.7, shown) : 0;
+          const d = rect.top > 0 ? 1 - smooth(0.4, 1.0, shown) : 0;
           rise.style.opacity = d.toFixed(3);
         }
 
