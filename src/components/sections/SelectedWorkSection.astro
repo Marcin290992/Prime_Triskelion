@@ -138,6 +138,7 @@ const deskVars = [
 	     --site-gutter). -->
 	<div class="sw-mob" id="sw-hs">
 		<div class="sw-intro-wrap">
+			<span class="sw-sentinel" aria-hidden="true"></span>
 			<div class="sw-intro-pin">
 				<div class="sw-intro">
 					<h2 class="sw-title">What we've<br><em>created.</em></h2>
@@ -541,27 +542,25 @@ const deskVars = [
 		}
 	}
 	/* One screen pinned for 70% of a screen of scroll, while it fades in. */
-	.sw-intro-wrap { height: calc(var(--app-stable-vh, 1svh) * 170); }
+	.sw-intro-wrap { position: relative; height: calc(var(--app-stable-vh, 1svh) * 170); }
+	/* Marks the top of the wrapper for the opener's observer. */
+	.sw-sentinel { position: absolute; top: 0; left: 0; width: 1px; height: 1px; pointer-events: none; }
 	.sw-intro-pin {
 		position: sticky;
 		top: 0;
 		height: calc(var(--app-stable-vh, 1svh) * 100);
 	}
 	.sw-mob .sw-intro { width: 100%; height: 100%; }
-	@supports (animation-timeline: view()) {
-		@media (prefers-reduced-motion: no-preference) {
-			.sw-intro-wrap { view-timeline: --swi block; }
-			.sw-mob .sw-intro {
-				animation: sw-blur-in 1ms cubic-bezier(0.5, 1, 0.89, 1) both;
-				animation-timeline: --swi;
-				animation-range: contain 0% contain calc(var(--app-stable-vh, 1svh) * 70);
-			}
-		}
+	/* The title comes into focus out of a blur, on a timer (not tied to the
+	   scroll, which flickered on iOS), once it is pinned: the script arms it
+	   and flips .is-in. Without the script it is simply there. */
+	.sw-mob .sw-intro {
+		transition: opacity 0.9s ease, filter 1.1s cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	/* Comes into focus out of a blur as it fades in. */
-	@keyframes sw-blur-in {
-		from { opacity: 0; filter: blur(14px); }
-		to { opacity: 1; filter: blur(0); }
+	.sw-mob.is-armed .sw-intro { opacity: 0; filter: blur(14px); }
+	.sw-mob.is-armed.is-in .sw-intro { opacity: 1; filter: blur(0); }
+	@media (prefers-reduced-motion: reduce) {
+		.sw-mob .sw-intro { transition: none; }
 	}
 	.sw-list { display: grid; gap: 1.5rem; padding-inline: var(--site-gutter); }
 	.sw-close {
@@ -704,11 +703,57 @@ const deskVars = [
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
 	}
 
+	// ── Phones/tablets: the opener's timed blur-in ─────────────────────────
+	// Armed (hidden) up front, then flipped in once the opener is pinned (the
+	// top of its wrapper has passed 10% of the screen); flipped back out only
+	// when the wrapper is fully below the screen again, so a small correction
+	// never replays it. An IntersectionObserver, not a scroll listener: iOS
+	// Safari does not deliver scroll events while a finger is down, so a
+	// scroll-based trigger fired late, after the finger lifted.
+	let openerOff: (() => void) | null = null;
+	function initOpener(section: HTMLElement) {
+		openerOff?.();
+		const root = section.querySelector<HTMLElement>('.sw-mob');
+		const mark = root?.querySelector<HTMLElement>('.sw-sentinel');
+		if (!root || !mark || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		root.classList.add('is-armed');
+		const set = (pinned: boolean | null) => {
+			if (pinned === true) root.classList.add('is-in');
+			else if (pinned === false) root.classList.remove('is-in');
+		};
+		// Live, while a finger is down.
+		const io = new IntersectionObserver((entries) => {
+			const e = entries[entries.length - 1];
+			if (e.isIntersecting || !e.rootBounds) return;
+			set(e.boundingClientRect.top < e.rootBounds.top);
+		}, { rootMargin: '-10% 0px 0px 0px' });
+		io.observe(mark);
+		// A backstop for jumps that skip past the marker in one frame (a restored
+		// scroll position, an anchor): the same rule, read from the scroll.
+		let ticking = false;
+		const sync = () => {
+			ticking = false;
+			const top = mark.getBoundingClientRect().top;
+			const vh = window.innerHeight;
+			set(top < vh * 0.1 ? true : top > vh ? false : null);
+		};
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(sync); } };
+		window.addEventListener('scroll', onScroll, { passive: true });
+		openerOff = () => {
+			io.disconnect();
+			window.removeEventListener('scroll', onScroll);
+			root.classList.remove('is-armed', 'is-in');
+			openerOff = null;
+		};
+	}
+	document.addEventListener('astro:before-swap', () => openerOff?.());
+
 	onReady(() => {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
-		// Phones and tablets are a plain vertical stack (CSS only).
-		if (window.matchMedia(MOBILE).matches) return;
+		// Phones and tablets are a plain vertical stack; only the opener's
+		// blur-in needs a nudge.
+		if (window.matchMedia(MOBILE).matches) { initOpener(section); return; }
 		// The desktop scene is driven by CSS where scroll-driven animations
 		// exist (see the styles); this is the same scene for the rest.
 		if (!CSS.supports('animation-timeline: view()')) initScene(section);
