@@ -132,10 +132,8 @@ const deskVars = [
 
 	<!-- Phones and tablets: the same work as one horizontal strip. The view is
 	     pinned with position: sticky and the strip is moved by the scroll
-	     (initStrip). On iPhone and iPad (WebKit cannot keep a scroll-driven
-	     strip in step with the finger) it is a natively swiped, snapping row
-	     instead, with a Swipe hint; so it is without the script or with
-	     reduced motion. -->
+	     (initStrip); without the script (or with reduced motion) it is a
+	     natively swiped, snapping row. -->
 	<div class="sw-mob" id="sw-hs">
 		<div class="sw-mob__sticky">
 			<div class="sw-mob__track">
@@ -143,7 +141,6 @@ const deskVars = [
 				<div class="sw-intro">
 					<h2 class="sw-title">What we've<br><em>created.</em></h2>
 					<a href="/projects" class="link-btn sw-link">View All Projects</a>
-					<p class="sw-hint" aria-hidden="true">Swipe <span>→</span></p>
 				</div>
 
 				{projects.map((p) => (
@@ -677,51 +674,6 @@ const deskVars = [
 		from { transform: translate3d(calc(-100vw - var(--gap)), 0, 0); }
 		to { transform: translate3d(0, 0, 0); }
 	}
-
-	/* ═══ iPhone / iPad: a natively swiped row ═══
-	   (-webkit-touch-callout exists only on iOS WebKit.) The strip is the
-	   browser's own horizontal scroller, so nothing can trail the finger. The
-	   section keeps the same length and pinned screen as the scroll-driven
-	   strip; the script does not start there. */
-	.sw-hint {
-		display: none;
-		margin: 1.75rem 0 0;
-		align-items: center;
-		gap: 0.7em;
-		font-family: var(--f-body);
-		font-size: 0.6875rem;
-		font-weight: 500;
-		letter-spacing: 0.28em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.55);
-	}
-	.sw-hint span { display: inline-block; animation: sw-nudge 1.8s ease-in-out infinite; }
-	@keyframes sw-nudge {
-		0%, 100% { transform: translateX(0); }
-		50% { transform: translateX(6px); }
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.sw-hint span { animation: none; }
-	}
-	@supports (-webkit-touch-callout: none) {
-		.sw-mob {
-			/* The fade-in (70% of a screen), the pinned screen and a half-screen hold. */
-			height: calc(var(--app-stable-vh, 1svh) * 220);
-		}
-		.sw-mob__sticky { position: sticky; top: 0; }
-		.sw-mob .sw-hint { display: flex; }
-		/* Comes up out of the dark as the section pins (opacity only). */
-		@supports (animation-timeline: view()) {
-			@media (prefers-reduced-motion: no-preference) {
-				.sw-mob { view-timeline: --swm block; }
-				.sw-mob__track {
-					animation: sw-fade-in 1ms cubic-bezier(0.5, 1, 0.89, 1) both;
-					animation-timeline: --swm;
-					animation-range: contain 0% contain calc(var(--app-stable-vh, 1svh) * 70);
-				}
-			}
-		}
-	}
 </style>
 
 <script>
@@ -1005,9 +957,7 @@ const deskVars = [
 	onReady(() => {
 		const section = document.getElementById('selected-work');
 		if (!section) return;
-		const ios = CSS.supports('-webkit-touch-callout: none');
-		// iPhone/iPad: a natively swiped row, CSS only (see the styles).
-		if (window.matchMedia(MOBILE).matches) { if (!ios) initStrip(section); }
+		if (window.matchMedia(MOBILE).matches) initStrip(section);
 		// The desktop scene is driven by CSS where scroll-driven animations
 		// exist (see the styles); this is the same scene for the rest.
 		else if (!CSS.supports('animation-timeline: view()')) initScene(section);
