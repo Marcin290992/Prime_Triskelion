@@ -604,6 +604,9 @@ const deskVars = [
 	/* The last slide is tucked under the cover and slides out from behind it
 	   sideways, as on desktop (CSS animation below, script fallback). */
 	.sw-mob.is-active .sw-panel--final { margin-left: -10vw; will-change: transform; }
+	/* Safari: no tucking under the cover and no slide, the closing slide is an
+	   ordinary last slide, so it can never stay hidden behind the cover. */
+	.sw-mob.is-active.plain-end .sw-panel--final { margin-left: 0; will-change: auto; animation: none !important; transform: none !important; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
@@ -684,6 +687,7 @@ const deskVars = [
 		stripMm = gsap.matchMedia();
 		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
 			root.classList.add('is-active');
+			if (isSafari()) root.classList.add('plain-end');
 			sticky.scrollLeft = 0;
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
@@ -733,7 +737,7 @@ const deskVars = [
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
-					root.classList.remove('is-driven', 'is-active');
+					root.classList.remove('is-driven', 'is-active', 'plain-end');
 				};
 			}
 
@@ -795,7 +799,7 @@ const deskVars = [
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
-				root.classList.remove('is-active');
+				root.classList.remove('is-active', 'plain-end');
 			};
 		});
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
