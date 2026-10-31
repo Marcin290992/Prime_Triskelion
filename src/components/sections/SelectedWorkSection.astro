@@ -622,8 +622,9 @@ const deskVars = [
 		width: 1px;
 		height: 1px;
 		pointer-events: none;
+		/* No scroll-snap-stop: always — a hard stop on each point made the
+		   strip (which trails the scroll a little on iOS) jump and come back. */
 		scroll-snap-align: start;
-		scroll-snap-stop: always;
 	}
 	:global(html.sw-snap) { scroll-snap-type: y mandatory; }
 
