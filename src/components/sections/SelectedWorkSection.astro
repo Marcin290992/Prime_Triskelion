@@ -689,7 +689,10 @@ const deskVars = [
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-			const setHeight = () => { root.style.height = `${enter() + distance() + sticky.offsetHeight}px`; };
+			// After the travel the last slide is held for a while (the strip stays
+			// pinned), so it can be read before Services comes up.
+			const hold = () => sticky.offsetHeight * 0.7;
+			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
 
 			// Snap: when the scroll stops, the strip settles on the nearest slide's
 			// centre (the opener, each card, the cover), so nothing can be left
