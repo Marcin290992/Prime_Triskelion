@@ -714,24 +714,6 @@ const deskVars = [
 			root.classList.add('is-active');
 			sticky.scrollLeft = 0;
 
-			// iOS Safari does not report the scroll live while a finger is down,
-			// so the strip catches up only after it lifts (a pull-back at the
-			// touch). While the strip is on screen GSAP drives the touch scroll
-			// itself, which reports it every frame.
-			const ios = CSS.supports('-webkit-touch-callout: none');
-			const normalize = ios
-				? ScrollTrigger.create({
-					trigger: root,
-					start: 'top bottom',
-					end: 'bottom top',
-					onToggle: (self) => { ScrollTrigger.normalizeScroll(self.isActive ? { type: 'touch', allowNestedScroll: true } : false); },
-				})
-				: null;
-			const stopNormalize = () => {
-				normalize?.kill();
-				if (ios) ScrollTrigger.normalizeScroll(false);
-			};
-
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// The strip stays pinned a little after it ends, so the last panel
 			// does not run off on a quick scroll.
@@ -754,7 +736,6 @@ const deskVars = [
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
-					stopNormalize();
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left', '--slot-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
@@ -848,7 +829,6 @@ const deskVars = [
 				});
 
 			return () => {
-				stopNormalize();
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
