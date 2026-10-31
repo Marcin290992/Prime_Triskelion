@@ -650,6 +650,7 @@ const deskVars = [
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
+	import { isSafari } from '../../utils/isSafari';
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -696,6 +697,18 @@ const deskVars = [
 			const hold = () => sticky.offsetHeight * 0.7;
 			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
 
+			// iOS Safari doesn't report the scroll live while a finger is down, so the
+			// strip catches up after it lifts (a pull-back and return). While this
+			// section is on screen GSAP drives the touch scroll itself instead.
+			if (isSafari()) {
+				ScrollTrigger.create({
+					trigger: root,
+					start: 'top bottom',
+					end: 'bottom top',
+					onToggle: (self) => { ScrollTrigger.normalizeScroll(self.isActive ? { allowNestedScroll: true } : false); },
+				});
+			}
+
 			// Snap: when the scroll stops, the strip settles on the nearest slide's
 			// centre (the opener, each card, the cover), so nothing can be left
 			// half-way or skipped. It acts only over the horizontal travel.
@@ -732,6 +745,7 @@ const deskVars = [
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
+					if (isSafari()) ScrollTrigger.normalizeScroll(false);
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
@@ -794,6 +808,7 @@ const deskVars = [
 			parallax();
 
 			return () => {
+				if (isSafari()) ScrollTrigger.normalizeScroll(false);
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
