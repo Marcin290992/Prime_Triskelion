@@ -471,6 +471,12 @@ const projects = [
     sink.setAttribute('aria-hidden', 'true');
     sink.style.cssText = 'position:absolute;inset:-1px 0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
     lastSec?.appendChild(sink);
+    // The first project is the mirror of that: it comes up out of the dark as
+    // its window opens under the header.
+    const firstSec = document.querySelector<HTMLElement>('.proj-section');
+    const rise = sink.cloneNode() as HTMLElement;
+    rise.style.opacity = '1';
+    firstSec?.appendChild(rise);
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -493,6 +499,12 @@ const projects = [
           const left = Math.max(0, Math.min(1, rect.bottom / vh));
           const d = rect.top <= 0 ? 1 - smooth(0.3, 1.0, left) : 0;
           sink.style.opacity = d.toFixed(3);
+        }
+
+        if (sec === firstSec && !reduce) {
+          const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
+          const d = rect.top > 0 ? 1 - smooth(0.0, 0.7, shown) : 0;
+          rise.style.opacity = d.toFixed(3);
         }
 
         const released = isMob && sec === lastSec && rect.top <= 0;
