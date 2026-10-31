@@ -701,6 +701,13 @@ const deskVars = [
 			const hold = () => sticky.offsetHeight * 0.7;
 			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
 
+			// iPhone/iPad (Safari): the strip is moved 1:1 by the scroll and nothing
+			// else touches the scroll position — no snap, no normalized touch
+			// scroll. Either one moved the page while the finger's momentum was
+			// still running, which read as a pull-back / jitter. Elsewhere the strip
+			// settles on the nearest slide when the scroll stops.
+			const ios = CSS.supports('-webkit-touch-callout: none');
+
 			// Snap: when the scroll stops, the strip settles on the nearest slide's
 			// centre (the opener, each card, the cover), so nothing can be left
 			// half-way or skipped. It acts only over the horizontal travel.
@@ -709,7 +716,7 @@ const deskVars = [
 				const x = slide.offsetLeft + slide.offsetWidth / 2 - sticky.clientWidth / 2;
 				return Math.min(1, Math.max(0, x / (distance() || 1)));
 			});
-			ScrollTrigger.create({
+			if (!ios) ScrollTrigger.create({
 				trigger: root,
 				start: () => `top+=${enter()} top`,
 				end: () => `+=${distance()}`,
@@ -727,7 +734,6 @@ const deskVars = [
 			// never per frame.
 			// Not on iOS: Safari runs scroll-driven animations on the main thread,
 			// so after a finger stops the momentum the strip jitters left/right.
-			const ios = CSS.supports('-webkit-touch-callout: none');
 			if (!ios && CSS.supports('animation-timeline: view()')) {
 				const place = () => {
 					setHeight();
@@ -757,17 +763,6 @@ const deskVars = [
 				cards.forEach((c) => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
 				coverLeft = cover.offsetLeft;
 			};
-
-			// iOS: sticky is placed on the scrolling thread and the strip's
-			// transform on the main one, so they drift apart during momentum.
-			// Scrolling driven by the script keeps both in the same frame.
-			if (ios) ScrollTrigger.normalizeScroll({
-				type: 'touch',
-				allowNestedScroll: true,
-				// A longer glide after the finger lifts (the default stops short,
-				// which reads as braking).
-				momentum: (self: { velocityY: number }) => Math.min(4, Math.abs(self.velocityY) / 450),
-			});
 
 			setHeight();
 			measure();
@@ -809,7 +804,6 @@ const deskVars = [
 			parallax();
 
 			return () => {
-				if (ios) ScrollTrigger.normalizeScroll(false);
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
