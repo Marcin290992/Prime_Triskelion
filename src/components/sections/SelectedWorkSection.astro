@@ -581,7 +581,10 @@ const deskVars = [
 		/* No script / reduced motion: a natively swiped row that snaps. */
 		overflow-x: auto;
 		overflow-y: hidden;
-		scroll-snap-type: x mandatory;
+		/* Avoid Safari pulling the row back when a touch interrupts momentum. */
+		scroll-snap-type: x proximity;
+		-webkit-overflow-scrolling: touch;
+		touch-action: pan-x pan-y;
 		overscroll-behavior-x: contain;
 		scrollbar-width: none;
 	}
@@ -593,7 +596,7 @@ const deskVars = [
 		width: max-content;
 		height: 100%;
 	}
-	.sw-mob__track > * { scroll-snap-align: center; }
+	.sw-mob__track > * { scroll-snap-align: center; scroll-snap-stop: normal; }
 	.sw-mob .sw-intro,
 	.sw-mob .sw-panel { align-self: stretch; }
 
