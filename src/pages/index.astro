@@ -138,6 +138,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		import gsap from 'gsap';
 		import ScrollTrigger from 'gsap/ScrollTrigger';
 		import { syncTickerToScroll } from '../utils/afterPageTransition';
+		import { TOUCH_LENIS_OPTIONS } from '../utils/touchLenis';
 
 		let lenisInstance: Lenis | null = null;
 		let lenisTickerCb: ((time: number) => void) | null = null;
@@ -161,13 +162,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// frame that moves the horizontal strip, so sticky and the strip's
 				// transform can't drift apart during the finger's momentum.
 				// autoRaf is off: the GSAP ticker calls raf (below).
-				lenisInstance = new Lenis({
-					autoRaf: false,
-					syncTouch: true,
-					syncTouchLerp: 0.075,
-					touchInertiaExponent: 1.7,
-					touchMultiplier: 1,
-				});
+				lenisInstance = new Lenis({ ...TOUCH_LENIS_OPTIONS });
 				(window as any).__lenis = lenisInstance;
 				// This page chose its Lenis: the Layout fallback must not add another.
 				(window as any).__lenisHandled = true;
