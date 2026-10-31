@@ -650,15 +650,15 @@ const deskVars = [
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
+	import { isSafari } from '../../utils/isSafari';
 
 	gsap.registerPlugin(ScrollTrigger);
 
 	const MOBILE = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 
-	// Off: Safari doesn't cope with the pinned, scroll-driven strip, so phones and
-	// tablets get the natively swiped, snapping row (the CSS fallback). Set to
-	// true to bring the pinned strip back (initStrip).
-	const PIN_STRIP = false;
+	// The pinned strip on phones and tablets. Off = the natively swiped, snapping
+	// row (the CSS fallback).
+	const PIN_STRIP = true;
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
 	// The strip is pinned by position: sticky (no pin spacer, no jump) and
@@ -702,7 +702,9 @@ const deskVars = [
 				const x = slide.offsetLeft + slide.offsetWidth / 2 - sticky.clientWidth / 2;
 				return Math.min(1, Math.max(0, x / (distance() || 1)));
 			});
-			ScrollTrigger.create({
+			// Not on iOS: the snap's own scrollTo fights the native momentum there and
+			// reads as a jerk.
+			if (!isSafari()) ScrollTrigger.create({
 				trigger: root,
 				start: () => `top+=${enter()} top`,
 				end: () => `+=${distance()}`,
@@ -780,7 +782,9 @@ const deskVars = [
 					trigger: root,
 					start: () => `top+=${enter()} top`,
 					end: () => `+=${distance()}`,
-					scrub: 0.3,
+					// Tied straight to the scroll: a smoothing value adds a second,
+					// lagging tween per frame on top of native momentum (iOS).
+					scrub: true,
 					invalidateOnRefresh: true,
 				},
 			});
