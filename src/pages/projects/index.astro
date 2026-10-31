@@ -421,10 +421,6 @@ const projects = [
       .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
     }
 
-    /* The last project is revealed like the others, then lets go (the script adds
-       .is-released once it fills the screen), so the page scrolls on normally
-       to the end. */
-    .proj-section:last-child.is-released .proj-inner { position: absolute; }
   }
 </style>
 
@@ -509,9 +505,6 @@ const projects = [
           rise.style.opacity = d.toFixed(3);
         }
 
-        const released = isMob && sec === lastSec && rect.top <= 0;
-        if (sec === lastSec) sec.classList.toggle('is-released', released);
-
         if (rect.top > vh || rect.bottom < 0) continue;
 
         if (bgText) {
@@ -522,7 +515,7 @@ const projects = [
         if (!reduce) {
           // How much of the screen this card's window covers: 0 → 1 as it
           // opens, 1 → 0 as the next one closes it.
-          const f = released ? 1 : (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
+          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
           if (foot) {
             const t = smooth(0.4, 0.92, f);
             foot.style.opacity = t.toFixed(3);
