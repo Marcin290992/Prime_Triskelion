@@ -24,16 +24,12 @@ const projects = [
 // Desktop scroll length, in screens: a blur-in on the spot, the horizontal
 // travel, a hold on the last slide, and the pinned view itself (1 screen).
 // The script reads these back from data attributes.
-// The closing "Discover my complete collection…" card with the button sits
-// between the projects and the A.I. slide. Off for now: set to true to bring
-// it back (desktop and phones).
-const SHOW_COVER = false;
 const ENTER = 0.7;
 const HOLD = 0.4;
 // The travel keeps one pace however many projects there are: 6.6 screens
-// for the 540vw the track moved with six cards (and the cover).
+// for the 540vw the track moved with six cards.
 const TRAVEL_PER_VW = 6.6 / 540;
-const trackTravel = (cards: number) => 110 + cards * 55 + (SHOW_COVER ? 100 : 0); // wide layout, vw
+const trackTravel = (cards: number) => 100 + 10 + cards * 55 + 100; // wide layout, vw
 const TRAVEL = Math.round(TRAVEL_PER_VW * trackTravel(projects.length) * 10) / 10;
 const TOTAL = ENTER + TRAVEL + HOLD;
 const deskHeight = Math.round((TOTAL + 1) * 100);
@@ -43,13 +39,12 @@ const deskHeight = Math.round((TOTAL + 1) * 100);
 // animations are timed from these: a position along the track becomes a
 // point in the scroll range.
 const LAYOUTS = { wide: { card: 45, gap: 10 }, narrow: { card: 42, gap: 5 } };
-const OVERLAP = SHOW_COVER ? 10 : 0; // the final slide is tucked this far under the cover
+const OVERLAP = 10; // the final slide is tucked this far under the cover
 const pct = (v: number) => `${(v * 100).toFixed(3)}%`;
 function plan({ card, gap }: { card: number; gap: number }) {
 	const cardX = projects.map((_, i) => 100 + gap + i * (card + gap));
 	const coverX = 100 + gap + projects.length * (card + gap);
-	// Track width minus one screen: the final slide's left edge.
-	const maxScroll = SHOW_COVER ? coverX + 100 + gap - OVERLAP : coverX;
+	const maxScroll = coverX + 100 + gap - OVERLAP; // track width minus one screen
 	// Scroll position at which the track has moved `x` vw.
 	const at = (x: number) => pct((ENTER + (TRAVEL * x) / maxScroll) / TOTAL);
 	return {
@@ -113,7 +108,6 @@ const deskVars = [
 					</div>
 				))}
 
-				{SHOW_COVER && (
 				<div class="sw-panel sw-panel--cover">
 					<div class="sw-panel__in">
 						<h2>Discover my complete collection of digital experiences, brands, and platforms.</h2>
@@ -127,9 +121,8 @@ const deskVars = [
 						</div>
 					</div>
 				</div>
-				)}
 
-				<div class:list={['sw-panel', 'sw-panel--final', SHOW_COVER && 'sw-panel--tucked']}>
+				<div class="sw-panel sw-panel--final">
 					<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 				</div>
 
@@ -166,7 +159,6 @@ const deskVars = [
 					</div>
 				))}
 
-				{SHOW_COVER && (
 				<div class="sw-panel sw-panel--cover">
 					<div class="sw-panel__in">
 						<h2>Discover my complete collection of digital experiences, brands, and platforms.</h2>
@@ -180,10 +172,9 @@ const deskVars = [
 						</div>
 					</div>
 				</div>
-				)}
 
 				<div class="sw-mob__slot">
-					<div class:list={['sw-panel', 'sw-panel--final', SHOW_COVER && 'sw-panel--tucked']}>
+					<div class="sw-panel sw-panel--final">
 						<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 					</div>
 				</div>
@@ -459,7 +450,7 @@ const deskVars = [
 		.sw-card--rise,
 		.sw-card--fade,
 		.sw-desk .sw-panel--cover .sw-panel__in,
-		.sw-desk .sw-panel--tucked {
+		.sw-desk .sw-panel--final {
 			animation-duration: 1ms;
 			animation-fill-mode: both;
 			animation-timeline: --sw;
@@ -493,7 +484,7 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain var(--cover-at) contain var(--t);
 		}
-		.sw-desk .sw-panel--tucked {
+		.sw-desk .sw-panel--final {
 			animation-name: sw-slide-out;
 			animation-timing-function: linear;
 			animation-range: contain var(--final-at) contain var(--t);
@@ -621,7 +612,7 @@ const deskVars = [
 		scroll-snap-type: none;
 	}
 	.sw-mob.is-active .sw-mob__track,
-	.sw-mob.is-active .sw-mob__slot .sw-panel--tucked { will-change: transform; }
+	.sw-mob.is-active .sw-mob__slot .sw-panel { will-change: transform; }
 	.sw-mob.is-active .sw-mob__progress { display: block; }
 
 	/* Snap points (made by the script): where a slide is centred. */
@@ -649,7 +640,7 @@ const deskVars = [
 		.sw-mob.is-driven .sw-mob__progress,
 		.sw-mob.is-driven .sw-mob__progress span,
 		.sw-mob.is-driven .sw-panel__in,
-		.sw-mob.is-driven .sw-mob__slot .sw-panel--tucked {
+		.sw-mob.is-driven .sw-mob__slot .sw-panel {
 			animation-duration: 1ms;
 			animation-fill-mode: both;
 			animation-timeline: --swm;
@@ -677,7 +668,7 @@ const deskVars = [
 			animation-range: contain calc(var(--enter) + var(--cover-left) - 120vw) contain calc(var(--enter) + var(--cover-left) + 100vw);
 		}
 		/* The last panel starts hidden exactly under the cover and ends in its own place. */
-		.sw-mob.is-driven .sw-mob__slot .sw-panel--tucked {
+		.sw-mob.is-driven .sw-mob__slot .sw-panel {
 			animation-name: sw-slot-in;
 			animation-timing-function: linear;
 			animation-range: contain calc(var(--enter) + var(--slot-left) - 100vw) contain calc(var(--enter) + var(--slot-left));
@@ -725,7 +716,7 @@ const deskVars = [
 		const last = slot?.querySelector<HTMLElement>('.sw-panel');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		if (!root || !sticky || !track || !bar || !slot || !last) return;
+		if (!root || !sticky || !track || !bar || !slot || !last || !cover || !coverIn) return;
 
 		ScrollTrigger.config({ ignoreMobileResize: true });
 		const setBar = gsap.quickSetter(bar, 'scaleX');
@@ -754,8 +745,7 @@ const deskVars = [
 				const half = sticky.clientWidth / 2;
 				const x = [0];
 				root.querySelectorAll<HTMLElement>('.sw-card').forEach((c) => x.push(c.offsetLeft + c.offsetWidth / 2 - half));
-				if (cover) x.push(cover.offsetLeft);
-				x.push(distance());
+				x.push(cover.offsetLeft, distance());
 				return x.map((v) => Math.min(distance(), Math.max(0, v)));
 			};
 			const placeSnaps = () => {
@@ -796,7 +786,7 @@ const deskVars = [
 				const place = () => {
 					setHeight();
 					root.style.setProperty('--dist', `${distance()}px`);
-					if (cover) root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
+					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
 					root.style.setProperty('--slot-left', `${slot.offsetLeft}px`);
 				};
 				place();
@@ -821,7 +811,7 @@ const deskVars = [
 			let coverLeft = 0;
 			const measure = () => {
 				cards.forEach((c) => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
-				coverLeft = cover?.offsetLeft ?? 0;
+				coverLeft = cover.offsetLeft;
 			};
 
 			setHeight();
@@ -842,7 +832,7 @@ const deskVars = [
 					}
 				});
 				const cp = (coverLeft - x) / vw;
-				if (coverIn && cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
+				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 			};
 
 			// Comes out of a blur once pinned (the manifesto has just faded out).
@@ -879,8 +869,8 @@ const deskVars = [
 
 			// The last panel starts hidden exactly under the cover and ends in
 			// its own place.
-			const offset = () => slot.offsetLeft - (cover?.offsetLeft ?? 0);
-			if (cover) gsap.fromTo(last,
+			const offset = () => slot.offsetLeft - cover.offsetLeft;
+			gsap.fromTo(last,
 				{ x: () => -offset() },
 				{
 					x: 0,
@@ -917,8 +907,8 @@ const deskVars = [
 		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
 		const view = scene.querySelector<HTMLElement>('.sw-desk__view')!;
 		const track = scene.querySelector<HTMLElement>('.sw-desk__track')!;
-		const cover = scene.querySelector<HTMLElement>('.sw-panel--cover');
-		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
+		const cover = scene.querySelector<HTMLElement>('.sw-panel--cover')!;
+		const coverIn = cover.querySelector<HTMLElement>('.sw-panel__in')!;
 		const last = scene.querySelector<HTMLElement>('.sw-panel--final')!;
 		const rising = Array.from(scene.querySelectorAll<HTMLElement>('.sw-card--rise'));
 		const fading = Array.from(scene.querySelectorAll<HTMLElement>('.sw-card--fade'));
@@ -944,7 +934,7 @@ const deskVars = [
 			maxScroll = Math.max(0, track.scrollWidth - window.innerWidth);
 			risingX = rising.map((c) => c.offsetLeft);
 			fadingX = fading.map((c) => c.offsetLeft);
-			coverX = cover?.offsetLeft ?? 0;
+			coverX = cover.offsetLeft;
 			pictures.forEach((p) => { p.left = p.box.offsetLeft; p.width = p.box.offsetWidth; });
 		};
 		measure();
@@ -958,7 +948,7 @@ const deskVars = [
 
 			// The last slide slides out from behind the cover.
 			const toEnd = maxScroll - x;
-			if (cover) last.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
+			last.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 
 			// Cards rise into place as they come in; the first one just fades.
 			// Only a value that changed is written: cards still waiting below
@@ -979,7 +969,7 @@ const deskVars = [
 			});
 
 			const cp = (coverX - x) / vw;
-			if (coverIn && cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
+			if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
 
 			pictures.forEach((p) => {
 				const left = p.left - x;
