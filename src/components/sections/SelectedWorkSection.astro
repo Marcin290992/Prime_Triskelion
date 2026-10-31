@@ -758,6 +758,11 @@ const deskVars = [
 				coverLeft = cover.offsetLeft;
 			};
 
+			// iOS: sticky is placed on the scrolling thread and the strip's
+			// transform on the main one, so they drift apart during momentum.
+			// Scrolling driven by the script keeps both in the same frame.
+			if (ios) ScrollTrigger.normalizeScroll({ type: 'touch', allowNestedScroll: true });
+
 			setHeight();
 			measure();
 			ScrollTrigger.addEventListener('refreshInit', setHeight);
@@ -798,6 +803,7 @@ const deskVars = [
 			parallax();
 
 			return () => {
+				if (ios) ScrollTrigger.normalizeScroll(false);
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
