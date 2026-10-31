@@ -89,7 +89,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// The light goes first: it is the source of everything on screen.
 				// Brightness, not opacity (the intro owns the canvas's opacity).
 				if (rays) {
-					const light = p > 0 ? 1 - smooth(clamp01(p / 0.6)) : 1;
+					const light = p > 0 ? 1 - smooth(clamp01(p / 0.35)) : 1;
 					// Fully out: nothing to see, so the hero stops drawing it
 					// (HeroSection's initRays listens) and starts again on the way back.
 					const dark = light <= 0;
@@ -99,11 +99,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					}
 					rays.style.filter = p > 0 ? `brightness(${light.toFixed(3)})` : '';
 				}
-				// Then the type and the rest go soft (the blur layer), and only once
-				// they are soft do they sink into the dark (the black layer) — the
-				// same going-out as the manifesto's line.
-				const bk = smooth(clamp01((p - 0.12) / 0.65));
-				const a = smooth(clamp01((p - 0.45) / 0.5));
+				// Three beats, one after the other: the light goes out first (0–0.35)
+				// while the type is still sharp; only then does the rest go soft
+				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
+				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.30) / 0.40));
+				const a = smooth(clamp01((p - 0.55) / 0.40));
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';

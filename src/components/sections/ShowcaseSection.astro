@@ -226,7 +226,7 @@ const steps = [
 			display: block;
 			/* 100vh + the pairs' scroll incl. their holds — see HOLD_VH in
 			   the script (keep the two in step). */
-			height: 689.5vh;
+			height: 484.4vh;
 		}
 		/* The one sticky element for the whole section — see the long
 		   comment above .showcase__intro's desktop rule for why this
@@ -649,13 +649,13 @@ const steps = [
 	// page's cards — eased into and out of over HOLD_EASE (in crossing-
 	// window units). The rail grows by exactly that much, so the motion
 	// between holds keeps its old pace.
-	const BASE_VH = 360;
-	const HOLD_VH = 36;
+	const BASE_VH = 250;
+	const HOLD_VH = 20;
 	const HOLD_EASE = 0.25;
 	const WINDOW_VH = WINDOW * BASE_VH;
 	const STEP_VH = (1 - LEAD_IN - TRAIL_OUT) * BASE_VH / STEPS + HOLD_VH + HOLD_EASE * WINDOW_VH;
-	// = LEAD_IN * BASE_VH + STEPS * STEP_VH + TRAIL_OUT * BASE_VH = 589.5;
-	// the rail's CSS height is 100vh plus this (689.5vh) — set there, not
+	// = LEAD_IN * BASE_VH + STEPS * STEP_VH + TRAIL_OUT * BASE_VH = 384.4;
+	// the rail's CSS height is 100vh plus this (484.4vh) — set there, not
 	// from here, so the sections below lay out right from the first paint.
 	const HOLD_HALF = HOLD_VH / 2 / WINDOW_VH;
 	// raw → raw with a flat stretch around 0 (the hold), entered and left
