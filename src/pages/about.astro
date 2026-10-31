@@ -622,8 +622,8 @@ import portrait from '../img/portrait-top.webp';
       mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 0.5, ease: 'sine.out' }, 0);
       if (img) {
         mtl.fromTo(img,
-          { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0) blur(28px)' },
-          { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9) blur(0px)', duration: 1, ease: 'sine.out' }, 0);
+          { filter: 'grayscale(1) contrast(1.1) brightness(0) blur(28px)' },
+          { filter: 'grayscale(1) contrast(1.1) brightness(0.9) blur(0px)', duration: 1, ease: 'sine.out' }, 0);
       }
       _acST = ScrollTrigger.create({
         animation: mtl,
@@ -631,7 +631,7 @@ import portrait from '../img/portrait-top.webp';
         start: 'top top',
         end: () => `+=${stableVh() * 0.7}`,
         pin: true,
-        scrub: 1,
+        scrub: true,
         invalidateOnRefresh: true,
       });
       // The copy stays in the flow, plain: no entrance animation.
@@ -655,7 +655,7 @@ import portrait from '../img/portrait-top.webp';
     // slowly settles (scale) and finds focus as the light comes up.
     tl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: develop, ease: 'power2.out' }, 0);
     if (img) {
-      tl.fromTo(img, { scale: 1.18, filter: 'grayscale(1) contrast(1.1) brightness(0)' }, { scale: 1, filter: 'grayscale(1) contrast(1.1) brightness(0.9)', duration: develop, ease: 'sine.out' }, 0);
+      tl.fromTo(img, { filter: 'grayscale(1) contrast(1.1) brightness(0) blur(28px)' }, { filter: 'grayscale(1) contrast(1.1) brightness(0.9) blur(0px)', duration: develop, ease: 'sine.out' }, 0);
     }
     // The copy doesn't move: each paragraph and line of the list comes up out
     // of the dark in place, from a blur, one after the other from top to
@@ -685,8 +685,8 @@ import portrait from '../img/portrait-top.webp';
   }
 
   // The big portrait: real colour under the cursor, and a ring of colour
-  // from every click or tap. Only once the portrait has settled (its
-  // entrance scales and fades it, and the colour layer must line up).
+  // from every click or tap. Only once the portrait has developed (its
+  // entrance lights and focuses it out of the dark; the colour must not show before).
   let _colorOff: (() => void) | null = null;
   function initPortraitColor() {
     _colorOff?.();
@@ -696,9 +696,11 @@ import portrait from '../img/portrait-top.webp';
     if (!photo || !img) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const settled = () => {
-      const m = getComputedStyle(img).transform;
-      const scale = m === 'none' ? 1 : new DOMMatrix(m).a;
-      return Math.abs(scale - 1) < 0.003 && parseFloat(getComputedStyle(photo).opacity) > 0.98;
+      // Developed: fully lit and in focus, and the photo fully opaque.
+      const f = getComputedStyle(img).filter;
+      const light = parseFloat(/brightness\(([0-9.]+)/.exec(f)?.[1] ?? '1');
+      const blur = parseFloat(/blur\(([0-9.]+)/.exec(f)?.[1] ?? '0');
+      return light > 0.895 && blur < 0.3 && parseFloat(getComputedStyle(photo).opacity) > 0.98;
     };
     _colorOff = initColorReveal(photo, img, { radius: 170, focusX: 0.5, focusY: 0.72, isReady: settled });
     document.addEventListener('astro:before-swap', () => { _colorOff?.(); _colorOff = null; }, { once: true });
