@@ -356,20 +356,6 @@ const deskVars = [
 	}
 	.sw-panel--cover h2 { font-size: var(--cover-size); line-height: 1.05; letter-spacing: -0.02em; }
 	.sw-panel__cta { width: auto !important; margin: 0; }
-	/* The cover's button, phones and tablets: this panel rides the moving strip,
-	   and Safari re-blurs a backdrop-filter and re-runs the infinite streak and
-	   glare animations on every frame of it (the jerk). So here the button is
-	   plain: no backdrop blur, no streaks, no glare. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.sw-mob .sw-panel__cta .h-hero-cta {
-			-webkit-backdrop-filter: none;
-			backdrop-filter: none;
-			background: rgb(var(--c-cream) / 0.06);
-		}
-		.sw-mob .sw-panel__cta .h-hero-cta--fixed::before { animation: none; display: none; }
-		.sw-mob .sw-panel__cta .h-hero-cta-grad-top,
-		.sw-mob .sw-panel__cta .h-hero-cta-grad-bottom { animation: none; display: none; }
-	}
 	.sw-panel--final { position: relative; z-index: 1; }
 	.sw-panel--final h2 { font-size: var(--final-size); line-height: 0.85; letter-spacing: -0.04em; }
 
