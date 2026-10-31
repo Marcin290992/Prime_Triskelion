@@ -615,19 +615,6 @@ const deskVars = [
 	.sw-mob.is-active .sw-mob__slot .sw-panel { will-change: transform; }
 	.sw-mob.is-active .sw-mob__progress { display: block; }
 
-	/* Snap points (made by the script): where a slide is centred. */
-	.sw-mob :global(.sw-snap) {
-		position: absolute;
-		left: 0;
-		width: 1px;
-		height: 1px;
-		pointer-events: none;
-		/* No scroll-snap-stop: always — a hard stop on each point made the
-		   strip (which trails the scroll a little on iOS) jump and come back. */
-		scroll-snap-align: start;
-	}
-	:global(html.sw-snap) { scroll-snap-type: y mandatory; }
-
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
 	   measures: --dist is how far the strip travels, the others where the last
@@ -733,52 +720,7 @@ const deskVars = [
 			const hold = () => sticky.offsetHeight * 0.5;
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-
-			// Touch: the page snaps to the middle of each slide while the strip
-			// travels, and cannot skip one. Native scroll snap, so the browser
-			// runs the momentum itself (a script's own scrollTo fought it).
-			// Invisible snap points sit in the strip's scroll length; snapping
-			// is on only while the strip is travelling, so the rest of the page
-			// scrolls freely.
-			const snapOn = matchMedia('(pointer: coarse)').matches;
-			const snaps: HTMLElement[] = [];
-			const snapTargets = () => {
-				const half = sticky.clientWidth / 2;
-				const x = [0];
-				root.querySelectorAll<HTMLElement>('.sw-card').forEach((c) => x.push(c.offsetLeft + c.offsetWidth / 2 - half));
-				x.push(cover.offsetLeft, distance());
-				return x.map((v) => Math.min(distance(), Math.max(0, v)));
-			};
-			const placeSnaps = () => {
-				if (!snapOn) return;
-				const x = snapTargets();
-				while (snaps.length < x.length) {
-					const el = document.createElement('div');
-					el.className = 'sw-snap';
-					el.setAttribute('aria-hidden', 'true');
-					root.append(el);
-					snaps.push(el);
-				}
-				x.forEach((v, i) => { snaps[i].style.top = `${enter() + v}px`; });
-			};
-			const snapTrigger = snapOn
-				? ScrollTrigger.create({
-					trigger: root,
-					start: () => `top+=${enter()} top`,
-					end: () => `+=${distance()}`,
-					invalidateOnRefresh: true,
-					onToggle: (self) => document.documentElement.classList.toggle('sw-snap', self.isActive),
-				})
-				: null;
-			const stopSnap = () => {
-				snapTrigger?.kill();
-				document.documentElement.classList.remove('sw-snap');
-				snaps.splice(0).forEach((el) => el.remove());
-			};
-			const setHeight = () => {
-				root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`;
-				placeSnaps();
-			};
+			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
 
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
@@ -794,7 +736,6 @@ const deskVars = [
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
-					stopSnap();
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left', '--slot-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
@@ -888,7 +829,6 @@ const deskVars = [
 				});
 
 			return () => {
-				stopSnap();
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
