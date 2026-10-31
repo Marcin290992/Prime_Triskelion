@@ -172,17 +172,12 @@ const deskVars = [
 						</div>
 					</div>
 				</div>
+
+				<div class="sw-panel sw-panel--final">
+					<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
+				</div>
 			</div>
 
-		</div>
-	</div>
-
-	<!-- Phones and tablets: the closing screen waits behind the pinned strip; when
-	     the strip scrolls up and off it is uncovered, held in place, and
-	     Services then rises over it like a curtain. -->
-	<div class="sw-mob-end" id="sw-end">
-		<div class="sw-mob-end__pin sw-panel sw-panel--final">
-			<h2>A.I.<br>DESIGN<br>DEVELOPMENT<br>BRANDING</h2>
 		</div>
 	</div>
 </section>
@@ -611,35 +606,9 @@ const deskVars = [
 	}
 	.sw-mob.is-active .sw-mob__track { will-change: transform; }
 
-	/* The closing screen (phones and tablets only). Pinned strip: it waits
-	   behind the strip's last screen (pulled up by one screen) and is
-	   uncovered when the strip scrolls up and off; it then holds for half a
-	   screen, and Services (pulled up by a screen) rises over it. */
-	.sw-mob-end { display: none; }
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.sw-mob-end {
-			--vh: var(--app-stable-vh, 1svh);
-			display: block;
-			position: relative;
-			z-index: 1;
-			height: calc(var(--vh) * 250);
-			margin-bottom: calc(var(--vh) * -100);
-		}
-		.sw-mob.is-active { z-index: 2; }
-		.sw-mob.is-active + .sw-mob-end {
-			margin-top: calc(var(--vh) * -100);
-			height: calc(var(--vh) * 350);
-		}
-		.sw-mob-end__pin {
-			--panel-pad: 8vw;
-			--final-size: min(9vw, calc(var(--vh) * 9.5));
-			position: sticky;
-			top: 0;
-			width: 100%;
-			height: calc(var(--vh) * 100);
-			box-sizing: border-box;
-		}
-	}
+	/* The last slide is tucked under the cover and slides out from behind it
+	   sideways, as on desktop (CSS animation below, script fallback). */
+	.sw-mob .sw-panel--final { margin-left: -10vw; will-change: transform; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
@@ -651,7 +620,8 @@ const deskVars = [
 			view-timeline: --swm block;
 		}
 		.sw-mob.is-driven .sw-mob__track,
-		.sw-mob.is-driven .sw-panel__in {
+		.sw-mob.is-driven .sw-panel__in,
+		.sw-mob.is-driven .sw-panel--final {
 			animation-duration: 1ms;
 			animation-fill-mode: both;
 			animation-timeline: --swm;
@@ -662,7 +632,13 @@ const deskVars = [
 			animation-timing-function: linear;
 			animation-range: contain var(--enter) contain calc(var(--enter) + var(--dist));
 		}
-		/* The cover's text drifts as its panel comes in and settles when the strip ends. */
+		/* The final slide slides out from behind the cover over the last 150vw. */
+		.sw-mob.is-driven .sw-panel--final {
+			animation-name: sw-slide-out;
+			animation-timing-function: linear;
+			animation-range: contain calc(var(--enter) + var(--dist) - 150vw) contain calc(var(--enter) + var(--dist));
+		}
+		/* The cover's text drifts as its panel comes in and settles when it is in place. */
 		.sw-mob.is-driven .sw-panel--cover .sw-panel__in {
 			animation-name: sw-drift-out;
 			animation-timing-function: linear;
@@ -700,7 +676,8 @@ const deskVars = [
 		const track = root?.querySelector<HTMLElement>('.sw-mob__track');
 		const cover = root?.querySelector<HTMLElement>('.sw-panel--cover');
 		const coverIn = cover?.querySelector<HTMLElement>('.sw-panel__in');
-		if (!root || !sticky || !track || !cover || !coverIn) return;
+		const final = root?.querySelector<HTMLElement>('.sw-panel--final');
+		if (!root || !sticky || !track || !cover || !coverIn || !final) return;
 
 		ScrollTrigger.config({ ignoreMobileResize: true });
 
@@ -735,27 +712,6 @@ const deskVars = [
 				},
 			});
 
-			// The strip scrolls up and off over its last screen: the cover's text
-			// drifts on upward and the closing screen, hidden until now, is
-			// uncovered.
-			const endBox = section.querySelector<HTMLElement>('.sw-mob-end__pin');
-			if (endBox) endBox.style.visibility = 'hidden';
-			const leave = ScrollTrigger.create({
-				trigger: root,
-				start: 'bottom bottom',
-				end: 'bottom top',
-				onUpdate: (self) => {
-					coverIn.style.translate = `0 ${(-200 * self.progress).toFixed(1)}px`;
-					if (endBox) endBox.style.visibility = self.progress > 0 ? '' : 'hidden';
-				},
-			});
-
-			const undoLeave = () => {
-				leave.kill();
-				coverIn.style.translate = '';
-				if (endBox) endBox.style.visibility = '';
-			};
-
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
 			// never per frame.
@@ -769,7 +725,6 @@ const deskVars = [
 				ScrollTrigger.addEventListener('refreshInit', place);
 				root.classList.add('is-driven');
 				return () => {
-					undoLeave();
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
@@ -809,6 +764,8 @@ const deskVars = [
 				});
 				const cp = (coverLeft - x) / vw;
 				if (cp < 1.2 && cp > -1) coverIn.style.transform = `translate3d(${(cp * 200).toFixed(1)}px,0,0)`;
+				const toEnd = distance() - x;
+				final.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 			};
 
 			const travel = gsap.to(track, {
@@ -828,7 +785,6 @@ const deskVars = [
 			parallax();
 
 			return () => {
-				undoLeave();
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
