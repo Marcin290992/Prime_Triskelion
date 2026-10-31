@@ -725,7 +725,10 @@ const deskVars = [
 			// Where scroll-driven animations exist, CSS moves the strip (see the
 			// styles) and the script only measures — here and on every refresh,
 			// never per frame.
-			if (CSS.supports('animation-timeline: view()')) {
+			// Not on iOS: Safari runs scroll-driven animations on the main thread,
+			// so after a finger stops the momentum the strip jitters left/right.
+			const ios = CSS.supports('-webkit-touch-callout: none');
+			if (!ios && CSS.supports('animation-timeline: view()')) {
 				const place = () => {
 					setHeight();
 					root.style.setProperty('--dist', `${distance()}px`);
@@ -787,7 +790,7 @@ const deskVars = [
 					trigger: root,
 					start: () => `top+=${enter()} top`,
 					end: () => `+=${distance()}`,
-					scrub: 0.3,
+					scrub: ios ? true : 0.3,
 					invalidateOnRefresh: true,
 				},
 			});
