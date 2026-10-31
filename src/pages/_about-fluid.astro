@@ -1828,9 +1828,9 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
       duration: 0.7,
       easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
       } : {
-        lerp: 0.01,
+        lerp: 0.06,
         smoothWheel: true,
-        wheelMultiplier: 0.5,
+        wheelMultiplier: 0.3,
       });
     (window as any).__lenis = _lenis;
     _lenis.on('scroll', ScrollTrigger.update);
