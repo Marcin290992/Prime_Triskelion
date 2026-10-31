@@ -959,7 +959,7 @@ const deskVars = [
 	// moving pictures (the one thing that dropped frames here): they are hidden
 	// (html.sw-hscroll, see global.css) while the desktop scene fills the screen.
 	let hideBandsOff: (() => void) | null = null;
-	function hideBandsWhilePinned(scene: HTMLElement, bands: boolean) {
+	function hideBandsWhilePinned(scene: HTMLElement, bands: boolean, hideBefore?: HTMLElement) {
 		hideBandsOff?.();
 		const root = document.documentElement;
 		let top = 0;
@@ -973,6 +973,10 @@ const deskVars = [
 		const update = () => {
 			const y = window.scrollY;
 			if (bands) root.classList.toggle('sw-hscroll', y >= top && y <= bottom);
+			// Phone strip: before its pin starts it is hidden, like the desktop view,
+			// so scrolling back up it doesn't slide down off the screen while the
+			// title is blurring out (the manifesto is what shows there).
+			if (hideBefore) hideBefore.style.visibility = hideBefore.classList.contains('is-active') && y < top ? 'hidden' : '';
 			// In once the scene is pinned. Scrolling back up it goes out in blur
 			// while the pinned view is still on screen (it is hidden at `top`),
 			// so the way out is seen.
@@ -992,6 +996,7 @@ const deskVars = [
 			window.removeEventListener('resize', onResize);
 			root.classList.remove('sw-hscroll');
 			intro?.classList.add('in');
+			if (hideBefore) hideBefore.style.visibility = '';
 			hideBandsOff = null;
 		};
 	}
@@ -1003,7 +1008,8 @@ const deskVars = [
 		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
 		if (window.matchMedia(MOBILE).matches) {
 			initStrip(section);
-			hideBandsWhilePinned(section.querySelector<HTMLElement>('.sw-mob')!, false);
+			const strip = section.querySelector<HTMLElement>('.sw-mob')!;
+			hideBandsWhilePinned(strip, false, strip);
 			return;
 		}
 		hideBandsWhilePinned(scene, true);
