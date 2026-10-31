@@ -703,18 +703,54 @@ const deskVars = [
 			final.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 		}
 
+		// Snap: once the scroll has come to rest (no finger down, no scroll event
+		// for a moment) the strip settles on the nearest slide's centre: the
+		// opener, each card, the cover with its button. Only over the travel.
+		// Nothing runs while the finger or the momentum is moving the page.
+		let touching = false;
+		let rest = 0;
+		const settle = () => {
+			if (touching) return;
+			const y = window.scrollY;
+			const x = y - top - enter;
+			if (x < -2 || x > dist + 2) return;
+			const centres = Array.from(track.children)
+				.filter((el) => el !== final)
+				.map((el) => {
+					const slide = el as HTMLElement;
+					return Math.min(dist, Math.max(0, slide.offsetLeft + slide.offsetWidth / 2 - vw / 2));
+				});
+			const target = centres.reduce((p, c) => (Math.abs(c - x) < Math.abs(p - x) ? c : p));
+			if (Math.abs(target - x) < 2) return;
+			window.scrollTo({ top: top + enter + target, behavior: 'smooth' });
+		};
+		const onScroll = () => {
+			update();
+			window.clearTimeout(rest);
+			rest = window.setTimeout(settle, 140);
+		};
+		const onTouchStart = () => { touching = true; window.clearTimeout(rest); };
+		const onTouchEnd = () => { touching = false; window.clearTimeout(rest); rest = window.setTimeout(settle, 140); };
+
 		// The URL bar growing/shrinking resizes the height only: ignored.
 		const onResize = () => { if (window.innerWidth !== vw) measure(); };
 		const onLoad = () => measure();
 		measure();
-		window.addEventListener('scroll', update, { passive: true });
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('touchstart', onTouchStart, { passive: true });
+		window.addEventListener('touchend', onTouchEnd, { passive: true });
+		window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		window.addEventListener('resize', onResize, { passive: true });
 		window.addEventListener('load', onLoad, { once: true });
 
 		stripOff = () => {
-			window.removeEventListener('scroll', update);
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('touchstart', onTouchStart);
+			window.removeEventListener('touchend', onTouchEnd);
+			window.removeEventListener('touchcancel', onTouchEnd);
 			window.removeEventListener('resize', onResize);
 			window.removeEventListener('load', onLoad);
+			window.clearTimeout(rest);
 			root.style.height = '';
 			track.style.transform = '';
 			coverIn.style.transform = '';
