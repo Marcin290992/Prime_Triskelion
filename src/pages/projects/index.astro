@@ -465,6 +465,12 @@ const projects = [
     // Phones/tablets: the last card, once it fills the screen, stops being
     // pinned and scrolls on with the page.
     const lastSec = document.querySelector<HTMLElement>('.proj-section:last-child');
+    // The last project sinks into black as its window closes (an overlay in the
+    // page colour on that section), so the CTA arrives on a dark screen.
+    const sink = document.createElement('div');
+    sink.setAttribute('aria-hidden', 'true');
+    sink.style.cssText = 'position:absolute;inset:-1px 0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
+    lastSec?.appendChild(sink);
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -482,6 +488,12 @@ const projects = [
       const vh = window.innerHeight;
       for (const { sec, bgText, foot, img, speed } of panels) {
         const rect = sec.getBoundingClientRect();
+
+        if (sec === lastSec && !reduce) {
+          const left = Math.max(0, Math.min(1, rect.bottom / vh));
+          const d = rect.top <= 0 ? 1 - smooth(0.3, 1.0, left) : 0;
+          sink.style.opacity = d.toFixed(3);
+        }
 
         const released = isMob && sec === lastSec && rect.top <= 0;
         if (sec === lastSec) sec.classList.toggle('is-released', released);
