@@ -604,9 +604,6 @@ const deskVars = [
 	/* The last slide is tucked under the cover and slides out from behind it
 	   sideways, as on desktop (CSS animation below, script fallback). */
 	.sw-mob.is-active .sw-panel--final { margin-left: -10vw; will-change: transform; }
-	/* Safari: no tucking under the cover and no slide, the closing slide is an
-	   ordinary last slide, so it can never stay hidden behind the cover. */
-	.sw-mob.is-active.plain-end .sw-panel--final { margin-left: 0; will-change: auto; animation: none !important; transform: none !important; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
@@ -653,7 +650,6 @@ const deskVars = [
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { onReady } from '../../utils/onReady';
-	import { isSafari } from '../../utils/isSafari';
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -662,6 +658,9 @@ const deskVars = [
 	// The pinned strip on phones and tablets. Off = the natively swiped, snapping
 	// row (the CSS fallback).
 	const PIN_STRIP = true;
+	// Settling on the nearest slide's centre when the scroll stops. Off: it fights
+	// the native momentum (jerks back and forth on every card).
+	const SNAP_STRIP = false;
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
 	// The strip is pinned by position: sticky (no pin spacer, no jump) and
@@ -687,7 +686,6 @@ const deskVars = [
 		stripMm = gsap.matchMedia();
 		stripMm.add('(prefers-reduced-motion: no-preference)', () => {
 			root.classList.add('is-active');
-			if (isSafari()) root.classList.add('plain-end');
 			sticky.scrollLeft = 0;
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
@@ -706,9 +704,9 @@ const deskVars = [
 				const x = slide.offsetLeft + slide.offsetWidth / 2 - sticky.clientWidth / 2;
 				return Math.min(1, Math.max(0, x / (distance() || 1)));
 			});
-			// Not on iOS: the snap's own scrollTo fights the native momentum there and
-			// reads as a jerk.
-			if (!isSafari()) ScrollTrigger.create({
+			// Off (SNAP_STRIP): the snap's own scrollTo fights the finger's momentum and
+			// reads as a quick pull-back and return on every card.
+			if (SNAP_STRIP) ScrollTrigger.create({
 				trigger: root,
 				start: () => `top+=${enter()} top`,
 				end: () => `+=${distance()}`,
@@ -737,7 +735,7 @@ const deskVars = [
 					ScrollTrigger.removeEventListener('refreshInit', place);
 					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
 					root.style.height = '';
-					root.classList.remove('is-driven', 'is-active', 'plain-end');
+					root.classList.remove('is-driven', 'is-active');
 				};
 			}
 
@@ -799,7 +797,7 @@ const deskVars = [
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
-				root.classList.remove('is-active', 'plain-end');
+				root.classList.remove('is-active');
 			};
 		});
 		window.addEventListener('load', () => ScrollTrigger.refresh(), { once: true });
