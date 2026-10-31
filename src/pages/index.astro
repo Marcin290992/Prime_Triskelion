@@ -155,15 +155,27 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (!_isTraverseNav) window.scrollTo(0, 0);
 
 			if (isTouch) {
-				// Na mobile natywny scroll — compositor thread, zero janku przy WebGL hero
-				(window as any).__lenis = null;
-				// null is falsy, so without this Layout.astro's own fallback
-				// Lenis init (`if (__lenis) return`) couldn't tell this apart
-				// from "no page Lenis exists yet" — it would create its own
-				// Lenis anyway, undoing this native-scroll choice and running
-				// an extra rAF loop alongside native scroll on mobile.
+				// TEST (Home only): scroll on touch is driven by Lenis, as on the
+				// reference site (white-desert.com) that holds up on iOS Safari.
+				// The page scroll position is then set from the same GSAP ticker
+				// frame that moves the horizontal strip, so sticky and the strip's
+				// transform can't drift apart during the finger's momentum.
+				// autoRaf is off: the GSAP ticker calls raf (below).
+				lenisInstance = new Lenis({
+					autoRaf: false,
+					syncTouch: true,
+					syncTouchLerp: 0.075,
+					touchInertiaExponent: 1.7,
+					touchMultiplier: 1,
+				});
+				(window as any).__lenis = lenisInstance;
+				// This page chose its Lenis: the Layout fallback must not add another.
 				(window as any).__lenisHandled = true;
-							} else {
+				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
+				gsap.ticker.add(lenisTickerCb);
+				syncTickerToScroll(); // gsap.ticker.lagSmoothing(0)
+				lenisInstance.on('scroll', ScrollTrigger.update);
+			} else {
 				// A continuous lerp, not a timed ease: a timed ease restarts on every
 				// wheel/trackpad event, which made the horizontal work section
 				// stutter.
