@@ -10,7 +10,7 @@ import scr3 from '../img/wos/screen-3.jpg';
 import scr4 from '../img/wos/screen-4.jpg';
 
 const screens = [
-  { img: scr1, url: 'windsofsinai.com', label: 'Homepage — above the fold' },
+  { img: scr1, url: 'windsofsinai.com', label: 'Homepage' },
   { img: scr2, url: 'windsofsinai.com/about', label: 'About page' },
   { img: scr3, url: 'windsofsinai.com/contact', label: 'Contact page' },
   { img: scr4, url: 'windsofsinai.com/experiences', label: 'Experiences page' },
@@ -20,6 +20,11 @@ const screens = [
 <Layout title="Winds Of Sinai — Prime Triskelion" description="Case study: Winds Of Sinai — branding, web design and development by Prime Triskelion.">
 
   <main class="wos-page">
+
+    <!-- ═══ SPLASH (mobile only): the title alone on a black screen, as on desktop ═══ -->
+    <section class="wos-splash">
+      <h1 class="wos-splash__title">Winds<br/>Of Sinai</h1>
+    </section>
 
     <!-- ═══ HERO (mobile only) ═══ -->
     <section class="wos-hero">
@@ -32,7 +37,7 @@ const screens = [
             <span class="wos-hero__dot" aria-hidden="true">·</span>
             <span class="wos-label wos-label--inline wos-label--dim">Branding &amp; Web</span>
           </div>
-          <h1 class="wos-hero__title">Winds<br/>Of Sinai</h1>
+          <h2 class="wos-hero__title">Winds<br/>Of Sinai</h2>
           <p class="wos-hero__desc">Full brand identity and website for a premium desert travel &amp; experiences brand rooted in the Sinai Peninsula.</p>
           <div class="wos-hero__btns">
             <div class="h-hero-cta-wrap">
@@ -281,92 +286,33 @@ const screens = [
         </div>
       </div>
 
-      <!-- MOBILE: prosty układ pionowy -->
-      <div class="scr-mobile">
-        <div class="showcase-item">
-          <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">Homepage — above the fold</span>
+      <!-- MOBILE: a horizontal strip (sticky + one scrubbed tween, see
+           initScreensStrip), with the same counter and progress line as desktop. -->
+      <div class="scr-mobile" id="scr-m">
+        <div class="scrm__sticky">
+          <h2 class="showcase-title scrm__title">Every screen.<br/><em>Pixel perfect.</em></h2>
+          <div class="scrm__meta">
+            <span class="showcase-desc scrm__label" id="scrm-label">{screens[0].label}</span>
+            <span class="showcase-desc scrm__count" id="scrm-count" aria-hidden="true">{`01 / 0${screens.length}`}</span>
           </div>
-          <div class="browser-frame browser-frame--wide">
-            <div class="browser-frame__bar">
-              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-              <div class="browser-frame__url">windsofsinai.com</div>
-            </div>
-            <div class="browser-frame__screen browser-frame__screen--tall">
-              <div class="browser-frame__ph">Desktop — Homepage</div>
-            </div>
+          <div class="scrm__track" id="scrm-track">
+            {screens.map((sc, i) => (
+              <figure class="scrm__item" data-label={sc.label}>
+                <div class="browser-frame">
+                  <div class="browser-frame__bar">
+                    <div class="browser-frame__dots"><span></span><span></span><span></span></div>
+                    <div class="browser-frame__url">{sc.url}</div>
+                  </div>
+                  <div class="browser-frame__screen browser-frame__screen--tall">
+                    <div class="browser-frame__ph">{`Desktop — ${['Homepage', 'About', 'Contact', 'Experiences'][i]}`}</div>
+                  </div>
+                </div>
+              </figure>
+            ))}
           </div>
-        </div>
-
-        <div class="showcase-item">
-          <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">About page</span>
-          </div>
-          <div class="browser-frame browser-frame--wide">
-            <div class="browser-frame__bar">
-              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-              <div class="browser-frame__url">windsofsinai.com/about</div>
-            </div>
-            <div class="browser-frame__screen browser-frame__screen--tall">
-              <div class="browser-frame__ph">Desktop — About</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="showcase-item">
-          <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">Contact page</span>
-          </div>
-          <div class="browser-frame browser-frame--wide">
-            <div class="browser-frame__bar">
-              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-              <div class="browser-frame__url">windsofsinai.com/contact</div>
-            </div>
-            <div class="browser-frame__screen browser-frame__screen--tall">
-              <div class="browser-frame__ph">Desktop — Contact</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="showcase-item">
-          <div class="showcase-item__label wos-inner">
-            <span class="showcase-desc">Experiences page</span>
-          </div>
-          <div class="browser-frame browser-frame--wide">
-            <div class="browser-frame__bar">
-              <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-              <div class="browser-frame__url">windsofsinai.com/experiences</div>
-            </div>
-            <div class="browser-frame__screen browser-frame__screen--tall">
-              <div class="browser-frame__ph">Desktop — Experiences</div>
-            </div>
-          </div>
+          <div class="scrm__progress" aria-hidden="true"><div class="scrm__bar" id="scrm-bar"></div></div>
         </div>
       </div>
-
-      <!-- Stats row -->
-      <div class="showcase-stats wos-inner">
-        <div class="showcase-stat">
-          <strong>98</strong>
-          <em>PageSpeed</em>
-        </div>
-        <div class="showcase-stat__sep"></div>
-        <div class="showcase-stat">
-          <strong>3</strong>
-          <em>Languages</em>
-        </div>
-        <div class="showcase-stat__sep"></div>
-        <div class="showcase-stat">
-          <strong>100%</strong>
-          <em>Responsive</em>
-        </div>
-        <div class="showcase-stat__sep"></div>
-        <div class="showcase-stat">
-          <strong>A+</strong>
-          <em>Accessibility</em>
-        </div>
-      </div>
-
     </section>
 
     <!-- ═══ FOOTER CTA ═══ -->
@@ -1201,6 +1147,118 @@ const screens = [
   }
 
 
+
+  /* ─────────────────────────────────────────
+     MOBILE — the desktop's scenes, on a finger scroll
+     (Lenis drives touch scroll site-wide, see utils/touchLenis.ts)
+  ───────────────────────────────────────── */
+  .wos-splash { display: none; }
+  .wos-splash__title { opacity: 0; }
+
+  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+    /* 1. The title alone on a black screen, then the case-study info. */
+    .wos-splash {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      padding: 0 var(--site-gutter, 1.5rem);
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .wos-splash__title {
+      margin: 0;
+      font-family: var(--f-display);
+      font-weight: 700;
+      font-size: clamp(3.2rem, 15vw, 7rem);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      line-height: 0.9;
+      color: rgb(var(--c-cream));
+    }
+
+    /* 2. The numbered scenes (01 / 02 / 03) are the desktop's sticky stack:
+       each one a whole screen, the next sliding up over it. */
+    .wos-stack { display: block; }
+    .wos-process-m { display: none; }
+    .wos-sec {
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+    }
+    .wos-sec__idx { font-size: clamp(9rem, 44vw, 18rem); }
+    .wos-sec__title { font-size: clamp(2.6rem, 12.5vw, 4.8rem); }
+    .wos-sec__body { font-size: clamp(0.92rem, 3.9vw, 1.08rem); max-width: 100%; }
+
+    /* Gaps between the blocks as everywhere else on the phone: the full-screen
+       scenes centre their content, so their blank halves used to add up to
+       half a screen between two blocks. Content sits a little higher, the
+       hero does not hold a screen of its own, and what follows a scene is
+       tucked up under its blank lower half. */
+    .wos-hero { min-height: 0; }
+    .wos-hero__inner { padding-bottom: clamp(2.5rem, 7vw, 3.5rem); }
+    .wos-sec { align-content: start; padding-top: calc(var(--app-stable-vh, 1svh) * 20); box-sizing: border-box; }
+    .wos-sec__idx { top: calc(var(--app-stable-vh, 1svh) * 20 + 4rem); transform: none; }
+    .skew-sec { position: relative; z-index: 1; margin-top: calc(var(--app-stable-vh, 1svh) * -30); }
+    .showcase-sec { position: relative; z-index: 1; }
+
+    /* 3. The screens: a horizontal strip, counter and progress as on desktop. */
+    .scr-mobile {
+      --scrm-gap: 14px;
+      --scrm-side: var(--site-gutter, 1.5rem);
+      --dist: 0px; /* set by the script: how far the track must travel sideways */
+      position: relative;
+      /* One screen + the sideways distance. The pinned view covers the whole
+         screen (title included), so nothing slides past it while it travels:
+         the blocks around it keep a constant gap. */
+      height: calc(var(--app-stable-vh, 1svh) * 100 + var(--dist));
+    }
+    /* The title is inside the pinned view now. */
+    .showcase-header { display: none; }
+    .showcase-sec { padding-bottom: 0; }
+    .scrm__title { margin: 0; padding: 0 var(--scrm-side); }
+    .scrm__sticky {
+      position: -webkit-sticky;
+      position: sticky;
+      top: 0;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
+      overflow: hidden; /* fine here: it is the sticky element itself */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1.4rem;
+      box-sizing: border-box;
+    }
+    .scrm__meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0 var(--scrm-side);
+    }
+    .scrm__track {
+      display: flex;
+      gap: var(--scrm-gap);
+      padding: 0 var(--scrm-side);
+      width: max-content;
+      will-change: transform;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+    .scrm__item { flex: 0 0 min(84vw, 560px); margin: 0; }
+    .scrm__progress {
+      margin: 0 var(--scrm-side);
+      height: 1px;
+      background: rgb(var(--c-cream) / 0.14);
+      overflow: hidden;
+    }
+    .scrm__bar {
+      height: 100%;
+      background: rgb(var(--c-red));
+      transform-origin: left center;
+      transform: scaleX(0);
+    }
+  }
 </style>
 
 <script>
@@ -1220,6 +1278,7 @@ const screens = [
   // ── Mobile: stary hero reveal (blur-in on load) ──
   function initHeroReveal() {
     const els = [
+      document.querySelector<HTMLElement>('.wos-splash__title'),
       document.querySelector<HTMLElement>('.wos-hero__top'),
       document.querySelector<HTMLElement>('.wos-hero__title'),
       document.querySelector<HTMLElement>('.wos-hero__desc'),
@@ -1250,6 +1309,61 @@ const screens = [
         duration: 0.65, stagger: 0.13, ease: 'power3.out', delay: 0.18,
       });
     });
+  }
+
+
+  // ── Mobile: the screens as a horizontal strip (sticky + one scrubbed tween,
+  // 1:1 with the finger; Lenis drives the scroll) ──
+  function initScreensStrip() {
+    const wrap  = document.getElementById('scr-m');
+    const track = document.getElementById('scrm-track');
+    const bar   = document.getElementById('scrm-bar');
+    const label = document.getElementById('scrm-label');
+    const count = document.getElementById('scrm-count');
+    if (!wrap || !track || !bar || !label || !count) return;
+
+    const items = Array.from(track.querySelectorAll<HTMLElement>('.scrm__item'));
+    const total = String(items.length).padStart(2, '0');
+    const getDistance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
+    const setDistance = () => wrap.style.setProperty('--dist', `${getDistance()}px`);
+    setDistance();
+
+    let shown = -1;
+    gsap.to(track, {
+      x: () => -getDistance(),
+      ease: 'none',
+      force3D: true,
+      scrollTrigger: {
+        trigger: wrap,
+        start: 'top top',
+        end: () => `+=${getDistance()}`, // exactly --dist px of scroll
+        scrub: true,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          gsap.set(bar, { scaleX: self.progress });
+          const i = Math.min(items.length - 1, Math.round(self.progress * (items.length - 1)));
+          if (i !== shown) {
+            shown = i;
+            label.textContent = items[i].dataset.label ?? '';
+            count.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
+          }
+        },
+      },
+    });
+
+    // Re-measure when the WIDTH changes (rotation); the address bar changing
+    // only the height is ignored on purpose.
+    let lastWidth = document.documentElement.clientWidth;
+    const onResize = () => {
+      const w = document.documentElement.clientWidth;
+      if (w === lastWidth) return;
+      lastWidth = w;
+      setDistance();
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener('resize', onResize);
+    document.addEventListener('astro:before-swap', () => window.removeEventListener('resize', onResize), { once: true });
+    requestAnimationFrame(() => { setDistance(); ScrollTrigger.refresh(); });
   }
 
   // ── Desktop: cinematic pinned animation ──
@@ -1386,7 +1500,9 @@ const screens = [
     // revealAfterHero) — called unconditionally so it can never stay hidden.
     afterPageTransition(() => revealAfterHero(550));
     if (isMob) {
+      ScrollTrigger.config({ ignoreMobileResize: true });
       initHeroReveal();
+      initScreensStrip();
     } else {
       initCinematic();
       initScreensScroll();
