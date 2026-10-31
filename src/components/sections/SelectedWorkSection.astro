@@ -672,8 +672,8 @@ const deskVars = [
 	// wrapper (its height is set from the measured distances), the view inside it
 	// pinned by position: sticky, and ONE scrub: true tween that moves the track
 	// 1:1 with the scroll. No snap, no normalized scroll, no scroll-driven CSS.
-	// The only addition: the strip rests for a while with the closing "Discover…"
-	// card centred, so it can be read, before the last slide slides out.
+	// (There used to be a rest on the closing "Discover…" card; with Lenis driving
+	// the scroll on touch it is not needed — the strip runs straight on.)
 	let stripMm: gsap.MatchMedia | null = null;
 
 	function initStrip(section: HTMLElement) {
@@ -700,15 +700,11 @@ const deskVars = [
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// Screens of blur-in on the spot before the row starts to travel.
 			const enter = () => sticky.offsetHeight * 0.7;
-			// The closing "Discover…" card rests, centred, for this much scroll.
-			const coverHold = () => sticky.offsetHeight * 0.6;
 			// After the travel the last slide is held for a while (the strip stays
 			// pinned), so it can be read before Services comes up.
 			const hold = () => sticky.offsetHeight * 0.7;
-			// Where the strip stands (px travelled) when the cover is centred.
-			const coverX = () => Math.min(distance(), Math.max(0, cover.offsetLeft + cover.offsetWidth / 2 - sticky.clientWidth / 2));
 			const setHeight = () => {
-				root.style.height = `${enter() + distance() + coverHold() + hold() + sticky.offsetHeight}px`;
+				root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`;
 			};
 
 			// Offsets for the parallax are measured at init and refresh, not per frame.
@@ -748,25 +744,16 @@ const deskVars = [
 				final.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 			};
 
-			// One tween, 1:1 with the scroll. Its ease maps the scroll (px) to the
-			// strip's position: along, rest on the cover, then on to the end.
+			// One tween, 1:1 with the scroll.
 			gsap.to(track, {
 				x: () => -distance(),
-				ease: (p: number) => {
-					const d = distance();
-					if (!d) return 0;
-					const hc = coverHold();
-					const xc = coverX();
-					const s = p * (d + hc);
-					const x = s <= xc ? s : s <= xc + hc ? xc : s - hc;
-					return x / d;
-				},
+				ease: 'none',
 				force3D: true,
 				onUpdate: parallax,
 				scrollTrigger: {
 					trigger: root,
 					start: () => `top+=${enter()} top`,
-					end: () => `+=${distance() + coverHold()}`,
+					end: () => `+=${distance()}`,
 					scrub: true, // no lag: the strip moves with the finger
 					invalidateOnRefresh: true,
 				},
