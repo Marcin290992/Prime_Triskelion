@@ -561,15 +561,10 @@ const deskVars = [
 		.sw-mob {
 			display: block;
 			position: relative;
-			/* Pulled up by one screen, so the pinned view takes over exactly
-			   where the manifesto's pin ends: the row blurs in on the spot,
-			   then travels. */
-			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-			/* The closing title's text sits mid-screen, so the lower half of the
-			   last screen is empty black: Services (stacked above, z-index 46) is
-			   tucked up over it instead of waiting below. */
-			margin-bottom: calc(var(--app-stable-vh, 1svh) * -40);
 		}
+		/* Only when the strip is pinned (see PIN_STRIP): pulled up by one screen,
+		   so the pinned view takes over exactly where the manifesto's pin ends. */
+		.sw-mob.is-active { margin-top: calc(var(--app-stable-vh, 1svh) * -100); }
 	}
 	.sw-mob__sticky {
 		height: 100svh;
@@ -608,7 +603,7 @@ const deskVars = [
 
 	/* The last slide is tucked under the cover and slides out from behind it
 	   sideways, as on desktop (CSS animation below, script fallback). */
-	.sw-mob .sw-panel--final { margin-left: -10vw; will-change: transform; }
+	.sw-mob.is-active .sw-panel--final { margin-left: -10vw; will-change: transform; }
 
 	/* Same idea as the desktop scene: where scroll-driven animations exist the
 	   strip is moved by the page's scroll on the compositor (the script only
@@ -659,6 +654,11 @@ const deskVars = [
 	gsap.registerPlugin(ScrollTrigger);
 
 	const MOBILE = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
+
+	// Off: Safari doesn't cope with the pinned, scroll-driven strip, so phones and
+	// tablets get the natively swiped, snapping row (the CSS fallback). Set to
+	// true to bring the pinned strip back (initStrip).
+	const PIN_STRIP = false;
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
 	// The strip is pinned by position: sticky (no pin spacer, no jump) and
@@ -966,9 +966,11 @@ const deskVars = [
 		if (!section) return;
 		const scene = section.querySelector<HTMLElement>('.sw-desk')!;
 		if (window.matchMedia(MOBILE).matches) {
-			initStrip(section);
-			const strip = section.querySelector<HTMLElement>('.sw-mob')!;
-			hideBandsWhilePinned(strip, false, strip);
+			if (PIN_STRIP) {
+				initStrip(section);
+				const strip = section.querySelector<HTMLElement>('.sw-mob')!;
+				hideBandsWhilePinned(strip, false, strip);
+			}
 			return;
 		}
 		hideBandsWhilePinned(scene, true);
