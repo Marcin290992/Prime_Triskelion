@@ -395,7 +395,8 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 <script>
   import Lenis from 'lenis';
   import gsap from 'gsap';
-  import { isSafari } from '../utils/isSafari';
+  import ScrollTrigger from 'gsap/ScrollTrigger';
+  import { TOUCH_LENIS_OPTIONS } from '../utils/touchLenis';
   import { syncTickerToScroll, skipsNativeTransition } from '../utils/afterPageTransition';
   import '../utils/pageCache';
   import '../utils/starBorder.js';
@@ -425,24 +426,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       if ((window as any).__lenisHandled || (window as any).__lenis) return;
 
       const isTouch = window.matchMedia('(pointer: coarse)').matches;
-      // Mobile Safari specifically: skip Lenis entirely rather than the
-      // reduced-motion config below. Safari's own compositor handles a
-      // competing scroll-linked rAF loop worse than Chromium's does, and
-      // this fallback path exists for pages that never opted into any
-      // particular scroll behavior — native scroll is the safe default
-      // there, same as index.astro/winds-of-sinai.astro already choose for
-      // themselves on all touch devices, not just Safari.
-      if (isTouch && isSafari()) {
-        (window as any).__lenis = null;
-        return;
-      }
-
-      _layoutLenis = new Lenis(isTouch ? {
-        duration: 1.2,
-        easing: (t: number) => 1 - Math.pow(1 - t, 3),
-        smoothWheel: false,
-        touchMultiplier: 1.1,
-      } : {
+      // Touch (phones, tablets, Safari too): the same Lenis on every page —
+      // see utils/touchLenis.ts.
+      _layoutLenis = new Lenis(isTouch ? { ...TOUCH_LENIS_OPTIONS } : {
         // Narrow windows (phone/tablet widths) get a much lighter drag.
         lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
         smoothWheel: true,
@@ -453,6 +439,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       _layoutRaf = (t: number) => _layoutLenis?.raf(t * 1000);
       gsap.ticker.add(_layoutRaf);
       syncTickerToScroll();
+      if (isTouch) _layoutLenis.on('scroll', ScrollTrigger.update);
     });
   }
 

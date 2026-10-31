@@ -668,10 +668,12 @@ const deskVars = [
 	const MOBILE = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 
 	// ── Phones/tablets ─────────────────────────────────────────────────────
-	// The strip is pinned by position: sticky (no pin spacer, no jump) and
-	// moved horizontally by a scrubbed ScrollTrigger; once it ends it scrolls
-	// up and off like any other block, with the closing screen below it.
-	// Without this the strip is a natively swiped, snapping row (see the CSS).
+	// The look is the original one; the mechanism is the reference model's: a tall
+	// wrapper (its height is set from the measured distances), the view inside it
+	// pinned by position: sticky, and ONE scrub: true tween that moves the track
+	// 1:1 with the scroll. No snap, no normalized scroll, no scroll-driven CSS.
+	// (There used to be a rest on the closing "Discover…" card; with Lenis driving
+	// the scroll on touch it is not needed — the strip runs straight on.)
 	let stripMm: gsap.MatchMedia | null = null;
 
 	function initStrip(section: HTMLElement) {
@@ -686,6 +688,8 @@ const deskVars = [
 		const final = root?.querySelector<HTMLElement>('.sw-panel--final');
 		if (!root || !sticky || !track || !cover || !coverIn || !final) return;
 
+		// The address bar changing the window's height must not re-measure the
+		// layout in the middle of a gesture.
 		ScrollTrigger.config({ ignoreMobileResize: true });
 
 		stripMm = gsap.matchMedia();
@@ -699,51 +703,9 @@ const deskVars = [
 			// After the travel the last slide is held for a while (the strip stays
 			// pinned), so it can be read before Services comes up.
 			const hold = () => sticky.offsetHeight * 0.7;
-			const setHeight = () => { root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`; };
-
-			// Snap: when the scroll stops, the strip settles on the nearest slide's
-			// centre (the opener, each card, the cover), so nothing can be left
-			// half-way or skipped. It acts only over the horizontal travel.
-			const centres = () => Array.from(track.children).map((el) => {
-				const slide = el as HTMLElement;
-				const x = slide.offsetLeft + slide.offsetWidth / 2 - sticky.clientWidth / 2;
-				return Math.min(1, Math.max(0, x / (distance() || 1)));
-			});
-			ScrollTrigger.create({
-				trigger: root,
-				start: () => `top+=${enter()} top`,
-				end: () => `+=${distance()}`,
-				invalidateOnRefresh: true,
-				snap: {
-					snapTo: (v: number) => centres().reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a)),
-					delay: 0.12,
-					duration: { min: 0.25, max: 0.7 },
-					ease: 'power2.inOut',
-				},
-			});
-
-			// Where scroll-driven animations exist, CSS moves the strip (see the
-			// styles) and the script only measures — here and on every refresh,
-			// never per frame.
-			// Not on iOS: Safari runs scroll-driven animations on the main thread,
-			// so after a finger stops the momentum the strip jitters left/right.
-			const ios = CSS.supports('-webkit-touch-callout: none');
-			if (!ios && CSS.supports('animation-timeline: view()')) {
-				const place = () => {
-					setHeight();
-					root.style.setProperty('--dist', `${distance()}px`);
-					root.style.setProperty('--cover-left', `${cover.offsetLeft}px`);
-				};
-				place();
-				ScrollTrigger.addEventListener('refreshInit', place);
-				root.classList.add('is-driven');
-				return () => {
-					ScrollTrigger.removeEventListener('refreshInit', place);
-					['--dist', '--cover-left'].forEach((v) => root.style.removeProperty(v));
-					root.style.height = '';
-					root.classList.remove('is-driven', 'is-active');
-				};
-			}
+			const setHeight = () => {
+				root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`;
+			};
 
 			// Offsets for the parallax are measured at init and refresh, not per frame.
 			const cards = Array.from(root.querySelectorAll<HTMLElement>('.sw-card')).map((el) => ({
@@ -757,25 +719,15 @@ const deskVars = [
 				cards.forEach((c) => { c.left = c.el.offsetLeft; c.width = c.el.offsetWidth; });
 				coverLeft = cover.offsetLeft;
 			};
-
-			// iOS: sticky is placed on the scrolling thread and the strip's
-			// transform on the main one, so they drift apart during momentum.
-			// Scrolling driven by the script keeps both in the same frame.
-			if (ios) ScrollTrigger.normalizeScroll({
-				type: 'touch',
-				allowNestedScroll: true,
-				// A longer glide after the finger lifts (the default stops short,
-				// which reads as braking).
-				momentum: (self: { velocityY: number }) => Math.min(4, Math.abs(self.velocityY) / 450),
-			});
-
 			setHeight();
 			measure();
 			ScrollTrigger.addEventListener('refreshInit', setHeight);
 			ScrollTrigger.addEventListener('refreshInit', measure);
 
 			// Same moves as the desktop scene: each picture drifts inside its
-			// frame, the closing text drifts as its panel comes in.
+			// frame, the closing text drifts as its panel comes in, and the last
+			// slide slides out from behind the cover. Run from the tween's own
+			// update, so it is always the same frame as the strip.
 			const parallax = () => {
 				const x = -(gsap.getProperty(track, 'x') as number);
 				const vw = window.innerWidth;
@@ -792,7 +744,8 @@ const deskVars = [
 				final.style.transform = toEnd < vw * 1.5 ? `translate3d(-${(toEnd * 0.5).toFixed(1)}px,0,0)` : 'translate3d(0,0,0)';
 			};
 
-			const travel = gsap.to(track, {
+			// One tween, 1:1 with the scroll.
+			gsap.to(track, {
 				x: () => -distance(),
 				ease: 'none',
 				force3D: true,
@@ -801,15 +754,13 @@ const deskVars = [
 					trigger: root,
 					start: () => `top+=${enter()} top`,
 					end: () => `+=${distance()}`,
-					scrub: ios ? true : 0.3,
+					scrub: true, // no lag: the strip moves with the finger
 					invalidateOnRefresh: true,
 				},
 			});
-
 			parallax();
 
 			return () => {
-				if (ios) ScrollTrigger.normalizeScroll(false);
 				ScrollTrigger.removeEventListener('refreshInit', setHeight);
 				ScrollTrigger.removeEventListener('refreshInit', measure);
 				root.style.height = '';
