@@ -168,9 +168,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// wheel/trackpad event, which made the horizontal work section
 				// stutter.
 				lenisInstance = new Lenis({
-					lerp: 0.06,
+					// Narrow windows (phone/tablet widths) get a much lighter drag.
+        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
 					smoothWheel: true,
-					wheelMultiplier: 0.3,
+					wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
 				});
 				(window as any).__lenis = lenisInstance;
 				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
