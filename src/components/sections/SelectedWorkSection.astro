@@ -27,8 +27,8 @@ const projects = [
 const ENTER = 0.7;
 const HOLD = 0.4;
 // The travel keeps one pace however many projects there are: 6.6 screens
-// for the 540vw the track moved with six cards.
-const TRAVEL_PER_VW = 6.6 / 540;
+// (now 4.8) for the 540vw the track moves with six cards.
+const TRAVEL_PER_VW = 4.8 / 540;
 const trackTravel = (cards: number) => 100 + 10 + cards * 55 + 100; // wide layout, vw
 const TRAVEL = Math.round(TRAVEL_PER_VW * trackTravel(projects.length) * 10) / 10;
 const TOTAL = ENTER + TRAVEL + HOLD;
@@ -699,10 +699,10 @@ const deskVars = [
 
 			const distance = () => Math.max(0, track.scrollWidth - sticky.clientWidth);
 			// Screens of blur-in on the spot before the row starts to travel.
-			const enter = () => sticky.offsetHeight * 0.7;
+			const enter = () => sticky.offsetHeight * 0.5;
 			// After the travel the last slide is held for a while (the strip stays
 			// pinned), so it can be read before Services comes up.
-			const hold = () => sticky.offsetHeight * 0.7;
+			const hold = () => sticky.offsetHeight * 0.5;
 			const setHeight = () => {
 				root.style.height = `${enter() + distance() + hold() + sticky.offsetHeight}px`;
 			};
