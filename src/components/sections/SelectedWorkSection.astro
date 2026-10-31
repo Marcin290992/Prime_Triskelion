@@ -552,11 +552,16 @@ const deskVars = [
 		@media (prefers-reduced-motion: no-preference) {
 			.sw-intro-wrap { view-timeline: --swi block; }
 			.sw-mob .sw-intro {
-				animation: sw-fade-in 1ms cubic-bezier(0.5, 1, 0.89, 1) both;
+				animation: sw-blur-in 1ms cubic-bezier(0.5, 1, 0.89, 1) both;
 				animation-timeline: --swi;
 				animation-range: contain 0% contain calc(var(--app-stable-vh, 1svh) * 70);
 			}
 		}
+	}
+	/* Comes into focus out of a blur as it fades in. */
+	@keyframes sw-blur-in {
+		from { opacity: 0; filter: blur(14px); }
+		to { opacity: 1; filter: blur(0); }
 	}
 	.sw-list { display: grid; gap: 1.5rem; padding-inline: var(--site-gutter); }
 	.sw-close {
