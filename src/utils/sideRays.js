@@ -494,10 +494,85 @@ function mountSideRays(host) {
   };
 }
 
+// Like the home hero: the header stays put for a stretch of scrolling while
+// its light goes out (scrubbed, so it follows the wheel both ways), and only
+// then does the page carry on and the next section come in. Hosts opt in with
+// [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
+const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
+const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
+const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
+function pinHost(host) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  const wrap = document.createElement('div');
+  // (a spacer, not padding: a sticky child only travels within its parent's content box)
+  const spacer = document.createElement('div');
+  spacer.setAttribute('aria-hidden', 'true');
+  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${PIN_VH})`;
+  host.before(wrap);
+  wrap.append(host, spacer);
+  host.style.position = 'sticky';
+  host.style.top = '0';
+  const smooth = (t) => t * t * (3 - 2 * t);
+  // Going down the light follows the scroll (scrubbed). Coming back to the
+  // header it does NOT follow: it lights again by itself, at its own pace.
+  const lit = { v: 1 };   // what the light has been allowed back up to
+  let relight = null;
+  let scrub = 1;          // what the scroll alone would show
+  let lastTop = 0;
+  const apply = () => {
+    const canvas = host.querySelector(':scope > .side-rays');
+    if (!canvas) return;
+    const light = Math.min(lit.v, scrub);
+    // brightness, not opacity: the entrance tween owns the canvas's opacity
+    if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
+      canvas.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+    }
+  };
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    const top = wrap.getBoundingClientRect().top;
+    const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
+    scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
+    const down = top < lastTop;
+    const up = top > lastTop;
+    lastTop = top;
+    if (down) {
+      // heading away again: the scroll takes over from wherever the light is
+      relight?.kill();
+      relight = null;
+      lit.v = Math.min(lit.v, scrub);
+    } else if (up && -top < range && lit.v < 1 && !relight) {
+      // back on the header: it lights up on its own
+      relight = gsap.to(lit, {
+        v: 1,
+        duration: RELIGHT_S,
+        ease: 'power2.out',
+        onUpdate: apply,
+        onComplete: () => { relight = null; },
+      });
+    }
+    apply();
+  };
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  onScroll();
+  return () => {
+    relight?.kill();
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', onScroll);
+  };
+}
+
 function mountAll() {
   if (!ENABLED) return;
   const cleanups = [];
   document.querySelectorAll('[data-side-rays]').forEach((host) => {
+    if (host.hasAttribute('data-rays-pin')) {
+      const off = pinHost(host);
+      if (off) cleanups.push(off);
+    }
     // Phones and tablets (touch) keep the original light: the new shader's
     // ribs rendered with hard edges in Chrome there.
     const c = window.matchMedia('(pointer: coarse)').matches ? mountSideRaysLegacy(host) : mountSideRays(host);

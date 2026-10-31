@@ -45,7 +45,8 @@ const projects = [
     title: 'Project Four',
     categories: ['Motion', 'Development'],
     year: '2023',
-    img: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=1400&fit=crop',
+    img: deeer2.src,
+    full: deeer2Full.src,
     bg: '#0d0c0a',
     speed: -1,
   },
@@ -59,7 +60,7 @@ const projects = [
   <main id="projects-page">
 
     <!-- Brief header -->
-    <header class="proj-header" data-side-rays>
+    <header class="proj-header" data-side-rays data-rays-pin>
       <h1 class="proj-title">
         <span class="proj-title__line"><span class="proj-title__word">My</span></span>
         <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
@@ -421,10 +422,6 @@ const projects = [
       .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
     }
 
-    /* The last project is revealed like the others, then lets go (the script adds
-       .is-released once it fills the screen), so the page scrolls on normally
-       to the end. */
-    .proj-section:last-child.is-released .proj-inner { position: absolute; }
   }
 </style>
 
@@ -469,8 +466,16 @@ const projects = [
     // page colour on that section), so the CTA arrives on a dark screen.
     const sink = document.createElement('div');
     sink.setAttribute('aria-hidden', 'true');
-    sink.style.cssText = 'position:absolute;inset:-1px 0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
-    lastSec?.appendChild(sink);
+    sink.style.cssText = 'position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
+    // (in the pinned panel, the same layer as the photo — in the section they
+    // rounded differently and a 1px sliver of the photo showed at the edge)
+    lastSec?.querySelector('.proj-inner')?.appendChild(sink);
+    // The first project is the mirror of that: it comes up out of the dark as
+    // its window opens under the header.
+    const firstSec = document.querySelector<HTMLElement>('.proj-section');
+    const rise = sink.cloneNode() as HTMLElement;
+    rise.style.opacity = '1';
+    firstSec?.querySelector('.proj-inner')?.appendChild(rise);
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -495,8 +500,11 @@ const projects = [
           sink.style.opacity = d.toFixed(3);
         }
 
-        const released = isMob && sec === lastSec && rect.top <= 0;
-        if (sec === lastSec) sec.classList.toggle('is-released', released);
+        if (sec === firstSec && !reduce) {
+          const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
+          const d = rect.top > 0 ? 1 - smooth(0.4, 1.0, shown) : 0;
+          rise.style.opacity = d.toFixed(3);
+        }
 
         if (rect.top > vh || rect.bottom < 0) continue;
 
@@ -508,7 +516,7 @@ const projects = [
         if (!reduce) {
           // How much of the screen this card's window covers: 0 → 1 as it
           // opens, 1 → 0 as the next one closes it.
-          const f = released ? 1 : (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
+          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
           if (foot) {
             const t = smooth(0.4, 0.92, f);
             foot.style.opacity = t.toFixed(3);
