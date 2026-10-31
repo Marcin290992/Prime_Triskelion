@@ -58,6 +58,12 @@ const services = [
 					))}
 				</a>
 			</div>
+			<!-- Inside the pinned scene, like the desktop's: visible the whole time,
+			     just above the MENU button. -->
+			<a href="/services" class="svc__btn svc-m__more" aria-label="View all services">
+				<span class="svc__btn__line"></span>
+				See more
+			</a>
 		</div>
 	</div>
 	</div>
@@ -357,10 +363,19 @@ const services = [
 			/* Right under the pinned title — centred, the spare height all
 			   went between the title and the names. */
 			align-items: flex-start;
-			/* Bottom: clear of the fixed MENU button. */
-			padding: 0.5rem var(--site-gutter) 5.5rem;
+			/* Bottom: clear of the fixed MENU button and of See more above it. */
+			padding: 0.5rem var(--site-gutter) 8rem;
 			box-sizing: border-box;
 		}
+		.svc-m__more {
+			position: absolute;
+			left: 50%;
+			bottom: 5.4rem;
+			transform: translateX(-50%);
+		}
+		/* The old end-of-section link is replaced by the one in the scene; its
+		   spacing stays. */
+		.svc__footer .svc__btn { display: none; }
 		.svc-m__stage {
 			width: 100%;
 			display: flex;
