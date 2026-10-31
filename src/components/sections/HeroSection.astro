@@ -553,11 +553,20 @@
 	// The soft beam of light from the About scroll, as a mask: --pc is the
 	// beam's centre (% of the width), lit only where the light is, dark
 	// ahead of it and again behind it. Cosine falloff so no edge shows.
-	function beamMask(k = 1): string {
+	function beamMask(k = 1, angle = 90): string {
 		const stops: string[] = [];
 		const f = (x: number, a: number) => `rgb(0 0 0 / ${a.toFixed(3)}) calc(var(--pc) * 1% ${x < 0 ? '-' : '+'} ${Math.abs(x * k).toFixed(1)}%)`;
 		for (let i = 0; i <= 12; i++) { const t = i / 12; stops.push(f(-85 + 79 * t, 0.5 - 0.5 * Math.cos(Math.PI * t))); }
 		for (let i = 1; i <= 16; i++) { const t = i / 16; stops.push(f(6 + 90 * t, 0.5 + 0.5 * Math.cos(Math.PI * t))); }
+		return `linear-gradient(${angle}deg, ${stops.join(', ')})`;
+	}
+
+	// The intro's beam: a lit band with short soft edges and nothing outside
+	// it — no long tail of dim light, so no halo (glow) around the letters.
+	// --pc is the band's centre (% of the logo's width).
+	function beamBand(half = 30, edge = 12): string {
+		const f = (x: number, a: number) => `rgb(0 0 0 / ${a}) calc(var(--pc) * 1% ${x < 0 ? '-' : '+'} ${Math.abs(x)}%)`;
+		const stops = [f(-half - edge, 0), f(-half - edge * 0.5, 0.18), f(-half, 1), f(half, 1), f(half + edge * 0.5, 0.18), f(half + edge, 0)];
 		return `linear-gradient(90deg, ${stops.join(', ')})`;
 	}
 
@@ -767,7 +776,7 @@
 
 			// Intro timings: one beam of light over the big logo; the claim follows
 			// as the beam leaves it. The corner logo blurs in last (see below).
-			const IT = { start: 0.4, beam: 3.3, dark: 0.4 };
+			const IT = { start: 0.4, beam: 3.4, dark: 0.4 };
 
 			// ── Opening (first visit, full entrance) ──
 			// A large logo in the middle of the black, brought out of the dark
@@ -800,7 +809,7 @@
 				// The beam is measured on the logo itself (not the screen), and
 				// narrower than the About scroll's, so its edge visibly crosses the
 				// mark and the words.
-				const beam = beamMask(0.75);
+				const beam = beamMask(0.75, 90);
 				logo.style.setProperty('-webkit-mask-image', beam);
 				logo.style.setProperty('mask-image', beam);
 				logo.innerHTML = `<svg viewBox="128 152 744 644" fill="#FFF" style="display:block;height:${markPx}px;width:auto;flex-shrink:0;overflow:visible"><polygon id="pt-intro-arm" points="476.676,605.596 394.876,463.914 500.000,281.834 559.525,384.935 487.122,384.935 453.185,443.715 661.335,443.715 500.000,164.274 327.003,463.914 442.740,664.375"/><use href="#pt-intro-arm" transform="rotate(120 500 577.259)"/><use href="#pt-intro-arm" transform="rotate(240 500 577.259)"/></svg><div style="display:flex;flex-direction:column;gap:0.15em"><div>PRIME</div><div>TRISKELION</div></div>`;
@@ -837,10 +846,10 @@
 				const START = IT.start;
 				const tl = gsap.timeline({ delay: START, onComplete: () => overlay.remove() });
 				// The beam crosses the logo left to right, on a timer.
-				tl.fromTo(logo, { '--pc': -80 }, { '--pc': 180, duration: IT.beam, ease: 'none' }, 0)
+				tl.fromTo(logo, { '--pc': -80 }, { '--pc': 180, duration: IT.beam, ease: 'power1.inOut' }, 0)
 					// Slow push-in on the whole frame, the camera drifting toward
 					// the mark for as long as the light is on it.
-					.fromTo(overlay, { scale: 1 }, { scale: 1.07, duration: IT.beam + 0.4, ease: 'none' }, 0)
+					.fromTo(overlay, { scale: 1 }, { scale: 1.12, duration: IT.beam + 0.4, ease: 'power1.in' }, 0)
 					// The beam has crossed: the page scrolls again. The real logo
 					// in the corner stays hidden until the very end of the hero's
 					// own timeline.
