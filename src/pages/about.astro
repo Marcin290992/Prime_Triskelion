@@ -92,6 +92,7 @@ import portrait from '../img/portrait-top.webp';
     padding-right: var(--site-gutter, 2rem);
   }
   .ac-photo {
+    position: relative;
     grid-column: 1;
     grid-row: 1;
     height: 100svh;
@@ -509,6 +510,7 @@ import portrait from '../img/portrait-top.webp';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
+  import { initColorReveal } from '../utils/colorReveal';
 
   gsap.registerPlugin(ScrollTrigger);
   // The browser's toolbar sliding in/out (it comes back as soon as you scroll
@@ -682,10 +684,31 @@ import portrait from '../img/portrait-top.webp';
     }, { once: true });
   }
 
+  // The big portrait: real colour under the cursor, and a ring of colour
+  // from every click or tap. Only once the portrait has settled (its
+  // entrance scales and fades it, and the colour layer must line up).
+  let _colorOff: (() => void) | null = null;
+  function initPortraitColor() {
+    _colorOff?.();
+    _colorOff = null;
+    const photo = document.querySelector<HTMLElement>('.ac-photo');
+    const img = photo?.querySelector<HTMLImageElement>('.ac-photo__img');
+    if (!photo || !img) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const settled = () => {
+      const m = getComputedStyle(img).transform;
+      const scale = m === 'none' ? 1 : new DOMMatrix(m).a;
+      return Math.abs(scale - 1) < 0.003 && parseFloat(getComputedStyle(photo).opacity) > 0.98;
+    };
+    _colorOff = initColorReveal(photo, img, { radius: 170, focusX: 0.5, focusY: 0.72, isReady: settled });
+    document.addEventListener('astro:before-swap', () => { _colorOff?.(); _colorOff = null; }, { once: true });
+  }
+
   function initAbout() {
     initAboutTitle();
     initAboutMobileReveal();
     initAboutContent();
+    initPortraitColor();
   }
 
   document.addEventListener('astro:page-load', initAbout);
