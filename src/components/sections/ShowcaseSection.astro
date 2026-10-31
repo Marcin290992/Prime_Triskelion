@@ -470,15 +470,12 @@ const steps = [
 			margin-top: calc(var(--app-stable-vh, 1svh) * 22);
 		}
 		.pstack__card {
-			/* Each sticks a little lower than the one before, so the deck's
-			   earlier edges stay in view. */
 			position: sticky;
-			top: calc(var(--pstack-top, 10rem) + var(--i) * 14px);
+			top: var(--pstack-top, 10rem);
 			/* All the cards as tall as the tallest (--pstack-card-h, measured):
 			   with their own heights, the ones behind poked out under the one in
-			   front at different depths — and the card-step scale made it worse. */
+			   front at different depths. */
 			min-height: var(--pstack-card-h, 0px);
-			transform-origin: 50% 0;
 			display: flex;
 			flex-direction: column;
 			background: #0c0c0e;
@@ -589,7 +586,6 @@ const steps = [
 		   Android and Safari 26+. Elsewhere the cards simply stack. */
 		@supports (animation-timeline: view()) {
 			.pstack { timeline-scope: --pm1, --pm2, --pm3, --pm4; }
-			.pstack__card,
 			.pstack__dim {
 				animation-duration: 1ms;
 				animation-timing-function: linear;
@@ -597,12 +593,8 @@ const steps = [
 				animation-timeline: var(--next);
 				animation-range: cover 12% cover 76%;
 			}
-			.pstack__card { animation-name: pstack-recede; }
 			.pstack__dim { animation-name: pstack-dark; }
 		}
-	}
-	@keyframes pstack-recede {
-		to { transform: translateY(-6px) scale(0.92); }
 	}
 	@keyframes pstack-dark {
 		to { opacity: 0.72; }
@@ -936,4 +928,3 @@ const steps = [
 		_stackTopObserver = null;
 	});
 </script>
-
