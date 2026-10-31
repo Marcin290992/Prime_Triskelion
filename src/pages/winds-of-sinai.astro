@@ -290,6 +290,7 @@ const screens = [
            initScreensStrip), with the same counter and progress line as desktop. -->
       <div class="scr-mobile" id="scr-m">
         <div class="scrm__sticky">
+          <h2 class="showcase-title scrm__title">Every screen.<br/><em>Pixel perfect.</em></h2>
           <div class="scrm__meta">
             <span class="showcase-desc scrm__label" id="scrm-label">{screens[0].label}</span>
             <span class="showcase-desc scrm__count" id="scrm-count" aria-hidden="true">{`01 / 0${screens.length}`}</span>
@@ -1206,20 +1207,26 @@ const screens = [
       --scrm-gap: 14px;
       --scrm-side: var(--site-gutter, 1.5rem);
       --dist: 0px; /* set by the script: how far the track must travel sideways */
-      --scrm-h: 26rem; /* the pinned view's own height (script) */
-      --scrm-top: 6rem; /* where it is pinned: centred on the screen (script) */
       position: relative;
-      /* Its own height + the sideways distance — no blank half-screens above
-         and below, so the next block follows at the site's usual spacing. */
-      height: calc(var(--scrm-h) + var(--dist));
+      /* One screen + the sideways distance. The pinned view covers the whole
+         screen (title included), so nothing slides past it while it travels:
+         the blocks around it keep a constant gap. */
+      height: calc(var(--app-stable-vh, 1svh) * 100 + var(--dist));
     }
+    /* The title is inside the pinned view now. */
+    .showcase-header { display: none; }
+    .showcase-sec { padding-bottom: 0; }
+    .scrm__title { margin: 0; padding: 0 var(--scrm-side); }
     .scrm__sticky {
       position: -webkit-sticky;
       position: sticky;
-      top: var(--scrm-top);
+      top: 0;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
       overflow: hidden; /* fine here: it is the sticky element itself */
       display: flex;
       flex-direction: column;
+      justify-content: center;
       gap: 1.4rem;
       box-sizing: border-box;
     }
@@ -1317,20 +1324,8 @@ const screens = [
 
     const items = Array.from(track.querySelectorAll<HTMLElement>('.scrm__item'));
     const total = String(items.length).padStart(2, '0');
-    const sticky = wrap.querySelector<HTMLElement>('.scrm__sticky')!;
     const getDistance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
-    // The pinned view is only as tall as its content and is centred on the
-    // screen (stable height, so the address bar can't move it).
-    const measure = () => {
-      const v = parseFloat(document.documentElement.style.getPropertyValue('--app-stable-vh'));
-      const screenH = v > 0 ? v * 100 : window.innerHeight;
-      const h = sticky.offsetHeight;
-      const top = Math.max(0, Math.round((screenH - h) / 2));
-      wrap.style.setProperty('--scrm-h', `${h}px`);
-      wrap.style.setProperty('--scrm-top', `${top}px`);
-      return top;
-    };
-    const setDistance = () => { measure(); wrap.style.setProperty('--dist', `${getDistance()}px`); };
+    const setDistance = () => wrap.style.setProperty('--dist', `${getDistance()}px`);
     setDistance();
 
     let shown = -1;
@@ -1340,8 +1335,8 @@ const screens = [
       force3D: true,
       scrollTrigger: {
         trigger: wrap,
-        start: () => `top ${measure()}px`, // the moment the view gets pinned
-        end: () => `+=${getDistance()}`,
+        start: 'top top',
+        end: () => `+=${getDistance()}`, // exactly --dist px of scroll
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
