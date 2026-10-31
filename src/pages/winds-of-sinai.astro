@@ -1206,22 +1206,22 @@ const screens = [
       --scrm-gap: 14px;
       --scrm-side: var(--site-gutter, 1.5rem);
       --dist: 0px; /* set by the script: how far the track must travel sideways */
+      --scrm-h: 26rem; /* the pinned view's own height (script) */
+      --scrm-top: 6rem; /* where it is pinned: centred on the screen (script) */
       position: relative;
-      height: calc(var(--app-stable-vh, 1svh) * 100 + var(--dist));
+      /* Its own height + the sideways distance — no blank half-screens above
+         and below, so the next block follows at the site's usual spacing. */
+      height: calc(var(--scrm-h) + var(--dist));
     }
     .scrm__sticky {
       position: -webkit-sticky;
       position: sticky;
-      top: 0;
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
+      top: var(--scrm-top);
       overflow: hidden; /* fine here: it is the sticky element itself */
       display: flex;
       flex-direction: column;
-      justify-content: center;
       gap: 1.4rem;
       box-sizing: border-box;
-      padding-bottom: 0;
     }
     .scrm__meta {
       display: flex;
@@ -1251,7 +1251,6 @@ const screens = [
       transform-origin: left center;
       transform: scaleX(0);
     }
-    :global(#contact-cta) { position: relative; z-index: 2; margin-top: calc(var(--app-stable-vh, 1svh) * -38); }
   }
 </style>
 
@@ -1318,8 +1317,20 @@ const screens = [
 
     const items = Array.from(track.querySelectorAll<HTMLElement>('.scrm__item'));
     const total = String(items.length).padStart(2, '0');
+    const sticky = wrap.querySelector<HTMLElement>('.scrm__sticky')!;
     const getDistance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
-    const setDistance = () => wrap.style.setProperty('--dist', `${getDistance()}px`);
+    // The pinned view is only as tall as its content and is centred on the
+    // screen (stable height, so the address bar can't move it).
+    const measure = () => {
+      const v = parseFloat(document.documentElement.style.getPropertyValue('--app-stable-vh'));
+      const screenH = v > 0 ? v * 100 : window.innerHeight;
+      const h = sticky.offsetHeight;
+      const top = Math.max(0, Math.round((screenH - h) / 2));
+      wrap.style.setProperty('--scrm-h', `${h}px`);
+      wrap.style.setProperty('--scrm-top', `${top}px`);
+      return top;
+    };
+    const setDistance = () => { measure(); wrap.style.setProperty('--dist', `${getDistance()}px`); };
     setDistance();
 
     let shown = -1;
@@ -1329,8 +1340,8 @@ const screens = [
       force3D: true,
       scrollTrigger: {
         trigger: wrap,
-        start: 'top top',
-        end: 'bottom bottom', // exactly --dist px of scroll
+        start: () => `top ${measure()}px`, // the moment the view gets pinned
+        end: () => `+=${getDistance()}`,
         scrub: true,
         invalidateOnRefresh: true,
         onUpdate: (self) => {
