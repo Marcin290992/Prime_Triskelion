@@ -967,7 +967,7 @@ const deskVars = [
 		if (window.matchMedia(MOBILE).matches) {
 			initStrip(section);
 			const strip = section.querySelector<HTMLElement>('.sw-mob')!;
-			hideBandsWhilePinned(strip, false, strip);
+			hideBandsWhilePinned(strip, true, strip);
 			return;
 		}
 		hideBandsWhilePinned(scene, true);
