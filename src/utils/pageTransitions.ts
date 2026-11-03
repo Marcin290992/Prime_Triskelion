@@ -154,7 +154,10 @@ function preparePageExit(event: PreparationEvent): void {
 
 	// The About portrait (filter + mask) can't be re-blurred smoothly: fade
 	// that page to black with opacity only.
-	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo');
+	// (The Projects page pins its cards with position:fixed; a filter on an
+	// ancestor becomes their containing block, so they'd un-pin and jump
+	// mid-exit. It gets the same opacity-only exit.)
+	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo, .proj-inner');
 
 	// On phones and tablets fading the live masked/filtered portrait layers
 	// stutters and the page cuts away halfway. One black layer fading in over
