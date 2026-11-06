@@ -1,0 +1,935 @@
+---
+import { Image } from 'astro:assets';
+// Placeholder pictures (Unsplash, stored locally — the site's CSP blocks
+// remote images, so the old hotlinked ones never showed in production).
+// Swap the files in src/img/process/ for real work.
+import imgDiscovery from '../../img/process/discovery.jpg';
+import imgDesign from '../../img/process/design.jpg';
+import imgDevelopment from '../../img/process/development.jpg';
+import imgLaunch from '../../img/process/launch.jpg';
+import imgSupport from '../../img/process/support.jpg';
+
+const steps = [
+	{ title: 'Discovery & Strategy', img: imgDiscovery, desc: 'I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.' },
+	{ title: 'Design & Motion', img: imgDesign, desc: 'I craft interfaces, motion systems, and brand visuals with precision. Every transition and micro-interaction is intentional — designed to guide, not distract.' },
+	{ title: 'Development', img: imgDevelopment, desc: 'I build in Astro, React, and Tailwind — performant, accessible, and animation-ready. Clean code, fast load times, and pixel-perfect output across all devices.' },
+	{ title: 'QA & Launch', img: imgLaunch, desc: 'I test across devices and browsers, handle DNS, analytics, and deployment. The go-live is coordinated, calm, and delivered on schedule.' },
+	{ title: 'Support & Growth', img: imgSupport, desc: 'After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.' },
+];
+---
+<!-- ═══════ SHOWCASE ═══════ -->
+<section id="showcase">
+
+	<!-- Markup order matters here: .showcase__intro sits as a plain sibling
+	     BEFORE .process-rail so mobile (where .process-rail is display:none)
+	     still renders it normally. On desktop, initShowcase() below moves
+	     this same element inside .process-rail__pin (ahead of the stage) so
+	     the title and the rail share ONE sticky pin instead of being two
+	     independent sticky elements — see the long comment on
+	     .process-rail__pin for why that used to matter (they unpinned at
+	     different scroll points and briefly overlapped). -->
+	<div class="showcase__intro">
+		<div class="showcase__intro-content">
+			<h2 class="showcase__title">The<br><em>Process.</em></h2>
+		</div>
+	</div>
+
+	<!-- Desktop: "meet in the middle" rail — a number tile (left) and its
+	     matching description tile (right) travel toward each other and
+	     cross at vertical center as you scroll; the center image swaps to
+	     whichever pair is currently crossing. Placeholder photos for now
+	     (src/img/process/) — swap for real project shots later. Phones
+	     and tablets get .pstack further down instead. -->
+	<div class="process-rail" id="process-rail">
+		<div class="process-rail__pin">
+
+		<div class="process-rail__stage">
+
+			<div class="process-rail__col process-rail__col--num">
+				<div class="process-num" data-index="0"><span>01</span></div>
+				<div class="process-num" data-index="1"><span>02</span></div>
+				<div class="process-num" data-index="2"><span>03</span></div>
+				<div class="process-num" data-index="3"><span>04</span></div>
+				<div class="process-num" data-index="4"><span>05</span></div>
+			</div>
+
+			<div class="process-rail__media">
+				<Image class="process-rail__img" data-index="0" src={steps[0].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="1" src={steps[1].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="2" src={steps[2].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="3" src={steps[3].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+				<Image class="process-rail__img" data-index="4" src={steps[4].img} alt="" widths={[800, 1200]} sizes="(min-width: 1900px) 900px, 600px" />
+			</div>
+
+			<div class="process-rail__col process-rail__col--desc">
+				<div class="process-desc" data-index="0">
+					<span class="process-desc__tag">The Process</span>
+					<h3>Discovery &<br>Strategy</h3>
+					<p>I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.</p>
+				</div>
+				<div class="process-desc" data-index="1">
+					<span class="process-desc__tag">The Process</span>
+					<h3>Design &<br>Motion</h3>
+					<p>I craft interfaces, motion systems, and brand visuals with precision. Every transition and micro-interaction is intentional — designed to guide, not distract.</p>
+				</div>
+				<div class="process-desc" data-index="2">
+					<span class="process-desc__tag">The Process</span>
+					<h3>Development</h3>
+					<p>I build in Astro, React, and Tailwind — performant, accessible, and animation-ready. Clean code, fast load times, and pixel-perfect output across all devices.</p>
+				</div>
+				<div class="process-desc" data-index="3">
+					<span class="process-desc__tag">The Process</span>
+					<h3>QA &<br>Launch</h3>
+					<p>I test across devices and browsers, handle DNS, analytics, and deployment. The go-live is coordinated, calm, and delivered on schedule.</p>
+				</div>
+				<div class="process-desc" data-index="4">
+					<span class="process-desc__tag">The Process</span>
+					<h3>Support &<br>Growth</h3>
+					<p>After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.</p>
+				</div>
+			</div>
+
+		</div>
+		</div>
+	</div>
+
+	<!-- Phones and tablets: the steps as cards that stack as you scroll,
+	     under the section title (which stays pinned). Each card sticks a
+	     little lower than the last, so the next slides up over it; the one
+	     covered recedes and goes dark. Pure CSS — sticky plus scroll-driven
+	     animations — so it moves with the browser's own scroll, no script
+	     per frame. Desktop keeps the rail above. -->
+	<div class="pstack" aria-label="The process, step by step">
+		{steps.map((st, i) => (<>
+			<span class="pstack__mark" style={`view-timeline-name:--pm${i}`} aria-hidden="true"></span>
+			<article class="pstack__card" style={`--i:${i};--next:${i < steps.length - 1 ? `--pm${i + 1}` : 'none'}`}>
+				<div class="pstack__media">
+					<Image
+						class="pstack__img"
+						src={st.img}
+						alt=""
+						widths={[480, 800, 1200]}
+						sizes="(min-width: 700px) 440px, 100vw"
+						loading="lazy"
+					/>
+				</div>
+				<div class="pstack__copy">
+					<div class="pstack__head">
+						<span class="pstack__num">{String(i + 1).padStart(2, '0')}</span>
+						<span class="pstack__tag">The Process</span>
+					</div>
+					<h3 class="pstack__title">{st.title}</h3>
+					<p class="pstack__desc">{st.desc}</p>
+				</div>
+				<span class="pstack__dim" aria-hidden="true"></span>
+			</article>
+		</>))}
+	</div>
+
+</section>
+
+<style>
+	#showcase {
+		position: relative;
+		z-index: 45;
+		color: rgb(var(--c-cream));
+		/* Full-bleed, independent of .process-rail__stage's centered
+		   max-width — on ultra-wide monitors the stage's content sits well
+		   clear of the screen edges (see max-width below), but the section
+		   itself still needs to paint over the full viewport width while
+		   pinned. */
+		background: rgb(var(--c-bg));
+	}
+	.showcase__intro {
+		padding: var(--section-space-top) var(--site-gutter) 0.7rem;
+		width: 100%;
+		box-sizing: border-box;
+		opacity: 0;
+		filter: blur(8px);
+		transform: translateY(14px);
+		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
+	}
+	.showcase__title {
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(3.5rem, 8vw, 11rem);
+		line-height: 0.9;
+		letter-spacing: -0.02em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream));
+	}
+	.showcase__title em { font-style: normal; color: rgb(var(--c-red)); }
+
+	/* Desktop only: no position:sticky here at all — .showcase__intro is
+	   moved (by initShowcase() below) inside .process-rail__pin, which is
+	   the ONE sticky element for the whole section. An earlier version
+	   made .showcase__intro sticky on its own, sharing a tall CSS-grid
+	   cell with .process-rail so it would stay pinned for the whole rail
+	   scroll. That worked for getting it to pin, but two *independent*
+	   sticky elements of different heights sharing one tall container
+	   don't release at the same scroll position — a shorter sticky
+	   element (the title) has more room left before it hits its
+	   container's bottom edge than a taller one (the rail stage) does, so
+	   the stage would start sliding back up — opaque background and all —
+	   right over the still-pinned title for a stretch of scroll near the
+	   end. Folding both into one sticky parent sidesteps the mismatch
+	   entirely: there's only one release point because there's only one
+	   sticky element. */
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.showcase__intro {
+			/* The title always starts just below the top blur band, on any
+			   screen: the band's height (utils/gradualBlur.js — keep the two
+			   in step) plus a little. It used to follow the screen's height
+			   (7vh), while the band follows its width, so on wide screens the
+			   top of the title fell into the blur. */
+			padding-top: calc(clamp(5.5rem, 6vw, 7rem) + 0.5rem);
+			/* More breathing room below the title before the rail starts —
+			   the base (mobile-first) rule only has 0.7rem here. */
+			padding-bottom: clamp(2rem, 4vh, 3.5rem);
+			flex: 0 0 auto;
+			/* Starts hidden and fades up once the section approaches the
+			   viewport (see .is-visible, toggled by an IntersectionObserver
+			   below) — the title arrives on its own first, well before the
+			   lead-in slot lets any pair start sliding in, so there's no
+			   risk of it lagging behind already-visible content. filter: none overrides the base
+			   (mobile) blur-in rule — combined with the font-size shrink
+			   further down, that filter was getting real compositor
+			   glitches out of a software-rendered browser during the
+			   transition; plain opacity + transform is lighter and just as
+			   smooth. */
+			opacity: 0;
+			filter: none;
+			transform: translateY(16px);
+			transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16,1,0.3,1);
+		}
+		.showcase__intro.is-visible {
+			opacity: 1;
+			transform: none;
+		}
+		/* The shrink-on-scroll lives on this inner wrapper's own font-size
+		   (via --title-scale), not on .showcase__intro itself —
+		   .showcase__intro's padding-top exists purely to clear the fixed
+		   logo, and that clearance has to stay constant, not shrink along
+		   with the title. Real font-size (not transform: scale()) so the
+		   text reflows and stays crisp instead of getting resampled. */
+		/* 13vh cap: on wide-but-short laptops the 8vw title ate the height
+		   the rail below needs; unchanged on ≥900px-tall screens. */
+		.showcase__intro-content .showcase__title {
+			font-size: calc(clamp(3.5rem, min(8vw, 13vh), 11rem) * var(--title-scale, 1));
+		}
+	}
+
+	/* ── Process rail (desktop "meet in the middle") ── */
+	.process-rail { display: none; }
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.process-rail {
+			display: block;
+			/* 100vh + the pairs' scroll incl. their holds — see HOLD_VH in
+			   the script (keep the two in step). */
+			height: 407.5vh;
+		}
+		/* The one sticky element for the whole section — see the long
+		   comment above .showcase__intro's desktop rule for why this
+		   replaced two independent sticky elements. Always exactly
+		   viewport-tall and pinned at top:0; .showcase__intro (flex: 0 0
+		   auto, moved in here by JS) and .process-rail__stage (flex: 1 1
+		   auto) just share that fixed height via ordinary flex layout —
+		   no coordinated offset/height math needed between them at all. */
+		.process-rail__pin {
+			position: sticky;
+			top: 0;
+			height: 100vh;
+			display: flex;
+			flex-direction: column;
+			overflow: hidden;
+			background: rgb(var(--c-bg));
+			/* Reserve the bottom band where the fixed MENU button lives
+			   (#ox-hud-mobile: ~54px tall at bottom: 1.5rem, plus the location
+			   badge / social dock). border-box + the flex column means this
+			   just lifts the whole vertically-centered rail — image, numbers,
+			   descriptions — clear of that button instead of centering the
+			   photo right under it. The JS reads the stage's resulting height
+			   for its travel math, so the choreography stays in proportion.
+			   The button's top edge sits ~92px up (1.5rem + 68px), so the
+			   124px floor keeps ~30px clear on short laptop screens — the old
+			   90px floor let the photo touch the button there. */
+			padding-bottom: clamp(124px, 16vh, 150px);
+		}
+		.process-rail__stage {
+			flex: 1 1 auto;
+			min-height: 0;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: clamp(2rem, 4vw, 5rem);
+			width: 100%;
+			max-width: var(--site-max-width);
+			margin: 0 auto;
+			padding: 0 var(--site-gutter);
+			box-sizing: border-box;
+			overflow: hidden;
+		}
+		.process-rail__col {
+			position: relative;
+			flex: 1 1 0;
+			height: 100%;
+			overflow: hidden;
+			display: flex;
+			align-items: center;
+		}
+		.process-rail__col--num { justify-content: flex-start; }
+		/* Size container, so the step heading can scale with the column's
+		   own width (see .process-desc h3). */
+		.process-rail__col--desc { justify-content: flex-end; container-type: inline-size; }
+
+		.process-num {
+			position: absolute;
+			left: 0;
+			top: 50%;
+			width: 100%;
+			font-family: var(--f-display);
+			font-weight: 700;
+			/* Height-capped too (10vh) so it shrinks with short laptop
+			   screens along with the photo. */
+			font-size: clamp(3rem, min(6vw, 10vh), 6rem);
+			line-height: 1;
+			letter-spacing: -0.01em;
+			color: rgba(255,255,255,0.16);
+			transition: color 0.3s ease;
+			will-change: transform, opacity;
+		}
+		.process-num.is-active { color: rgb(var(--c-cream)); }
+
+		.process-desc {
+			position: absolute;
+			right: 0;
+			top: 50%;
+			width: 100%;
+			text-align: right;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 0.8rem;
+			max-width: 38ch;
+			margin-left: auto;
+			will-change: transform, opacity;
+		}
+		.process-desc__tag {
+			font-family: var(--f-body);
+			font-size: 10px;
+			font-weight: 300;
+			letter-spacing: 0.42em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.72);
+		}
+		.process-desc h3 {
+			font-family: var(--f-display);
+			font-weight: 600;
+			/* 12cqi: the longest single word ("DEVELOPMENT") always fits the
+			   description column, whatever the screen's width/height mix. */
+			font-size: clamp(1.1rem, min(2.6vw, 4.4vh, 12cqi), 2.6rem);
+			letter-spacing: -0.01em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream));
+			line-height: 0.98;
+		}
+		.process-desc p {
+			font-family: var(--f-body);
+			font-size: clamp(0.85rem, 1vw, 0.98rem);
+			font-weight: 300;
+			line-height: 1.7;
+			color: rgb(var(--c-cream) / 0.82);
+		}
+
+		.process-rail__media {
+			flex: 0 0 auto;
+			/* Landscape frame. Width-driven within a premium range; height follows the
+			   3/2 ratio and is still clamped to the pinned stage's own box
+			   via max-height: 100% so it can't run into the shrunk title
+			   above or the fixed menu button below on shorter laptops —
+			   object-fit: cover just crops in that case. The JS reads the
+			   resulting stage height for its travel math, so the number /
+			   description choreography stays in proportion. Also capped by
+			   viewport height (64vh), so on wide-but-short laptops the frame
+			   scales down with the screen instead of filling the whole stage;
+			   ≥900px-tall screens are unaffected. */
+			width: clamp(320px, min(40vw, 64vh), 600px);
+			max-width: 100%;
+			aspect-ratio: 3 / 2;
+			max-height: 100%;
+			position: relative;
+			overflow: hidden;
+			border: 1px solid rgba(255,255,255,0.08);
+			background: #060608;
+			/* The tile itself (border + background), not just the <img>
+			   inside it — otherwise the empty frame sits there visible on
+			   its own before any pair has faded in. No transition: driven
+			   directly per scroll frame, same as everything else in the
+			   rail, so it can't lag behind or feel disconnected from the
+			   actual scroll position. */
+			opacity: 0;
+		}
+		.process-rail__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			opacity: 0;
+			/* No transition — driven directly per scroll frame in JS, same
+			   as everything else in the rail (see the comment on
+			   .process-rail__media above). This used to crossfade via a
+			   0.5s CSS transition on a binary is-active toggle, layered
+			   under the container's own scroll-locked opacity — the two
+			   fell out of sync on anything but a slow, steady scroll,
+			   since the crossfade ran on a wall-clock timer while the
+			   container followed scroll position exactly. */
+			filter: grayscale(100%) contrast(1.1) brightness(0.75);
+		}
+	}
+
+	/* Every desktop screen: the three columns used to be
+	   pushed to the edges — the number far left, the copy far right, a small
+	   photo alone in the middle — and read as three separate things. Here
+	   they close in on the photo as one group: the number right beside its
+	   left edge, the copy right beside its right edge (left-aligned now,
+	   facing it), and the photo itself larger. */
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.process-rail__stage {
+			justify-content: center;
+			gap: clamp(1.75rem, 3vw, 3.5rem);
+		}
+		/* Same width both sides, so the photo sits on the page's centre
+		   line (with the MENU button); the number is right-aligned in its
+		   column, against the photo. */
+		.process-rail__col--num,
+		.process-rail__col--desc { flex: 0 1 clamp(240px, 27vw, 430px); }
+		.process-num { text-align: right; }
+		.process-desc {
+			left: 0;
+			right: auto;
+			margin-left: 0;
+			text-align: left;
+			align-items: flex-start;
+		}
+		.process-rail__media { width: clamp(360px, min(46vw, 78vh), 820px); }
+	}
+
+	/* Big monitors (27-32"+): the rail's caps were set for ~1440-1920px and
+	   left it small and bunched in the middle of a 2400px+ screen. Past
+	   1900px the stage widens and the photo, number and copy scale up with
+	   it — the height caps stay, so a wide-but-short screen is still safe.
+	   Below 1900px nothing changes. */
+	@media (min-width: 1900px) and (hover: hover), (min-width: 1900px) and (pointer: fine) {
+		.process-rail__stage { max-width: min(100%, 2000px); }
+		/* Same grouped layout as below 1900px, scaled up in proportion. */
+		.process-rail__media { width: clamp(360px, min(46vw, 78vh), 1300px); }
+		.process-rail__col--num,
+		.process-rail__col--desc { flex-basis: clamp(240px, 27vw, 640px); }
+		.process-num { font-size: clamp(3rem, min(6vw, 11vh), 9rem); }
+		.process-desc { max-width: 42ch; gap: 1rem; }
+		.process-desc__tag { font-size: clamp(10px, 0.55vw, 14px); }
+		.process-desc h3 { font-size: clamp(1.1rem, min(2.6vw, 5vh, 12cqi), 3.6rem); }
+		.process-desc p { font-size: clamp(0.85rem, 0.9vw, 1.35rem); }
+	}
+
+	/* ── Process stack (phones and tablets; desktop has the rail) ── */
+	.pstack { display: none; }
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		/* The title stays pinned while the cards stack under it; the cards
+		   stick just below it (--pstack-top, its measured height, set by
+		   initProcessStackTop). Its own fade covers cards sliding under. */
+		.showcase__intro {
+			position: sticky;
+			top: 0;
+			z-index: 6;
+			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
+			padding: 4.75rem var(--site-gutter) 1.1rem;
+			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
+		}
+		.showcase__title { font-size: clamp(2.8rem, 11vw, 4.6rem); }
+		/* The title lets go with the deck, not after it: its margin reaches
+		   down a card's height plus the stack's bottom padding
+		   (--pstack-lead, measured), and the stack pulls back up by the
+		   same — layout unchanged, only the title's pin runs out with the
+		   cards'. Flex column, so the margins don't collapse. */
+		#showcase { display: flex; flex-direction: column; }
+		.showcase__intro { margin-bottom: var(--pstack-lead, 0px); }
+		.pstack { margin-top: calc(-1 * var(--pstack-lead, 0px)); }
+		.pstack {
+			display: block;
+			padding: 0.5rem var(--site-gutter) clamp(5rem, 14vw, 7rem);
+		}
+		/* Zero-height markers in the flow, one before each card: the next
+		   card's marker is the timeline its predecessor recedes on. */
+		.pstack__mark { display: block; height: 0; }
+		/* Small: the next card follows right under the one that just
+		   stuck instead of arriving out of a long stretch of black. */
+		.pstack__mark:not(:first-child) {
+			margin-top: 22svh;
+			margin-top: calc(var(--app-stable-vh, 1svh) * 22);
+		}
+		.pstack__card {
+			position: sticky;
+			top: var(--pstack-top, 10rem);
+			/* All the cards as tall as the tallest (--pstack-card-h, measured):
+			   with their own heights, the ones behind poked out under the one in
+			   front at different depths. */
+			min-height: var(--pstack-card-h, 0px);
+			display: flex;
+			flex-direction: column;
+			background: #0c0c0e;
+			border: 1px solid rgb(var(--c-cream) / 0.1);
+			/* Cast up onto the card it's covering — the depth of the deck. */
+			box-shadow: 0 -22px 44px -16px rgb(0 0 0 / 0.85);
+			overflow: hidden;
+		}
+		/* Darkens the card as the next one covers it. */
+		.pstack__dim {
+			position: absolute;
+			inset: 0;
+			z-index: 2;
+			background: #000;
+			opacity: 0;
+			pointer-events: none;
+		}
+		.pstack__media {
+			position: relative;
+			/* Explicit width: with aspect-ratio + max-height, Safari narrows the box
+			   to keep the ratio once the height cap kicks in (Chrome keeps it full
+			   width), so on an iPhone the picture didn't fill the card. */
+			width: 100%;
+			aspect-ratio: 16 / 10;
+			max-height: 30vh;
+			overflow: hidden;
+			background: #060608;
+		}
+		.pstack__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			filter: grayscale(100%) contrast(1.1) brightness(0.78);
+		}
+		.pstack__copy {
+			display: flex;
+			flex-direction: column;
+			gap: 0.75rem;
+			padding: 1.3rem 1.3rem 1.5rem;
+		}
+		.pstack__head {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+		.pstack__num {
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2rem, 9vw, 2.8rem);
+			line-height: 1;
+			letter-spacing: -0.01em;
+			color: rgb(var(--c-red));
+		}
+		.pstack__tag {
+			font-family: var(--f-body);
+			font-size: 11px;
+			font-weight: 500;
+			letter-spacing: 0.28em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.5);
+		}
+		.pstack__title {
+			margin: 0;
+			font-family: var(--f-display);
+			font-weight: 600;
+			font-size: clamp(1.6rem, 7vw, 2.4rem);
+			line-height: 0.98;
+			letter-spacing: -0.01em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream));
+		}
+		.pstack__desc {
+			margin: 0;
+			max-width: 46ch;
+			font-family: var(--f-body);
+			font-size: 0.9rem;
+			font-weight: 300;
+			line-height: 1.65;
+			color: rgb(var(--c-cream) / 0.72);
+		}
+		/* Tablet width: picture on the left, the copy on the right. */
+		@media (min-width: 700px) {
+			.pstack__card {
+				flex-direction: row;
+				align-items: stretch;
+			}
+			.pstack__media {
+				flex: 0 0 48%;
+				aspect-ratio: auto;
+				max-height: none;
+				min-height: clamp(260px, 42vh, 380px);
+			}
+			.pstack__copy {
+				flex: 1 1 auto;
+				justify-content: center;
+				padding: 2rem 2.2rem;
+			}
+			.pstack__title { font-size: clamp(1.8rem, 3.6vw, 2.6rem); }
+			.pstack__desc { font-size: 0.95rem; }
+			.pstack__media { min-height: clamp(240px, 38vh, 360px); }
+		}
+		/* The card being covered steps back into the deck — a touch smaller
+		   and up — and goes into the dark, scrubbed by the next card's
+		   approach. Compositor-driven (scroll-driven animations): Chrome /
+		   Android and Safari 26+. Elsewhere the cards simply stack. */
+		@supports (animation-timeline: view()) {
+			.pstack { timeline-scope: --pm1, --pm2, --pm3, --pm4; }
+			.pstack__card,
+			.pstack__dim {
+				animation-duration: 1ms;
+				animation-timing-function: linear;
+				animation-fill-mode: both;
+				animation-timeline: var(--next);
+				animation-range: cover 12% cover 76%;
+			}
+			.pstack__card { animation-name: pstack-recede; }
+			.pstack__dim { animation-name: pstack-dark; }
+		}
+	}
+	@keyframes pstack-recede {
+		to { transform: translateY(-3px) scale(0.97); }
+	}
+	@keyframes pstack-dark {
+		to { opacity: 0.72; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.process-num, .process-desc, .process-rail__img { transition: none !important; }
+	}
+</style>
+
+<script>
+	import { onReady } from '../../utils/onReady';
+	let _railCleanup: (() => void) | null = null;
+
+	const STEPS = 5;
+	// How wide (in scroll-progress units, 0–1 across the whole rail) each
+	// pair's own crossing window is. Bigger than the per-step spacing below
+	// so consecutive pairs overlap in view a bit, like a conveyor, instead
+	// of one strictly finishing before the next starts. Briefly tried 0.08
+	// (narrower, so each crossing covers less scroll) to make the reveal
+	// feel snappier, but that made the pair-to-pair handoff itself feel
+	// too fast/rushed — reverted back to 0.11. The "too slow" feedback
+	// that prompted the 0.08 attempt was actually about LEAD_IN (the
+	// initial entrance delay), not this — see LEAD_IN below.
+	const WINDOW = 0.11;
+	// Progress reaches 1 (fully shrunk) by the time SHRINK_END of the
+	// rail's total scroll has gone by.
+	const SHRINK_END = 0.10;
+	// Pair 0's actual fade-in *start* point is NOT LEAD_IN itself — it's
+	// center_0 - WINDOW, and center_0 is LEAD_IN + half a step further in
+	// (see `center` below), so it lands a bit later than LEAD_IN's own
+	// value would suggest. Landing this around the MIDDLE of the shrink
+	// window (~0.05, half of SHRINK_END) rather than after it (old
+	// behaviour: waited for the shrink to finish first, felt delayed) or
+	// right at progress 0 (tried that too: the image was already visible
+	// before the section had even properly started). This is the middle
+	// ground — title shrinks alone for a beat, then the rail content
+	// starts rising while it finishes.
+	const LEAD_IN = 0.075;
+	const TRAIL_OUT = 0.06;
+	// The fractions above are of the rail's original scroll (BASE_VH, a
+	// 460vh rail). Each pair now also HOLDS at center, numbers and copy
+	// standing still for HOLD_VH of scroll — the same pause as the Services
+	// page's cards — eased into and out of over HOLD_EASE (in crossing-
+	// window units). The rail grows by exactly that much, so the motion
+	// between holds keeps its old pace.
+	const BASE_VH = 200;
+	const HOLD_VH = 16;
+	const HOLD_EASE = 0.25;
+	const WINDOW_VH = WINDOW * BASE_VH;
+	const STEP_VH = (1 - LEAD_IN - TRAIL_OUT) * BASE_VH / STEPS + HOLD_VH + HOLD_EASE * WINDOW_VH;
+	// = LEAD_IN * BASE_VH + STEPS * STEP_VH + TRAIL_OUT * BASE_VH = 307.5;
+	// the rail's CSS height is 100vh plus this (407.5vh) — set there, not
+	// from here, so the sections below lay out right from the first paint.
+	const HOLD_HALF = HOLD_VH / 2 / WINDOW_VH;
+	// raw → raw with a flat stretch around 0 (the hold), entered and left
+	// with a smooth bend instead of a dead stop.
+	function holdAtCenter(raw: number): number {
+		const a = Math.abs(raw);
+		if (a <= HOLD_HALF) return 0;
+		const d = a - HOLD_HALF;
+		return Math.sign(raw) * (d < HOLD_EASE ? (d * d) / (2 * HOLD_EASE) : d - HOLD_EASE / 2);
+	}
+
+	function initShowcase() {
+		const section = document.getElementById('showcase');
+		if (!section) return;
+
+		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		if (isMobile) return;
+
+		const sectionEl = section;
+		const intro = sectionEl.querySelector<HTMLElement>('.showcase__intro');
+		const rail = sectionEl.querySelector<HTMLElement>('.process-rail');
+		const pin = sectionEl.querySelector<HTMLElement>('.process-rail__pin');
+		const stage = sectionEl.querySelector<HTMLElement>('.process-rail__stage');
+		const numEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.process-num'));
+		const descEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.process-desc'));
+		const imgEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.process-rail__img'));
+		const mediaEl = sectionEl.querySelector<HTMLElement>('.process-rail__media');
+		if (!rail || !pin || !stage || !numEls.length) return;
+
+		// Markup keeps .showcase__intro as a plain sibling before
+		// .process-rail so mobile (which never runs this branch) renders
+		// it normally. Desktop needs it inside .process-rail__pin instead,
+		// ahead of the stage, so the two share ONE sticky element rather
+		// than being two independent ones — see the CSS comment on
+		// .process-rail__pin for why that distinction matters.
+		if (intro) pin.insertBefore(intro, stage);
+
+		const TITLE_MIN_SCALE = 0.56;
+
+		// The rail's own height (the ONE thing that determines how much
+		// room the stage has once the title's done shrinking) at each end
+		// of the shrink range — measured directly rather than derived from
+		// --title-scale each frame, so updateRail() never has to read
+		// layout back after writing it (that read-after-write is what
+		// causes forced synchronous layout / scroll jank).
+		let stageHFull = 0;
+		let stageHShrunk = 0;
+		function measureStageHeights() {
+			sectionEl.style.setProperty('--title-scale', '1');
+			stageHFull = stage!.getBoundingClientRect().height;
+			sectionEl.style.setProperty('--title-scale', String(TITLE_MIN_SCALE));
+			stageHShrunk = stage!.getBoundingClientRect().height;
+			// Leave it at the shrunk value — updateRail() runs right after
+			// this on every call site and sets the real, current value.
+		}
+		measureStageHeights();
+		window.addEventListener('resize', measureStageHeights);
+		// The title uses the custom display font, loaded with
+		// font-display: swap — correct the measurement once it's in.
+		document.fonts?.ready?.then(measureStageHeights).catch(() => {});
+
+		function updateRail() {
+			// .process-rail__pin is the only sticky element now (see its
+			// CSS comment) — its release point is simply railHeight minus
+			// its own fixed 100vh, with no title-height/offset math to get
+			// wrong.
+			const railRect = rail!.getBoundingClientRect();
+			const totalScrollable = Math.max(1, railRect.height - window.innerHeight);
+			const scrolled = Math.max(0, Math.min(totalScrollable, -railRect.top));
+			// Scroll in vh of the screen — the pairs' timing is set in vh.
+			const scrolledVh = scrolled / Math.max(1, window.innerHeight) * 100;
+
+			// Shrink the title early in the scroll so the rail gets more
+			// headroom once the first pair starts arriving — on short/wide
+			// (32"/24") monitors the full-size title alone leaves too
+			// little vertical room for the rail underneath it.
+			const shrinkT = Math.max(0, Math.min(1, scrolledVh / (SHRINK_END * BASE_VH)));
+			const titleScale = 1 - shrinkT * (1 - TITLE_MIN_SCALE);
+			sectionEl.style.setProperty('--title-scale', String(titleScale));
+
+			// Interpolated from the two cached measurements above instead
+			// of read live — see measureStageHeights().
+			const stageH = Math.max(1, stageHFull + (stageHShrunk - stageHFull) * shrinkT);
+			// Kept well short of the full half-height so numbers/descriptions
+			// never travel into the fixed bottom-left location badge or the
+			// fixed bottom-right social icons/clock (both sit above every
+			// section, z-index 9100 in OxygenMenu.astro).
+			const reach = stageH * 0.4;
+			let activeIndex = -1;
+			let bestOpacity = 0;
+			let bestImgOpacity = 0;
+			// How far before crossing (in the same units as `raw`) the center
+			// image starts rising — it should be fully visible (opacity 1)
+			// by the moment its pair's number/description actually reach
+			// center, not still ramping up or already fading back out at
+			// that point. Pair 0 gets a much bigger window than the rest:
+			// it's the only one with no preceding pair to clash with, so it
+			// can start emerging right alongside the title's own shrink
+			// instead of waiting for the window to open. Unlike the old
+			// "shift raw and reuse the symmetric text-opacity curve"
+			// approach, this window's width no longer has to stay under 1.0
+			// — see the asymmetric rise/fall right below, the rise always
+			// lands exactly on 1 at raw 0 regardless of how wide it is.
+			const TEXT_BLUR = 8;       // px, at fully transparent
+			const IMAGE_SETTLE = 0.04; // scale above 1, at fully transparent
+			const IMAGE_LEAD = 0.35;
+			const IMAGE_LEAD_ENTRANCE = 1.2;
+			// How gently the last pair settles into its final centered
+			// position instead of hitting a hard stop — see lastPairEase()
+			// below.
+			const FREEZE_EASE = 0.5;
+
+			// Smoothly decelerates `raw` to exactly 0 as it crosses into
+			// the last FREEZE_EASE (in raw units) before center, instead of
+			// hard-clamping it to 0 the instant it passes center. A hard
+			// clamp keeps constant velocity right up until the clamp
+			// engages and then instantly zeroes it — a real, felt jolt —
+			// where this keeps position AND velocity continuous, landing
+			// at a natural-feeling stop instead of hitting a wall.
+			function lastPairEase(raw: number): number {
+				if (raw >= 0) return 0;
+				if (raw <= -FREEZE_EASE) return raw;
+				const u = (raw + FREEZE_EASE) / FREEZE_EASE; // 0 at -FREEZE_EASE, 1 at 0
+				return FREEZE_EASE * (-u * u * u + u * u + u - 1);
+			}
+
+			// Centers spread evenly across [LEAD_IN, 1-TRAIL_OUT], not across
+			// the full 0–1 range — LEAD_IN reserves a leading slice of
+			// scroll where no pair has arrived yet, so the section opens on
+			// the title alone (and finishes shrinking) before the first
+			// pair starts sliding in. TRAIL_OUT mirrors that at the tail
+			// end, before the sticky pin releases.
+			for (let i = 0; i < STEPS; i++) {
+				const centerVh = LEAD_IN * BASE_VH + (i + 0.5) * STEP_VH;
+				const raw = holdAtCenter((scrolledVh - centerVh) / WINDOW_VH);
+				// The last pair doesn't cross back past center and fade/
+				// drift back out once it's arrived — it eases to a stop
+				// instead, and both its position and opacity just hold
+				// from then on, rather than continuing to slide up and off
+				// before the section releases.
+				const isLast = i === STEPS - 1;
+				const rawPos = isLast ? lastPairEase(raw) : raw;
+				const y = -rawPos * reach;
+				const opacity = Math.max(0, Math.min(1, 1.35 - Math.abs(rawPos) * 1.35));
+
+				// Numbers and descriptions come out of a blur as they arrive and
+				// go back into it as they leave, off the same curve as their
+				// opacity (nothing extra to work out). They're small; the big image
+				// tiles get no blur — filtering them every scroll frame is what janks.
+				const blur = `blur(${((1 - opacity) * TEXT_BLUR).toFixed(2)}px)`;
+				const numEl = numEls[i];
+				const descEl = descEls[i];
+				if (numEl) {
+					numEl.style.transform = `translateY(calc(-50% + ${y.toFixed(1)}px))`;
+					numEl.style.opacity = String(opacity);
+					numEl.style.filter = blur;
+				}
+				if (descEl) {
+					descEl.style.transform = `translateY(calc(-50% + ${(-y).toFixed(1)}px))`;
+					descEl.style.opacity = String(opacity);
+					descEl.style.filter = blur;
+				}
+				// The "active" pair (driving the number's highlight color)
+				// is whichever one is currently most visible, not just
+				// whichever is geometrically closest to center — at
+				// progress 0 (LEAD_IN not yet crossed), pair 0 is the
+				// closest but still fully transparent, and picking it
+				// regardless used to highlight it before anything had
+				// actually scrolled into view.
+				if (opacity > bestOpacity) { bestOpacity = opacity; activeIndex = i; }
+
+				// Asymmetric on purpose, unlike the text's opacity curve:
+				// ramp UP linearly over the lead window so it lands on
+				// exactly 1 right as rawPos crosses 0 (this is what actually
+				// lets the image emerge earlier than its number/description
+				// while still guaranteeing it's fully visible, not fading,
+				// at the moment they meet) — then fall at the SAME rate the
+				// text itself recedes at post-crossing, so image and text
+				// disappear together instead of the image lagging behind on
+				// its own independent timer. rawPos (not raw) so the last
+				// pair, which eases to a stop at 0 and never goes positive,
+				// automatically holds its image at 1 forever after too.
+				const riseWindow = i === 0 ? IMAGE_LEAD_ENTRANCE : IMAGE_LEAD;
+				const imgOpacity = rawPos <= 0
+					? Math.max(0, Math.min(1, (rawPos + riseWindow) / riseWindow))
+					: Math.max(0, Math.min(1, 1.35 - rawPos * 1.35));
+				const imgEl = imgEls[i];
+				if (imgEl) {
+					imgEl.style.opacity = String(imgOpacity);
+					// Settles from a hair oversized as it fades in (a transform,
+					// cheap on the compositor), instead of a blur.
+					imgEl.style.transform = `scale(${(1 + (1 - imgOpacity) * IMAGE_SETTLE).toFixed(4)})`;
+				}
+				bestImgOpacity = Math.max(bestImgOpacity, imgOpacity);
+			}
+
+			numEls.forEach((el, i) => el.classList.toggle('is-active', i === activeIndex));
+			if (mediaEl) mediaEl.style.opacity = String(bestImgOpacity);
+		}
+
+		// updateRail() writes a layout-affecting style every call (the
+		// title's font-size, via --title-scale) — 'scroll' can fire
+		// several times per animation frame during a fast flick, and
+		// running a full layout write on every single one of those is how
+		// you get scroll jank and stale/torn compositor frames. rAF-batch
+		// it down to at most once per frame instead.
+		let rafId = 0;
+		function onScroll() {
+			if (rafId) return;
+			rafId = requestAnimationFrame(() => {
+				rafId = 0;
+				updateRail();
+			});
+		}
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('resize', updateRail);
+		updateRail();
+
+		// The title fades/blurs in on its own the first time the section
+		// approaches the viewport, instead of just snapping to visible the
+		// moment it pins — rootMargin fires this a bit before the section's
+		// top actually reaches the bottom of the screen, so it's done
+		// revealing by the time the section is properly in view.
+		let introObserver: IntersectionObserver | null = null;
+		if (intro) {
+			introObserver = new IntersectionObserver((entries) => {
+				if (entries[0]?.isIntersecting) {
+					intro.classList.add('is-visible');
+					introObserver?.disconnect();
+				}
+			}, { rootMargin: '0px 0px -10% 0px', threshold: 0.01 });
+			introObserver.observe(sectionEl);
+		}
+
+		_railCleanup = () => {
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('resize', updateRail);
+			window.removeEventListener('resize', measureStageHeights);
+			if (rafId) cancelAnimationFrame(rafId);
+			introObserver?.disconnect();
+		};
+	}
+
+	onReady(initShowcase);
+
+	// Phones/tablets: the process cards stick just under the pinned title —
+	// hand its height to the CSS. A ResizeObserver, not a scroll handler.
+	let _stackTopObserver: ResizeObserver | null = null;
+	function initProcessStackTop() {
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
+		const section = document.getElementById('showcase');
+		const intro = section?.querySelector<HTMLElement>('.showcase__intro');
+		if (!section || !intro || !section.querySelector('.pstack')) return;
+		const stack = section.querySelector<HTMLElement>('.pstack')!;
+		const cards = Array.from(stack.querySelectorAll<HTMLElement>('.pstack__card'));
+		const set = () => {
+			section.style.setProperty('--pstack-top', `${intro.offsetHeight}px`);
+			// Every card as tall as the tallest: measure their own heights
+			// (the minimum off), then give them all that one.
+			section.style.setProperty('--pstack-card-h', '0px');
+			const tallest = Math.max(0, ...cards.map((c) => c.offsetHeight));
+			section.style.setProperty('--pstack-card-h', `${tallest}px`);
+			const pad = parseFloat(getComputedStyle(stack).paddingBottom) || 0;
+			if (cards[0]) section.style.setProperty('--pstack-lead', `${cards[0].offsetHeight + pad}px`);
+		};
+		set();
+		_stackTopObserver = new ResizeObserver(set);
+		_stackTopObserver.observe(intro);
+		cards.forEach((c) => _stackTopObserver!.observe(c));
+	}
+	document.addEventListener('astro:page-load', initProcessStackTop);
+
+	document.addEventListener('astro:before-swap', () => {
+		_railCleanup?.();
+		_railCleanup = null;
+		_stackTopObserver?.disconnect();
+		_stackTopObserver = null;
+	});
+</script>

@@ -1,16 +1,23 @@
 ---
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 // Every service uses the same deer photo for now (the site's CSP blocks remote
 // images, so it is the local file). deeer2.webp is a huge source (7360px wide) —
 // <Image> below generates the small versions each spot needs.
 import imgDeer from '../../img/deeer2.webp';
+// The desktop hover picture is WebGL (437px on screen): one local photo per service.
+import glWebsites from '../../img/services/websites.jpg';
+import glBranding from '../../img/services/branding.jpg';
+import glMotion from '../../img/services/motion.jpg';
+import glStrategy from '../../img/services/strategy.jpg';
 
 const services = [
-	{ name: 'Websites', img: imgDeer, pos: '50% 50%', desc: 'High-performance websites built to convert and scale.' },
-	{ name: 'Branding', img: imgDeer, pos: '20% 40%', desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
-	{ name: 'Motion', img: imgDeer, pos: '80% 60%', desc: 'Animation and motion systems that bring interfaces to life.' },
-	{ name: 'Strategy', img: imgDeer, pos: '50% 20%', desc: 'Creative direction and strategy built around your goals.' },
+	{ name: 'Websites', gl: glWebsites, img: imgDeer, pos: '50% 50%', desc: 'High-performance websites built to convert and scale.' },
+	{ name: 'Branding', gl: glBranding, img: imgDeer, pos: '20% 40%', desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
+	{ name: 'Motion', gl: glMotion, img: imgDeer, pos: '80% 60%', desc: 'Animation and motion systems that bring interfaces to life.' },
+	{ name: 'Strategy', gl: glStrategy, img: imgDeer, pos: '50% 20%', desc: 'Creative direction and strategy built around your goals.' },
 ];
+const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ src: sv.gl, width: 960 })).src));
+services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 ---
 <!-- ═══════ SERVICES ═══════ -->
 <section id="services">
@@ -74,7 +81,7 @@ const services = [
 		<div class="svc__col">
 			<ul class="svc__list">
 				{services.map((sv, i) => (
-					<li class:list={['svc__row', i === 0 && 'is-active']} data-i={i}>
+					<li class="svc__row" data-key={`s${i}`} data-src={sv.glSrc}>
 						<a href="/services" class="svc__link">
 								<span class="svc__roll">
 									<span class="svc__roll__base">{sv.name}</span>
@@ -88,21 +95,6 @@ const services = [
 				<span class="svc__btn__line"></span>
 				See more
 			</a>
-		</div>
-		<div class="svc__media" aria-hidden="true">
-			{services.map((sv, i) => (
-				<Image
-					src={sv.img}
-					alt=""
-					widths={[480, 800, 1200]}
-					sizes="30vw"
-					loading="eager"
-					decoding="async"
-					class:list={['svc__img', i === 0 && 'is-active']}
-					data-i={i}
-					style={`object-position:${sv.pos}`}
-				/>
-			))}
 		</div>
 	</div>
 
@@ -224,61 +216,9 @@ const services = [
 		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
 		#services .svc__footer { display: none; }
 		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
-		.svc__media {
-			position: relative;
-			width: 100%;
-			aspect-ratio: 4 / 3;
-			max-height: 50vh;
-			overflow: hidden;
-			border: 1px solid rgba(255, 255, 255, 0.08);
-			background: #060608;
-		}
-		.svc__img {
-			position: absolute;
-			inset: 0;
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			filter: grayscale(100%) contrast(1.08) brightness(0.82);
-			opacity: 0;
-			transform: scale(1.05);
-			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
-		}
-		.svc__img.is-active { opacity: 1; transform: none; }
-
-		/* A real mouse: the picture is not a fixed panel on the right but a card
-		   that comes up in the middle of the screen while the pointer is on a
-		   name (initServices sets its place) and is gone otherwise — the reward
-		   for pointing at a name. */
-		@media (hover: hover) and (pointer: fine) {
-			.svc__body { grid-template-columns: minmax(0, 1fr); }
-			.svc__media {
-				position: fixed;
-				left: 0;
-				top: 0;
-				z-index: 60;
-				width: clamp(300px, 28vw, 480px);
-				max-height: none;
-				pointer-events: none;
-				opacity: 0;
-				filter: blur(12px);
-				/* Closed from the top: it opens upward, like a shutter lifting. */
-				clip-path: inset(22% 3% 0 3%);
-				transition: opacity 0.4s ease, filter 0.6s ease, clip-path 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-				will-change: transform, opacity, clip-path;
-			}
-			.svc__media.is-shown { opacity: 1; filter: none; clip-path: inset(0 0 0 0); }
-			/* The picture sits a little oversized inside its frame and slides
-			   against the card's own movement (--ix / --iy, set per frame), which
-			   gives the card depth; a new picture comes in from below or above,
-			   by whether the next name is further down or up the list. */
-			.svc__img {
-				translate: calc(var(--ix, 0) * 1px) calc(var(--iy, 0) * 1px);
-				scale: 1.14;
-				transform: translateY(calc(var(--svc-dir, 1) * 8%));
-				transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
-			}
-		}
+		/* The picture is WebGL, drawn on a canvas that fills the section behind
+		   the names (utils/hoverGallery.ts); the list sits above it. */
+		.svc__body { grid-template-columns: minmax(0, 1fr); position: relative; z-index: 1; }
 	}
 	/* Phones/tablets only — see the mobile block below. */
 	.svc-m { display: none; }
@@ -476,6 +416,9 @@ const services = [
 			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 		.svc-m__img.is-active { opacity: 1; transform: none; }
+		/* WebGL running: the canvas shows the pictures (same grade as the <img>s). */
+		.svc-m__media.is-gl .svc-m__img { display: none; }
+		.svc-m__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.8); }
 
 		/* Tablet width: the phone's stacked layout, scaled up — names, line
 		   and picture all bigger; the title the same size as What we've
@@ -522,6 +465,7 @@ const services = [
 
 <script>
 	import { onReady } from '../../utils/onReady';
+	import { createHoverGallery } from '../../utils/hoverGallery';
 
 	let _isBackNav = false;
 
@@ -541,7 +485,10 @@ const services = [
 	// page scrolls past it; tapping a name scrolls to its step.
 	let _svcScroll: (() => void) | null = null;
 	let _svcHeadObserver: ResizeObserver | null = null;
+	let _svcMobGl: (() => void) | null = null;
 	function initServicesMobile(section: HTMLElement) {
+		_svcMobGl?.();
+		_svcMobGl = null;
 		const scene = section.querySelector<HTMLElement>('.svc-m');
 		const pin = section.querySelector<HTMLElement>('.svc-m__pin');
 		if (!scene || !pin) return;
@@ -560,9 +507,32 @@ const services = [
 		if (header) _svcHeadObserver?.observe(header);
 		const head = () => parseFloat(getComputedStyle(pin).top) || 0;
 		let active = 0;
+
+		// The pictures change with the same fold/unfold as the desktop's (WebGL,
+		// utils/hoverGallery.ts) instead of a crossfade. The plain <img>s stay as
+		// the fallback (no WebGL2, or reduced motion) and are hidden when it runs.
+		const media = scene.querySelector<HTMLElement>('.svc-m__media');
+		const gallery = media && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+			? createHoverGallery(media, imgs.map((im, i) => ({ key: `m${i}`, src: (im as HTMLImageElement).currentSrc || (im as HTMLImageElement).src })), { fill: true })
+			: null;
+		let entered = false;
+		if (media && gallery) {
+			media.classList.add('is-gl');
+			// The first picture opens as the scene comes into view, not before.
+			const eio = new IntersectionObserver(([en]) => {
+				if (!en.isIntersecting) return;
+				entered = true;
+				gallery.setHovered(`m${active}`);
+				eio.disconnect();
+			});
+			eio.observe(media);
+			_svcMobGl = () => { eio.disconnect(); gallery.destroy(); media.classList.remove('is-gl'); };
+		}
+
 		const set = (i: number) => {
 			if (i === active) return;
 			active = i;
+			if (entered) gallery?.setHovered(`m${i}`);
 			[names, descs, imgs].forEach((list) => list.forEach((el, k) => el.classList.toggle('is-active', k === i)));
 		};
 		const range = () => Math.max(1, scene.offsetHeight - pin.offsetHeight);
@@ -588,9 +558,17 @@ const services = [
 		_svcScroll = null;
 		_svcHeadObserver?.disconnect();
 		_svcHeadObserver = null;
+		_svcMobGl?.();
+		_svcMobGl = null;
 	});
 
+	// Desktop: the WebGL hover gallery and its listeners, undone on leaving the page.
+	let _svcDesk: (() => void) | null = null;
+	document.addEventListener('astro:before-swap', () => { _svcDesk?.(); _svcDesk = null; });
+
 	function initServices() {
+		_svcDesk?.();
+		_svcDesk = null;
 		const section = document.getElementById('services');
 		if (!section) return;
 
@@ -619,153 +597,62 @@ const services = [
 		}
 
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
-		const imgs = Array.from(section.querySelectorAll<HTMLElement>('.svc__img'));
-		let active = 0;
-		const set = (i: number) => {
-			if (i === active) return;
-			section.style.setProperty('--svc-dir', i > active ? '1' : '-1');
-			active = i;
-			rows.forEach((r, n) => r.classList.toggle('is-active', n === i));
-			imgs.forEach((im, n) => im.classList.toggle('is-active', n === i));
-		};
-		// The name under the mouse (or with keyboard focus) is active; it stays on
-		// the last one when the mouse leaves.
-		rows.forEach((row, i) => {
-			row.querySelector('a')?.addEventListener('mouseenter', () => set(i));
-			row.querySelector('a')?.addEventListener('focus', () => set(i));
-		});
+		const list = section.querySelector<HTMLElement>('.svc__list');
 
-		// A real mouse: the picture is a card at the pointer's right while the
-		// pointer is on a name, travelling with it. It has weight: it trails the
-		// pointer a little late, leans and banks with its own speed, and the
-		// picture inside slides against the card. It never covers the letters of
-		// the name that is pointed at. It shows whenever a name is under the
-		// pointer — also when the list scrolled under a resting one — and goes
-		// away when the pointer is no longer on a name.
-		const card = section.querySelector<HTMLElement>('.svc__media');
-		if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
-			const list = section.querySelector<HTMLElement>('.svc__list');
-			const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1;
-			const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-			const GAP = 36;
-			let raf = 0, shown = false, idle = 0;
-			let px = pointer.x, py = pointer.y; // the pointer, as last seen
-			let textRight = 0; // where the pointed-at name's letters end
-			let lastRow: Element | null = null;
-			const cur = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 };
-			// Where the card wants to be: right of the pointer, past the end of the
-			// name's letters, vertically centred on the pointer. Always on the right
-			// (it never jumps across the pointer); at the screen's right edge it
-			// simply stops there and the pointer slides onto it. Kept on screen.
-			const target = () => {
-				const w = card.offsetWidth, h = card.offsetHeight;
-				// Before the pointer has moved on this page its position is unknown
-				// (it can rest on a name since the page was entered): the card then
-				// sits at the end of the name, on its row, until the first move.
-				const known = px >= 0;
-				const rowBox = lastRow?.getBoundingClientRect();
-				const cy = known ? py : rowBox ? rowBox.top + rowBox.height / 2 : 0;
-				const x = Math.min(window.innerWidth - w - 16, Math.max((known ? px : 0) + GAP, textRight + GAP * 0.6));
-				const y = clamp(cy - h / 2, 16, window.innerHeight - h - 16);
-				return { x, y };
-			};
-			let last = 0;
-			const step = (now: number) => {
-				// Smoothing by time, not by frame, so it feels the same at 60 and
-				// 144 Hz: each rate is "per second", turned into this frame's share.
-				const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
-				last = now;
-				const k = (rate: number) => 1 - Math.exp(-rate * dt);
-				const t = target();
-				const px0 = cur.x, py0 = cur.y;
-				cur.x += (t.x - cur.x) * k(8.4);
-				cur.y += (t.y - cur.y) * k(8.4);
-				const vx = (cur.x - px0) / (dt * 60), vy = (cur.y - py0) / (dt * 60); // its own speed, px per 60 Hz frame
-				cur.rz += (clamp(vx * 0.5, -6, 6) * calm - cur.rz) * k(7.6);
-				cur.ry += (clamp(vx * 0.9, -9, 9) * calm - cur.ry) * k(7.6);
-				cur.rx += (clamp(-vy * 0.7, -7, 7) * calm - cur.rx) * k(7.6);
-				cur.s += ((shown ? 1 : 0.93) - cur.s) * k(6.3);
-				cur.ix += (clamp(-vx * 2.2, -26, 26) * calm - cur.ix) * k(6.3);
-				cur.iy += (clamp(-vy * 1.6, -18, 18) * calm - cur.iy) * k(6.3);
-				card.style.transform =
-					`translate3d(${cur.x.toFixed(1)}px, ${cur.y.toFixed(1)}px, 0) perspective(1100px) ` +
-					`rotateX(${cur.rx.toFixed(2)}deg) rotateY(${cur.ry.toFixed(2)}deg) rotateZ(${cur.rz.toFixed(2)}deg) scale(${cur.s.toFixed(4)})`;
-				card.style.setProperty('--ix', cur.ix.toFixed(1));
-				card.style.setProperty('--iy', cur.iy.toFixed(1));
-				// Runs while shown, and a moment after it hides (the fade-out).
-				idle = shown ? 0 : idle + 1;
-				raf = idle < 70 ? requestAnimationFrame(step) : 0;
-				if (!raf) last = 0;
-			};
-			const show = () => {
-				if (shown) return;
-				shown = true;
-				idle = 0;
-				if (!raf) {
-					// Starts at its place, small and still: it does not fly in.
-					const t = target();
-					Object.assign(cur, { x: t.x, y: t.y, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 });
-					last = 0;
-					raf = requestAnimationFrame(step);
-				}
-				card.classList.add('is-shown');
-			};
-			const hide = () => {
-				heat(null);
-				if (!shown) return;
-				shown = false;
-				card.classList.remove('is-shown');
-			};
-			// The row under the pointer is lit by the script (see .is-hot in the CSS).
-			const heat = (hot: Element | null) => {
-				rows.forEach((r) => r.classList.toggle('is-hot', r === hot));
-			};
-			// The right end of a name's letters (its row is the full width).
-			const measure = (row: Element) => {
-				const base = row.querySelector('.svc__roll__base');
-				if (!base) return;
-				const r = document.createRange();
-				r.selectNodeContents(base);
-				textRight = r.getBoundingClientRect().right;
-			};
-			// Whatever name is under the pointer is the active one and has the card —
-			// whether the pointer moved onto it or the list scrolled under a resting
-			// pointer. The browser does not update :hover (nor send mouse events) in
-			// that case, so the row is found from the pointer's last known position
-			// (kept across pages, see `pointer`); :hover only backs it up when no
-			// position is known yet.
-			const sync = () => {
-				px = pointer.x;
-				py = pointer.y;
-				const under = px >= 0 ? document.elementFromPoint(px, py) : null;
-				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null)
-					?? (px < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
-				if (!row) { hide(); return; }
-				heat(row);
-				if (row !== lastRow) {
-					lastRow = row;
-					measure(row);
-					set(rows.indexOf(row));
-				}
-				show();
-			};
-			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; sync(); }, { passive: true });
-			document.documentElement.addEventListener('mouseleave', () => { px = -1; hide(); });
-			list?.addEventListener('mouseleave', hide);
-			rows.forEach((row) => row.querySelector('a')?.addEventListener('mouseenter', sync));
+		// A real mouse (and no request for less motion): the picture is a WebGL
+		// plane that unfolds under the pointer and trails it (see
+		// utils/hoverGallery.ts). Everyone else gets the plain list.
+		if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const gallery = createHoverGallery(
+			section,
+			rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
+		);
+		if (!gallery) return;
+
+		// The row under the pointer is lit by the script (see .is-hot in the CSS)
+		// and has the picture. The browser does not update :hover (nor send mouse
+		// events) while the list scrolls under a resting pointer, so the row is found
+		// from the pointer's last known position (kept across pages, see `pointer`);
+		// :hover only backs it up when no position is known yet.
+		const sync = () => {
+			const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
+			const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null)
+				?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
+			rows.forEach((r) => r.classList.toggle('is-hot', r === row));
+			gallery.setHovered(row ? row.dataset.key! : null);
+		};
+		let syncing = false;
+		let settle = 0;
+		const onScroll = () => {
 			// The browser refreshes :hover a moment after a scroll stops, so check
 			// again then as well as while it runs.
-			let syncing = false;
-			let settle = 0;
-			window.addEventListener('scroll', () => {
-				clearTimeout(settle);
-				settle = window.setTimeout(sync, 160);
-				if (syncing) return;
-				syncing = true;
-				requestAnimationFrame(() => { syncing = false; sync(); });
-			}, { passive: true });
-		}
+			clearTimeout(settle);
+			settle = window.setTimeout(sync, 160);
+			if (syncing) return;
+			syncing = true;
+			requestAnimationFrame(() => { syncing = false; sync(); });
+		};
+		const onLeave = () => gallery.setHovered(null);
+		window.addEventListener('mousemove', sync, { passive: true });
+		window.addEventListener('scroll', onScroll, { passive: true });
+		document.documentElement.addEventListener('mouseleave', onLeave);
+		list?.addEventListener('mouseleave', onLeave);
+		rows.forEach((row) => {
+			row.querySelector('a')?.addEventListener('mouseenter', sync);
+			// Keyboard focus opens the picture too.
+			row.querySelector('a')?.addEventListener('focus', () => gallery.setHovered(row.dataset.key!));
+			row.querySelector('a')?.addEventListener('blur', onLeave);
+		});
+		_svcDesk = () => {
+			clearTimeout(settle);
+			window.removeEventListener('mousemove', sync);
+			window.removeEventListener('scroll', onScroll);
+			document.documentElement.removeEventListener('mouseleave', onLeave);
+			gallery.destroy();
+		};
 	}
+
 
 	onReady(initServices);
 </script>

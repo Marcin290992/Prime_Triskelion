@@ -1,0 +1,771 @@
+---
+import { Image } from 'astro:assets';
+// Every service uses the same deer photo for now (the site's CSP blocks remote
+// images, so it is the local file). deeer2.webp is a huge source (7360px wide) —
+// <Image> below generates the small versions each spot needs.
+import imgDeer from '../../img/deeer2.webp';
+
+const services = [
+	{ name: 'Websites', img: imgDeer, pos: '50% 50%', desc: 'High-performance websites built to convert and scale.' },
+	{ name: 'Branding', img: imgDeer, pos: '20% 40%', desc: 'Brand strategy, identity and guidelines — the fundamentals of your image.' },
+	{ name: 'Motion', img: imgDeer, pos: '80% 60%', desc: 'Animation and motion systems that bring interfaces to life.' },
+	{ name: 'Strategy', img: imgDeer, pos: '50% 20%', desc: 'Creative direction and strategy built around your goals.' },
+];
+---
+<!-- ═══════ SERVICES ═══════ -->
+<section id="services">
+
+	<!-- The title and the phone/tablet scene share one box, so the title's
+	     pin lets go the moment the scene ends — after the last picture it
+	     goes with it, not hanging on over See more and Client Stories. -->
+	<div class="svc__pinbox">
+	<div class="svc__header">
+		<h2 class="svc__title-main">My<br><em>Services.</em></h2>
+	</div>
+
+	<!-- Phones and tablets: a pinned scene — scrolling steps through the
+	     four services, each with its picture and one line (initServicesMobile).
+	     Desktop keeps the hover list below. -->
+	<div class="svc-m">
+		<div class="svc-m__pin">
+			<div class="svc-m__stage">
+				<div class="svc-m__copy">
+					<ol class="svc-m__list">
+						{services.map((sv, i) => <li class:list={['svc-m__name', i === 0 && 'is-active']} data-i={i}>
+								<span class="svc__roll">
+									<span class="svc__roll__base">{sv.name}</span>
+									<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
+								</span>
+							</li>)}
+					</ol>
+					<div class="svc-m__descs">
+						{services.map((sv, i) => <p class:list={['svc-m__desc', i === 0 && 'is-active']} data-i={i}>{sv.desc}</p>)}
+					</div>
+					<div class="svc-m__progress" aria-hidden="true"><span></span></div>
+				</div>
+				<!-- The picture is a way in, like See more below. -->
+				<a href="/services" class="svc-m__media" aria-label="See all services">
+					{services.map((sv, i) => (
+						<Image
+							src={sv.img}
+							alt=""
+							widths={[480, 800, 1200]}
+							sizes="(min-width: 700px) 55vw, 100vw"
+							loading="lazy"
+							class:list={['svc-m__img', i === 0 && 'is-active']}
+							data-i={i}
+						/>
+					))}
+				</a>
+			</div>
+			<!-- Inside the pinned scene, like the desktop's: visible the whole time,
+			     just above the MENU button. -->
+			<a href="/services" class="svc__btn svc-m__more" aria-label="View all services">
+				<span class="svc__btn__line"></span>
+				See more
+			</a>
+		</div>
+	</div>
+	</div>
+
+	<!-- Desktop: all four names readable at once, one picture at the side that
+	     follows the active name. Phones and tablets use the pinned scene above. -->
+	<div class="svc__body">
+		<div class="svc__col">
+			<ul class="svc__list">
+				{services.map((sv, i) => (
+					<li class:list={['svc__row', i === 0 && 'is-active']} data-i={i}>
+						<a href="/services" class="svc__link">
+								<span class="svc__roll">
+									<span class="svc__roll__base">{sv.name}</span>
+									<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
+								</span>
+							</a>
+					</li>
+				))}
+			</ul>
+			<a href="/services" class="svc__btn svc__btn--d" aria-label="View all services">
+				<span class="svc__btn__line"></span>
+				See more
+			</a>
+		</div>
+		<div class="svc__media" aria-hidden="true">
+			{services.map((sv, i) => (
+				<Image
+					src={sv.img}
+					alt=""
+					widths={[480, 800, 1200]}
+					sizes="30vw"
+					loading="eager"
+					decoding="async"
+					class:list={['svc__img', i === 0 && 'is-active']}
+					data-i={i}
+					style={`object-position:${sv.pos}`}
+				/>
+			))}
+		</div>
+	</div>
+
+	<div class="svc__footer">
+		<a href="/services" class="svc__btn" aria-label="View all services">
+			<span class="svc__btn__line"></span>
+			See more
+		</a>
+	</div>
+
+</section>
+
+<style>
+	#services {
+		position: relative;
+		z-index: 46;
+		color: rgb(var(--c-cream));
+	}
+	.svc__header {
+		width: 100%;
+		padding: var(--section-space-top) var(--site-gutter) var(--section-space-bottom);
+		box-sizing: border-box;
+		opacity: 0;
+		filter: blur(8px);
+		transform: translateY(14px);
+		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
+	}
+	.svc__header.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
+	.svc__title-main {
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(3.5rem, 8vw, 8.5rem);
+		letter-spacing: -0.02em;
+		text-transform: uppercase;
+		line-height: 0.9;
+		color: rgb(var(--c-cream));
+	}
+	.svc__title-main em {
+		font-style: normal;
+		color: rgb(var(--c-red) / 1);
+	}
+	/* ── Desktop (mouse): names on the left, one picture on the right ───────
+	   Sized by height too, so title + list + "See more" fit one laptop screen
+	   and none of it sits in the page's soft top/bottom edge zones. */
+	.svc__body, .svc__btn--d { display: none; }
+	/* Rolling text, as in the menu: the dimmed name slides up, the red one
+	   comes in from below, in white — red stays the section title's alone. */
+	.svc__roll { position: relative; display: block; overflow: hidden; }
+	.svc__roll__base, .svc__roll__red {
+		display: block;
+		transition: transform 0.34s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+	.svc__roll__red {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		width: 100%;
+		color: rgb(var(--c-cream));
+	}
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		.svc__header { padding: clamp(3.75rem, 7vh, 5.5rem) var(--site-gutter) clamp(1rem, 3vh, 2rem); }
+		.svc__title-main { font-size: clamp(3.5rem, min(8vw, 11vh), 8.5rem); }
+		.svc__body {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+			gap: clamp(1.5rem, 5vw, 6rem);
+			align-items: center;
+			padding: 0 var(--site-gutter);
+		}
+		.svc__list { list-style: none; margin: 0; padding: 0; }
+		/* Each name is a full-width row, ruled above and below, so what the
+		   pointer is on is plain to see: the whole band between the two lines
+		   answers to it, not only the letters. The lines light up on the row
+		   under the pointer. */
+		.svc__row { position: relative; padding: clamp(0.3rem, 1vh, 0.85rem) 0; }
+		.svc__row::before,
+		.svc__row::after {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			height: 1px;
+			background: rgb(var(--c-cream) / 0.14);
+			transition: background-color 0.4s ease;
+			pointer-events: none;
+		}
+		.svc__row::before { top: 0; }
+		.svc__row::after { bottom: 0; }
+		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::before,
+		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::after,
+		/* .is-hot: set by the script for the name under the pointer — the browser
+		   does not update :hover while the page scrolls under a pointer that is
+		   not moving. */
+		.svc__row.is-hot::before,
+		.svc__row.is-hot::after { background: rgb(var(--c-cream) / 0.6); }
+		.svc__link {
+			display: block;
+			width: 100%;
+			font-family: var(--f-display);
+			font-weight: 700;
+			font-size: clamp(2.4rem, min(6vw, 9vh), 6.5rem);
+			line-height: 1.04;
+			letter-spacing: 0.005em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.38);
+			text-decoration: none;
+			transition: color 0.4s ease;
+		}
+		.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
+		/* Mouse only. At rest, and whenever the mouse is off the names (on the
+		   picture too), every name is dimmed. The one under the mouse rolls to
+		   white; the others stay dim. */
+		@media (hover: hover) and (pointer: fine) {
+			.svc__link:hover .svc__roll__base,
+			.svc__link:hover .svc__roll__red,
+			.svc__row.is-hot .svc__roll__base,
+			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
+		}
+		.svc__btn--d { display: inline-flex; margin-top: clamp(0.9rem, 2.4vh, 1.75rem); }
+		#services .svc__footer { display: none; }
+		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
+		.svc__media {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 4 / 3;
+			max-height: 50vh;
+			overflow: hidden;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			background: #060608;
+		}
+		.svc__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			filter: grayscale(100%) contrast(1.08) brightness(0.82);
+			opacity: 0;
+			transform: scale(1.05);
+			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc__img.is-active { opacity: 1; transform: none; }
+
+		/* A real mouse: the picture is not a fixed panel on the right but a card
+		   that comes up in the middle of the screen while the pointer is on a
+		   name (initServices sets its place) and is gone otherwise — the reward
+		   for pointing at a name. */
+		@media (hover: hover) and (pointer: fine) {
+			.svc__body { grid-template-columns: minmax(0, 1fr); }
+			.svc__media {
+				position: fixed;
+				left: 0;
+				top: 0;
+				z-index: 60;
+				width: clamp(300px, 28vw, 480px);
+				max-height: none;
+				pointer-events: none;
+				opacity: 0;
+				filter: blur(12px);
+				/* Closed from the top: it opens upward, like a shutter lifting. */
+				clip-path: inset(22% 3% 0 3%);
+				transition: opacity 0.4s ease, filter 0.6s ease, clip-path 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+				will-change: transform, opacity, clip-path;
+			}
+			.svc__media.is-shown { opacity: 1; filter: none; clip-path: inset(0 0 0 0); }
+			/* The picture sits a little oversized inside its frame and slides
+			   against the card's own movement (--ix / --iy, set per frame), which
+			   gives the card depth; a new picture comes in from below or above,
+			   by whether the next name is further down or up the list. */
+			.svc__img {
+				translate: calc(var(--ix, 0) * 1px) calc(var(--iy, 0) * 1px);
+				scale: 1.14;
+				transform: translateY(calc(var(--svc-dir, 1) * 8%));
+				transition: opacity 0.7s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+			}
+		}
+	}
+	/* Phones/tablets only — see the mobile block below. */
+	.svc-m { display: none; }
+	.svc__footer {
+		width: 100%;
+		padding: 0 var(--site-gutter) var(--section-space-bottom);
+		box-sizing: border-box;
+		display: flex;
+		justify-content: center;
+	}
+	/* Touch: the link's text line is 18px tall — tap 44px. */
+	@media (pointer: coarse) {
+		.svc__btn::before { content: ''; position: absolute; inset: -13px 0; }
+	}
+	.svc__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		font-family: var(--f-body);
+		font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+		font-weight: 300;
+		letter-spacing: 0.38em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.7);
+		text-decoration: none;
+		cursor: pointer;
+		transition: color 0.3s ease;
+		position: relative;
+	}
+	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
+	.svc__btn__line {
+		display: block;
+		width: 36px;
+		height: 1px;
+		background: rgb(var(--c-red) / 0.9);
+		transform-origin: left;
+		transition: width 0.35s ease;
+		flex-shrink: 0;
+	}
+	.svc__btn:hover .svc__btn__line { width: 56px; }
+	/* Phones and tablets: the pinned scene replaces the hover list. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		/* Opaque, so it covers the closing screen of Selected work like a curtain. */
+		#services { background: rgb(var(--c-bg)); }
+		.svc__body { display: none; }
+		/* The title stays pinned over the scene, like The Process's; the
+		   scene's pin starts just under it (--svc-head, its measured
+		   height, set by initServicesMobile). Its fade covers what slides
+		   under. Same size as What we've built's title. */
+		.svc__header {
+			position: sticky;
+			top: 0;
+			z-index: 6;
+			margin-top: max(0px, calc(var(--section-space-top) - 4.75rem));
+			padding: 4.75rem var(--site-gutter) 1.25rem;
+			background: linear-gradient(to bottom, rgb(var(--c-bg)) 0 80%, rgb(var(--c-bg) / 0));
+		}
+		.svc__title-main { font-size: clamp(2.4rem, min(10vw, 8vh), 5rem); }
+		/* The title lets go the moment the scene's pin does (when the scene's
+		   end reaches the bottom of the screen), not a screen later: its
+		   margin reaches down the pin's height and the scene pulls back up by
+		   the same — no change to the layout, only to where the title's pin
+		   runs out. Flex column, so the two margins don't collapse. */
+		.svc__pinbox { display: flex; flex-direction: column; }
+		.svc__header { margin-bottom: calc(var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px)); }
+		.svc-m { margin-top: calc(-1 * (var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px))); }
+		/* Scroll room for the four steps; the stage stays pinned meanwhile.
+		   Stable vh (Layout.astro), like Manifesto's pin, so the toolbar
+		   can't resize it mid-scroll. */
+		.svc-m {
+			display: block;
+			position: relative;
+			height: 250svh;
+			height: calc(var(--app-stable-vh, 1svh) * 250);
+		}
+		.svc-m__pin {
+			position: sticky;
+			top: var(--svc-head, 0px);
+			height: calc(100svh - var(--svc-head, 0px));
+			height: calc(var(--app-stable-vh, 1svh) * 100 - var(--svc-head, 0px));
+			display: flex;
+			/* Right under the pinned title — centred, the spare height all
+			   went between the title and the names. */
+			align-items: flex-start;
+			/* Bottom: clear of the fixed MENU button and of See more above it. */
+			padding: 0.5rem var(--site-gutter) 8rem;
+			box-sizing: border-box;
+		}
+		.svc-m__more {
+			position: absolute;
+			left: 50%;
+			bottom: 5.4rem;
+			transform: translateX(-50%);
+		}
+		/* The old end-of-section link is replaced by the one in the scene; its
+		   spacing stays. */
+		.svc__footer .svc__btn { display: none; }
+		.svc-m__stage {
+			width: 100%;
+			display: flex;
+			flex-direction: column;
+			gap: clamp(1.25rem, 3vh, 2rem);
+		}
+		.svc-m__list {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			gap: 0.16em;
+		}
+		.svc-m__name {
+			font-family: var(--f-display);
+			font-weight: 700;
+			/* A clear step below the section title, letters and lines apart —
+			   at 70% of it with tight tracking the four ran together. */
+			font-size: calc(var(--hero-size) * 0.5);
+			line-height: 1;
+			letter-spacing: -0.005em;
+			text-transform: uppercase;
+			color: rgb(var(--c-cream) / 0.2);
+			cursor: pointer;
+			transition: color 0.45s ease;
+			/* A tap is a choice, not a text selection: no blue tap flash, no
+			   selection highlight or callout on a long press. */
+			-webkit-tap-highlight-color: transparent;
+			-webkit-user-select: none;
+			user-select: none;
+			-webkit-touch-callout: none;
+			outline: none;
+		}
+		/* The same roll as the desktop list: the dimmed name slides up, the
+		   white one comes in from below. */
+		.svc-m__name .svc__roll__base { color: rgb(var(--c-cream) / 0.2); }
+		.svc-m__name.is-active .svc__roll__base,
+		.svc-m__name.is-active .svc__roll__red { transform: translateY(-100%); }
+		/* All four lines stacked in one spot; the active one fades up. */
+		.svc-m__descs {
+			display: grid;
+			margin-top: clamp(0.9rem, 2.5vh, 1.4rem);
+		}
+		.svc-m__desc {
+			grid-area: 1 / 1;
+			margin: 0;
+			max-width: 38ch;
+			font-family: var(--f-body);
+			font-size: 0.95rem;
+			font-weight: 300;
+			line-height: 1.6;
+			color: rgb(var(--c-cream) / 0.72);
+			opacity: 0;
+			transform: translateY(8px);
+			transition: opacity 0.4s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc-m__desc.is-active { opacity: 1; transform: none; }
+		/* How far through the four the scroll is. */
+		.svc-m__progress {
+			height: 1px;
+			margin-top: clamp(1rem, 2.5vh, 1.5rem);
+			background: rgb(var(--c-cream) / 0.12);
+			overflow: hidden;
+		}
+		.svc-m__progress span {
+			display: block;
+			height: 100%;
+			background: rgb(var(--c-red));
+			transform-origin: left center;
+			transform: scaleX(var(--p, 0));
+		}
+		.svc-m__media {
+			position: relative;
+			display: block;
+			/* Explicit width: with aspect-ratio + max-height, Safari narrows the box
+			   to keep the ratio once the height cap kicks in (Chrome keeps it full
+			   width), so on an iPhone the picture didn't fill the card. */
+			width: 100%;
+			-webkit-tap-highlight-color: transparent;
+			-webkit-touch-callout: none;
+			aspect-ratio: 4 / 3;
+			max-height: 29vh;
+			overflow: hidden;
+			border: 1px solid rgba(255, 255, 255, 0.08);
+			background: #060608;
+		}
+		.svc-m__media:focus:not(:focus-visible) { outline: none; }
+		.svc-m__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			filter: grayscale(100%) contrast(1.1) brightness(0.8);
+			opacity: 0;
+			transform: scale(1.06);
+			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.svc-m__img.is-active { opacity: 1; transform: none; }
+
+		/* Tablet width: the phone's stacked layout, scaled up — names, line
+		   and picture all bigger; the title the same size as What we've
+		   built's. */
+		@media (min-width: 700px) {
+			/* Height-capped too, so a landscape tablet's short screen still
+			   fits names, line and picture between the logo and the MENU. */
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.55); }
+			.svc-m__desc { font-size: 1.15rem; max-width: 44ch; }
+			.svc-m__media { max-height: 34vh; }
+		}
+		/* Short phone screens (an iPhone with Safari's bars showing): names,
+		   line and picture scale down to fit under the pinned title and
+		   above the MENU button. */
+		@media (max-width: 699px) and (max-height: 760px) {
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.45); }
+			.svc-m__stage { gap: 1.1rem; }
+			.svc-m__descs { margin-top: 0.6rem; }
+			.svc-m__desc { font-size: 0.88rem; }
+			.svc-m__progress { margin-top: 0.8rem; }
+			.svc-m__media { max-height: 19vh; }
+		}
+		/* Landscape tablet: names and line on the left, the picture on the
+		   right — the wide, short screen suits two columns better than the
+		   portrait stack. */
+		@media (min-width: 700px) and (orientation: landscape) {
+			.svc-m__stage {
+				display: grid;
+				grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+				gap: clamp(1.5rem, 4vw, 3rem);
+				align-items: center;
+			}
+			.svc-m__pin { align-items: center; }
+			.svc-m__name { font-size: calc(var(--hero-size) * 0.5); }
+			.svc-m__desc { font-size: 1rem; }
+			.svc-m__media { max-height: 44vh; }
+		}
+		@media (prefers-reduced-motion: reduce) {
+			.svc-m__desc, .svc-m__img { transition: opacity 0.2s linear; transform: none; }
+			.svc__roll__base, .svc__roll__red { transition: none; }
+		}
+	}
+</style>
+
+<script>
+	import { onReady } from '../../utils/onReady';
+
+	let _isBackNav = false;
+
+	// Where the mouse last was, kept for the whole visit: a page's own scripts
+	// start knowing nothing, but the pointer is still where the click that
+	// brought the visitor here left it. Bound once; -1 = not known / outside.
+	const pointer = { x: -1, y: -1 };
+	const track = (e: MouseEvent) => { pointer.x = e.clientX; pointer.y = e.clientY; };
+	['mousemove', 'mousedown', 'click'].forEach((type) => window.addEventListener(type, track as EventListener, { passive: true, capture: true }));
+	document.documentElement.addEventListener('mouseleave', () => { pointer.x = -1; pointer.y = -1; });
+
+	document.addEventListener('astro:before-swap', (e: any) => {
+		_isBackNav = (e.navigationType ?? '') === 'traverse';
+	});
+
+	// Phones/tablets: the pinned scene steps through the services as the
+	// page scrolls past it; tapping a name scrolls to its step.
+	let _svcScroll: (() => void) | null = null;
+	let _svcHeadObserver: ResizeObserver | null = null;
+	function initServicesMobile(section: HTMLElement) {
+		const scene = section.querySelector<HTMLElement>('.svc-m');
+		const pin = section.querySelector<HTMLElement>('.svc-m__pin');
+		if (!scene || !pin) return;
+		const names = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__name'));
+		const descs = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__desc'));
+		const imgs = Array.from(scene.querySelectorAll<HTMLElement>('.svc-m__img'));
+		const bar = scene.querySelector<HTMLElement>('.svc-m__progress');
+		const count = names.length;
+		// The pinned title's height, handed to the CSS (the scene pins just
+		// under it). A ResizeObserver, not a scroll handler.
+		const header = section.querySelector<HTMLElement>('.svc__header');
+		const setHead = () => { if (header) section.style.setProperty('--svc-head', `${header.offsetHeight}px`); };
+		setHead();
+		_svcHeadObserver?.disconnect();
+		_svcHeadObserver = header ? new ResizeObserver(setHead) : null;
+		if (header) _svcHeadObserver?.observe(header);
+		const head = () => parseFloat(getComputedStyle(pin).top) || 0;
+		let active = 0;
+		const set = (i: number) => {
+			if (i === active) return;
+			active = i;
+			[names, descs, imgs].forEach((list) => list.forEach((el, k) => el.classList.toggle('is-active', k === i)));
+		};
+		const range = () => Math.max(1, scene.offsetHeight - pin.offsetHeight);
+		let ticking = false;
+		const update = () => {
+			ticking = false;
+			const p = Math.min(1, Math.max(0, (head() - scene.getBoundingClientRect().top) / range()));
+			bar?.style.setProperty('--p', p.toFixed(4));
+			set(Math.min(count - 1, Math.floor(p * count)));
+		};
+		const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+		if (_svcScroll) window.removeEventListener('scroll', _svcScroll);
+		window.addEventListener('scroll', onScroll, { passive: true });
+		_svcScroll = onScroll;
+		update();
+		names.forEach((name, i) => name.addEventListener('click', () => {
+			const top = scene.getBoundingClientRect().top + window.scrollY;
+			window.scrollTo({ top: top - head() + range() * ((i + 0.5) / count), behavior: 'smooth' });
+		}));
+	}
+	document.addEventListener('astro:before-swap', () => {
+		if (_svcScroll) window.removeEventListener('scroll', _svcScroll);
+		_svcScroll = null;
+		_svcHeadObserver?.disconnect();
+		_svcHeadObserver = null;
+	});
+
+	function initServices() {
+		const section = document.getElementById('services');
+		if (!section) return;
+
+		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) { _isBackNav = false; initServicesMobile(section); return; }
+
+		const isBack = _isBackNav;
+		_isBackNav = false;
+
+		const header = section.querySelector<HTMLElement>('.svc__header');
+		if (header) {
+			if (isBack) {
+				header.style.transition = 'none';
+				header.classList.add('visible');
+				requestAnimationFrame(() => { header.style.transition = ''; });
+			} else {
+				const hio = new IntersectionObserver((entries) => {
+					entries.forEach(entry => {
+						if (entry.isIntersecting) {
+							header.classList.add('visible');
+							hio.unobserve(entry.target);
+						}
+					});
+				}, { threshold: 0.15 });
+				hio.observe(header);
+			}
+		}
+
+		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
+		const imgs = Array.from(section.querySelectorAll<HTMLElement>('.svc__img'));
+		let active = 0;
+		const set = (i: number) => {
+			if (i === active) return;
+			section.style.setProperty('--svc-dir', i > active ? '1' : '-1');
+			active = i;
+			rows.forEach((r, n) => r.classList.toggle('is-active', n === i));
+			imgs.forEach((im, n) => im.classList.toggle('is-active', n === i));
+		};
+		// The name under the mouse (or with keyboard focus) is active; it stays on
+		// the last one when the mouse leaves.
+		rows.forEach((row, i) => {
+			row.querySelector('a')?.addEventListener('mouseenter', () => set(i));
+			row.querySelector('a')?.addEventListener('focus', () => set(i));
+		});
+
+		// A real mouse: the picture is a card at the pointer's right while the
+		// pointer is on a name, travelling with it. It has weight: it trails the
+		// pointer a little late, leans and banks with its own speed, and the
+		// picture inside slides against the card. It never covers the letters of
+		// the name that is pointed at. It shows whenever a name is under the
+		// pointer — also when the list scrolled under a resting one — and goes
+		// away when the pointer is no longer on a name.
+		const card = section.querySelector<HTMLElement>('.svc__media');
+		if (card && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+			const list = section.querySelector<HTMLElement>('.svc__list');
+			const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 1;
+			const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+			const GAP = 36;
+			let raf = 0, shown = false, idle = 0;
+			let px = pointer.x, py = pointer.y; // the pointer, as last seen
+			let textRight = 0; // where the pointed-at name's letters end
+			let lastRow: Element | null = null;
+			const cur = { x: 0, y: 0, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 };
+			// Where the card wants to be: right of the pointer, past the end of the
+			// name's letters, vertically centred on the pointer. Always on the right
+			// (it never jumps across the pointer); at the screen's right edge it
+			// simply stops there and the pointer slides onto it. Kept on screen.
+			const target = () => {
+				const w = card.offsetWidth, h = card.offsetHeight;
+				// Before the pointer has moved on this page its position is unknown
+				// (it can rest on a name since the page was entered): the card then
+				// sits at the end of the name, on its row, until the first move.
+				const known = px >= 0;
+				const rowBox = lastRow?.getBoundingClientRect();
+				const cy = known ? py : rowBox ? rowBox.top + rowBox.height / 2 : 0;
+				const x = Math.min(window.innerWidth - w - 16, Math.max((known ? px : 0) + GAP, textRight + GAP * 0.6));
+				const y = clamp(cy - h / 2, 16, window.innerHeight - h - 16);
+				return { x, y };
+			};
+			let last = 0;
+			const step = (now: number) => {
+				// Smoothing by time, not by frame, so it feels the same at 60 and
+				// 144 Hz: each rate is "per second", turned into this frame's share.
+				const dt = last ? Math.min(0.05, (now - last) / 1000) : 1 / 60;
+				last = now;
+				const k = (rate: number) => 1 - Math.exp(-rate * dt);
+				const t = target();
+				const px0 = cur.x, py0 = cur.y;
+				cur.x += (t.x - cur.x) * k(8.4);
+				cur.y += (t.y - cur.y) * k(8.4);
+				const vx = (cur.x - px0) / (dt * 60), vy = (cur.y - py0) / (dt * 60); // its own speed, px per 60 Hz frame
+				cur.rz += (clamp(vx * 0.5, -6, 6) * calm - cur.rz) * k(7.6);
+				cur.ry += (clamp(vx * 0.9, -9, 9) * calm - cur.ry) * k(7.6);
+				cur.rx += (clamp(-vy * 0.7, -7, 7) * calm - cur.rx) * k(7.6);
+				cur.s += ((shown ? 1 : 0.93) - cur.s) * k(6.3);
+				cur.ix += (clamp(-vx * 2.2, -26, 26) * calm - cur.ix) * k(6.3);
+				cur.iy += (clamp(-vy * 1.6, -18, 18) * calm - cur.iy) * k(6.3);
+				card.style.transform =
+					`translate3d(${cur.x.toFixed(1)}px, ${cur.y.toFixed(1)}px, 0) perspective(1100px) ` +
+					`rotateX(${cur.rx.toFixed(2)}deg) rotateY(${cur.ry.toFixed(2)}deg) rotateZ(${cur.rz.toFixed(2)}deg) scale(${cur.s.toFixed(4)})`;
+				card.style.setProperty('--ix', cur.ix.toFixed(1));
+				card.style.setProperty('--iy', cur.iy.toFixed(1));
+				// Runs while shown, and a moment after it hides (the fade-out).
+				idle = shown ? 0 : idle + 1;
+				raf = idle < 70 ? requestAnimationFrame(step) : 0;
+				if (!raf) last = 0;
+			};
+			const show = () => {
+				if (shown) return;
+				shown = true;
+				idle = 0;
+				if (!raf) {
+					// Starts at its place, small and still: it does not fly in.
+					const t = target();
+					Object.assign(cur, { x: t.x, y: t.y, rx: 0, ry: 0, rz: 0, s: 0.93, ix: 0, iy: 0 });
+					last = 0;
+					raf = requestAnimationFrame(step);
+				}
+				card.classList.add('is-shown');
+			};
+			const hide = () => {
+				heat(null);
+				if (!shown) return;
+				shown = false;
+				card.classList.remove('is-shown');
+			};
+			// The row under the pointer is lit by the script (see .is-hot in the CSS).
+			const heat = (hot: Element | null) => {
+				rows.forEach((r) => r.classList.toggle('is-hot', r === hot));
+			};
+			// The right end of a name's letters (its row is the full width).
+			const measure = (row: Element) => {
+				const base = row.querySelector('.svc__roll__base');
+				if (!base) return;
+				const r = document.createRange();
+				r.selectNodeContents(base);
+				textRight = r.getBoundingClientRect().right;
+			};
+			// Whatever name is under the pointer is the active one and has the card —
+			// whether the pointer moved onto it or the list scrolled under a resting
+			// pointer. The browser does not update :hover (nor send mouse events) in
+			// that case, so the row is found from the pointer's last known position
+			// (kept across pages, see `pointer`); :hover only backs it up when no
+			// position is known yet.
+			const sync = () => {
+				px = pointer.x;
+				py = pointer.y;
+				const under = px >= 0 ? document.elementFromPoint(px, py) : null;
+				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null)
+					?? (px < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
+				if (!row) { hide(); return; }
+				heat(row);
+				if (row !== lastRow) {
+					lastRow = row;
+					measure(row);
+					set(rows.indexOf(row));
+				}
+				show();
+			};
+			window.addEventListener('mousemove', (e) => { px = e.clientX; py = e.clientY; sync(); }, { passive: true });
+			document.documentElement.addEventListener('mouseleave', () => { px = -1; hide(); });
+			list?.addEventListener('mouseleave', hide);
+			rows.forEach((row) => row.querySelector('a')?.addEventListener('mouseenter', sync));
+			// The browser refreshes :hover a moment after a scroll stops, so check
+			// again then as well as while it runs.
+			let syncing = false;
+			let settle = 0;
+			window.addEventListener('scroll', () => {
+				clearTimeout(settle);
+				settle = window.setTimeout(sync, 160);
+				if (syncing) return;
+				syncing = true;
+				requestAnimationFrame(() => { syncing = false; sync(); });
+			}, { passive: true });
+		}
+	}
+
+	onReady(initServices);
+</script>

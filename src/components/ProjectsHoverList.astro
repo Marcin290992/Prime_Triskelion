@@ -1,0 +1,141 @@
+---
+// A list of project titles; hovering one opens its picture in WebGL and
+// carries it after the cursor (see ../utils/hoverGallery.ts — raw WebGL2,
+// no dependencies). Phones, tablets and reduced-motion get the plain list.
+//
+//   <ProjectsHoverList projects={[{ title, href, img, tag? }, ...]} />
+//
+// `img` is an imported image; pictures stay local (the site's CSP blocks
+// remote ones). A 960px-wide copy is enough: the plane is 437px on screen.
+import { getImage } from 'astro:assets';
+
+interface Props {
+	projects: { title: string; href: string; img: ImageMetadata; tag?: string }[];
+}
+const { projects } = Astro.props;
+
+const items = await Promise.all(
+	projects.map(async (p, i) => ({
+		...p,
+		index: String(i + 1).padStart(3, '0'),
+		key: `p${i}`,
+		src: (await getImage({ src: p.img, width: 960 })).src,
+	})),
+);
+---
+
+<div class="phl" data-hover-list>
+	<ul class="phl__list">
+		{
+			items.map((p) => (
+				<li class="phl__item" data-key={p.key} data-src={p.src}>
+					<a class="phl__link" href={p.href}>
+						<span class="phl__index">{p.index}</span>
+						<span class="phl__title">{p.title}</span>
+						{p.tag && <span class="phl__tag">{p.tag}</span>}
+					</a>
+				</li>
+			))
+		}
+	</ul>
+</div>
+
+<style>
+	.phl {
+		position: relative;
+		padding-block: clamp(2rem, 6vw, 5rem);
+	}
+	.phl__list {
+		position: relative; /* above the canvas, which is prepended */
+		z-index: 1;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.phl__link {
+		display: flex;
+		align-items: baseline;
+		gap: clamp(1rem, 3vw, 3rem);
+		padding: clamp(0.6rem, 1.4vw, 1.2rem) var(--site-gutter);
+		color: rgb(var(--c-cream) / 0.9);
+		text-decoration: none;
+		transition: color 0.5s ease;
+	}
+	.phl__index {
+		font: 300 0.8rem/1 var(--f-body);
+		letter-spacing: 0.2em;
+		color: rgb(var(--c-cream) / 0.4);
+		transition: color 0.5s ease;
+	}
+	.phl__title {
+		font: 600 clamp(2rem, 6vw, 5.5rem) / 1.05 var(--f-display);
+		letter-spacing: -0.01em;
+		transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.phl__tag {
+		margin-left: auto;
+		font: 300 0.8rem/1 var(--f-body);
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.4);
+	}
+
+	/* Mouse only: the hovered title lights up, the others dim, the title nudges right. */
+	@media (hover: hover) and (pointer: fine) {
+		.phl.is-live .phl__list:hover .phl__link {
+			color: rgb(var(--c-cream) / 0.25);
+		}
+		.phl.is-live .phl__list:hover .phl__item:hover .phl__link {
+			color: rgb(var(--c-cream));
+		}
+		.phl.is-live .phl__item:hover .phl__index {
+			color: rgb(var(--c-red));
+		}
+		.phl.is-live .phl__item:hover .phl__title {
+			transform: translateX(0.6rem);
+		}
+	}
+</style>
+
+<script>
+	import { createHoverGallery } from '../utils/hoverGallery';
+
+	let teardown: (() => void) | null = null;
+
+	function init() {
+		teardown?.();
+		teardown = null;
+		const root = document.querySelector<HTMLElement>('[data-hover-list]');
+		if (!root) return;
+		// Mouse only, and not for people who asked for less motion.
+		const ok = matchMedia('(hover: hover) and (pointer: fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (!ok) return;
+
+		const els = [...root.querySelectorAll<HTMLElement>('.phl__item')];
+		const gallery = createHoverGallery(
+			root,
+			els.map((el) => ({ key: el.dataset.key!, src: el.dataset.src! })),
+		);
+		if (!gallery) return; // no WebGL2 → plain list
+		root.classList.add('is-live');
+
+		const offs = els.flatMap((el) => {
+			const over = () => gallery.setHovered(el.dataset.key!);
+			const out = () => gallery.setHovered(null);
+			el.addEventListener('mouseenter', over);
+			el.addEventListener('mouseleave', out);
+			return [() => el.removeEventListener('mouseenter', over), () => el.removeEventListener('mouseleave', out)];
+		});
+		teardown = () => {
+			offs.forEach((off) => off());
+			gallery.destroy();
+			root.classList.remove('is-live');
+		};
+	}
+
+	document.addEventListener('astro:page-load', init);
+	document.addEventListener('astro:before-swap', () => {
+		teardown?.();
+		teardown = null;
+	});
+</script>

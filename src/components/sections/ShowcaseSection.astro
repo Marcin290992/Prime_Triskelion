@@ -386,6 +386,9 @@ const steps = [
 			   container followed scroll position exactly. */
 			filter: grayscale(100%) contrast(1.1) brightness(0.75);
 		}
+		/* WebGL running: the canvas shows the pictures (same grade as the <img>s). */
+		.process-rail__media.is-gl .process-rail__img { display: none; }
+		.process-rail__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.75); }
 	}
 
 	/* Every desktop screen: the three columns used to be
@@ -612,6 +615,7 @@ const steps = [
 
 <script>
 	import { onReady } from '../../utils/onReady';
+	import { createHoverGallery } from '../../utils/hoverGallery';
 	let _railCleanup: (() => void) | null = null;
 
 	const STEPS = 5;
@@ -681,6 +685,16 @@ const steps = [
 		const imgEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.process-rail__img'));
 		const mediaEl = sectionEl.querySelector<HTMLElement>('.process-rail__media');
 		if (!rail || !pin || !stage || !numEls.length) return;
+
+		// The centre pictures are WebGL planes that open from the middle line,
+		// left and right, scrubbed by the scroll (the same fold as the Services
+		// hover, turned on its side — utils/hoverGallery.ts). The plain <img>s
+		// stay as the fallback (no WebGL2, or reduced motion) and are hidden
+		// when it runs.
+		const gallery = mediaEl && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+			? createHoverGallery(mediaEl, imgEls.map((im, i) => ({ key: `r${i}`, src: (im as HTMLImageElement).currentSrc || (im as HTMLImageElement).src })), { fill: true, axis: 'x' })
+			: null;
+		if (gallery) mediaEl!.classList.add('is-gl');
 
 		// Markup keeps .showcase__intro as a plain sibling before
 		// .process-rail so mobile (which never runs this branch) renders
@@ -839,8 +853,11 @@ const steps = [
 				const imgOpacity = rawPos <= 0
 					? Math.max(0, Math.min(1, (rawPos + riseWindow) / riseWindow))
 					: Math.max(0, Math.min(1, 1.35 - rawPos * 1.35));
+				// The same 0–1 the <img> fades with now drives the fold: fully
+				// folded away at 0, fully open at 1.
+				gallery?.setWarp(`r${i}`, 1 - imgOpacity);
 				const imgEl = imgEls[i];
-				if (imgEl) {
+				if (imgEl && !gallery) {
 					imgEl.style.opacity = String(imgOpacity);
 					// Settles from a hair oversized as it fades in (a transform,
 					// cheap on the compositor), instead of a blur.
@@ -893,6 +910,10 @@ const steps = [
 			window.removeEventListener('resize', measureStageHeights);
 			if (rafId) cancelAnimationFrame(rafId);
 			introObserver?.disconnect();
+			if (gallery) {
+				gallery.destroy();
+				mediaEl?.classList.remove('is-gl');
+			}
 		};
 	}
 
