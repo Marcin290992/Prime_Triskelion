@@ -8,6 +8,13 @@ import imgDesign from '../../img/process/design.jpg';
 import imgDevelopment from '../../img/process/development.jpg';
 import imgLaunch from '../../img/process/launch.jpg';
 import imgSupport from '../../img/process/support.jpg';
+import ProcessWheel from '../ProcessWheel.astro';
+
+// Desktop: the wheel (ProcessWheel.astro, the mechanism of trionn.com's services)
+// replaces the old "meet in the middle" rail. Set false to bring the rail back.
+const WHEEL = true;
+// What stands still in the middle of the wheel: 'image' | 'number'.
+const WHEEL_CENTER = 'image';
 
 const steps = [
 	{ title: 'Discovery & Strategy', img: imgDiscovery, desc: 'I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.' },
@@ -18,7 +25,7 @@ const steps = [
 ];
 ---
 <!-- ═══════ SHOWCASE ═══════ -->
-<section id="showcase">
+<section id="showcase" class:list={[WHEEL && 'has-wheel']}>
 
 	<!-- Markup order matters here: .showcase__intro sits as a plain sibling
 	     BEFORE .process-rail so mobile (where .process-rail is display:none)
@@ -40,6 +47,8 @@ const steps = [
 	     whichever pair is currently crossing. Placeholder photos for now
 	     (src/img/process/) — swap for real project shots later. Phones
 	     and tablets get .pstack further down instead. -->
+	{WHEEL && <ProcessWheel steps={steps} center={WHEEL_CENTER} />}
+
 	<div class="process-rail" id="process-rail">
 		<div class="process-rail__pin">
 
@@ -217,6 +226,13 @@ const steps = [
 		.showcase__intro-content .showcase__title {
 			font-size: calc(clamp(3.5rem, min(8vw, 13vh), 11rem) * var(--title-scale, 1));
 		}
+	}
+
+	/* With the wheel on, the desktop shows it instead of the title + rail
+	   (the wheel brings its own title). Phones and tablets are untouched. */
+	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+		#showcase.has-wheel .showcase__intro,
+		#showcase.has-wheel .process-rail { display: none; }
 	}
 
 	/* ── Process rail (desktop "meet in the middle") ── */
@@ -670,6 +686,7 @@ const steps = [
 
 		const isMobile = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		if (isMobile) return;
+		if (section.classList.contains('has-wheel')) return; // the wheel runs the desktop
 
 		const sectionEl = section;
 		const intro = sectionEl.querySelector<HTMLElement>('.showcase__intro');
