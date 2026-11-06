@@ -46,6 +46,9 @@ export interface GalleryOptions {
   // Which way the picture opens: 'y' from a horizontal line (up/down, the
   // default), 'x' from a vertical line (left/right).
   axis?: 'x' | 'y';
+  // A calmer fold: the picture is pulled toward the centre less while it
+  // opens, and scrubbed values are eased (slow start, slow end).
+  soft?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,6 +80,7 @@ uniform sampler2D uTex;
 uniform vec2 uCover;   // UV scale that makes the picture fill the plane (object-fit: cover)
 uniform float uOpacity;
 uniform float uWarp;   // 0 = fully open, 1 = folded away
+uniform float uSqueeze; // how much the picture is pulled toward the centre while folding (1 = the original)
 uniform float uAxis;   // 0 = opens from a horizontal line (up/down), 1 = from a vertical line (left/right)
 in vec2 vUv;
 out vec4 outColor;
@@ -88,7 +92,7 @@ void main() {
   float d = uAxis > 0.5 ? abs(c.x) : abs(c.y);
   float k = smoothstep(0.0, 1.0, uWarp * 2.0 + d * 2.0 - 1.0);
   // Pull the sample point toward the centre while folding.
-  vec2 uv = (vUv - c * k * k - 0.5) * uCover + 0.5;
+  vec2 uv = (vUv - c * k * k * uSqueeze - 0.5) * uCover + 0.5;
   vec4 col = texture(uTex, vec2(uv.x, 1.0 - uv.y));
   float a = col.a * uOpacity * (1.0 - k);
   outColor = vec4(col.rgb * a, a); // premultiplied
@@ -245,7 +249,7 @@ interface Plane {
 }
 
 export function createHoverGallery(container: HTMLElement, items: GalleryItem[], options: GalleryOptions = {}) {
-  const { fill = false, blurMix = 0.5, axis = 'y' } = options;
+  const { fill = false, blurMix = 0.5, axis = 'y', soft = false } = options;
   const opacity = options.opacity ?? (fill ? 1 : 0.5);
   const motionBlur = options.motionBlur ?? !fill;
   let pw = PLANE_W, ph = PLANE_H; // plane size in px (the container's, when filling)
@@ -266,7 +270,7 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
   const prog = program(gl, VERT, FRAG);
   const U = (n: string) => gl.getUniformLocation(prog, n);
   const uProj = U('uProj'), uCenter = U('uCenter'), uSize = U('uSize'), uCurveL = U('uCurve');
-  const uTiltL = U('uTilt'), uTexL = U('uTex'), uCoverL = U('uCover'), uOpacityL = U('uOpacity'), uWarpL = U('uWarp'), uAxisL = U('uAxis');
+  const uTiltL = U('uTilt'), uTexL = U('uTex'), uCoverL = U('uCover'), uOpacityL = U('uOpacity'), uWarpL = U('uWarp'), uAxisL = U('uAxis'), uSqueezeL = U('uSqueeze');
 
   const post = program(gl, POST_VERT, POST_FRAG);
   const copy = program(gl, POST_VERT, COPY_FRAG);
@@ -451,7 +455,9 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
   function setWarp(key: string, value: number) {
     const p = planes.get(key);
     if (!p) return;
-    const v = Math.min(1, Math.max(0, value));
+    // Soft: eased (slow start, slow end) so scrubbing never feels abrupt.
+    const open = 1 - Math.min(1, Math.max(0, value));
+    const v = soft ? 1 - open * open * (3 - 2 * open) : 1 - open;
     if (p.warp.v === v && !p.warp.moving) return;
     p.warp.set(v);
     dirty();
@@ -509,6 +515,7 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
       g.uniform1f(uCurveL, curve.v);
       g.uniform1f(uOpacityL, opacity);
       g.uniform1f(uAxisL, axis === 'x' ? 1 : 0);
+      g.uniform1f(uSqueezeL, soft ? 0.4 : 1);
       g.uniform1i(uTexL, 0);
       g.activeTexture(g.TEXTURE0);
       planes.forEach((p) => {

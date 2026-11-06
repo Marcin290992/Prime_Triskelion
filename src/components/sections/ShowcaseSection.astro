@@ -386,9 +386,6 @@ const steps = [
 			   container followed scroll position exactly. */
 			filter: grayscale(100%) contrast(1.1) brightness(0.75);
 		}
-		/* WebGL running: the canvas shows the pictures (same grade as the <img>s). */
-		.process-rail__media.is-gl .process-rail__img { display: none; }
-		.process-rail__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.75); }
 	}
 
 	/* Every desktop screen: the three columns used to be
@@ -515,9 +512,6 @@ const steps = [
 			object-fit: cover;
 			filter: grayscale(100%) contrast(1.1) brightness(0.78);
 		}
-		/* WebGL running: the canvas shows the picture (same grade as the <img>). */
-		.pstack__media.is-gl .pstack__img { display: none; }
-		.pstack__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.78); }
 		.pstack__copy {
 			display: flex;
 			flex-direction: column;
@@ -618,7 +612,6 @@ const steps = [
 
 <script>
 	import { onReady } from '../../utils/onReady';
-	import { createHoverGallery } from '../../utils/hoverGallery';
 	let _railCleanup: (() => void) | null = null;
 
 	const STEPS = 5;
@@ -688,16 +681,6 @@ const steps = [
 		const imgEls = Array.from(sectionEl.querySelectorAll<HTMLElement>('.process-rail__img'));
 		const mediaEl = sectionEl.querySelector<HTMLElement>('.process-rail__media');
 		if (!rail || !pin || !stage || !numEls.length) return;
-
-		// The centre pictures are WebGL planes that open from the middle line,
-		// left and right, scrubbed by the scroll (the same fold as the Services
-		// hover, turned on its side — utils/hoverGallery.ts). The plain <img>s
-		// stay as the fallback (no WebGL2, or reduced motion) and are hidden
-		// when it runs.
-		const gallery = mediaEl && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-			? createHoverGallery(mediaEl, imgEls.map((im, i) => ({ key: `r${i}`, src: (im as HTMLImageElement).currentSrc || (im as HTMLImageElement).src })), { fill: true, axis: 'x' })
-			: null;
-		if (gallery) mediaEl!.classList.add('is-gl');
 
 		// Markup keeps .showcase__intro as a plain sibling before
 		// .process-rail so mobile (which never runs this branch) renders
@@ -856,11 +839,8 @@ const steps = [
 				const imgOpacity = rawPos <= 0
 					? Math.max(0, Math.min(1, (rawPos + riseWindow) / riseWindow))
 					: Math.max(0, Math.min(1, 1.35 - rawPos * 1.35));
-				// The same 0–1 the <img> fades with now drives the fold: fully
-				// folded away at 0, fully open at 1.
-				gallery?.setWarp(`r${i}`, 1 - imgOpacity);
 				const imgEl = imgEls[i];
-				if (imgEl && !gallery) {
+				if (imgEl) {
 					imgEl.style.opacity = String(imgOpacity);
 					// Settles from a hair oversized as it fades in (a transform,
 					// cheap on the compositor), instead of a blur.
@@ -913,10 +893,6 @@ const steps = [
 			window.removeEventListener('resize', measureStageHeights);
 			if (rafId) cancelAnimationFrame(rafId);
 			introObserver?.disconnect();
-			if (gallery) {
-				gallery.destroy();
-				mediaEl?.classList.remove('is-gl');
-			}
 		};
 	}
 
@@ -925,7 +901,6 @@ const steps = [
 	// Phones/tablets: the process cards stick just under the pinned title —
 	// hand its height to the CSS. A ResizeObserver, not a scroll handler.
 	let _stackTopObserver: ResizeObserver | null = null;
-	let _stackGlCleanup: (() => void) | null = null;
 	function initProcessStackTop() {
 		_stackTopObserver?.disconnect();
 		_stackTopObserver = null;
@@ -948,73 +923,6 @@ const steps = [
 		_stackTopObserver = new ResizeObserver(set);
 		_stackTopObserver.observe(intro);
 		cards.forEach((c) => _stackTopObserver!.observe(c));
-
-		// The pictures open from the middle line, left and right — the desktop
-		// rail's fold, scrubbed by the card's own arrival: folded away while the
-		// card is still below the screen, fully open as it comes up to where it
-		// sticks (and it stays open once stuck). One WebGL canvas per card, but
-		// only for the cards near the screen, so a phone never holds all five.
-		_stackGlCleanup?.();
-		_stackGlCleanup = null;
-		if (getComputedStyle(stack).display === 'none') return;
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const live = new Map<HTMLElement, ReturnType<typeof createHoverGallery>>();
-		const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
-		const near = new Set<HTMLElement>(); // on or near the screen
-		const medias = cards.map((c) => c.querySelector<HTMLElement>('.pstack__media')!);
-		const fold = () => {
-			const vh = window.innerHeight;
-			const stuck = intro.offsetHeight;
-			const start = vh * 0.95;
-			const end = stuck + (vh - stuck) * 0.2;
-			// A card the next one has fully reached sits dark behind it: its plain
-			// <img> looks the same there, so it gives its canvas back. That keeps
-			// the live canvases to two or three, however far down the stack is.
-			medias.forEach((media, i) => {
-				const next = cards[i + 1];
-				const covered = !!next && next.getBoundingClientRect().top <= stuck + 4;
-				const want = near.has(media) && !covered;
-				if (want && !live.has(media)) open(media);
-				else if (!want && live.has(media)) close(media);
-			});
-			live.forEach((g, media) => {
-				const top = media.parentElement!.getBoundingClientRect().top;
-				g?.setWarp('p', 1 - clamp01((start - top) / (start - end)));
-			});
-		};
-		const open = (media: HTMLElement) => {
-			if (live.has(media)) return;
-			const im = media.querySelector<HTMLImageElement>('.pstack__img');
-			if (!im) return;
-			const g = createHoverGallery(media, [{ key: 'p', src: im.currentSrc || im.src }], { fill: true, axis: 'x' });
-			if (!g) return;
-			live.set(media, g);
-			media.classList.add('is-gl');
-		};
-		const close = (media: HTMLElement) => {
-			live.get(media)?.destroy();
-			live.delete(media);
-			media.classList.remove('is-gl');
-		};
-		const io = new IntersectionObserver((entries) => {
-			entries.forEach((en) => (en.isIntersecting ? near.add(en.target as HTMLElement) : near.delete(en.target as HTMLElement)));
-			fold();
-		}, { rootMargin: '50% 0px' });
-		cards.forEach((c) => { const m = c.querySelector<HTMLElement>('.pstack__media'); if (m) io.observe(m); });
-		let raf = 0;
-		const onScroll = () => {
-			if (raf) return;
-			raf = requestAnimationFrame(() => { raf = 0; fold(); });
-		};
-		window.addEventListener('scroll', onScroll, { passive: true });
-		window.addEventListener('resize', onScroll);
-		_stackGlCleanup = () => {
-			io.disconnect();
-			window.removeEventListener('scroll', onScroll);
-			window.removeEventListener('resize', onScroll);
-			if (raf) cancelAnimationFrame(raf);
-			[...live.keys()].forEach(close);
-		};
 	}
 	document.addEventListener('astro:page-load', initProcessStackTop);
 
@@ -1023,7 +931,5 @@ const steps = [
 		_railCleanup = null;
 		_stackTopObserver?.disconnect();
 		_stackTopObserver = null;
-		_stackGlCleanup?.();
-		_stackGlCleanup = null;
 	});
 </script>

@@ -416,9 +416,6 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 			transition: opacity 0.6s ease, transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 		}
 		.svc-m__img.is-active { opacity: 1; transform: none; }
-		/* WebGL running: the canvas shows the pictures (same grade as the <img>s). */
-		.svc-m__media.is-gl .svc-m__img { display: none; }
-		.svc-m__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.8); }
 
 		/* Tablet width: the phone's stacked layout, scaled up — names, line
 		   and picture all bigger; the title the same size as What we've
@@ -485,10 +482,7 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 	// page scrolls past it; tapping a name scrolls to its step.
 	let _svcScroll: (() => void) | null = null;
 	let _svcHeadObserver: ResizeObserver | null = null;
-	let _svcMobGl: (() => void) | null = null;
 	function initServicesMobile(section: HTMLElement) {
-		_svcMobGl?.();
-		_svcMobGl = null;
 		const scene = section.querySelector<HTMLElement>('.svc-m');
 		const pin = section.querySelector<HTMLElement>('.svc-m__pin');
 		if (!scene || !pin) return;
@@ -508,31 +502,9 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 		const head = () => parseFloat(getComputedStyle(pin).top) || 0;
 		let active = 0;
 
-		// The pictures change with the same fold/unfold as the desktop's (WebGL,
-		// utils/hoverGallery.ts) instead of a crossfade. The plain <img>s stay as
-		// the fallback (no WebGL2, or reduced motion) and are hidden when it runs.
-		const media = scene.querySelector<HTMLElement>('.svc-m__media');
-		const gallery = media && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-			? createHoverGallery(media, imgs.map((im, i) => ({ key: `m${i}`, src: (im as HTMLImageElement).currentSrc || (im as HTMLImageElement).src })), { fill: true })
-			: null;
-		let entered = false;
-		if (media && gallery) {
-			media.classList.add('is-gl');
-			// The first picture opens as the scene comes into view, not before.
-			const eio = new IntersectionObserver(([en]) => {
-				if (!en.isIntersecting) return;
-				entered = true;
-				gallery.setHovered(`m${active}`);
-				eio.disconnect();
-			});
-			eio.observe(media);
-			_svcMobGl = () => { eio.disconnect(); gallery.destroy(); media.classList.remove('is-gl'); };
-		}
-
 		const set = (i: number) => {
 			if (i === active) return;
 			active = i;
-			if (entered) gallery?.setHovered(`m${i}`);
 			[names, descs, imgs].forEach((list) => list.forEach((el, k) => el.classList.toggle('is-active', k === i)));
 		};
 		const range = () => Math.max(1, scene.offsetHeight - pin.offsetHeight);
@@ -558,8 +530,6 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 		_svcScroll = null;
 		_svcHeadObserver?.disconnect();
 		_svcHeadObserver = null;
-		_svcMobGl?.();
-		_svcMobGl = null;
 	});
 
 	// Desktop: the WebGL hover gallery and its listeners, undone on leaving the page.
