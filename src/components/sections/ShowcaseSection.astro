@@ -515,6 +515,9 @@ const steps = [
 			object-fit: cover;
 			filter: grayscale(100%) contrast(1.1) brightness(0.78);
 		}
+		/* WebGL running: the canvas shows the picture (same grade as the <img>). */
+		.pstack__media.is-gl .pstack__img { display: none; }
+		.pstack__media > :global(canvas) { filter: grayscale(100%) contrast(1.1) brightness(0.78); }
 		.pstack__copy {
 			display: flex;
 			flex-direction: column;
@@ -922,6 +925,7 @@ const steps = [
 	// Phones/tablets: the process cards stick just under the pinned title —
 	// hand its height to the CSS. A ResizeObserver, not a scroll handler.
 	let _stackTopObserver: ResizeObserver | null = null;
+	let _stackGlCleanup: (() => void) | null = null;
 	function initProcessStackTop() {
 		_stackTopObserver?.disconnect();
 		_stackTopObserver = null;
@@ -944,6 +948,73 @@ const steps = [
 		_stackTopObserver = new ResizeObserver(set);
 		_stackTopObserver.observe(intro);
 		cards.forEach((c) => _stackTopObserver!.observe(c));
+
+		// The pictures open from the middle line, left and right — the desktop
+		// rail's fold, scrubbed by the card's own arrival: folded away while the
+		// card is still below the screen, fully open as it comes up to where it
+		// sticks (and it stays open once stuck). One WebGL canvas per card, but
+		// only for the cards near the screen, so a phone never holds all five.
+		_stackGlCleanup?.();
+		_stackGlCleanup = null;
+		if (getComputedStyle(stack).display === 'none') return;
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const live = new Map<HTMLElement, ReturnType<typeof createHoverGallery>>();
+		const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+		const near = new Set<HTMLElement>(); // on or near the screen
+		const medias = cards.map((c) => c.querySelector<HTMLElement>('.pstack__media')!);
+		const fold = () => {
+			const vh = window.innerHeight;
+			const stuck = intro.offsetHeight;
+			const start = vh * 0.95;
+			const end = stuck + (vh - stuck) * 0.2;
+			// A card the next one has fully reached sits dark behind it: its plain
+			// <img> looks the same there, so it gives its canvas back. That keeps
+			// the live canvases to two or three, however far down the stack is.
+			medias.forEach((media, i) => {
+				const next = cards[i + 1];
+				const covered = !!next && next.getBoundingClientRect().top <= stuck + 4;
+				const want = near.has(media) && !covered;
+				if (want && !live.has(media)) open(media);
+				else if (!want && live.has(media)) close(media);
+			});
+			live.forEach((g, media) => {
+				const top = media.parentElement!.getBoundingClientRect().top;
+				g?.setWarp('p', 1 - clamp01((start - top) / (start - end)));
+			});
+		};
+		const open = (media: HTMLElement) => {
+			if (live.has(media)) return;
+			const im = media.querySelector<HTMLImageElement>('.pstack__img');
+			if (!im) return;
+			const g = createHoverGallery(media, [{ key: 'p', src: im.currentSrc || im.src }], { fill: true, axis: 'x' });
+			if (!g) return;
+			live.set(media, g);
+			media.classList.add('is-gl');
+		};
+		const close = (media: HTMLElement) => {
+			live.get(media)?.destroy();
+			live.delete(media);
+			media.classList.remove('is-gl');
+		};
+		const io = new IntersectionObserver((entries) => {
+			entries.forEach((en) => (en.isIntersecting ? near.add(en.target as HTMLElement) : near.delete(en.target as HTMLElement)));
+			fold();
+		}, { rootMargin: '50% 0px' });
+		cards.forEach((c) => { const m = c.querySelector<HTMLElement>('.pstack__media'); if (m) io.observe(m); });
+		let raf = 0;
+		const onScroll = () => {
+			if (raf) return;
+			raf = requestAnimationFrame(() => { raf = 0; fold(); });
+		};
+		window.addEventListener('scroll', onScroll, { passive: true });
+		window.addEventListener('resize', onScroll);
+		_stackGlCleanup = () => {
+			io.disconnect();
+			window.removeEventListener('scroll', onScroll);
+			window.removeEventListener('resize', onScroll);
+			if (raf) cancelAnimationFrame(raf);
+			[...live.keys()].forEach(close);
+		};
 	}
 	document.addEventListener('astro:page-load', initProcessStackTop);
 
@@ -952,5 +1023,7 @@ const steps = [
 		_railCleanup = null;
 		_stackTopObserver?.disconnect();
 		_stackTopObserver = null;
+		_stackGlCleanup?.();
+		_stackGlCleanup = null;
 	});
 </script>
