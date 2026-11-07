@@ -49,6 +49,11 @@ export interface GalleryOptions {
   // A calmer fold: the picture is pulled toward the centre less while it
   // opens, and scrubbed values are eased (slow start, slow end).
   soft?: boolean;
+  // Draw the canvas over its container's other children (so the picture is not
+  // crossed by the list's rules) instead of behind them.
+  above?: boolean;
+  // Seconds the picture takes to unfold (default 1.75).
+  openSeconds?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +254,7 @@ interface Plane {
 }
 
 export function createHoverGallery(container: HTMLElement, items: GalleryItem[], options: GalleryOptions = {}) {
-  const { fill = false, blurMix = 0.5, axis = 'y', soft = false } = options;
+  const { fill = false, blurMix = 0.5, axis = 'y', soft = false, above = false, openSeconds = 1.75 } = options;
   const opacity = options.opacity ?? (fill ? 1 : 0.5);
   const motionBlur = options.motionBlur ?? !fill;
   let pw = PLANE_W, ph = PLANE_H; // plane size in px (the container's, when filling)
@@ -257,7 +262,7 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
 
   const canvas = document.createElement('canvas');
   canvas.setAttribute('aria-hidden', 'true');
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block';
+  canvas.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:block${above ? ';z-index:2' : ''}`;
   container.prepend(canvas);
 
   const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'high-performance' });
@@ -444,7 +449,7 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
     const now = performance.now() / 1000;
     planes.forEach((p, k) => {
       const open = k === key;
-      p.warp.go(open ? 0 : 1, open ? 1.75 : 0.75, easeOut, now);
+      p.warp.go(open ? 0 : 1, open ? openSeconds : 0.75, easeOut, now);
     });
     setTilt(tiltTarget);
     dirty();

@@ -218,7 +218,10 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
 		/* The picture is WebGL, drawn on a canvas that fills the section behind
 		   the names (utils/hoverGallery.ts); the list sits above it. */
-		.svc__body { grid-template-columns: minmax(0, 1fr); position: relative; z-index: 1; }
+		/* The body is not a stacking context, so the picture (canvas, z 2) can sit above
+		   the rows' rules but under the names (z 3). */
+		.svc__body { grid-template-columns: minmax(0, 1fr); position: relative; }
+		.svc__body .svc__roll { position: relative; z-index: 3; }
 	}
 	/* Phones/tablets only — see the mobile block below. */
 	.svc-m { display: none; }
@@ -577,6 +580,8 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 		const gallery = createHoverGallery(
 			section,
 			rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
+			// Brighter than the original's half opacity, and over the list's rules (the unfold tempo is unchanged).
+			{ opacity: 0.92, above: true },
 		);
 		if (!gallery) return;
 
