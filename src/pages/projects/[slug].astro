@@ -661,7 +661,11 @@ const [line1, line2] = d.titleLines;
     }
     .wos-splash {
       position: absolute;
-      inset: 0;
+      /* One screen tall from the top of the stage, so the title is centred on the
+         screen even when the panel under it is taller than the screen (small phones). */
+      inset: 0 0 auto 0;
+      height: 100svh;
+      height: calc(var(--app-stable-vh, 1svh) * 100);
       z-index: 2;
       display: flex;
       align-items: center;
