@@ -171,6 +171,9 @@ const { steps, center = 'image' } = Astro.props;
 			will-change: transform, opacity;
 			color: rgb(var(--c-cream));
 		}
+		/* The tile of the step that is not current (the one leaving) is dimmed. */
+		.pw-card > * { transition: opacity 0.5s ease; }
+		.pw-card:not(.is-current) > * { opacity: 0.3; }
 		.pw-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 		.pw-card__num {
 			font-family: var(--f-display);
@@ -255,10 +258,10 @@ const { steps, center = 'image' } = Astro.props;
 	// Scroll lengths, in screen heights (vh), while the section stays pinned.
 	const LEAD_VH = 0; // step 01 is already beside the picture when the section arrives
 	const TAIL_VH = 25; // a calm moment after the last tile leaves
-	const CARDS_VH = 265;
+	const CARDS_VH = 370;
 	// One tile at a time, alternating sides: each travels for 0.5 of the run,
-	// and the next starts 0.24 later — so at most two share the screen.
-	const STEP_GAP = 0.24;
+	// and the next starts 0.36 later — so mostly one is on screen, and only briefly two.
+	const STEP_GAP = 0.36;
 	const STEP_RUN = 0.5;
 	// The run starts with step 1 already at rest beside the picture (half-way along its path).
 	const T_START = 0.5 * STEP_RUN;
@@ -305,13 +308,14 @@ const { steps, center = 'image' } = Astro.props;
 			track.style.height = `${stageH + dimensions.lead + dimensions.cardsPx + (TAIL_VH / 100) * stageH}px`;
 		};
 
-		let active = 0;
+		let active = -1; // the first call (below) marks step 1 as current
 		const setActive = (i: number) => {
 			if (i === active) return;
 			active = i;
 			bigNums.forEach((el, k) => el.classList.toggle('is-active', k === i));
 			pics.forEach((el, k) => el.classList.toggle('is-active', k === i));
 			if (nowEl) nowEl.textContent = String(i + 1).padStart(2, '0');
+			cards.forEach((el, k) => el.classList.toggle('is-current', k === i));
 		};
 
 		const place = (el: HTMLElement, x: number, y: number, opacity: number) => {
@@ -377,6 +381,7 @@ const { steps, center = 'image' } = Astro.props;
 		const wake = () => { if (near && !raf) raf = requestAnimationFrame(tick); };
 
 		layout();
+		setActive(0);
 		cur = target();
 		render(cur);
 		const io = new IntersectionObserver(([en]) => { near = en.isIntersecting; wake(); }, { rootMargin: '25% 0px' });
