@@ -471,6 +471,8 @@ import scr4 from '../img/wos/screen-4.jpg';
   }
   .wos-pd__tab.is-active .wos-pd__bar { animation: wosPdBar var(--wos-pd-ms, 6000ms) linear forwards; }
   /* While the tabs are held (hover / touch) the timer stops: the active tab's line stays full red. */
+  /* Phone/tablet: the timer waits until the panel has come up out of blur. */
+  .wos-pd__tabs.is-waiting .wos-pd__bar { animation: none; transform: scaleX(0); }
   .wos-pd__tabs.is-paused .wos-pd__tab.is-active .wos-pd__bar { animation: none; transform: scaleX(1); }
   @keyframes wosPdBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .wos-pd__panels { margin-top: 1.5rem; display: grid; }
@@ -719,9 +721,20 @@ import scr4 from '../img/wos/screen-4.jpg';
     const items = stage.querySelectorAll<HTMLElement>('.wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs');
     gsap.set(items, { opacity: 0, filter: 'blur(12px)' });
 
+    // The tab timer may run only once the panel is fully out of blur (pin finished).
+    const gate = (on: boolean) => {
+      if ((window as any).__wosTabsGate === on) return;
+      (window as any).__wosTabsGate = on;
+      document.dispatchEvent(new CustomEvent('wos:tabs-gate', { detail: on }));
+    };
+    (window as any).__wosTabsGate = false;
+
     gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true },
+      scrollTrigger: {
+        trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true,
+        onUpdate: (self) => gate(self.progress >= 0.995),
+      },
     })
       // Explicit start values: the entrance tween above is still running when this
       // is built, so a plain .to() would remember its blurred start and scroll back
@@ -758,9 +771,20 @@ import scr4 from '../img/wos/screen-4.jpg';
       };
       const arm = () => {
         window.clearTimeout(timer);
-        if (reducedMotion() || tabs.classList.contains('is-paused')) return;
+        if (reducedMotion() || !gateOpen || tabs.classList.contains('is-paused')) return;
         timer = window.setTimeout(() => { show((active + 1) % btns.length); arm(); }, PD_MS);
       };
+      // Phone/tablet: wait for the panel to come out of blur (see initSplash).
+      let gateOpen = (window as any).__wosTabsGate !== false;
+      tabs.classList.toggle('is-waiting', !gateOpen);
+      const onGate = (e: Event) => {
+        gateOpen = (e as CustomEvent<boolean>).detail;
+        tabs.classList.toggle('is-waiting', !gateOpen);
+        window.clearTimeout(timer);
+        if (gateOpen) { show(active); arm(); }
+      };
+      document.addEventListener('wos:tabs-gate', onGate);
+      document.addEventListener('astro:before-swap', () => document.removeEventListener('wos:tabs-gate', onGate), { once: true });
       btns.forEach((b, i) => b.addEventListener('click', () => { show(i); arm(); }));
       tabs.addEventListener('mouseenter', () => { tabs.classList.add('is-paused'); window.clearTimeout(timer); });
       tabs.addEventListener('mouseleave', () => { tabs.classList.remove('is-paused'); show(active); arm(); });
@@ -860,6 +884,7 @@ import scr4 from '../img/wos/screen-4.jpg';
     // Content below the hero fades in after it (mobile only, see
     // revealAfterHero) — called unconditionally so it can never stay hidden.
     afterPageTransition(() => revealAfterHero(550));
+    (window as any).__wosTabsGate = undefined; // only the phone/tablet splash closes it
     if (isMob) {
       ScrollTrigger.config({ ignoreMobileResize: true });
       initSplash();
