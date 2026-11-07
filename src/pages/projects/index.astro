@@ -2,55 +2,21 @@
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
 import { getImage } from 'astro:assets';
-import deeer2Raw from '../../img/deeer2.webp';
+import { projects as data, hrefOf } from '../../data/projects';
 
-// deeer2Raw is a 7360px-wide source — this page's <img> tags take a plain
-// string src (`img` also holds external URLs for the other entries), so
-// getImage() pre-generates a downscaled asset to use instead of the original.
-const deeer2 = await getImage({ src: deeer2Raw, width: 900, height: 1200 });
-// Full-screen version for the case-study entrance (data-case-src).
-const deeer2Full = await getImage({ src: deeer2Raw, width: 2400 });
-
-const projects = [
-  {
-    slug: '/winds-of-sinai',
-    title: 'Winds of Sinai',
-    categories: ['Brand Identity', 'Web Design'],
-    year: '2024',
-    img: deeer2.src,
-    full: deeer2Full.src,
-    bg: '#0c0d0b',
-    speed: 1,
-  },
-  {
-    slug: '#',
-    title: 'Project Two',
-    categories: ['Web Design', 'Development'],
-    year: '2024',
-    img: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400&fit=crop',
-    bg: '#0d0b0b',
-    speed: -1,
-  },
-  {
-    slug: '#',
-    title: 'Project Three',
-    categories: ['Brand Identity', 'Strategy'],
-    year: '2023',
-    img: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1400&fit=crop',
-    bg: '#0b0b0d',
-    speed: 1,
-  },
-  {
-    slug: '#',
-    title: 'Project Four',
-    categories: ['Motion', 'Development'],
-    year: '2023',
-    img: deeer2.src,
-    full: deeer2Full.src,
-    bg: '#0d0c0a',
-    speed: -1,
-  },
-];
+// Titles, tags, years and card pictures come from src/data/projects.ts (the same
+// file the /projects/[slug] case-study pages read). A local card picture can be
+// a 7360px-wide source, so getImage() pre-generates a downscaled one for the card
+// and a 2400px one for the full-screen case-study entrance (data-case-src).
+// Placeholders keep their remote URL (no `full`).
+const projects = await Promise.all(
+  data.map(async (p) => {
+    const local = typeof p.card !== 'string';
+    const img = local ? (await getImage({ src: p.card, width: 900, height: 1200 })).src : (p.card as string);
+    const full = local ? (await getImage({ src: p.card, width: 2400 })).src : undefined;
+    return { slug: hrefOf(p), title: p.title, categories: p.categories, year: p.year, img, full, bg: p.bg, speed: p.speed };
+  })
+);
 ---
 
 <Layout

@@ -12,7 +12,7 @@ Zapis tego, jak użyty jest **Lenis** w tym projekcie, żeby scroll, przypięcia
 |---|---|
 | Wspólne opcje Lenisa na dotyku | `src/utils/touchLenis.ts` (`TOUCH_LENIS_OPTIONS`) |
 | Lenis na Home (dotyk i desktop) | `src/pages/index.astro`, funkcja `initLenis` |
-| Lenis na Winds of Sinai | `src/pages/winds-of-sinai.astro` (sekcja "1. Lenis musi być przed ScrollTrigger") |
+| Lenis na Winds of Sinai | `src/pages/projects/[slug].astro` (sekcja "1. Lenis musi być przed ScrollTrigger") |
 | Lenis na wszystkich pozostałych stronach (About, Projects, Services, Contact, 404) | `src/layouts/Layout.astro`, funkcja `initLayoutLenis` (fallback) |
 | Zegar GSAP: `lagSmoothing(0)` | `src/utils/pageEntrances.ts`, funkcja `syncTickerToScroll()` |
 | Blokada scrolla przy menu | `src/utils/oxygenMenu.ts`, `lockBodyScroll` / `unlockBodyScroll` |

@@ -68,7 +68,7 @@ Do tego globalnie `ScrollTrigger.config({ ignoreMobileResize: true })` (pasek ad
 
 **Gdzie to jest w tym projekcie:**
 - Home — `src/pages/index.astro`, funkcja `initLenis` (gałąź dotyku),
-- Winds of Sinai — `src/pages/winds-of-sinai.astro`,
+- Winds of Sinai — `src/pages/projects/[slug].astro`,
 - wszystkie pozostałe strony — fallback w `src/layouts/Layout.astro` (`initLayoutLenis`; wcześniej na iPhonie był tu pomijany).
 
 Desktop zostaje przy swoim Lenisie z `lerp` (na dotyku to jest osobna konfiguracja).

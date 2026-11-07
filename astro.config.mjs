@@ -3,6 +3,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  // The case study moved under /projects/<slug>/ (src/pages/projects/[slug].astro).
+  redirects: { '/winds-of-sinai': '/projects/winds-of-sinai/' },
   // Nothing was prefetching links at all before this — every tap had to
   // wait for the new page's fetch to even START before the View Transition
   // could begin, which on a mobile connection reads as an inconsistent

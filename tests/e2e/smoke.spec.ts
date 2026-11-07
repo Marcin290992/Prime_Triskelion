@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // Just enough to catch "the build succeeded but the page is actually
 // broken" — a blank screen, a thrown client-side error, a 404 where a page
 // should be. Not a design/content review.
-const pages = ['/', '/about', '/contact', '/projects', '/services', '/winds-of-sinai'];
+const pages = ['/', '/about', '/contact', '/projects', '/services', '/projects/winds-of-sinai'];
 
 for (const path of pages) {
   test(`${path} loads without a client-side error`, async ({ page }) => {

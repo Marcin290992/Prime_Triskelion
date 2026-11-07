@@ -13,6 +13,13 @@
   command = "npm run build"
   publish = "dist"
 
+# Old case-study address
+[[redirects]]
+  from = "/winds-of-sinai"
+  to = "/projects/winds-of-sinai/"
+  status = 301
+  force = true
+
 # HTTP → HTTPS redirect
 [[redirects]]
   from = "http://primetriskelion.com/*"
