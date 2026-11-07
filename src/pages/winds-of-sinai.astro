@@ -9,12 +9,6 @@ import scr2 from '../img/wos/screen-2.jpg';
 import scr3 from '../img/wos/screen-3.jpg';
 import scr4 from '../img/wos/screen-4.jpg';
 
-const screens = [
-  { img: scr1, url: 'windsofsinai.com', label: 'Homepage' },
-  { img: scr2, url: 'windsofsinai.com/about', label: 'About page' },
-  { img: scr3, url: 'windsofsinai.com/contact', label: 'Contact page' },
-  { img: scr4, url: 'windsofsinai.com/experiences', label: 'Experiences page' },
-];
 ---
 
 <Layout title="Winds Of Sinai — Prime Triskelion" description="Case study: Winds Of Sinai — branding, web design and development by Prime Triskelion.">
@@ -115,203 +109,86 @@ const screens = [
       </div>
     </section>
 
-    <!-- ═══ STICKY STACK ═══ -->
-    <div class="wos-stack">
+    <!-- ═══ PROJECT DETAIL (Trionn-style): sticky panel left, gallery right ═══ -->
+    <section class="wos-pd" id="wos-pd">
+      <div class="wos-inner wos-pd__grid">
 
-      <section class="wos-sec">
-        <span class="wos-sec__idx" aria-hidden="true">01</span>
-        <div class="wos-inner">
-          <h2 class="wos-sec__title">The<br/><em>challenge.</em></h2>
-          <p class="wos-sec__body">A travel brand with deep roots in Sinai's landscape and culture needed an identity that could compete globally — premium, evocative, and trusted — without losing its authentic desert soul.</p>
-        </div>
-      </section>
-
-      <section class="wos-sec wos-sec--mid">
-        <span class="wos-sec__idx" aria-hidden="true">02</span>
-        <div class="wos-inner">
-          <h2 class="wos-sec__title">How we<br/><em>approached it.</em></h2>
-          <p class="wos-sec__body">I started with a brand sprint — mood boards, competitor mapping, and tone-of-voice workshops. The visual language was built around sand, silence, and scale: muted earth palettes, wide-body type, and considered negative space.</p>
-        </div>
-      </section>
-
-      <section class="wos-sec">
-        <span class="wos-sec__idx" aria-hidden="true">03</span>
-        <div class="wos-inner">
-          <h2 class="wos-sec__title">What we<br/><em>delivered.</em></h2>
-          <ul class="wos-deliverables">
-            <li class="wos-del"><span class="wos-del__dot"></span>Logo System &amp; Brand Identity</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Color Palette &amp; Typography</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Web Design (Figma)</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Frontend Development (Astro)</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>SEO &amp; Performance</li>
-          </ul>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- ═══ MOBILE PROCESS (replaces sticky stack on small screens) ═══ -->
-    <div class="wos-process-m" aria-label="Project process">
-      <div class="wos-inner">
-
-        <div class="wos-pm__item">
-          <h2 class="wos-pm__title">The<br/><em>challenge.</em></h2>
-          <p class="wos-pm__body">A travel brand with deep roots in Sinai's landscape and culture needed an identity that could compete globally — premium, evocative, and trusted — without losing its authentic desert soul.</p>
-        </div>
-
-        <div class="wos-pm__item">
-          <h2 class="wos-pm__title">How we<br/><em>approached it.</em></h2>
-          <p class="wos-pm__body">I started with a brand sprint — mood boards, competitor mapping, and tone-of-voice workshops. The visual language was built around sand, silence, and scale: muted earth palettes, wide-body type, and considered negative space.</p>
-        </div>
-
-        <div class="wos-pm__item wos-pm__item--last">
-          <h2 class="wos-pm__title">What we<br/><em>delivered.</em></h2>
-          <ul class="wos-deliverables">
-            <li class="wos-del"><span class="wos-del__dot"></span>Logo System &amp; Brand Identity</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Color Palette &amp; Typography</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Web Design (Figma)</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>Frontend Development (Astro)</li>
-            <li class="wos-del"><span class="wos-del__dot"></span>SEO &amp; Performance</li>
-          </ul>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ═══ SKEWED BROWSER FRAMES ═══ -->
-    <section class="skew-sec">
-      <div class="skew-sec__inner">
-
-        <div class="skew-sec__sticky">
-          <h2 class="skew-sec__heading">Brand<br/>identity<br/>in motion.</h2>
-          <p class="skew-sec__sub">Logo, color system, typography, and web screens from the Winds Of Sinai project.</p>
-        </div>
-
-        <div class="skew-sec__cards">
-
-          <figure class="skew-fig skew-fig--neg">
-            <div class="browser-frame">
-              <div class="browser-frame__bar">
-                <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                <div class="browser-frame__url">windsofsinai.com</div>
+        <aside class="wos-pd__side">
+          <div class="wos-pd__side-inner">
+            <div class="wos-pd__top">
+              <div class="wos-pd__topbar">
+                <a href="/projects/" class="wos-pd__link">Back to projects</a>
+                <a href="https://windsofsinai.com" class="wos-pd__live wos-pd__live--top" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</a>
               </div>
-              <div class="browser-frame__screen">
-                <div class="browser-frame__ph">Homepage</div>
-              </div>
+              <h2 class="wos-pd__title">Winds<br/>Of Sinai</h2>
+              <p class="wos-pd__sub">Full brand identity and website for a premium desert travel &amp; experiences brand rooted in the Sinai Peninsula.</p>
+              <ul class="wos-pd__cats">
+                <li>Branding</li>
+                <li>Web Design</li>
+                <li>Development</li>
+              </ul>
             </div>
-          </figure>
 
-          <figure class="skew-fig skew-fig--pos">
-            <div class="browser-frame">
-              <div class="browser-frame__bar">
-                <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                <div class="browser-frame__url">windsofsinai.com/experiences</div>
+            <div class="wos-pd__tabs" id="wos-pd-tabs">
+              <div class="wos-pd__tabrow" role="tablist">
+                <button type="button" role="tab" class="wos-pd__tab is-active" aria-selected="true">Challenge<span class="wos-pd__bar"></span></button>
+                <button type="button" role="tab" class="wos-pd__tab" aria-selected="false">Approach<span class="wos-pd__bar"></span></button>
+                <button type="button" role="tab" class="wos-pd__tab" aria-selected="false">Delivered<span class="wos-pd__bar"></span></button>
               </div>
-              <div class="browser-frame__screen">
-                <div class="browser-frame__ph">Experiences</div>
-              </div>
-            </div>
-          </figure>
-
-          <figure class="skew-fig skew-fig--neg">
-            <div class="browser-frame">
-              <div class="browser-frame__bar">
-                <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                <div class="browser-frame__url">windsofsinai.com/about</div>
-              </div>
-              <div class="browser-frame__screen">
-                <div class="browser-frame__ph">About</div>
-              </div>
-            </div>
-          </figure>
-
-          <figure class="skew-fig skew-fig--pos">
-            <div class="browser-frame">
-              <div class="browser-frame__bar">
-                <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                <div class="browser-frame__url">windsofsinai.com/contact</div>
-              </div>
-              <div class="browser-frame__screen">
-                <div class="browser-frame__ph">Contact</div>
-              </div>
-            </div>
-          </figure>
-
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ FULL-WIDTH SHOWCASE ═══ -->
-    <section class="showcase-sec">
-      <div class="showcase-header wos-inner">
-        <h2 class="showcase-title">Every screen.<br/><em>Pixel perfect.</em></h2>
-      </div>
-
-      <!-- DESKTOP: horizontal scroll via GSAP ScrollTrigger -->
-      <div class="scr-outer">
-        <div class="scr-sticky">
-          <!-- One frame stays put; the screen inside changes as the page
-               scrolls (initScreensScroll). -->
-          <div class="scr-slide">
-            <div class="scr-slide__meta">
-              <div class="scr-stack scr-labels">
-                {screens.map((sc, i) => <span class="showcase-desc scr-stack__item" data-i={i}>{sc.label}</span>)}
-              </div>
-              <div class="scr-stack scr-count" aria-hidden="true">
-                {screens.map((_, i) => <span class="showcase-desc scr-stack__item" data-i={i}>{`0${i + 1} / 0${screens.length}`}</span>)}
-              </div>
-            </div>
-            <div class="scr-persp">
-              <div class="browser-frame browser-frame--scr scr-frame">
-                <div class="browser-frame__bar">
-                  <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                  <div class="browser-frame__url scr-urls">
-                    {screens.map((sc, i) => <span class="scr-stack__item" data-i={i}>{sc.url}</span>)}
-                  </div>
+              <div class="wos-pd__panels">
+                <div class="wos-pd__panel is-active" role="tabpanel">
+                  <p>A travel brand with deep roots in Sinai's landscape and culture needed an identity that could compete globally — premium, evocative, and trusted — without losing its authentic desert soul.</p>
                 </div>
-                <div class="browser-frame__screen browser-frame__screen--tall">
-                  {screens.map((sc, i) => (
-                    <div class="scr-shot" data-i={i}>
-                      <Image src={sc.img} alt="" widths={[1280, 1920]} sizes="90vw" loading="lazy" />
-                    </div>
-                  ))}
+                <div class="wos-pd__panel" role="tabpanel">
+                  <p>I started with a brand sprint — mood boards, competitor mapping, and tone-of-voice workshops. The visual language was built around sand, silence, and scale: muted earth palettes, wide-body type, and considered negative space.</p>
+                </div>
+                <div class="wos-pd__panel" role="tabpanel">
+                  <ul>
+                    <li>Logo System &amp; Brand Identity</li>
+                    <li>Color Palette &amp; Typography</li>
+                    <li>Web Design (Figma)</li>
+                    <li>Frontend Development (Astro)</li>
+                    <li>SEO &amp; Performance</li>
+                  </ul>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="scr-progress" aria-hidden="true">
-            <div class="scr-progress__fill"></div>
+            <div class="wos-pd__nav">
+              <a href="/projects/" class="wos-pd__link wos-pd__link--back">Back to projects</a>
+              <a href="https://windsofsinai.com" class="wos-pd__live" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</a>
+            </div>
+          </div>
+        </aside>
+
+        <div class="wos-pd__gallery" id="wos-pd-gallery">
+          <div class="wos-pd__img" style="aspect-ratio: 16 / 10;">
+            <Image src={scr1} alt="Winds Of Sinai — homepage" widths={[900, 1400]} sizes="(min-width: 1025px) 62vw, 100vw" loading="eager" />
+          </div>
+          <div class="wos-pd__row">
+            <div class="wos-pd__img" style="aspect-ratio: 4 / 5;">
+              <Image src={scr2} alt="Winds Of Sinai — about page" widths={[600, 900]} sizes="(min-width: 1025px) 31vw, 50vw" loading="lazy" />
+            </div>
+            <div class="wos-pd__img" style="aspect-ratio: 4 / 5;">
+              <Image src={scr3} alt="Winds Of Sinai — contact page" widths={[600, 900]} sizes="(min-width: 1025px) 31vw, 50vw" loading="lazy" />
+            </div>
+          </div>
+          <div class="wos-pd__img" style="aspect-ratio: 16 / 10;">
+            <Image src={scr4} alt="Winds Of Sinai — experiences page" widths={[900, 1400]} sizes="(min-width: 1025px) 62vw, 100vw" loading="lazy" />
+          </div>
+          <div class="wos-pd__row">
+            <div class="wos-pd__img" style="aspect-ratio: 1 / 1;">
+              <Image src={scr3} alt="" widths={[600, 900]} sizes="(min-width: 1025px) 31vw, 50vw" loading="lazy" />
+            </div>
+            <div class="wos-pd__img" style="aspect-ratio: 1 / 1;">
+              <Image src={scr1} alt="" widths={[600, 900]} sizes="(min-width: 1025px) 31vw, 50vw" loading="lazy" />
+            </div>
+          </div>
+          <div class="wos-pd__img" style="aspect-ratio: 16 / 10;">
+            <Image src={scr2} alt="" widths={[900, 1400]} sizes="(min-width: 1025px) 62vw, 100vw" loading="lazy" />
           </div>
         </div>
-      </div>
 
-      <!-- MOBILE: a horizontal strip (sticky + one scrubbed tween, see
-           initScreensStrip), with the same counter and progress line as desktop. -->
-      <div class="scr-mobile" id="scr-m">
-        <div class="scrm__sticky">
-          <h2 class="showcase-title scrm__title">Every screen.<br/><em>Pixel perfect.</em></h2>
-          <div class="scrm__meta">
-            <span class="showcase-desc scrm__label" id="scrm-label">{screens[0].label}</span>
-            <span class="showcase-desc scrm__count" id="scrm-count" aria-hidden="true">{`01 / 0${screens.length}`}</span>
-          </div>
-          <div class="scrm__track" id="scrm-track">
-            {screens.map((sc, i) => (
-              <figure class="scrm__item" data-label={sc.label}>
-                <div class="browser-frame">
-                  <div class="browser-frame__bar">
-                    <div class="browser-frame__dots"><span></span><span></span><span></span></div>
-                    <div class="browser-frame__url">{sc.url}</div>
-                  </div>
-                  <div class="browser-frame__screen browser-frame__screen--tall">
-                    <div class="browser-frame__ph">{`Desktop — ${['Homepage', 'About', 'Contact', 'Experiences'][i]}`}</div>
-                  </div>
-                </div>
-              </figure>
-            ))}
-          </div>
-          <div class="scrm__progress" aria-hidden="true"><div class="scrm__bar" id="scrm-bar"></div></div>
-        </div>
       </div>
     </section>
 
@@ -643,111 +520,145 @@ const screens = [
   ───────────────────────────────────────── */
 
   /* ─────────────────────────────────────────
-     STICKY INTRO
+     PROJECT DETAIL — sticky panel + gallery (after the hero)
   ───────────────────────────────────────── */
-  .wos-sec {
-    position: sticky;
-    top: 0;
-    height: 100vh;
+  .wos-pd { background: rgb(var(--c-bg)); position: relative; }
+  .wos-pd__grid {
     display: grid;
-    /* Centred vertically, but stretched across: the text block starts on
-       the same left edge as the hero, the frames and the stats (it used to
-       shrink to its content and centre, ~320px in). */
-    align-content: center;
-    justify-content: stretch;
-    background: rgb(var(--c-bg));
-    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 5.75rem;
+    padding-bottom: 6.25rem;
   }
-  .wos-sec--mid { border-top: 1px solid rgb(var(--c-red) / 0.12); }
-  /* The step number, huge and barely there, in the right half the text
-     leaves empty (same idea as the project cards' giant background word). */
-  .wos-sec__idx {
-    position: absolute;
-    right: var(--site-gutter);
-    top: 50%;
-    transform: translateY(-50%);
+  .wos-pd__grid.wos-inner { width: 100%; max-width: none; padding-inline: 1.75rem; }
+  .wos-pd__side, .wos-pd__gallery { grid-column: 1 / -1; min-width: 0; }
+  .wos-pd__panels { grid-template-columns: minmax(0, 1fr); }
+  .wos-pd__gallery { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 4rem; }
+  .wos-pd__side-inner { display: flex; flex-direction: column; }
+
+  .wos-pd__link {
+    font-family: var(--f-body);
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.85);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .wos-pd__link:hover { color: rgb(var(--c-red)); }
+  .wos-pd__topbar { display: none; } /* phone: back link and Live are in the bottom row */
+  .wos-pd__live {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    font-family: var(--f-body); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgb(var(--c-cream)); text-decoration: none;
+    transition: color 0.3s;
+  }
+  .wos-pd__live:hover { color: rgb(var(--c-red)); }
+  .wos-pd__live-dot {
+    width: 7px; height: 7px; background: rgb(var(--c-red)); flex-shrink: 0;
+    animation: wosLive 1.6s ease-in-out infinite;
+  }
+  @keyframes wosLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  .wos-pd__title {
+    margin: 0;
     font-family: var(--f-display);
     font-weight: 700;
-    font-size: clamp(10rem, 26vw, 32rem);
-    line-height: 1;
-    letter-spacing: -0.04em;
-    color: rgb(var(--c-cream) / 0.05);
-    pointer-events: none;
-    user-select: none;
-  }
-  .wos-sec__title {
-    font-family: var(--f-display);
-    font-weight: 700;
-    font-size: clamp(2.8rem, 8vw, 9rem);
+    font-size: clamp(2.6rem, 4.2vw, 4.4rem);
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    line-height: 0.9;
+    line-height: 0.92;
     color: rgb(var(--c-cream));
-    margin: 0 0 clamp(1.2rem, 3vh, 2rem);
   }
-  .wos-sec__title em { font-style: normal; color: rgb(var(--c-red) / 0.85); }
-  .wos-sec__body {
+  .wos-pd__sub {
+    margin: 1.25rem 0 0;
+    max-width: 24rem;
     font-family: var(--f-body);
-    font-size: clamp(0.9rem, 1.3vw, 1.05rem);
+    font-size: 0.95rem;
     font-weight: 300;
-    line-height: 1.75;
+    line-height: 1.65;
+    color: rgb(var(--c-cream) / 0.7);
+  }
+  .wos-pd__cats, .wos-pd__panel ul { list-style: none; padding: 0; margin: 0; }
+  .wos-pd__cats { margin-top: 1.75rem; }
+  .wos-pd__cats li, .wos-pd__panel li {
+    display: flex; gap: 0.4rem;
+    font-family: var(--f-body); font-weight: 300; font-size: 0.95rem; line-height: 1.7;
     color: rgb(var(--c-cream) / 0.82);
-    max-width: 48ch;
   }
-  .wos-deliverables { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.75rem; }
-  .wos-del {
-    font-family: var(--f-body);
-    font-size: clamp(0.88rem, 1.2vw, 1rem);
-    font-weight: 300;
+  .wos-pd__cats li::before, .wos-pd__panel li::before { content: '·'; color: rgb(var(--c-red) / 0.85); }
+
+  .wos-pd__tabs { margin-top: 3.5rem; }
+  .wos-pd__tabrow { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  .wos-pd__tab {
+    position: relative; padding: 0 0 0.5rem; background: none; border: 0; cursor: pointer;
+    font-family: var(--f-body); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgb(var(--c-cream)); opacity: 0.4; transition: opacity 0.3s;
+  }
+  .wos-pd__tab:hover, .wos-pd__tab.is-active { opacity: 1; }
+  .wos-pd__tab::after {
+    content: ''; position: absolute; left: 0; bottom: 0; width: 100%; height: 1px;
+    background: rgb(var(--c-cream) / 0.25); transform: scaleX(0); transform-origin: left; transition: transform 0.4s;
+  }
+  .wos-pd__tab.is-active::after { transform: scaleX(1); }
+  .wos-pd__bar {
+    position: absolute; left: 0; bottom: 0; z-index: 1; width: 100%; height: 1px;
+    background: rgb(var(--c-red)); transform: scaleX(0); transform-origin: left;
+  }
+  .wos-pd__tab.is-active .wos-pd__bar { animation: wosPdBar var(--wos-pd-ms, 6000ms) linear forwards; }
+  .wos-pd__tabs.is-paused .wos-pd__bar { animation-play-state: paused; }
+  @keyframes wosPdBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .wos-pd__panels { margin-top: 1.5rem; display: grid; }
+  .wos-pd__panel { grid-area: 1 / 1; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity 0.5s, transform 0.5s, visibility 0s 0.5s; }
+  .wos-pd__panel.is-active { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .wos-pd__panel p {
+    margin: 0; max-width: 28rem;
+    font-family: var(--f-body); font-size: 1rem; font-weight: 300; line-height: 1.7;
     color: rgb(var(--c-cream) / 0.82);
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
   }
-  .wos-del__dot { width: 4px; height: 4px; border-radius: 50%; background: rgb(var(--c-red) / 0.7); flex-shrink: 0; }
 
-  /* Desktop: show sticky stack, hide mobile version */
-  .wos-process-m { display: none; }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    /* Hide desktop sticky stack */
-    .wos-stack { display: none; }
-
-    /* Show mobile process */
-    .wos-process-m {
-      display: block;
-      border-top: 1px solid rgba(255,255,255,0.06);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgb(var(--c-bg));
-    }
-    .wos-pm__item {
-      padding: clamp(2.8rem, 9vw, 4rem) 0;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .wos-pm__item--last { border-bottom: none; }
-    .wos-pm__title {
-      font-family: var(--f-display);
-      font-weight: 700;
-      font-size: clamp(2.2rem, 10vw, 3.8rem);
-      letter-spacing: 0.02em;
-      text-transform: uppercase;
-      line-height: 0.9;
-      color: rgb(var(--c-cream));
-      margin: clamp(0.6rem, 2vw, 1rem) 0 clamp(1rem, 3.5vw, 1.6rem);
-    }
-    .wos-pm__title em { font-style: normal; color: rgb(var(--c-red) / 0.85); }
-    .wos-pm__body {
-      font-family: var(--f-body);
-      font-size: clamp(0.88rem, 3.8vw, 1rem);
-      font-weight: 300;
-      line-height: 1.72;
-      color: rgb(var(--c-cream) / 0.82);
-      margin: 0;
-    }
-    /* reuse wos-del for deliverables list */
-    .wos-pm__item--last .wos-deliverables { margin-top: 0; }
-    .wos-pm__item--last .wos-del { font-size: clamp(0.88rem, 3.8vw, 1rem); }
+  .wos-pd__nav {
+    display: flex; justify-content: space-between; gap: 1rem;
+    margin-top: 3rem; padding-top: 1rem; border-top: 1px solid rgb(var(--c-cream) / 0.14);
   }
+  .wos-pd__row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .wos-pd__img {
+    position: relative; overflow: hidden; border-radius: 0.5rem; background: #111114;
+    opacity: 0; transform: translateY(2.5rem);
+    transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.2s ease;
+  }
+  .wos-pd__img :global(img) {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    transform: scale(1.12); transition: transform 1.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .wos-pd__img.is-in { opacity: 1; transform: none; }
+  .wos-pd__img.is-in :global(img) { transform: none; }
+
+  @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
+    .wos-pd__grid { padding-top: 0; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 1.5rem; }
+    .wos-pd__side { grid-column: 1 / span 4; }
+    .wos-pd__gallery { grid-column: 5 / span 8; margin-top: 0; padding-top: clamp(6.5rem, 12vh, 7.5rem); }
+    .wos-pd__side-inner {
+      position: sticky; top: 0; height: 100vh; height: 100svh;
+      /* Bottom clears the fixed blur band, so the last row stays readable. */
+      padding-top: clamp(6.5rem, 12vh, 7.5rem); padding-bottom: clamp(6.5rem, 13vh, 8rem); box-sizing: border-box;
+    }
+    .wos-pd__topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      padding-bottom: 0.9rem; margin-bottom: clamp(1.25rem, 3.5vh, 2.5rem);
+      border-bottom: 1px solid rgb(var(--c-cream) / 0.14);
+    }
+    .wos-pd__tabs { margin-top: clamp(1.5rem, 4.5vh, 3rem); }
+    .wos-pd__title { font-size: clamp(2.2rem, min(3.4vw, 6.2vh), 3.8rem); }
+    .wos-pd__title + .wos-pd__sub { margin-top: clamp(0.75rem, 2vh, 1.25rem); }
+    .wos-pd__cats { margin-top: clamp(1rem, 2.5vh, 1.75rem); }
+    .wos-pd__nav { display: none; } /* desktop: the back link is at the top, nothing sits in the bottom blur band */
+  }
+  /* Low laptop screens: shorter panel, so the tab text stays above the bottom blur band. */
+  @media (min-width: 1025px) and (max-height: 760px) { .wos-pd__sub { display: none; } }
+  @media (min-width: 1025px) and (max-height: 680px) { .wos-pd__cats { display: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    .wos-pd__img, .wos-pd__img :global(img) { opacity: 1; transform: none; transition: none; }
+  }
+
 
   /* ─────────────────────────────────────────
      BROWSER FRAME
@@ -858,295 +769,6 @@ const screens = [
   }
 
 
-  /* ─────────────────────────────────────────
-     TABLET FRAME
-  ───────────────────────────────────────── */
-  .tablet-frame {
-    background: #111114;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.55);
-    width: clamp(240px, 32vw, 380px);
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 12px;
-    gap: 10px;
-    box-sizing: border-box;
-  }
-  .tablet-frame__camera {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-    flex-shrink: 0;
-  }
-  .tablet-frame__screen {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    background: linear-gradient(160deg, #141418 0%, #0e0e12 100%);
-    border-radius: 6px;
-    display: grid;
-    place-content: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .tablet-frame__screen::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      linear-gradient(135deg, rgb(var(--c-red) / 0.03) 0%, transparent 60%),
-      repeating-linear-gradient(0deg, transparent, transparent 19px, rgba(255,255,255,0.02) 19px, rgba(255,255,255,0.02) 20px),
-      repeating-linear-gradient(90deg, transparent, transparent 19px, rgba(255,255,255,0.02) 19px, rgba(255,255,255,0.02) 20px);
-  }
-
-  /* ─────────────────────────────────────────
-     SKEWED SECTION
-  ───────────────────────────────────────── */
-  .skew-sec {
-    background: rgb(var(--c-bg));
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-  .skew-sec__inner {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: min(100%, var(--site-max-width));
-    margin-inline: auto;
-    padding-inline: var(--site-gutter);
-    box-sizing: border-box;
-    gap: clamp(2rem, 4vw, 5rem);
-  }
-  .skew-sec__sticky {
-    position: sticky;
-    top: 0;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .skew-sec__heading {
-    font-family: var(--f-display);
-    font-weight: 700;
-    font-size: clamp(2rem, 4.5vw, 5rem);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    line-height: 0.9;
-    color: rgb(var(--c-cream));
-    margin: 0 0 1.5rem;
-  }
-  .skew-sec__sub {
-    font-family: var(--f-body);
-    font-size: clamp(0.82rem, 1.1vw, 0.95rem);
-    font-weight: 300;
-    line-height: 1.75;
-    color: rgb(var(--c-cream) / 0.82);
-    max-width: 30ch;
-  }
-  .skew-sec__cards {
-    display: grid;
-    gap: clamp(1rem, 2vw, 1.5rem);
-    padding-block: clamp(3rem, 6vh, 6rem);
-  }
-  .skew-fig { display: grid; }
-  .skew-fig--neg { transform: skewX(-3deg); }
-  .skew-fig--pos { transform: skewX(3deg); }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    .skew-sec__inner { grid-template-columns: 1fr; }
-    .skew-sec__sticky { position: relative; height: auto; padding-block: clamp(3rem, 8vw, 5rem); }
-    .skew-fig--neg, .skew-fig--pos { transform: none; }
-    .skew-sec__cards { padding-top: 0; }
-  }
-
-  /* ─────────────────────────────────────────
-     FULL-WIDTH SHOWCASE
-  ───────────────────────────────────────── */
-  .showcase-sec {
-    background: rgb(var(--c-bg));
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-bottom: clamp(4rem, 8vw, 8rem);
-  }
-  .showcase-header {
-    padding-top: clamp(4rem, 8vw, 7rem);
-    padding-bottom: clamp(2.5rem, 5vw, 4rem);
-  }
-  .showcase-title {
-    font-family: var(--f-display);
-    font-weight: 700;
-    font-size: clamp(2.5rem, 7vw, 8rem);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    line-height: 0.9;
-    color: rgb(var(--c-cream));
-    margin: 0;
-  }
-  .showcase-title em { font-style: normal; color: rgb(var(--c-red) / 0.85); }
-
-  .showcase-item {
-    margin-bottom: clamp(2.5rem, 5vw, 5rem);
-  }
-  .showcase-item__label {
-    display: flex;
-    align-items: baseline;
-    gap: 1.2rem;
-    margin-bottom: 1rem;
-  }
-  .showcase-desc {
-    font-family: var(--f-body);
-    font-size: 12px;
-    font-weight: 400;
-    letter-spacing: 0.35em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.92);
-  }
-
-  /* Test image, same as .browser-frame__screen img above. */
-  /* A phone screen is a portrait shape (the desktop gallery's is too). */
-
-  /* Stats */
-  .showcase-stats {
-    display: flex;
-    align-items: center;
-    gap: clamp(1.5rem, 4vw, 4rem);
-    padding-top: clamp(3rem, 6vw, 5rem);
-    flex-wrap: wrap;
-  }
-  .showcase-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-  .showcase-stat strong {
-    font-family: var(--f-display);
-    font-size: clamp(2rem, 4vw, 4rem);
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    color: rgb(var(--c-cream));
-    line-height: 1;
-  }
-  .showcase-stat em {
-    font-style: normal;
-    font-family: var(--f-body);
-    font-size: 11px;
-    font-weight: 300;
-    letter-spacing: 0.4em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.8);
-  }
-  .showcase-stat__sep {
-    width: 1px;
-    height: clamp(2rem, 4vw, 3.5rem);
-    background: rgba(255,255,255,0.08);
-    flex-shrink: 0;
-  }
-
-  /* Desktop: the four figures spread over the whole row, not bunched at
-     the left with the right two thirds empty. */
-  @media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
-    .showcase-stats { justify-content: space-between; gap: 0; }
-  }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    /* Stats */
-    .showcase-stat__sep { display: none; }
-    .showcase-stats { gap: 1.5rem 2.5rem; }
-    .showcase-stat strong { font-size: clamp(1.8rem, 8vw, 3rem); }
-  }
-
-  /* ─────────────────────────────────────────
-     SCREENS — one frame, the screen changes on scroll
-  ───────────────────────────────────────── */
-
-  .scr-mobile { display: none; }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    .scr-outer  { display: none; }
-    .scr-mobile { display: block; }
-  }
-
-  .scr-outer {
-    /* As big as the screen allows: the full width, or the height left after
-       the label above and the progress line below (16.5rem), whichever is
-       smaller — it grows with the display up to 2000px (a 32" monitor). */
-    --scr-w: min(
-      calc(100vw - var(--site-gutter) * 2),
-      calc((100vh - 16.5rem - 34px) * 16 / 9),
-      2000px
-    );
-    height: 100vh;
-    overflow: clip;
-  }
-  .scr-sticky {
-    height: 100vh;
-    overflow: hidden;
-    background: rgb(var(--c-bg));
-  }
-  .scr-slide {
-    width: 100vw;
-    height: 100%;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /* Top clears the fixed top blur band (up to 7rem, utils/gradualBlur.js) so the slide label stays sharp. */
-    padding: clamp(6.5rem, 12vh, 8.5rem) var(--site-gutter) clamp(8rem, 15vh, 10rem);
-    box-sizing: border-box;
-    gap: 1.2rem;
-  }
-  /* Label, counter and address: all four stacked in one spot, the current
-     one faded in by the scroll timeline. */
-  .scr-stack { display: grid; }
-  .scr-stack__item { grid-area: 1 / 1; opacity: 0; white-space: nowrap; }
-  .scr-stack__item[data-i="0"] { opacity: 1; }
-  .scr-labels { flex: 1; min-width: 0; }
-  .scr-count { margin-left: auto; text-align: right; }
-  .scr-count .scr-stack__item { text-align: right; }
-  .scr-urls { display: grid; align-content: center; }
-  .scr-urls .scr-stack__item { font: inherit; }
-  /* The frame tilts in 3D and straightens as you scroll. */
-  .scr-persp { perspective: 1800px; display: flex; justify-content: center; width: 100%; }
-  .scr-frame { transform-style: preserve-3d; will-change: transform; backface-visibility: hidden; }
-  .scr-shot { position: absolute; inset: 0; z-index: 1; overflow: hidden; will-change: clip-path; }
-  .scr-shot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; will-change: transform; }
-  /* The label is as wide as the frame under it and centred with it, so it
-     starts on the frame's left edge (it used to sit at the slide's edge,
-     far left of a narrower frame). 16.5rem = what the slide keeps free
-     around the frame: the label above, the progress line below. */
-  .scr-slide__meta {
-    display: flex;
-    align-items: baseline;
-    gap: 1.2rem;
-    align-self: center;
-    width: var(--scr-w);
-  }
-  .browser-frame--scr {
-    width: var(--scr-w);
-    border-radius: 12px;
-    flex-shrink: 0;
-  }
-  .scr-progress {
-    position: absolute;
-    /* Above the fixed bottom-left badge and the MENU button, not through
-       them (it ran at 1.5-2.2rem from the bottom, across the badge's text). */
-    bottom: clamp(6.5rem, 13vh, 8rem);
-    left: var(--site-gutter);
-    right: var(--site-gutter);
-    height: 1px;
-    background: rgba(255,255,255,0.08);
-  }
-  .scr-progress__fill {
-    height: 100%;
-    width: 100%;
-    background: rgb(var(--c-red) / 0.65);
-    transform: scaleX(0);
-    transform-origin: left;
-  }
-
-
 
   /* ─────────────────────────────────────────
      MOBILE — the desktop's scenes, on a finger scroll
@@ -1178,86 +800,8 @@ const screens = [
       color: rgb(var(--c-cream));
     }
 
-    /* 2. The numbered scenes (01 / 02 / 03) are the desktop's sticky stack:
-       each one a whole screen, the next sliding up over it. */
-    .wos-stack { display: block; }
-    .wos-process-m { display: none; }
-    .wos-sec {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-    }
-    .wos-sec__idx { font-size: clamp(9rem, 44vw, 18rem); }
-    .wos-sec__title { font-size: clamp(2.6rem, 12.5vw, 4.8rem); }
-    .wos-sec__body { font-size: clamp(0.92rem, 3.9vw, 1.08rem); max-width: 100%; }
-
-    /* Gaps between the blocks as everywhere else on the phone: the full-screen
-       scenes centre their content, so their blank halves used to add up to
-       half a screen between two blocks. Content sits a little higher, the
-       hero does not hold a screen of its own, and what follows a scene is
-       tucked up under its blank lower half. */
     .wos-hero { min-height: 0; }
     .wos-hero__inner { padding-bottom: clamp(2.5rem, 7vw, 3.5rem); }
-    .wos-sec { align-content: start; padding-top: calc(var(--app-stable-vh, 1svh) * 20); box-sizing: border-box; }
-    .wos-sec__idx { top: calc(var(--app-stable-vh, 1svh) * 20 + 4rem); transform: none; }
-    .skew-sec { position: relative; z-index: 1; margin-top: calc(var(--app-stable-vh, 1svh) * -30); }
-    .showcase-sec { position: relative; z-index: 1; }
-
-    /* 3. The screens: a horizontal strip, counter and progress as on desktop. */
-    .scr-mobile {
-      --scrm-gap: 14px;
-      --scrm-side: var(--site-gutter, 1.5rem);
-      --dist: 0px; /* set by the script: how far the track must travel sideways */
-      position: relative;
-      /* One screen + the sideways distance. The pinned view covers the whole
-         screen (title included), so nothing slides past it while it travels:
-         the blocks around it keep a constant gap. */
-      height: calc(var(--app-stable-vh, 1svh) * 100 + var(--dist));
-    }
-    /* The title is inside the pinned view now. */
-    .showcase-header { display: none; }
-    .showcase-sec { padding-bottom: 0; }
-    .scrm__title { margin: 0; padding: 0 var(--scrm-side); }
-    .scrm__sticky {
-      position: -webkit-sticky;
-      position: sticky;
-      top: 0;
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      overflow: hidden; /* fine here: it is the sticky element itself */
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 1.4rem;
-      box-sizing: border-box;
-    }
-    .scrm__meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0 var(--scrm-side);
-    }
-    .scrm__track {
-      display: flex;
-      gap: var(--scrm-gap);
-      padding: 0 var(--scrm-side);
-      width: max-content;
-      will-change: transform;
-      -webkit-backface-visibility: hidden;
-      backface-visibility: hidden;
-    }
-    .scrm__item { flex: 0 0 min(84vw, 560px); margin: 0; }
-    .scrm__progress {
-      margin: 0 var(--scrm-side);
-      height: 1px;
-      background: rgb(var(--c-cream) / 0.14);
-      overflow: hidden;
-    }
-    .scrm__bar {
-      height: 100%;
-      background: rgb(var(--c-red));
-      transform-origin: left center;
-      transform: scaleX(0);
-    }
   }
 </style>
 
@@ -1312,59 +856,50 @@ const screens = [
   }
 
 
-  // ── Mobile: the screens as a horizontal strip (sticky + one scrubbed tween,
-  // 1:1 with the finger; Lenis drives the scroll) ──
-  function initScreensStrip() {
-    const wrap  = document.getElementById('scr-m');
-    const track = document.getElementById('scrm-track');
-    const bar   = document.getElementById('scrm-bar');
-    const label = document.getElementById('scrm-label');
-    const count = document.getElementById('scrm-count');
-    if (!wrap || !track || !bar || !label || !count) return;
-
-    const items = Array.from(track.querySelectorAll<HTMLElement>('.scrm__item'));
-    const total = String(items.length).padStart(2, '0');
-    const getDistance = () => Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
-    const setDistance = () => wrap.style.setProperty('--dist', `${getDistance()}px`);
-    setDistance();
-
-    let shown = -1;
-    gsap.to(track, {
-      x: () => -getDistance(),
-      ease: 'none',
-      force3D: true,
-      scrollTrigger: {
-        trigger: wrap,
-        start: 'top top',
-        end: () => `+=${getDistance()}`, // exactly --dist px of scroll
-        scrub: true,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          gsap.set(bar, { scaleX: self.progress });
-          const i = Math.min(items.length - 1, Math.round(self.progress * (items.length - 1)));
-          if (i !== shown) {
-            shown = i;
-            label.textContent = items[i].dataset.label ?? '';
-            count.textContent = `${String(i + 1).padStart(2, '0')} / ${total}`;
+  // ── Project detail: tabs that switch on their own (timer line under the active
+  // tab), pause on hover; gallery pictures rise and un-zoom as they enter ──
+  const PD_MS = 6000;
+  function initProjectDetail() {
+    const tabs = document.getElementById('wos-pd-tabs');
+    if (tabs) {
+      tabs.style.setProperty('--wos-pd-ms', `${PD_MS}ms`);
+      const btns = Array.from(tabs.querySelectorAll<HTMLElement>('.wos-pd__tab'));
+      const panels = Array.from(tabs.querySelectorAll<HTMLElement>('.wos-pd__panel'));
+      let active = 0;
+      let timer: number | undefined;
+      const show = (i: number) => {
+        active = i;
+        btns.forEach((b, k) => {
+          const on = k === i;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-selected', String(on));
+          if (on) {
+            const bar = b.querySelector<HTMLElement>('.wos-pd__bar');
+            if (bar) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = ''; }
           }
-        },
-      },
-    });
+        });
+        panels.forEach((p, k) => p.classList.toggle('is-active', k === i));
+      };
+      const arm = () => {
+        window.clearTimeout(timer);
+        if (reducedMotion() || tabs.classList.contains('is-paused')) return;
+        timer = window.setTimeout(() => { show((active + 1) % btns.length); arm(); }, PD_MS);
+      };
+      btns.forEach((b, i) => b.addEventListener('click', () => { show(i); arm(); }));
+      tabs.addEventListener('mouseenter', () => { tabs.classList.add('is-paused'); window.clearTimeout(timer); });
+      tabs.addEventListener('mouseleave', () => { tabs.classList.remove('is-paused'); show(active); arm(); });
+      document.addEventListener('astro:before-swap', () => window.clearTimeout(timer), { once: true });
+      arm();
+    }
 
-    // Re-measure when the WIDTH changes (rotation); the address bar changing
-    // only the height is ignored on purpose.
-    let lastWidth = document.documentElement.clientWidth;
-    const onResize = () => {
-      const w = document.documentElement.clientWidth;
-      if (w === lastWidth) return;
-      lastWidth = w;
-      setDistance();
-      ScrollTrigger.refresh();
-    };
-    window.addEventListener('resize', onResize);
-    document.addEventListener('astro:before-swap', () => window.removeEventListener('resize', onResize), { once: true });
-    requestAnimationFrame(() => { setDistance(); ScrollTrigger.refresh(); });
+    const imgs = Array.from(document.querySelectorAll<HTMLElement>('.wos-pd__img'));
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -6% 0px' });
+    imgs.forEach((el) => io.observe(el));
+    document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
   }
+
 
   // ── Desktop: cinematic pinned animation ──
   function initCinematic() {
@@ -1417,56 +952,6 @@ const screens = [
     });
   }
 
-  function initScreensScroll() {
-    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
-    const outer = document.querySelector<HTMLElement>('.scr-outer');
-    const frame = document.querySelector<HTMLElement>('.scr-frame');
-    const fill  = document.querySelector<HTMLElement>('.scr-progress__fill');
-    if (!outer || !frame) return;
-    const shots = Array.from(outer.querySelectorAll<HTMLElement>('.scr-shot'));
-    const imgs  = shots.map((el) => el.querySelector('img'));
-    const stacks = ['.scr-labels', '.scr-count', '.scr-urls'].map((sel) =>
-      Array.from(outer.querySelectorAll<HTMLElement>(`${sel} .scr-stack__item`)));
-    const n = shots.length;
-
-    // One frame stays put; each next screen is revealed from the bottom
-    // (clip-path) while its picture settles from a slight zoom, and the
-    // label, counter and address change with it.
-    const tl = gsap.timeline({
-      scrollTrigger: {
-        trigger: outer,
-        start: 'top top',
-        end: () => `+=${window.innerHeight * (n + 0.6)}`,
-        scrub: 1,
-        pin: true,
-        invalidateOnRefresh: true,
-      },
-    });
-
-    // Tilted and a little small, then it comes square to the viewer…
-    gsap.set(frame, { transformPerspective: 1800, transformOrigin: '50% 60%' });
-    tl.fromTo(frame,
-      { rotationX: 16, rotationY: -9, scale: 0.86, y: 50 },
-      { rotationX: 0, rotationY: 0, scale: 1, y: 0, duration: 0.8, ease: 'power2.out' }, 0);
-    // …and over the rest of the scroll turns a few degrees the other way.
-    tl.to(frame, { rotationY: 3.5, rotationX: -1.5, duration: n - 0.4, ease: 'none' }, 0.8);
-
-    shots.forEach((shot, i) => {
-      if (i === 0) return;
-      const at = i - 0.2;
-      tl.fromTo(shot, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 0.9, ease: 'power2.inOut' }, at);
-      tl.fromTo(imgs[i], { scale: 1.18 }, { scale: 1, duration: 1.1, ease: 'power2.out' }, at);
-      // The one underneath drifts back a little as it is covered.
-      tl.to(imgs[i - 1], { scale: 0.96, duration: 1.1, ease: 'none' }, at);
-    });
-    stacks.forEach((items) => items.forEach((el, i) => {
-      // Out as the next picture starts to cover, in just after.
-      if (i > 0) tl.fromTo(el, { opacity: 0, filter: 'blur(6px)' }, { opacity: 1, filter: 'blur(0px)', duration: 0.35, ease: 'none' }, i + 0.15);
-      if (i < n - 1) tl.to(el, { opacity: 0, filter: 'blur(6px)', duration: 0.3, ease: 'none' }, i + 1 - 0.2);
-    }));
-    // From empty, so the line tracks the scroll exactly.
-    if (fill) tl.fromTo(fill, { scaleX: 0 }, { scaleX: 1, duration: tl.duration(), ease: 'none' }, 0);
-  }
 
   function initPage() {
     // The sitewide column lines now run through this page too (they used to be
@@ -1483,7 +968,7 @@ const screens = [
         // Narrow windows (phone/tablet widths) get a much lighter drag.
         lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
         smoothWheel: true,
-        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
+        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.75,
       });
       (window as any).__lenis = _lenis;
 
@@ -1502,10 +987,10 @@ const screens = [
     if (isMob) {
       ScrollTrigger.config({ ignoreMobileResize: true });
       initHeroReveal();
-      initScreensStrip();
+      initProjectDetail();
     } else {
       initCinematic();
-      initScreensScroll();
+      initProjectDetail();
     }
     document.addEventListener('astro:before-swap', () => {
       const gl = document.getElementById('grid-lines');
