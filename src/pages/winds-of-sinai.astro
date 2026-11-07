@@ -723,8 +723,11 @@ import scr4 from '../img/wos/screen-4.jpg';
       defaults: { ease: 'none' },
       scrollTrigger: { trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true },
     })
-      .to(title, { filter: 'blur(16px)', duration: 0.5, ease: 'sine.in' }, 0)
-      .to(title, { opacity: 0, duration: 0.5, ease: 'sine.inOut' }, 0.2)
+      // Explicit start values: the entrance tween above is still running when this
+      // is built, so a plain .to() would remember its blurred start and scroll back
+      // to that blur instead of to a sharp title.
+      .fromTo(title, { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.5, ease: 'sine.in', immediateRender: false }, 0)
+      .fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: 'sine.inOut', immediateRender: false }, 0.2)
       .to(splash, { opacity: 0, duration: 0.4 }, 0.55)
       .to(items, { opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.5, ease: 'sine.out' }, 0.6);
   }
