@@ -580,8 +580,8 @@ services.forEach((sv, i) => { (sv as any).glSrc = glSrcs[i]; });
 		const gallery = createHoverGallery(
 			section,
 			rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
-			// Brighter than the original's half opacity, and over the list's rules (the unfold tempo is unchanged).
-			{ opacity: 0.92, above: true },
+			// Brighter than the original's half opacity, and over the list's rules (unfold slowed from 1.75 s to 2.6 s).
+			{ opacity: 0.92, above: true, openSeconds: 2.6 },
 		);
 		if (!gallery) return;
 
