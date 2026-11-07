@@ -15,13 +15,8 @@ import scr4 from '../img/wos/screen-4.jpg';
 
   <main class="wos-page">
 
-    <!-- ═══ SPLASH (mobile only): the title alone on a black screen, as on desktop ═══ -->
-    <section class="wos-splash">
-      <h1 class="wos-splash__title">Winds<br/>Of Sinai</h1>
-    </section>
-
     <!-- ═══ CINEMATIC HERO (desktop only) ═══ -->
-    <div data-after-hero>
+    <div>
     <section class="wos-cin" id="wos-cin">
       <h1 class="wos-cin__sr">Winds Of Sinai — Case Study</h1>
       <div class="wos-cin__image" aria-hidden="true">
@@ -68,7 +63,12 @@ import scr4 from '../img/wos/screen-4.jpg';
       <div class="wos-inner wos-pd__grid">
 
         <aside class="wos-pd__side">
-          <div class="wos-pd__side-inner">
+          <div class="wos-pd__side-inner" id="wos-stage">
+            <!-- phone/tablet: the title alone on black, laid over the panel; scroll blurs it away
+                 and the panel comes up out of blur in the same place -->
+            <div class="wos-splash" aria-hidden="true">
+              <span class="wos-splash__title">Winds<br/>Of Sinai</span>
+            </div>
             <div class="wos-pd__top">
               <div class="wos-pd__topbar">
                 <a href="/projects/" class="wos-pd__link">Back to projects</a>
@@ -470,7 +470,8 @@ import scr4 from '../img/wos/screen-4.jpg';
     background: rgb(var(--c-red)); transform: scaleX(0); transform-origin: left;
   }
   .wos-pd__tab.is-active .wos-pd__bar { animation: wosPdBar var(--wos-pd-ms, 6000ms) linear forwards; }
-  .wos-pd__tabs.is-paused .wos-pd__bar { animation-play-state: paused; }
+  /* While the tabs are held (hover / touch) the timer stops: the active tab's line stays full red. */
+  .wos-pd__tabs.is-paused .wos-pd__tab.is-active .wos-pd__bar { animation: none; transform: scaleX(1); }
   @keyframes wosPdBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
   .wos-pd__panels { margin-top: 1.5rem; display: grid; }
   .wos-pd__panel { grid-area: 1 / 1; opacity: 0; visibility: hidden; transform: translateY(8px); transition: opacity 0.5s, transform 0.5s, visibility 0s 0.5s; }
@@ -641,19 +642,28 @@ import scr4 from '../img/wos/screen-4.jpg';
      (Lenis drives touch scroll site-wide, see utils/touchLenis.ts)
   ───────────────────────────────────────── */
   .wos-splash { display: none; }
-  .wos-splash__title { opacity: 0; }
+  .wos-splash__title { opacity: 0; display: block; }
 
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    /* 1. The title alone on a black screen, then the case-study info. */
+    /* 1. The stage: one screen, the panel centred in it, the splash title laid over it. */
+    .wos-pd__side-inner {
+      position: relative;
+      min-height: 100svh;
+      min-height: calc(var(--app-stable-vh, 1svh) * 100);
+      justify-content: center;
+      box-sizing: border-box;
+      padding: 5rem 0 6rem;
+    }
     .wos-splash {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      padding: 0 var(--site-gutter, 1.5rem);
-      box-sizing: border-box;
+      background: rgb(var(--c-bg));
       text-align: center;
+      pointer-events: none;
     }
     .wos-splash__title {
       margin: 0;
@@ -666,11 +676,11 @@ import scr4 from '../img/wos/screen-4.jpg';
       color: rgb(var(--c-cream));
     }
 
-    /* The panel opens with the case-study line; the title was just on the splash. */
-    .wos-pd__title { display: none; }
+    /* The panel opens like the old hero: case-study line, title, description. */
+    .wos-pd__title { font-size: clamp(3rem, 14vw, 5.5rem); margin-bottom: 1.25rem; }
     .wos-pd__meta { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; margin-bottom: 1.25rem; }
     .wos-pd__meta .wos-label { font-size: 11px; letter-spacing: 0.2em; }
-    .wos-pd__grid { padding-top: clamp(1rem, 3vh, 2rem); }
+    .wos-pd__grid { padding-top: 0; }
   }
 </style>
 
@@ -688,12 +698,13 @@ import scr4 from '../img/wos/screen-4.jpg';
   let _lenisRaf: ((time: number) => void) | null = null;
   let _cinST: ReturnType<typeof ScrollTrigger.create> | null = null;
 
-  // ── Mobile/tablet: the title alone, pinned; scrolling blurs it out into the dark,
-  // and the panel below comes up out of blur ──
+  // ── Mobile/tablet: the title alone on black, laid over the panel (one pinned screen).
+  // Scrolling blurs the title away, and the panel comes up out of blur in the same place ──
   function initSplash() {
-    const splash = document.querySelector<HTMLElement>('.wos-splash');
-    const title = document.querySelector<HTMLElement>('.wos-splash__title');
-    if (!splash || !title) return;
+    const stage = document.getElementById('wos-stage');
+    const splash = stage?.querySelector<HTMLElement>('.wos-splash');
+    const title = stage?.querySelector<HTMLElement>('.wos-splash__title');
+    if (!stage || !splash || !title) return;
 
     const mode = subpageMode();
     if (mode === 'none' || reducedMotion()) gsap.set(title, { opacity: 1 });
@@ -703,22 +714,19 @@ import scr4 from '../img/wos/screen-4.jpg';
         gsap.to(title, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.65, ease: 'power3.out', delay: 0.18 });
       });
     }
-    if (reducedMotion()) return;
+    if (reducedMotion()) { splash.style.display = 'none'; return; }
+
+    const items = stage.querySelectorAll<HTMLElement>('.wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs');
+    gsap.set(items, { opacity: 0, filter: 'blur(12px)' });
 
     gsap.timeline({
       defaults: { ease: 'none' },
-      scrollTrigger: { trigger: splash, start: 'top top', end: '+=45%', scrub: 0.6, pin: true, invalidateOnRefresh: true },
+      scrollTrigger: { trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true },
     })
-      .to(title, { filter: 'blur(16px)', duration: 0.6, ease: 'sine.in' }, 0)
-      .to(title, { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25);
-
-    const els = document.querySelectorAll<HTMLElement>('.wos-pd__meta, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs');
-    if (els.length) {
-      gsap.fromTo(els,
-        { opacity: 0, y: 24, filter: 'blur(10px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', stagger: 0.12, ease: 'none',
-          scrollTrigger: { trigger: '#wos-pd', start: 'top 100%', end: 'top 35%', scrub: 0.6, invalidateOnRefresh: true } });
-    }
+      .to(title, { filter: 'blur(16px)', duration: 0.5, ease: 'sine.in' }, 0)
+      .to(title, { opacity: 0, duration: 0.5, ease: 'sine.inOut' }, 0.2)
+      .to(splash, { opacity: 0, duration: 0.4 }, 0.55)
+      .to(items, { opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.5, ease: 'sine.out' }, 0.6);
   }
 
   // ── Project detail: tabs that switch on their own (timer line under the active
