@@ -67,7 +67,7 @@ void main() {
   vec2 sh = vec2(k * 0.04 * uRect.z / uCrop.z, 0.0);
   vec3 g = vec3(lum(uv + sh), lum(uv), lum(uv - sh));
   g = clamp((g - 0.5) * mix(2.2, 1.1, uT) + 0.5, 0.0, 1.0);
-  g *= 0.9 * mix(0.55, 1.0, smoothstep(0.0, 0.8, uT));
+  g *= 0.877 * mix(0.55, 1.0, smoothstep(0.0, 0.8, uT));
   float a = smoothstep(0.0, 0.1, uT);
   gl_FragColor = vec4(g * a, a);
 }`;
@@ -150,14 +150,18 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 		requestDraw();
 	};
 	img.loading = 'eager';
+	img.style.willChange = 'opacity';   // keep it rastered, ready to be uncovered
+	img.decode?.().catch(() => {});
 	img.addEventListener('load', upload);
 
 	// grid of tiles over the whole box
 	let W = 1, H = 1, cols = 1, rows = 1, tw = 1, th = 1;
 	let tiles: Tile[] = [];
 	function layout() {
-		const dpr = Math.min(window.devicePixelRatio || 1, 2);
 		W = host.clientWidth || 1; H = host.clientHeight || 1;
+		// full device resolution (phones are 3x): the tiles must be as sharp as the <img>
+		// under them, or the hand-over at the end shows as a flicker of sharpness
+		const dpr = Math.min(window.devicePixelRatio || 1, 3, 4096 / Math.max(W, H));
 		canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
 		gl!.viewport(0, 0, canvas.width, canvas.height);
 		const want = opts.tile ?? Math.max(60, Math.min(W, H) / 8);
@@ -173,7 +177,9 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 		}
 		sized = true;
 		upload();   // the photo is re-cut for the new size
-		requestDraw();
+		// Resizing a canvas clears it: draw again at once, in this very frame —
+		// not in the next one, which would show one empty frame (a blink).
+		draw();
 	}
 
 	function requestDraw() { if (!raf) raf = requestAnimationFrame(draw); }

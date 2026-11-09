@@ -646,14 +646,16 @@ import portrait from '../img/portrait-top.webp';
     const proxy = { a: 0 };
     const addTiles = (tl: gsap.core.Timeline, start: number, dur: number) => {
       if (!tiles || !img) return;
-      gsap.set(img, { opacity: 0 });
+      // (not 0: a layer at exactly 0 may never be painted, and would then pop in
+      // late — a blink — when the tiles fade off it)
+      gsap.set(img, { opacity: 0.001 });
       gsap.set(tiles.canvas, { opacity: 1 });
       tl.fromTo(proxy, { a: 0 }, { a: 1, duration: dur, ease: 'none', onUpdate: () => tiles.setProgress(proxy.a) }, start)
         // The real image is put in place UNDER the finished (opaque) tiles at
         // once, and only then are the tiles faded away: cross-fading the two
         // against each other dips in brightness half-way — a visible blink.
-        .fromTo(img, { opacity: 0 }, { opacity: 1, duration: 0.001, ease: 'none', immediateRender: false }, start + dur)
-        .fromTo(tiles.canvas, { opacity: 1 }, { opacity: 0, duration: 0.08, ease: 'none', immediateRender: false }, start + dur);
+        .fromTo(img, { opacity: 0.001 }, { opacity: 1, duration: 0.001, ease: 'none', immediateRender: false }, start + dur)
+        .fromTo(tiles.canvas, { opacity: 1 }, { opacity: 0, duration: 0.18, ease: 'sine.inOut', immediateRender: false }, start + dur);
     };
 
     // Phones and tablets: only the portrait is scrubbed — held at the top
@@ -664,7 +666,7 @@ import portrait from '../img/portrait-top.webp';
       // Real blur, kept cheap: it lives on the <img> in a single filter chain
       // (with the grayscale/brightness), so the masked container only ever
       // animates opacity and is never re-rasterised per frame.
-      if (tiles) addTiles(mtl, 0, 0.9);
+      if (tiles) addTiles(mtl, 0, 0.78);
       else mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 0.7, ease: 'sine.out' }, 0);
       if (img && !tiles) {
         gsap.set(img, { transformOrigin: '50% 72%' });
