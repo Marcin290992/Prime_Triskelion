@@ -511,6 +511,7 @@ import portrait from '../img/portrait-top.webp';
   import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
   import { initColorReveal } from '../utils/colorReveal';
+  import { initFaceTiles, type FaceTiles } from '../utils/faceTiles';
 
   gsap.registerPlugin(ScrollTrigger);
   // The browser's toolbar sliding in/out (it comes back as soon as you scroll
@@ -557,13 +558,30 @@ import portrait from '../img/portrait-top.webp';
     // (blur + fade), then the rest; `o` shifts the rest behind them.
     const hold = 0.12; // the name stands alone on black before the face is lit
     const o = 0.48; // light out (0–0.2), title dissolves (0.2–0.44), a short beat of dark, then the name at 0.53
-    const rays = veil.querySelector<HTMLElement>('canvas');
-    if (rays) tl.fromTo(rays, { opacity: 1 }, { opacity: 0, duration: 0.2, immediateRender: false }, 0);
     tl.fromTo([wordL, wordR], { opacity: 1, filter: 'blur(0px)' }, { opacity: 0, filter: 'blur(16px)', duration: 0.24, ease: 'sine.in' }, 0.2)
       .fromTo(veil, { opacity: 1 }, { opacity: 0, duration: 0.04 }, 0.06 + o + hold)
       .fromTo(scene, { '--pc': -100 }, { '--pc': 190, duration: 0.9, ease: 'none' }, 0.1 + o + hold)
       // …and then a stretch of pure black before the page carries on.
       .to({}, { duration: 0.04 }, 1.04 + o + hold);
+
+    // The light goes out (and comes back) on the clock, never on the scroll:
+    // one slow fade of the same length however fast you scroll. Scrubbing it
+    // made a fast scroll cut it off while a slow one dimmed it gently.
+    // .rays-off (stops sideRays.js rendering) is only set once it is dark.
+    let raysOff = false;
+    const setRays = (off: boolean) => {
+      if (off === raysOff) return;
+      raysOff = off;
+      const rays = veil.querySelector<HTMLElement>('canvas');
+      if (!rays) { veil.classList.toggle('rays-off', off); return; }
+      if (off) {
+        gsap.to(rays, { opacity: 0, duration: 1.4, ease: 'power2.out', overwrite: 'auto',
+          onComplete: () => { if (raysOff) veil.classList.add('rays-off'); } });
+      } else {
+        veil.classList.remove('rays-off');
+        gsap.to(rays, { opacity: 1, duration: 1.2, ease: 'power2.out', overwrite: 'auto' });
+      }
+    };
 
     _amRevealST = ScrollTrigger.create({
       animation: tl,
@@ -577,7 +595,7 @@ import portrait from '../img/portrait-top.webp';
       scrub: 0.8,
       // .rays-off stops sideRays.js rendering once the light has faded; on
       // the way back it stays out until the title has rejoined.
-      onUpdate: (self) => veil.classList.toggle('rays-off', self.progress >= 0.2 / 1.68),
+      onUpdate: (self) => setRays(self.progress >= 0.03),
     });
 
     document.addEventListener('astro:before-swap', () => {
@@ -600,7 +618,16 @@ import portrait from '../img/portrait-top.webp';
   // The portrait comes up out of the dark as the section scrolls in, from a
   // blur, then the details after it.
   let _acST: ScrollTrigger | null = null;
+  let _acPin: ScrollTrigger | null = null;
+  let _acTiles: ScrollTrigger | null = null;
+  let _tiles: FaceTiles | null = null;
   function initAboutContent() {
+    _acPin?.kill();
+    _acPin = null;
+    _acTiles?.kill();
+    _acTiles = null;
+    _tiles?.destroy();
+    _tiles = null;
     const section = document.querySelector<HTMLElement>('#about-content');
     const photo   = document.querySelector<HTMLElement>('.ac-photo');
     const body    = document.querySelector<HTMLElement>('.ac-body-col');
@@ -608,19 +635,33 @@ import portrait from '../img/portrait-top.webp';
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     const inner = body.querySelector<HTMLElement>('.ac-scroll');
-    const img = photo.querySelector<HTMLElement>('.ac-photo__img');
+    const img = photo.querySelector<HTMLImageElement>('.ac-photo__img');
     if (!inner) return;
 
+    // The portrait is built from tiles (WebGL) that settle into the photo
+    // as the scroll plays; when they are all in place the canvas fades onto
+    // the real <img>. Without WebGL the old blur-in below is used instead.
+    const tiles = img ? initFaceTiles(photo, img, { focusX: 0.5, focusY: 0.72 }) : null;
+    _tiles = tiles;
+    const proxy = { a: 0 };
+    const addTiles = (tl: gsap.core.Timeline, start: number, dur: number) => {
+      if (!tiles || !img) return;
+      tl.fromTo(proxy, { a: 0 }, { a: 1, duration: dur, ease: 'none', onUpdate: () => tiles.setProgress(proxy.a) }, start)
+        .fromTo(img, { opacity: 0 }, { opacity: 1, duration: 0.04, ease: 'none' }, start + dur)
+        .fromTo(tiles.canvas, { opacity: 1 }, { opacity: 0, duration: 0.04, ease: 'none' }, start + dur);
+    };
+
     // Phones and tablets: only the portrait is scrubbed — held at the top
-    // while it comes out of the dark, then released. The copy is plain text
-    // under it, and the page scrolls on normally.
+    // while it builds itself from tiles, then released. The copy is plain
+    // text under it, and the page scrolls on normally.
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
       const mtl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
       // Real blur, kept cheap: it lives on the <img> in a single filter chain
       // (with the grayscale/brightness), so the masked container only ever
       // animates opacity and is never re-rasterised per frame.
-      mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 0.7, ease: 'sine.out' }, 0);
-      if (img) {
+      if (tiles) addTiles(mtl, 0, 0.9);
+      else mtl.fromTo(photo, { opacity: 0 }, { opacity: 1, duration: 0.7, ease: 'sine.out' }, 0);
+      if (img && !tiles) {
         gsap.set(img, { transformOrigin: '50% 72%' });
         mtl.fromTo(img,
           { filter: 'grayscale(1) contrast(1.1) brightness(0) blur(20px)', scale: 1.08 },
@@ -639,6 +680,8 @@ import portrait from '../img/portrait-top.webp';
       document.addEventListener('astro:before-swap', () => {
         _acST?.kill();
         _acST = null;
+        _tiles?.destroy();
+        _tiles = null;
       }, { once: true });
       return;
     }
@@ -654,34 +697,67 @@ import portrait from '../img/portrait-top.webp';
     const tl = gsap.timeline({ defaults: { ease: 'sine.inOut' } });
     // Out of pure black: heavy blur and no light at first, the picture
     // slowly settles (scale) and finds focus as the light comes up.
-    tl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: develop, ease: 'power2.out' }, 0);
-    if (img) {
+    if (!tiles) tl.fromTo(photo, { opacity: 0, filter: 'blur(48px)' }, { opacity: 1, filter: 'blur(0px)', duration: develop, ease: 'power2.out' }, 0);
+    if (img && !tiles) {
       tl.fromTo(img, { filter: 'grayscale(1) contrast(1.1) brightness(0) blur(28px)' }, { filter: 'grayscale(1) contrast(1.1) brightness(0.9) blur(0px)', duration: develop, ease: 'sine.out' }, 0);
     }
     // The copy doesn't move: each paragraph and line of the list comes up out
     // of the dark in place, from a blur, one after the other from top to
-    // bottom.
+    // bottom. With the tiles nothing waits: it all starts at once, and the
+    // scroll trigger itself starts early (see below).
+    // The copy never travels: it waits until the section is pinned and
+    // standing still, then each line comes up out of the dark in place
+    // (blur + fade). With the tiles the picture has its own, earlier trigger
+    // (below) and only the tiles ride in with the page.
+    const lead = tiles ? 0 : develop;
+    gsap.set(inner.querySelectorAll('.ac-body, .am-item'), { opacity: 0, filter: 'blur(14px)' });
     tl.fromTo(inner.querySelectorAll('.ac-body, .am-item'),
       { opacity: 0, filter: 'blur(14px)' },
       { opacity: 1, filter: 'blur(0px)', duration: 0.14, ease: 'sine.out', stagger: { amount: 0.22 } },
-      develop);
+      lead);
+    if (!tiles) addTiles(tl, lead, 0.36);
     // …and it stays there, at rest: the pin lets go and the page scrolls
     // on normally to the closing line.
-    tl.to({}, { duration: 0.12 }, develop + 0.36);
+    tl.to({}, { duration: 0.12 }, lead + 0.36);
 
-    _acST = ScrollTrigger.create({
-      animation: tl,
-      trigger: section,
-      // Pinned: the portrait stays; the scroll plays the picture, then the copy.
-      start: 'top top',
-      end: () => `+=${(baseDist() + holdDist()) * 0.62}`,
-      pin: true,
-      scrub: 1,
-      invalidateOnRefresh: true,
-    });
+    const pinDist = () => (baseDist() + holdDist()) * 0.62;
+    if (tiles) {
+      const EARLY = 0.5; // the tiles start when the section is half on screen
+      _acPin = ScrollTrigger.create({
+        trigger: section, start: 'top top', end: () => `+=${pinDist()}`, pin: true, invalidateOnRefresh: true,
+      });
+      // the copy (0.36 of the timeline's 0.48) — from the pin on
+      _acST = ScrollTrigger.create({
+        animation: tl, trigger: section, start: 'top top', end: () => `+=${pinDist()}`, scrub: 1, invalidateOnRefresh: true,
+      });
+      // the tiles: early, and they land exactly when the last line of copy does
+      const tilesTl = gsap.timeline();
+      addTiles(tilesTl, 0, 1);
+      _acTiles = ScrollTrigger.create({
+        animation: tilesTl, trigger: section, start: `top ${(1 - EARLY) * 100}%`,
+        end: () => `+=${pinDist() * 0.75 + window.innerHeight * EARLY}`, scrub: 1, invalidateOnRefresh: true,
+      });
+    } else {
+      _acST = ScrollTrigger.create({
+        animation: tl,
+        trigger: section,
+        // Pinned: the portrait stays; the scroll plays the picture, then the copy.
+        start: 'top top',
+        end: () => `+=${pinDist()}`,
+        pin: true,
+        scrub: 1,
+        invalidateOnRefresh: true,
+      });
+    }
     document.addEventListener('astro:before-swap', () => {
       _acST?.kill();
       _acST = null;
+      _acPin?.kill();
+      _acPin = null;
+      _acTiles?.kill();
+      _acTiles = null;
+      _tiles?.destroy();
+      _tiles = null;
     }, { once: true });
   }
 
@@ -701,7 +777,9 @@ import portrait from '../img/portrait-top.webp';
       const f = getComputedStyle(img).filter;
       const light = parseFloat(/brightness\(([0-9.]+)/.exec(f)?.[1] ?? '1');
       const blur = parseFloat(/blur\(([0-9.]+)/.exec(f)?.[1] ?? '0');
-      return light > 0.895 && blur < 0.3 && parseFloat(getComputedStyle(photo).opacity) > 0.98;
+      // (and, with the tiles, the real image has taken over from them)
+      return light > 0.895 && blur < 0.3 && parseFloat(getComputedStyle(photo).opacity) > 0.98
+        && parseFloat(getComputedStyle(img).opacity) > 0.98;
     };
     _colorOff = initColorReveal(photo, img, { radius: 170, focusX: 0.5, focusY: 0.72, isReady: settled });
     document.addEventListener('astro:before-swap', () => { _colorOff?.(); _colorOff = null; }, { once: true });
