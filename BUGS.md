@@ -100,6 +100,48 @@ Sekcja "What we've created." (`src/components/sections/SelectedWorkSection.astro
 2. Długość przypięcia portretu liczona z żywego `window.innerHeight` — teraz ze stałej wysokości ekranu (`--app-stable-vh`).
 3. Scroll anchoring Chrome (korekta pozycji przy zmianie wysokości strony przez rozstawianie przypięć) — `overflow-anchor: none` na `html, body` na tej stronie.
 
+## Winds of Sinai na iPhonie: białe kreski przy lewej krawędzi napisu startowego
+
+**Objaw:** na telefonie/tablecie (Safari na iPhonie 14), po przewinięciu poza napis startowy i cofnięciu do niego, przy lewej krawędzi ekranu widać było dwie małe białe kreski, kawałki liter W i O. Słabsze plamki niżej, na wysokości kolejnych linii tekstu. Na Androidzie nie występowało.
+
+**Przyczyna:** napis startowy (`.wos-splash`, czarne tło) przykrywał tylko kolumnę panelu (około 28px–362px od lewej), a nie cały ekran. Panel pod nim jest wyrównany do lewej, więc pierwsze litery tytułu (W, O) leżą dokładnie na krawędzi tej kolumny. Wszystko, co z panelu nie jest w 100% niewidoczne (litery, ich blur, antyaliasing na brzegu tła), przebijało przez brzeg. Pomiar: gdy tytuł panelu miał 50% widoczności, jasne piksele wychodziły tylko w lewym marginesie, na wysokości obu linii tytułu, po prawej zero.
+
+**Poprawka:** napis startowy ma szerokość całego ekranu (`left: calc(50% - 50vw); width: 100vw`), więc brzeg tła jest daleko od liter panelu. Po poprawce test nie znalazł jasnych pikseli po bokach (390px i 820px).
+
+**Plik:** `src/pages/projects/[slug].astro`, `.wos-splash` w bloku mobile.
+
+**Próbowane i porzucone:** ukrywanie elementów panelu przez `autoAlpha` (`visibility: hidden`) i `translateZ(0)` na warstwie napisu — to były plastry, nie dotykały przyczyny. Wartości animacji w spoczynku były poprawne (panel 0, napis 1), więc to nie był błąd stanu, tylko krawędź przykrycia.
+
+**Uwaga:** emulacja WebKit na Windowsie błędu nie pokazuje; potwierdza go tylko prawdziwy iPhone.
+
+## Światło: gasło nagle przy szybkim scrollu (About, strona główna)
+
+**Objaw:** na About (i na stronie głównej) światło w hero gasło czasem nagle, a czasem powoli, zależnie od tego, jak szybko się przewijało.
+
+**Przyczyna:** wygaszanie było częściowo sterowane przewijaniem (`scrub` lub jasność liczona z pozycji scrolla), a częściowo zegarem (`.rays-off` zatrzymywał rysowanie po progu). Przy wolnym ruchu oba trafiały w siebie, przy szybkim się rozjeżdżały.
+
+**Poprawka:** jedno wygaszanie na zegarze, zawsze tej samej długości (około 1,4 s), włączane progiem przewijania; powrót 1,2 s. Wspólny czas wygaszania w `sideRays.js` / `sideRaysLegacy.js` (`dimMs`) i w `HeroSection.astro` ustawiony na 1,4 s. `.rays-off` dodawane dopiero, gdy jest już ciemno.
+
+**Pliki:** `src/pages/about.astro` (`setRays`), `src/pages/index.astro` (`setLight`), `src/utils/sideRays.js`, `src/utils/sideRaysLegacy.js`, `src/components/sections/HeroSection.astro`.
+
+**Zasada:** światła nie wygaszać `scrubem`, tylko na zegarze od progu.
+
+## About: portret z kafelków (WebGL) mrugał na końcu, zwłaszcza na telefonie
+
+**Objaw:** gdy kafelki składały się w portret, na samym końcu było krótkie mrugnięcie, mocniej na telefonie.
+
+**Przyczyny i poprawki** (`src/utils/faceTiles.ts`, `src/pages/about.astro`):
+1. Przejście z kafelków na prawdziwe zdjęcie: oba były półprzezroczyste jednocześnie, więc w połowie jasność spadała. Teraz zdjęcie jest wstawiane pod gotowe, nieprzezroczyste kafelki, a dopiero potem kafelki znikają (wolniej, `sine.inOut`).
+2. Kafelki próbkowały ogromny oryginał (3840px) bez wygładzania, więc na końcu zmieniała się ostrość. Teraz tekstura to zdjęcie już przycięte i zmniejszone przez przeglądarkę do rozmiaru ekranu.
+3. Rozdzielczość canvasu była ograniczona do 2×, a iPhone ma 3×. Teraz pełna rozdzielczość urządzenia (do 4096px).
+4. Jasność kafelków była o około 2,3% wyższa niż zdjęcia z filtrem CSS (`0.9` → `0.877`).
+5. Zmiana rozmiaru czyści canvas: rysowanie od razu w tej samej klatce, nie w następnej (pusta klatka).
+6. Zdjęcie pod spodem ma krycie `0.001`, nie `0` (warstwa przy zerze może się nie malować i wskakiwać późno).
+
+**Telefon/tablet:** portret przypięty na 1,7 wysokości ekranu (było 0,7), z lekkim wygładzaniem scrolla, bo kafelki składały się za szybko.
+
+**Uwaga o tekście i kafelkach na desktopie:** tekst nie rusza się z miejsca, wychodzi z ciemności dopiero po przypięciu sekcji; kafelki startują wcześniej (osobny `ScrollTrigger`).
+
 ## Reguły na przyszłe projekty (Safari / mobile)
 
 1. Przypięcia i poziome paski: **sticky + jedna animacja `scrub: true`**, bez snapu, bez `normalizeScroll`, bez animacji CSS sterowanych scrollem.
@@ -120,3 +162,5 @@ Sekcja "What we've created." (`src/components/sections/SelectedWorkSection.astro
 - `3d218d4` — oryginalny wygląd paska na tym mechanizmie
 - `77c74e6` — usunięta pauza na karcie "Discover…" (pasek jedzie liniowo)
 - `d5b5e8c` — ten sam Lenis na dotyku na całej stronie (wspólne opcje w `src/utils/touchLenis.ts`)
+- `2447885`, `bc52fe8`, `48212d8`, `4890e46` — About: portret z kafelków (WebGL), mrugnięcie na końcu, dłuższe przypięcie na telefonie; światło wygaszane na zegarze na wszystkich stronach
+- `aa8526b` — Winds of Sinai (iPhone): napis startowy na całą szerokość ekranu (kreski W i O przy lewej krawędzi)
