@@ -678,9 +678,12 @@ import portrait from '../img/portrait-top.webp';
         animation: mtl,
         trigger: photo,
         start: 'top top',
-        end: () => `+=${stableVh() * 0.7}`,
+        // With the tiles the portrait is held for longer (a finger flick used
+        // to run through the whole assembly in an instant), and a little
+        // smoothing keeps a fast swipe from jumping the tiles.
+        end: () => `+=${stableVh() * (tiles ? 1.7 : 0.7)}`,
         pin: true,
-        scrub: true,
+        scrub: tiles ? 0.8 : true,
         invalidateOnRefresh: true,
       });
       // The copy stays in the flow, plain: no entrance animation.
