@@ -662,8 +662,13 @@ const [line1, line2] = d.titleLines;
     .wos-splash {
       position: absolute;
       /* One screen tall from the top of the stage, so the title is centred on the
-         screen even when the panel under it is taller than the screen (small phones). */
-      inset: 0 0 auto 0;
+         screen even when the panel under it is taller than the screen (small phones).
+         And the full width of the screen, not just the stage's column: the panel's
+         title is flush left, and its first letters (W, O) and their blur reach past
+         the column into the gutter, where a column-wide cover left them showing. */
+      top: 0;
+      left: calc(50% - 50vw);
+      width: 100vw;
       height: 100svh;
       height: calc(var(--app-stable-vh, 1svh) * 100);
       z-index: 2;
