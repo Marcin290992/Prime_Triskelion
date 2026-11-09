@@ -66,11 +66,8 @@ void main() {
   vec2 uv = (px - uCrop.xy) / uCrop.zw;
   vec2 sh = vec2(k * 0.04 * uRect.z / uCrop.z, 0.0);
   vec3 g = vec3(lum(uv + sh), lum(uv), lum(uv - sh));
-  g = (g - 0.5) * mix(2.2, 1.1, uT) + 0.5;
+  g = clamp((g - 0.5) * mix(2.2, 1.1, uT) + 0.5, 0.0, 1.0);
   g *= 0.9 * mix(0.55, 1.0, smoothstep(0.0, 0.8, uT));
-  // a thin light edge while a tile is still on its way, so the tiles read even on the black
-  float e = min(min(vUv.x, 1.0 - vUv.x), min(vUv.y, 1.0 - vUv.y));
-  g += (1.0 - smoothstep(0.0, 0.035, e)) * k * 0.45;
   float a = smoothstep(0.0, 0.1, uT);
   gl_FragColor = vec4(g * a, a);
 }`;
@@ -125,13 +122,26 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 	// the photo as a texture, once it is there
 	const tex = gl.createTexture();
 	let ready = false;
-	let iw = 1, ih = 1;
+	// The texture is the photo already cropped (cover + focus) and scaled to the
+	// box's own pixel size by the browser's high-quality resampler, so the tiles
+	// are as sharp and as soft as the <img> they fade onto — sampling the huge
+	// original directly was noticeably crisper and showed as a blink at the end.
+	let sized = false;
 	const upload = () => {
-		if (!img.naturalWidth) return;
-		iw = img.naturalWidth; ih = img.naturalHeight;
+		if (!sized || !img.naturalWidth || !canvas.width) return;
+		const cw = canvas.width, ch = canvas.height;
+		const c2 = document.createElement('canvas');
+		c2.width = cw; c2.height = ch;
+		const x = c2.getContext('2d');
+		if (!x) return;
+		const sc = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
+		const dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+		x.imageSmoothingEnabled = true;
+		x.imageSmoothingQuality = 'high';
+		x.drawImage(img, (cw - dw) * focusX, (ch - dh) * focusY, dw, dh);
 		gl.bindTexture(gl.TEXTURE_2D, tex);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c2);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -140,8 +150,7 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 		requestDraw();
 	};
 	img.loading = 'eager';
-	if (img.complete && img.naturalWidth) upload();
-	else img.addEventListener('load', upload, { once: true });
+	img.addEventListener('load', upload);
 
 	// grid of tiles over the whole box
 	let W = 1, H = 1, cols = 1, rows = 1, tw = 1, th = 1;
@@ -162,6 +171,8 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 				delay: (row / (rows - 1)) * 0.6 + hash(i) * 0.4,   // top to bottom, like the copy
 			});
 		}
+		sized = true;
+		upload();   // the photo is re-cut for the new size
 		requestDraw();
 	}
 
@@ -174,16 +185,13 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 		g.clear(g.COLOR_BUFFER_BIT);
 		if (!ready || progress <= 0) return;
 
-		// where the photo sits in the box (object-fit: cover, object-position focus)
-		const sc = Math.max(W / iw, H / ih);
-		const dw = iw * sc, dh = ih * sc;
 		const cam = Math.max(W, H) * 1.1;
 		g.activeTexture(g.TEXTURE0);
 		g.bindTexture(g.TEXTURE_2D, tex);
 		g.uniform1i(U.uTex, 0);
 		g.uniform2f(U.uBox, W, H);
 		g.uniform2f(U.uSize, tw * 1.006, th * 1.006);   // a hair of overlap: no seams
-		g.uniform4f(U.uCrop, (W - dw) * focusX, (H - dh) * focusY, dw, dh);
+		g.uniform4f(U.uCrop, 0, 0, W, H);   // the texture is the box
 		g.uniform1f(U.uCam, cam);
 		g.uniform1f(U.uTime, progress * 6);
 

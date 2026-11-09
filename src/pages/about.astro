@@ -646,9 +646,14 @@ import portrait from '../img/portrait-top.webp';
     const proxy = { a: 0 };
     const addTiles = (tl: gsap.core.Timeline, start: number, dur: number) => {
       if (!tiles || !img) return;
+      gsap.set(img, { opacity: 0 });
+      gsap.set(tiles.canvas, { opacity: 1 });
       tl.fromTo(proxy, { a: 0 }, { a: 1, duration: dur, ease: 'none', onUpdate: () => tiles.setProgress(proxy.a) }, start)
-        .fromTo(img, { opacity: 0 }, { opacity: 1, duration: 0.04, ease: 'none' }, start + dur)
-        .fromTo(tiles.canvas, { opacity: 1 }, { opacity: 0, duration: 0.04, ease: 'none' }, start + dur);
+        // The real image is put in place UNDER the finished (opaque) tiles at
+        // once, and only then are the tiles faded away: cross-fading the two
+        // against each other dips in brightness half-way — a visible blink.
+        .fromTo(img, { opacity: 0 }, { opacity: 1, duration: 0.001, ease: 'none', immediateRender: false }, start + dur)
+        .fromTo(tiles.canvas, { opacity: 1 }, { opacity: 0, duration: 0.08, ease: 'none', immediateRender: false }, start + dur);
     };
 
     // Phones and tablets: only the portrait is scrubbed — held at the top

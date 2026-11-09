@@ -53,7 +53,7 @@ const OPTS = {
   // Off once less than this share of the hero is on screen (its lower part
   // fades out anyway); faded out / back in over these (ms).
   activeRatio: 0.35,
-  dimMs: 500,
+  dimMs: 1400,   // slow, always the same length — the light never cuts out
   relightMs: 1600,
   // Entrance, as the home hero's light: right after the hero's text has
   // come in (title 0.8s, lead done at ~0.85s — titleIn/supportIn's short
