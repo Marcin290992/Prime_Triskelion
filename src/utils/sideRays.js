@@ -377,8 +377,7 @@ function mountSideRays(host) {
     if (on === active) return;
     active = on;
     canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
-    canvas.style.filter = on ? '' : 'opacity(0)';
-    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
+    canvas.style.filter = on ? '' : 'opacity(0)';    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
     ensureLoop();
   };
 
@@ -543,26 +542,14 @@ function pinHost(host) {
     after.style.transition = 'none';
   }
 
-  // The light goes out (and comes back) on the clock — one slow fade of the
-  // same length however fast you scroll. Brightness, not opacity: the
-  // entrance tween owns the canvas's opacity.
-  const lightState = { v: 1 };
-  let lightOff = null;
-  const applyLight = () => {
-    const canvas = host.querySelector(':scope > .side-rays');
-    if (!canvas) return;
-    if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      canvas.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
-    }
-  };
-  const setLight = (off) => {
-    if (off === lightOff) return;
-    const first = lightOff === null;
-    lightOff = off;
-    gsap.killTweensOf(lightState);
-    if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
-    gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: () => { applyLight(); update(); } });
-  };
+  // The light's own layer: a black sheet over the rays (below the header's
+  // content, which is above them), its opacity the only thing that dims the
+  // light. Nothing else writes to it, so nothing can undo it.
+  host.style.isolation = 'isolate';
+  const dimEl = document.createElement('div');
+  dimEl.setAttribute('aria-hidden', 'true');
+  dimEl.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:-1;background:#000;opacity:0;';
+  host.append(dimEl);
 
   // Every write below happens only when the value changed, and the sizes are
   // measured once (and again on resize), not on every scroll frame.
@@ -615,16 +602,14 @@ function pinHost(host) {
       if (last.tr !== tr) { last.tr = tr; after.style.transform = tr; }
     }
 
-    // 1. the light, first
-    setLight(p > 0.02);
-    // the blur and the dark do not start until it is (nearly) gone
-    const out = smooth(clamp01((1 - lightState.v - 0.5) / 0.5));
-
-    // 2. the header: soft (0.30-0.70 of the pin), then dark (0.55-0.95) — the
-    //    home page's numbers exactly (index.astro, initHeroExit); it
-    //    stays dark while it scrolls away under the content
-    const bk = smooth(clamp01((p - 0.30) / 0.40)) * out;
-    const a = smooth(clamp01((p - 0.55) / 0.40)) * out;
+    // Three stretches of the pin, one after the other, each a function of the
+    // scroll position alone: the light goes out (0.02-0.30), the header goes
+    // soft (0.30-0.70) and sinks into the dark (0.55-0.95) — the home page's
+    // stretches (index.astro, initHeroExit). It stays dark while it scrolls
+    // away under the content.
+    put(dimEl, 'dm', 'opacity', smooth(clamp01((p - 0.02) / 0.28)).toFixed(3));
+    const bk = smooth(clamp01((p - 0.30) / 0.40));
+    const a = smooth(clamp01((p - 0.55) / 0.40));
     const live = pos < range + vh;
     setBlur(blurEl, 'b', live ? bk : 0);
     put(veilEl, 'vv', 'visibility', a > 0.002 && live ? 'visible' : 'hidden');
@@ -632,7 +617,7 @@ function pinHost(host) {
 
     // 3. the content, once the pin is over: up out of the dark, then into focus
     const d = pos > range ? (pos - range) / (hold > 0 ? hold : vh) : 0;
-    const shown = out > 0.999 ? smooth(clamp01(d / 0.25)) : 0;
+    const shown = smooth(clamp01(d / 0.25));
     const soft = 1 - smooth(clamp01(d / 0.5));
     if (after) {
       put(after, 'ao', 'opacity', shown.toFixed(3));
@@ -649,9 +634,9 @@ function pinHost(host) {
   update();
   return () => {
     hostRO.disconnect();
-    gsap.killTweensOf(lightState);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
+    dimEl.remove();
     blurEl.remove();
     veilEl.remove();
     focusEl.remove();
@@ -668,14 +653,15 @@ function mountAll() {
   if (!ENABLED) return;
   const cleanups = [];
   document.querySelectorAll('[data-side-rays]').forEach((host) => {
-    if (host.hasAttribute('data-rays-pin')) {
-      const off = pinHost(host);
-      if (off) cleanups.push(off);
-    }
     // Phones and tablets (touch) keep the original light: the new shader's
     // ribs rendered with hard edges in Chrome there.
     const c = window.matchMedia('(pointer: coarse)').matches ? mountSideRaysLegacy(host) : mountSideRays(host);
     if (c) cleanups.push(c);
+    // the pin comes second: its dimming sheet goes over the light's canvas
+    if (host.hasAttribute('data-rays-pin')) {
+      const off = pinHost(host);
+      if (off) cleanups.push(off);
+    }
   });
   if (!cleanups.length) return;
   document.addEventListener('astro:before-swap', () => cleanups.forEach((c) => c()), { once: true });
