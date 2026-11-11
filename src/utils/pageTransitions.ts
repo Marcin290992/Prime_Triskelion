@@ -115,13 +115,12 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 			restoreY: typeof history.state?.scrollY === 'number' ? history.state.scrollY : null,
 		};
 		if (!isNativeSwipe) document.documentElement.classList.add('vt-cut');
-		// On a touch device back is (almost always) a swipe/gesture, and the
-		// browser has already played its own animation by the time popstate
-		// fires — a moment later the old page is on screen again. Fading it out
-		// a second time shows it twice (dark, old page, dark, new page). So the
-		// old page goes black at once and the new one fades in from that black.
-		// Pointer devices (no gesture) keep the page's own fade-out.
-		if (isNativeSwipe || coarsePointer()) coverAtOnce();
+		// The browser's own swipe-back animation has already played by the time
+		// popstate fires, and the old page is on screen again for a moment:
+		// fading it out too would show it twice. Then it goes black at once and
+		// the new page fades in from that black. Any other back (button, desktop)
+		// gets the page's own fade-out.
+		if (isNativeSwipe) coverAtOnce();
 		else if (!reducedMotion()) preparePageExit(event);
 	} else {
 		const caseTransition = prepareCaseStudy(event);
@@ -140,10 +139,6 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	nativeSkipped = activeRun.skipNative;
 	inlineNewStylesheets(event);
 });
-
-function coarsePointer(): boolean {
-	return matchMedia('(pointer: coarse)').matches;
-}
 
 // Black over the leaving page, now, with no animation. It lives in the old
 // <body>, so the swap removes it; beginHistoryTransition then puts the next
