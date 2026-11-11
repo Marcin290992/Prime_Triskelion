@@ -49,6 +49,18 @@ const { title, description = "Prime Triskelion — one-person design studio craf
 				var lockWidth = window.innerWidth || 0;
 				var isTraverseNav = false;
 
+				// The browser's own back gesture (Chrome, Safari): popstate then says
+				// it has already shown a transition. This has to be read HERE, in the
+				// head, before the router's module is evaluated: the router's popstate
+				// handler starts the navigation and fires astro:before-preparation
+				// synchronously, so a listener registered after it (the page-transition
+				// module's) always ran too late and saw "no gesture" (see
+				// utils/pageTransitions.ts, which reads this flag).
+				window.__nativeBack = false;
+				window.addEventListener('popstate', function (event) {
+					window.__nativeBack = !!event.hasUAVisualTransition;
+				}, true);
+
 				function measureHeight() {
 					var ih = window.innerHeight || 0;
 					var vv = window.visualViewport ? window.visualViewport.height : 0;

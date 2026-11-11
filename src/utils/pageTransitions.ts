@@ -57,7 +57,6 @@ let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
 let transitionReady: Promise<void> = Promise.resolve();
 let caseShot: HTMLElement | null = null;
-let nativeHistoryTransition = false;
 let restoring = false;
 let cutSwapComplete = false;
 let cutTransitionComplete = false;
@@ -94,16 +93,14 @@ export function holdRestore(): () => void {
 	return release;
 }
 
-window.addEventListener('popstate', (event) => {
-	nativeHistoryTransition = !!(event as PopStateEvent & { hasUAVisualTransition?: boolean }).hasUAVisualTransition;
-}, true);
-
+// (the flag is set by an early popstate listener in Layout.astro's head script)
 document.addEventListener('astro:before-preparation', (rawEvent) => {
 	const event = rawEvent as PreparationEvent;
 	const incoming = requestedIncoming;
-	const isNativeSwipe = nativeHistoryTransition;
+	const native = window as Window & { __nativeBack?: boolean };
+	const isNativeSwipe = !!native.__nativeBack;
 	requestedIncoming = null;
-	nativeHistoryTransition = false;
+	native.__nativeBack = false;
 	caseShot?.remove();
 	caseShot = null;
 
