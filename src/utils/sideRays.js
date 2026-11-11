@@ -68,9 +68,9 @@ const OPTS = {
   // (the lead runs 0.15-0.85s in titleIn/supportIn's short entrance), and the
   // rays grow out of their source to full length (reveal) while the light
   // fades up (opacity) — a sunrise of about two seconds. Seconds.
-  inAt: 0.5,
-  inOpacity: 2.0,
-  inReveal: 2.0,
+  inAt: 0.2,
+  inOpacity: 2.5,
+  inReveal: 2.5,
   // Phones and tablets: same start, then a sunrise — the light creeps up
   // from nothing (slow start, power1.in) and keeps growing for seconds,
   // never jumping in (power2.out did most of its change at once). Kept to
@@ -377,8 +377,7 @@ function mountSideRays(host) {
     if (on === active) return;
     active = on;
     canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
-    canvas.style.filter = on ? '' : 'opacity(0)';
-    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
+    canvas.style.filter = on ? '' : 'opacity(0)';    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
     ensureLoop();
   };
 
@@ -470,7 +469,7 @@ function mountSideRays(host) {
     }
     const c = compact.matches
       ? OPTS.inCompact
-      : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power2.out' };
+      : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power1.inOut' };
     tweens = [
       gsap.to(canvas, { opacity: 1, duration: c.opacity, delay: c.at, ease: c.ease }),
       gsap.to(intro, { reveal: 1, duration: c.reveal, delay: c.at, ease: c.ease }),
@@ -494,74 +493,159 @@ function mountSideRays(host) {
   };
 }
 
-// Like the home hero: the header stays put for a stretch of scrolling while
-// its light goes out (scrubbed, so it follows the wheel both ways), and only
-// then does the page carry on and the next section come in. Hosts opt in with
-// [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
-const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
-const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
-const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
+// The home hero's exit, on the subpages — built the same way (see index.astro,
+// initHeroExit). The header stays put (sticky) for a stretch of scrolling.
+// Everything on screen is a plain function of the scroll position, nothing is
+// remembered between frames, so going back up is the same scene played in
+// reverse: the light goes out first (on the clock), then the header goes soft
+// (blur layer) and sinks into the dark (black layer). The page content sits
+// above those layers, pulled up to where the pin ends; it comes up out of the
+// dark, soft first and then in focus. Hosts opt in with [data-rays-pin]; an
+// [data-pin-hold] on the content (screens x 100) keeps its first block still
+// for that much scroll while it comes into focus (see projects/index.astro).
+// Two fixed layers rather than a filter on the content: the project cards are
+// position:fixed, which a filter on an ancestor would break.
+const PIN_VH = 100;       // extra scroll the header stays pinned for, in screens x 100 (as on the home page)
+const PIN_VH_TOUCH = 100; // the same on phones and tablets, as on the home page
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
   const wrap = document.createElement('div');
   // (a spacer, not padding: a sticky child only travels within its parent's content box)
   const spacer = document.createElement('div');
   spacer.setAttribute('aria-hidden', 'true');
-  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${PIN_VH})`;
+  const pinVh = window.matchMedia('(pointer: coarse)').matches ? PIN_VH_TOUCH : PIN_VH;
+  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${pinVh})`;
   host.before(wrap);
   wrap.append(host, spacer);
   host.style.position = 'sticky';
   host.style.top = '0';
   const smooth = (t) => t * t * (3 - 2 * t);
-  // Going down the light follows the scroll (scrubbed). Coming back to the
-  // header it does NOT follow: it lights again by itself, at its own pace.
-  const lit = { v: 1 };   // what the light has been allowed back up to
-  let relight = null;
-  let scrub = 1;          // what the scroll alone would show
-  let lastTop = 0;
-  const apply = () => {
-    const canvas = host.querySelector(':scope > .side-rays');
-    if (!canvas) return;
-    const light = Math.min(lit.v, scrub);
-    // brightness, not opacity: the entrance tween owns the canvas's opacity
-    if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      canvas.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
-    }
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+  const mkLayer = (z, css) => {
+    const el = document.createElement('div');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = `position:fixed;inset:0;pointer-events:none;visibility:hidden;z-index:${z};${css}`;
+    document.body.append(el);
+    return el;
   };
+  const blurEl = mkLayer(19, '');                           // softens the header
+  const veilEl = mkLayer(20, 'background:#000;opacity:0;'); // sinks it into the dark
+  const focusEl = mkLayer(31, '');                          // softens the content coming up (above it)
+
+  // The content, above the layers (as the manifesto on the home page), starting
+  // where the pin ends.
+  const after = wrap.nextElementSibling;
+  if (after) {
+    after.style.position = 'relative';
+    after.style.zIndex = '30';
+    after.style.transition = 'none';
+  }
+
+  // The light's own layer: a black sheet over the rays (below the header's
+  // content, which is above them), its opacity the only thing that dims the
+  // light. Nothing else writes to it, so nothing can undo it.
+  host.style.isolation = 'isolate';
+  const dimEl = document.createElement('div');
+  dimEl.setAttribute('aria-hidden', 'true');
+  dimEl.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:-1;background:#000;opacity:0;';
+  host.append(dimEl);
+
+  // Every write below happens only when the value changed, and the sizes are
+  // measured once (and again on resize), not on every scroll frame.
+  const last = {};
+  const put = (el, key, prop, val) => {
+    if (last[key] === val) return;
+    last[key] = val;
+    el.style[prop] = val;
+  };
+  const setBlur = (el, key, amount) => {
+    const on = amount > 0.002;
+    put(el, key + 'v', 'visibility', on ? 'visible' : 'hidden');
+    const f = on ? `blur(${(amount * 22).toFixed(1)}px)` : '';
+    if (last[key + 'f'] === f) return;
+    last[key + 'f'] = f;
+    el.style.backdropFilter = el.style.webkitBackdropFilter = f;
+  };
+
+  let hostH = 0;
   let ticking = false;
-  const update = () => {
+  function update() {
     ticking = false;
-    const top = wrap.getBoundingClientRect().top;
-    const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
-    scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
-    const down = top < lastTop;
-    const up = top > lastTop;
-    lastTop = top;
-    if (down) {
-      // heading away again: the scroll takes over from wherever the light is
-      relight?.kill();
-      relight = null;
-      lit.v = Math.min(lit.v, scrub);
-    } else if (up && -top < range && lit.v < 1 && !relight) {
-      // back on the header: it lights up on its own
-      relight = gsap.to(lit, {
-        v: 1,
-        duration: RELIGHT_S,
-        ease: 'power2.out',
-        onUpdate: apply,
-        onComplete: () => { relight = null; },
-      });
+    const vh = window.innerHeight;
+    if (!hostH || last.vh !== vh) {
+      hostH = host.offsetHeight;
+      last.vh = vh;
+      wrap.style.marginBottom = `-${hostH}px`;   // the content starts where the pin ends
     }
-    apply();
-  };
+    const top = wrap.getBoundingClientRect().top;
+    const range = Math.max(1, wrap.offsetHeight - hostH);
+    const pos = Math.max(0, -top);
+    const p = pos / range;
+    // (data-pin-hold-touch: for the phone/tablet layouts, where nothing is held)
+    const stacked = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+    const holdAttr = after && (stacked && after.dataset.pinHoldTouch != null ? after.dataset.pinHoldTouch : after.dataset.pinHold);
+    const hold = holdAttr ? (vh * parseFloat(holdAttr)) / 100 : 0;
+    if (after && last.hold !== Math.round(hold)) {
+      last.hold = Math.round(hold);
+      after.style.setProperty('--pin-hold', `${last.hold}px`);
+    }
+    // Layouts with nothing sticky to hold the first block (the phone/tablet
+    // stack of Services; [data-pin-hold-shift]): the content is carried down
+    // by exactly as much as the page scrolls, so it stands still on screen
+    // for the hold; the room it needs at the bottom is made by --shift-pad.
+    const shift = !!after && stacked && after.hasAttribute('data-pin-hold-shift') && hold > 0;
+    if (after) {
+      const pad = shift ? `${last.hold}px` : '0px';
+      if (last.pad !== pad) { last.pad = pad; after.style.setProperty('--shift-pad', pad); }
+      const tr = shift && pos > range ? `translate3d(0, ${Math.min(pos - range, hold).toFixed(1)}px, 0)` : '';
+      if (last.tr !== tr) { last.tr = tr; after.style.transform = tr; }
+    }
+
+    // Three stretches of the pin, one after the other, each a function of the
+    // scroll position alone: the light goes out (0.02-0.30), the header goes
+    // soft (0.30-0.70) and sinks into the dark (0.55-0.95) — the home page's
+    // stretches (index.astro, initHeroExit). It stays dark while it scrolls
+    // away under the content.
+    put(dimEl, 'dm', 'opacity', smooth(clamp01((p - 0.02) / 0.28)).toFixed(3));
+    const bk = smooth(clamp01((p - 0.30) / 0.40));
+    const a = smooth(clamp01((p - 0.55) / 0.40));
+    const live = pos < range + vh;
+    setBlur(blurEl, 'b', live ? bk : 0);
+    put(veilEl, 'vv', 'visibility', a > 0.002 && live ? 'visible' : 'hidden');
+    put(veilEl, 'vo', 'opacity', a.toFixed(3));
+
+    // 3. the content, once the pin is over: up out of the dark, then into focus
+    const d = pos > range ? (pos - range) / (hold > 0 ? hold : vh) : 0;
+    const shown = smooth(clamp01(d / 0.25));
+    const soft = 1 - smooth(clamp01(d / 0.5));
+    if (after) {
+      put(after, 'ao', 'opacity', shown.toFixed(3));
+      put(after, 'ap', 'pointerEvents', shown < 0.05 ? 'none' : '');
+    }
+    setBlur(focusEl, 'f', shown > 0 ? soft : 0);
+  }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
-  onScroll();
+  // the header's own size can settle late (fonts, copy): measure it again then
+  const hostRO = new ResizeObserver(() => { hostH = 0; onScroll(); });
+  hostRO.observe(host);
+  update();
   return () => {
-    relight?.kill();
+    hostRO.disconnect();
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
+    dimEl.remove();
+    blurEl.remove();
+    veilEl.remove();
+    focusEl.remove();
+    if (after) {
+      ['position', 'zIndex', 'transition', 'opacity', 'pointerEvents', 'transform'].forEach((k) => { after.style[k] = ''; });
+      after.style.removeProperty('--pin-hold');
+      after.style.removeProperty('--shift-pad');
+    }
+    wrap.style.marginBottom = '';
   };
 }
 
@@ -569,14 +653,15 @@ function mountAll() {
   if (!ENABLED) return;
   const cleanups = [];
   document.querySelectorAll('[data-side-rays]').forEach((host) => {
-    if (host.hasAttribute('data-rays-pin')) {
-      const off = pinHost(host);
-      if (off) cleanups.push(off);
-    }
     // Phones and tablets (touch) keep the original light: the new shader's
     // ribs rendered with hard edges in Chrome there.
     const c = window.matchMedia('(pointer: coarse)').matches ? mountSideRaysLegacy(host) : mountSideRays(host);
     if (c) cleanups.push(c);
+    // the pin comes second: its dimming sheet goes over the light's canvas
+    if (host.hasAttribute('data-rays-pin')) {
+      const off = pinHost(host);
+      if (off) cleanups.push(off);
+    }
   });
   if (!cleanups.length) return;
   document.addEventListener('astro:before-swap', () => cleanups.forEach((c) => c()), { once: true });
