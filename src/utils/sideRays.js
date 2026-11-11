@@ -572,6 +572,7 @@ function pinHost(host) {
   let ticking = false;
   function update() {
     ticking = false;
+    attachLenis();   // (Lenis may only exist after the first scroll)
     const vh = window.innerHeight;
     if (!hostH || last.vh !== vh) {
       hostH = host.offsetHeight;
@@ -626,6 +627,20 @@ function pinHost(host) {
     setBlur(focusEl, 'f', shown > 0 ? soft : 0);
   }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  // With Lenis (touch) the page is moved by script, in its own frame callback.
+  // The window's scroll event only arrives a frame later, so the held content
+  // (the translate above) trailed the page by one frame and snapped back: a
+  // small jump. Lenis' own scroll event fires right after it moves the page,
+  // before the frame is painted, so the pin is updated there, in the same frame.
+  let lenisOn = null;
+  const attachLenis = () => {
+    const lenis = window.__lenis;
+    if (!lenis || lenis === lenisOn) return;
+    lenisOn?.off?.('scroll', update);
+    lenisOn = lenis;
+    lenis.on('scroll', update);
+  };
+  attachLenis();
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
   // the header's own size can settle late (fonts, copy): measure it again then
@@ -634,6 +649,7 @@ function pinHost(host) {
   update();
   return () => {
     hostRO.disconnect();
+    lenisOn?.off?.('scroll', update);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
     dimEl.remove();
