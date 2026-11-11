@@ -555,22 +555,30 @@ function pinHost(host) {
     else window.scrollTo(0, y);
   };
 
-  const root = document.documentElement;
   let busy = false;
+  let heldY = 0;        // while busy the page is held here (no overflow:hidden: iOS Safari resizes its view for that)
   let tl = null;
   let away = false;     // has been well into the page since last at its top
   let armedAt = 0;      // scrolling up from the section's top plays the way back only after this (a trackpad tail must not)
-  const lock = () => { busy = true; root.style.overflow = 'hidden'; window.__lenis?.stop?.(); };
-  const unlock = () => { busy = false; root.style.overflow = ''; window.__lenis?.start?.(); };
+  const lock = () => { busy = true; heldY = window.scrollY; window.__lenis?.stop?.(); };
+  const unlock = () => { busy = false; window.__lenis?.start?.(); };
+  // Puts the section's top exactly at the top of the screen (a phone's
+  // browser may settle a scroll a little off: check where it really is).
+  const land = () => {
+    const off = Math.round(content.getBoundingClientRect().top);
+    if (Math.abs(off) > 1) jump(window.scrollY + off);
+    heldY = window.scrollY;
+  };
 
   const goDown = () => {
     if (busy) return;
     lock();
-    tl = gsap.timeline({ onComplete: () => { armedAt = performance.now() + 700; away = false; unlock(); } })
+    tl = gsap.timeline({ onComplete: () => { land(); armedAt = performance.now() + 700; away = false; unlock(); setTimeout(() => { if (!busy && Math.abs(window.scrollY - sectionY()) < 12) land(); }, 350); } })
       .call(() => setLight(false), null, 0)
       .to(level, { soft: 1, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.45)
       .to(level, { dark: 1, duration: 0.7, ease: 'power2.inOut', onUpdate: render }, 0.9)
-      .call(() => jump(sectionY()), null, 1.7)
+      .call(() => { jump(sectionY()); land(); }, null, 1.7)
+      .call(land, null, 2.2)
       .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 1.8)
       .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.95);
   };
@@ -580,7 +588,7 @@ function pinHost(host) {
     tl = gsap.timeline({ onComplete: unlock })
       .to(level, { soft: 1, duration: 0.45, ease: 'power2.out', onUpdate: render }, 0)
       .to(level, { dark: 1, duration: 0.55, ease: 'power2.inOut', onUpdate: render }, 0.1)
-      .call(() => { jump(0); setLight(true); }, null, 0.75)
+      .call(() => { jump(0); heldY = 0; setLight(true); }, null, 0.75)
       .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.85)
       .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.0);
   };
@@ -616,7 +624,10 @@ function pinHost(host) {
   // Anything else that moves the page (scrollbar, find, anchors): never rest
   // between the header and the section, settle on the nearer one.
   const onScroll = () => {
-    if (busy) return;
+    if (busy) {
+      if (Math.abs(window.scrollY - heldY) > 1) jump(heldY); // the page does not move while it plays
+      return;
+    }
     const y = window.scrollY;
     const top = sectionY();
     if (y > top + 40) away = true;
@@ -634,7 +645,6 @@ function pinHost(host) {
   return () => {
     tl?.kill();
     gsap.killTweensOf(lit);
-    root.style.overflow = '';
     window.removeEventListener('wheel', onWheel, cap);
     window.removeEventListener('touchstart', onTouchStart, { capture: true });
     window.removeEventListener('touchmove', onTouchMove, cap);
