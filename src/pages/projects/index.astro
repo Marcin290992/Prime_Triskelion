@@ -26,6 +26,7 @@ const projects = await Promise.all(
   <main id="projects-page">
 
     <!-- Brief header -->
+    <div class="hx-pin">
     <header class="proj-header" data-side-rays data-rays-pin>
       <h1 class="proj-title">
         <span class="proj-title__line"><span class="proj-title__word">My</span></span>
@@ -33,9 +34,11 @@ const projects = await Promise.all(
       </h1>
       <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
     </header>
+    <div class="hx-spacer" aria-hidden="true"></div>
+    </div>
 
     <!-- Mask reveal sections -->
-    <div data-after-hero data-pin-hold="60">
+    <div class="hx-next" data-after-hero>
     {projects.map((p) => (
       <section
         class="proj-section"

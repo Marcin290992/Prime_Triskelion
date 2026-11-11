@@ -498,43 +498,23 @@ function mountSideRays(host) {
 // screen of scrolling while it goes out — first the light, then the rest
 // goes soft (blur), then sinks into the dark — and the page's first section
 // comes up out of that dark, in place, and stands still for a while, so the
-// scroll only carries on once it is sharp. Hosts opt in with [data-rays-pin];
-// the section that follows the header is the one that comes up (its
-// data-pin-hold / data-pin-hold-touch say how long it stands, in screens x 100).
+// scroll only carries on once it is sharp.
 //
-// The light goes on the clock (one slow fade whatever the scroll speed), the
-// blur and the dark follow the scroll, both ways. Two fixed layers, over the
-// page and under the site's chrome, do the going out and the coming up.
+// The layout is static (markup + global.css: .hx-pin / .hx-spacer / .hx-next),
+// so nothing here moves anything on load — a page restored by Back is laid
+// out right from the first frame. This only drives the light and two fixed
+// layers (blur, dark) from the scroll position.
+//   <div class="hx-pin"><header data-side-rays data-rays-pin>…</header><div class="hx-spacer"></div></div>
+//   <div class="hx-next" data-after-hero>…the first section stands for HOLD_VH…</div>
 const LIGHT_OUT_S = 1.4; // the light going out
 const LIGHT_IN_S = 1.2;  // and coming back
-const EMERGE_TOUCH_VH = 35; // no hold possible (plain stack): it comes up over this much scroll
+const HOLD_VH = 60;      // how long the section stands (global.css --pin-hold says the same)
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-  const content = host.nextElementSibling;
-  if (!content) return null;
-  const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
-
-  const wrap = document.createElement('div');
-  // (a spacer, not padding: a sticky child only travels within its parent's content box)
-  const spacer = document.createElement('div');
-  spacer.setAttribute('aria-hidden', 'true');
-  spacer.style.height = 'calc(var(--app-stable-vh, 1svh) * 100)';
-  host.before(wrap);
-  wrap.append(host, spacer);
-  host.style.position = 'sticky';
-  host.style.top = '0';
-
-  // The section is pulled up under the header, so when the pin ends it is
-  // exactly in place; opaque and above the header so the header never shows
-  // through it, and hidden until the screen is dark.
-  const pull = compact.matches && content.hasAttribute('data-pin-hold-touch') ? 'data-pin-hold-touch' : 'data-pin-hold';
-  const holdVh = Number(content.getAttribute(pull)) || 0;
-  content.style.marginTop = 'calc(var(--app-stable-vh, 1svh) * -100)';
-  content.style.position = 'relative';
-  content.style.zIndex = '2';
-  content.style.background = 'rgb(var(--c-bg))';
-  content.style.setProperty('--pin-hold', `calc(var(--app-stable-vh, 1svh) * ${holdVh})`);
-  content.style.visibility = 'hidden';
+  const wrap = host.parentElement;
+  const content = wrap?.nextElementSibling;
+  if (!wrap?.classList.contains('hx-pin') || !content?.classList.contains('hx-next')) return null;
+  const maxBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 14 : 22;
 
   const layer = (z, extra) => {
     const el = document.createElement('div');
@@ -570,45 +550,56 @@ function pinHost(host) {
     gsap.to(lit, { v: off ? 0 : 1, duration: off ? LIGHT_OUT_S : LIGHT_IN_S, ease: 'power2.out', onUpdate: apply });
   };
 
+  let range = 1; // the pin's length (px), and one screen
+  let screen = 1;
+  const measure = () => {
+    screen = host.offsetHeight || 1;
+    range = Math.max(1, wrap.offsetHeight - screen);
+  };
+
   let ticking = false;
+  let shown = ''; // what the layers show now, to touch the page only when it changes
   const update = () => {
     ticking = false;
-    const y = -wrap.getBoundingClientRect().top;       // scrolled into the pin
-    const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
+    const y = -wrap.getBoundingClientRect().top; // scrolled into the pin
     const p = y / range;
     setLight(p > 0.02);
     // Three beats, one after the other: the light (above), then the blur
     // (0.30-0.70), then the dark (0.55-0.95).
     const bk = smooth(clamp01((p - 0.30) / 0.40));
     const a = smooth(clamp01((p - 0.55) / 0.40));
-    // Then the section comes up: the dark lifts first, the blur after, while
-    // it stands still (or, with no hold, over a short stretch of scroll).
-    const vh = host.offsetHeight;
-    const emerge = holdVh > 0 ? holdVh * 0.75 : EMERGE_TOUCH_VH;
-    const q = clamp01((y - range) / (emerge / 100 * vh));
+    // Then the section comes up while it stands still: the dark lifts first,
+    // the blur after.
+    const q = clamp01((y - range) / (HOLD_VH * 0.75 / 100 * screen));
     const dark = a * (1 - smooth(clamp01(q / 0.6)));
     const soft = bk * (1 - smooth(clamp01((q - 0.3) / 0.7)));
+    const key = `${dark.toFixed(3)}|${soft.toFixed(2)}|${p < 0.96}`;
+    if (key === shown) return;
+    shown = key;
     blur.style.visibility = soft > 0.001 ? 'visible' : 'hidden';
-    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft > 0.001 ? `blur(${(soft * 22).toFixed(1)}px)` : '';
+    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft > 0.001 ? `blur(${(soft * maxBlur).toFixed(1)}px)` : '';
     veil.style.visibility = dark > 0.001 ? 'visible' : 'hidden';
     veil.style.opacity = dark.toFixed(3);
     // Nothing of the section shows until the screen is dark.
     content.style.visibility = p < 0.96 ? 'hidden' : '';
   };
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  const onResize = () => { measure(); shown = ''; onScroll(); };
+  const ro = new ResizeObserver(onResize);
+  ro.observe(host);
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
-  const late = window.setTimeout(onScroll, 400); // after fonts / layout settle
+  measure();
   update();
   return () => {
     gsap.killTweensOf(lit);
-    window.clearTimeout(late);
+    ro.disconnect();
     window.removeEventListener('scroll', onScroll);
-    window.removeEventListener('resize', onScroll);
     blur.remove();
     veil.remove();
+    content.style.visibility = '';
   };
 }
+
 
 function mountAll() {
   if (!ENABLED) return;
