@@ -56,7 +56,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
          scrolls normally beside them. Phones and tablets: the wrappers
          dissolve (display: contents) and each card sits above its own
          copy, a plain stack. -->
-    <div class="svc-split" data-after-hero data-pin-hold="70" data-pin-hold-touch="60" data-pin-hold-shift>
+    <div class="svc-split" data-after-hero>
       <div class="svc-deck">
         {SERVICES.map((s, i) => (
           <div class="svc-card" data-svc-card style={`order: ${i * 2}`}>
@@ -274,12 +274,6 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
   }
   .svc-text:last-child { border-bottom: 0; }
-  /* The first service holds longer (--pin-hold, set by the hero's exit in
-     utils/sideRays.js): card and copy stand still, in focus, before the scroll
-     carries on to the next service. */
-  .svc-text:first-child {
-    min-height: calc(var(--app-stable-vh, 1vh) * (100 + var(--svc-hold)) + var(--pin-hold, 0px));
-  }
   .svc-text__body {
     position: sticky;
     top: 0;
@@ -375,8 +369,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-split {
       flex-direction: column;
       align-items: stretch;
-      /* (+ --shift-pad: the room the hold's shift needs at the bottom, see utils/sideRays.js) */
-      padding: 0 var(--site-gutter) calc(clamp(4rem, 10vw, 6rem) + var(--shift-pad, 0px));
+      padding: 0 var(--site-gutter) clamp(4rem, 10vw, 6rem);
       box-sizing: border-box;
     }
     .svc-deck, .svc-texts { display: contents; }
@@ -395,8 +388,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-card__frame { width: 100%; aspect-ratio: 4 / 5; }
     .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
     .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
-    .svc-text,
-    .svc-text:first-child {
+    .svc-text {
       min-height: 0;
       padding: clamp(1.6rem, 5vw, 2.4rem) 0 0;
       border-bottom: 0;
