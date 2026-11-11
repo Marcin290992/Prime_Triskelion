@@ -3,7 +3,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-type RouteKind = 'idle' | 'standard' | 'menu' | 'case-study' | 'history' | 'native-history';
+type RouteKind = 'idle' | 'standard' | 'menu' | 'case-study' | 'history';
 type IncomingEffect = 'blur' | 'none';
 
 interface RouteRun {
@@ -109,15 +109,20 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		document.documentElement.classList.add('vt-cut');
 	} else if (event.navigationType === 'traverse') {
 		activeRun = {
-			kind: isNativeSwipe ? 'native-history' : 'history',
+			kind: 'history',
 			skipNative: !isNativeSwipe,
 			incoming: 'none',
 			restoreY: typeof history.state?.scrollY === 'number' ? history.state.scrollY : null,
 		};
-		if (!isNativeSwipe) {
-			document.documentElement.classList.add('vt-cut');
-			if (!reducedMotion()) preparePageExit(event);
-		}
+		if (!isNativeSwipe) document.documentElement.classList.add('vt-cut');
+		// On a touch device back is (almost always) a swipe/gesture, and the
+		// browser has already played its own animation by the time popstate
+		// fires — a moment later the old page is on screen again. Fading it out
+		// a second time shows it twice (dark, old page, dark, new page). So the
+		// old page goes black at once and the new one fades in from that black.
+		// Pointer devices (no gesture) keep the page's own fade-out.
+		if (isNativeSwipe || coarsePointer()) coverAtOnce();
+		else if (!reducedMotion()) preparePageExit(event);
 	} else {
 		const caseTransition = prepareCaseStudy(event);
 		if (caseTransition) {
@@ -135,6 +140,20 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	nativeSkipped = activeRun.skipNative;
 	inlineNewStylesheets(event);
 });
+
+function coarsePointer(): boolean {
+	return matchMedia('(pointer: coarse)').matches;
+}
+
+// Black over the leaving page, now, with no animation. It lives in the old
+// <body>, so the swap removes it; beginHistoryTransition then puts the next
+// black veil (opacity 1) on the new page in the same task, and fades that out.
+function coverAtOnce(): void {
+	const veil = document.createElement('div');
+	veil.setAttribute('aria-hidden', 'true');
+	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
+	document.body.append(veil);
+}
 
 function preparePageExit(event: PreparationEvent): void {
 	const content = Array.from(document.querySelectorAll<HTMLElement>(
@@ -378,16 +397,13 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 		clearCutClassWhenReady();
 	}
 
-	if (run.kind !== 'history' && run.kind !== 'native-history') {
+	if (run.kind !== 'history') {
 		ScrollTrigger.clearScrollMemory();
 		ScrollTrigger.update();
 	}
 
 	if (run.kind === 'case-study') finishCaseStudyTransition();
 	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
-	// The browser's own swipe-back animation has no veil, but the restored
-	// page still needs its scroll and scrubbed scenes put back in place.
-	else if (run.kind === 'native-history') void settleRestoredPage(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();
