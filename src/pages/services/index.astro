@@ -56,7 +56,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
          scrolls normally beside them. Phones and tablets: the wrappers
          dissolve (display: contents) and each card sits above its own
          copy, a plain stack. -->
-    <div class="svc-split" data-after-hero>
+    <div class="svc-split" data-after-hero data-pin-hold="60" data-pin-hold-touch="0">
       <div class="svc-deck">
         {SERVICES.map((s, i) => (
           <div class="svc-card" data-svc-card style={`order: ${i * 2}`}>
@@ -274,6 +274,12 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
   }
   .svc-text:last-child { border-bottom: 0; }
+  /* The first service holds longer (--pin-hold, set by the header's exit in
+     utils/sideRays.js): card and copy stand still while they come up out of
+     the dark, before the scroll carries on to the next service. */
+  .svc-text:first-child {
+    min-height: calc(var(--app-stable-vh, 1vh) * (100 + var(--svc-hold)) + var(--pin-hold, 0px));
+  }
   .svc-text__body {
     position: sticky;
     top: 0;
@@ -383,12 +389,18 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       margin-top: clamp(2.5rem, 8vw, 4rem);
     }
     .svc-card:nth-child(even) { background: none; }
+    /* The first card starts below the logo, not under it, as it comes up
+       out of the dark. */
+    .svc-card:first-child {
+      margin-top: max(6rem, calc(var(--app-stable-vh, 1svh) * 17));
+    }
     .svc-card__inner { position: relative; padding: 0; will-change: auto; }
     .svc-card__shade { display: none; }
     .svc-card__frame { width: 100%; aspect-ratio: 4 / 5; }
     .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
     .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
-    .svc-text {
+    .svc-text,
+    .svc-text:first-child {
       min-height: 0;
       padding: clamp(1.6rem, 5vw, 2.4rem) 0 0;
       border-bottom: 0;
