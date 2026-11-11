@@ -494,119 +494,74 @@ function mountSideRays(host) {
   };
 }
 
-// The hero's exit, the same as the home page's: the header stays put for a
-// screen of scrolling while it goes out — first the light, then the rest
-// goes soft (blur), then sinks into the dark — and the page's first section
-// comes up out of that dark, in place, and stands still for a while, so the
-// scroll only carries on once it is sharp. Hosts opt in with [data-rays-pin];
-// the section that follows the header is the one that comes up (its
-// data-pin-hold / data-pin-hold-touch say how long it stands, in screens x 100).
-//
-// The light goes on the clock (one slow fade whatever the scroll speed), the
-// blur and the dark follow the scroll, both ways. Two fixed layers, over the
-// page and under the site's chrome, do the going out and the coming up.
-const LIGHT_OUT_S = 1.4; // the light going out
-const LIGHT_IN_S = 1.2;  // and coming back
-const EMERGE_TOUCH_VH = 35; // no hold possible (plain stack): it comes up over this much scroll
+// Like the home hero: the header stays put for a stretch of scrolling while
+// its light goes out (scrubbed, so it follows the wheel both ways), and only
+// then does the page carry on and the next section come in. Hosts opt in with
+// [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
+const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
+const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
+const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-  const content = host.nextElementSibling;
-  if (!content) return null;
-  const compact = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)');
-
   const wrap = document.createElement('div');
   // (a spacer, not padding: a sticky child only travels within its parent's content box)
   const spacer = document.createElement('div');
   spacer.setAttribute('aria-hidden', 'true');
-  spacer.style.height = 'calc(var(--app-stable-vh, 1svh) * 100)';
+  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${PIN_VH})`;
   host.before(wrap);
   wrap.append(host, spacer);
   host.style.position = 'sticky';
   host.style.top = '0';
-
-  // The section is pulled up under the header, so when the pin ends it is
-  // exactly in place; opaque and above the header so the header never shows
-  // through it, and hidden until the screen is dark.
-  const pull = compact.matches && content.hasAttribute('data-pin-hold-touch') ? 'data-pin-hold-touch' : 'data-pin-hold';
-  const holdVh = Number(content.getAttribute(pull)) || 0;
-  content.style.marginTop = 'calc(var(--app-stable-vh, 1svh) * -100)';
-  content.style.position = 'relative';
-  content.style.zIndex = '2';
-  content.style.background = 'rgb(var(--c-bg))';
-  content.style.setProperty('--pin-hold', `calc(var(--app-stable-vh, 1svh) * ${holdVh})`);
-  content.style.visibility = 'hidden';
-
-  const layer = (z, extra) => {
-    const el = document.createElement('div');
-    el.setAttribute('aria-hidden', 'true');
-    el.style.cssText = `position:fixed;inset:0;z-index:${z};pointer-events:none;visibility:hidden;${extra}`;
-    document.body.appendChild(el);
-    return el;
-  };
-  // (over the page and the grid lines, under the top blur band and the chrome)
-  const blur = layer(900, '');
-  const veil = layer(901, 'background:#000;opacity:0;');
-
   const smooth = (t) => t * t * (3 - 2 * t);
-  const clamp01 = (v) => Math.max(0, Math.min(1, v));
-
-  // The light: 1 = lit, 0 = out. On the clock, never scrubbed.
-  const lit = { v: 1 };
-  let lightOff = null;
+  // Going down the light follows the scroll (scrubbed). Coming back to the
+  // header it does NOT follow: it lights again by itself, at its own pace.
+  const lit = { v: 1 };   // what the light has been allowed back up to
+  let relight = null;
+  let scrub = 1;          // what the scroll alone would show
+  let lastTop = 0;
   const apply = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
+    const light = Math.min(lit.v, scrub);
     // brightness, not opacity: the entrance tween owns the canvas's opacity
     if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      canvas.style.filter = lit.v < 0.999 ? `brightness(${lit.v.toFixed(3)})` : '';
+      canvas.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
     }
   };
-  const setLight = (off) => {
-    if (off === lightOff) return;
-    const first = lightOff === null;
-    lightOff = off;
-    gsap.killTweensOf(lit);
-    if (first) { lit.v = off ? 0 : 1; apply(); return; }
-    gsap.to(lit, { v: off ? 0 : 1, duration: off ? LIGHT_OUT_S : LIGHT_IN_S, ease: 'power2.out', onUpdate: apply });
-  };
-
   let ticking = false;
   const update = () => {
     ticking = false;
-    const y = -wrap.getBoundingClientRect().top;       // scrolled into the pin
+    const top = wrap.getBoundingClientRect().top;
     const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
-    const p = y / range;
-    setLight(p > 0.02);
-    // Three beats, one after the other: the light (above), then the blur
-    // (0.30-0.70), then the dark (0.55-0.95).
-    const bk = smooth(clamp01((p - 0.30) / 0.40));
-    const a = smooth(clamp01((p - 0.55) / 0.40));
-    // Then the section comes up: the dark lifts first, the blur after, while
-    // it stands still (or, with no hold, over a short stretch of scroll).
-    const vh = host.offsetHeight;
-    const emerge = holdVh > 0 ? holdVh * 0.75 : EMERGE_TOUCH_VH;
-    const q = clamp01((y - range) / (emerge / 100 * vh));
-    const dark = a * (1 - smooth(clamp01(q / 0.6)));
-    const soft = bk * (1 - smooth(clamp01((q - 0.3) / 0.7)));
-    blur.style.visibility = soft > 0.001 ? 'visible' : 'hidden';
-    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft > 0.001 ? `blur(${(soft * 22).toFixed(1)}px)` : '';
-    veil.style.visibility = dark > 0.001 ? 'visible' : 'hidden';
-    veil.style.opacity = dark.toFixed(3);
-    // Nothing of the section shows until the screen is dark.
-    content.style.visibility = p < 0.96 ? 'hidden' : '';
+    scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
+    const down = top < lastTop;
+    const up = top > lastTop;
+    lastTop = top;
+    if (down) {
+      // heading away again: the scroll takes over from wherever the light is
+      relight?.kill();
+      relight = null;
+      lit.v = Math.min(lit.v, scrub);
+    } else if (up && -top < range && lit.v < 1 && !relight) {
+      // back on the header: it lights up on its own
+      relight = gsap.to(lit, {
+        v: 1,
+        duration: RELIGHT_S,
+        ease: 'power2.out',
+        onUpdate: apply,
+        onComplete: () => { relight = null; },
+      });
+    }
+    apply();
   };
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
-  const late = window.setTimeout(onScroll, 400); // after fonts / layout settle
-  update();
+  onScroll();
   return () => {
-    gsap.killTweensOf(lit);
-    window.clearTimeout(late);
+    relight?.kill();
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
-    blur.remove();
-    veil.remove();
   };
 }
 
