@@ -564,25 +564,45 @@ function pinHost(host) {
     gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.1 : 1.2, ease: 'power2.out', onUpdate: () => { applyLight(); update(); } });
   };
 
-  const setBlur = (el, amount) => {
-    el.style.visibility = amount > 0.002 ? 'visible' : 'hidden';
-    el.style.backdropFilter = el.style.webkitBackdropFilter = amount > 0.002 ? `blur(${(amount * 22).toFixed(1)}px)` : '';
+  // Every write below happens only when the value changed, and the sizes are
+  // measured once (and again on resize), not on every scroll frame.
+  const last = {};
+  const put = (el, key, prop, val) => {
+    if (last[key] === val) return;
+    last[key] = val;
+    el.style[prop] = val;
+  };
+  const setBlur = (el, key, amount) => {
+    const on = amount > 0.002;
+    put(el, key + 'v', 'visibility', on ? 'visible' : 'hidden');
+    const f = on ? `blur(${(amount * 22).toFixed(1)}px)` : '';
+    if (last[key + 'f'] === f) return;
+    last[key + 'f'] = f;
+    el.style.backdropFilter = el.style.webkitBackdropFilter = f;
   };
 
+  let hostH = 0;
   let ticking = false;
   function update() {
     ticking = false;
     const vh = window.innerHeight;
-    wrap.style.marginBottom = `-${host.offsetHeight}px`;   // the content starts where the pin ends
+    if (!hostH || last.vh !== vh) {
+      hostH = host.offsetHeight;
+      last.vh = vh;
+      wrap.style.marginBottom = `-${hostH}px`;   // the content starts where the pin ends
+    }
     const top = wrap.getBoundingClientRect().top;
-    const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
+    const range = Math.max(1, wrap.offsetHeight - hostH);
     const pos = Math.max(0, -top);
     const p = pos / range;
     // (data-pin-hold-touch: for the phone/tablet layouts, where nothing is held)
     const stacked = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
     const holdAttr = after && (stacked && after.dataset.pinHoldTouch != null ? after.dataset.pinHoldTouch : after.dataset.pinHold);
     const hold = holdAttr ? (vh * parseFloat(holdAttr)) / 100 : 0;
-    if (after) after.style.setProperty('--pin-hold', `${Math.round(hold)}px`);
+    if (after && last.hold !== Math.round(hold)) {
+      last.hold = Math.round(hold);
+      after.style.setProperty('--pin-hold', `${last.hold}px`);
+    }
 
     // 1. the light, first
     setLight(p > 0.02);
@@ -594,25 +614,29 @@ function pinHost(host) {
     const bk = smooth(clamp01((p - 0.40) / 0.40)) * out;
     const a = smooth(clamp01((p - 0.60) / 0.35)) * out;
     const live = pos < range + vh;
-    setBlur(blurEl, live ? bk : 0);
-    veilEl.style.visibility = a > 0.002 && live ? 'visible' : 'hidden';
-    veilEl.style.opacity = a.toFixed(3);
+    setBlur(blurEl, 'b', live ? bk : 0);
+    put(veilEl, 'vv', 'visibility', a > 0.002 && live ? 'visible' : 'hidden');
+    put(veilEl, 'vo', 'opacity', a.toFixed(3));
 
     // 3. the content, once the pin is over: up out of the dark, then into focus
     const d = pos > range ? (pos - range) / (hold > 0 ? hold : vh) : 0;
     const shown = out > 0.999 ? smooth(clamp01(d / 0.25)) : 0;
     const soft = 1 - smooth(clamp01(d / 0.5));
     if (after) {
-      after.style.opacity = shown.toFixed(3);
-      after.style.pointerEvents = shown < 0.05 ? 'none' : '';
+      put(after, 'ao', 'opacity', shown.toFixed(3));
+      put(after, 'ap', 'pointerEvents', shown < 0.05 ? 'none' : '');
     }
-    setBlur(focusEl, shown > 0 ? soft : 0);
+    setBlur(focusEl, 'f', shown > 0 ? soft : 0);
   }
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
+  // the header's own size can settle late (fonts, copy): measure it again then
+  const hostRO = new ResizeObserver(() => { hostH = 0; onScroll(); });
+  hostRO.observe(host);
   update();
   return () => {
+    hostRO.disconnect();
     gsap.killTweensOf(lightState);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
