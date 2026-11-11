@@ -282,7 +282,8 @@ export function mountSideRaysLegacy(host) {
     if (on === active) return;
     active = on;
     canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
-    canvas.style.filter = on ? '' : 'opacity(0)';    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
+    canvas.style.filter = on ? '' : 'opacity(0)';
+    if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
     ensureLoop();
   };
 
