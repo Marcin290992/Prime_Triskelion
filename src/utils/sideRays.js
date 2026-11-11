@@ -494,26 +494,22 @@ function mountSideRays(host) {
   };
 }
 
-// The hero's exit, the same as the home page's: the header stays put for a
-// screen of scrolling while it goes out — first the light, then the rest
-// goes soft (blur), then sinks into the dark — and the page's first section
-// comes up out of that dark, in place, and stands still for a while, so the
-// scroll only carries on once it is sharp.
-//
-// The layout is static (markup + global.css: .hx-pin / .hx-spacer / .hx-next),
-// so nothing here moves anything on load — a page restored by Back is laid
-// out right from the first frame. This only drives the light and two fixed
-// layers (blur, dark) from the scroll position.
-//   <div class="hx-pin"><header data-side-rays data-rays-pin>…</header><div class="hx-spacer"></div></div>
-//   <div class="hx-next" data-after-hero>…the first section stands for HOLD_VH…</div>
-const LIGHT_OUT_S = 1.4; // the light going out
+// The hero's exit on Projects and Services, the same going-out as the home
+// page's but on the clock, not on the scroll: the first scroll down plays it
+// through and holds the page until it is done. The light goes out, then the
+// rest goes soft (blur), then sinks into the dark; the first section is then
+// put in place under the dark and comes up out of it (dark lifts, then blur),
+// and only when it is sharp does the scroll carry on. Scrolling up from the
+// top of that section plays it back the other way. Hosts opt in with
+// [data-rays-pin]; the section that follows the header is the one that
+// comes up. Nothing on the page is moved by script until the first scroll.
+// Reduced motion: plain scrolling.
+const LIGHT_OUT_S = 1.0; // the light going out
 const LIGHT_IN_S = 1.2;  // and coming back
-const HOLD_VH = 60;      // how long the section stands (global.css --pin-hold says the same)
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-  const wrap = host.parentElement;
-  const content = wrap?.nextElementSibling;
-  if (!wrap?.classList.contains('hx-pin') || !content?.classList.contains('hx-next')) return null;
+  const content = host.nextElementSibling;
+  if (!content) return null;
   const maxBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 14 : 22;
 
   const layer = (z, extra) => {
@@ -526,13 +522,18 @@ function pinHost(host) {
   // (over the page and the grid lines, under the top blur band and the chrome)
   const blur = layer(900, '');
   const veil = layer(901, 'background:#000;opacity:0;');
+  const level = { dark: 0, soft: 0 };
+  const render = () => {
+    const soft = level.soft > 0.001;
+    blur.style.visibility = soft ? 'visible' : 'hidden';
+    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft ? `blur(${(level.soft * maxBlur).toFixed(1)}px)` : '';
+    const dark = level.dark > 0.001;
+    veil.style.visibility = dark ? 'visible' : 'hidden';
+    veil.style.opacity = level.dark.toFixed(3);
+  };
 
-  const smooth = (t) => t * t * (3 - 2 * t);
-  const clamp01 = (v) => Math.max(0, Math.min(1, v));
-
-  // The light: 1 = lit, 0 = out. On the clock, never scrubbed.
+  // The light: 1 = lit, 0 = out.
   const lit = { v: 1 };
-  let lightOff = null;
   const apply = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
@@ -541,62 +542,106 @@ function pinHost(host) {
       canvas.style.filter = lit.v < 0.999 ? `brightness(${lit.v.toFixed(3)})` : '';
     }
   };
-  const setLight = (off) => {
-    if (off === lightOff) return;
-    const first = lightOff === null;
-    lightOff = off;
+  const setLight = (on) => {
     gsap.killTweensOf(lit);
-    if (first) { lit.v = off ? 0 : 1; apply(); return; }
-    gsap.to(lit, { v: off ? 0 : 1, duration: off ? LIGHT_OUT_S : LIGHT_IN_S, ease: 'power2.out', onUpdate: apply });
+    gsap.to(lit, { v: on ? 1 : 0, duration: on ? LIGHT_IN_S : LIGHT_OUT_S, ease: 'power2.out', onUpdate: apply });
   };
 
-  let range = 1; // the pin's length (px), and one screen
-  let screen = 1;
-  const measure = () => {
-    screen = host.offsetHeight || 1;
-    range = Math.max(1, wrap.offsetHeight - screen);
+  // Where the section sits when it is "in place": its top at the top of the screen.
+  const sectionY = () => Math.round(content.getBoundingClientRect().top + window.scrollY);
+  const jump = (y) => {
+    const lenis = window.__lenis;
+    if (lenis) lenis.scrollTo(y, { immediate: true, force: true });
+    else window.scrollTo(0, y);
   };
 
-  let ticking = false;
-  let shown = ''; // what the layers show now, to touch the page only when it changes
-  const update = () => {
-    ticking = false;
-    const y = -wrap.getBoundingClientRect().top; // scrolled into the pin
-    const p = y / range;
-    setLight(p > 0.02);
-    // Three beats, one after the other: the light (above), then the blur
-    // (0.30-0.70), then the dark (0.55-0.95).
-    const bk = smooth(clamp01((p - 0.30) / 0.40));
-    const a = smooth(clamp01((p - 0.55) / 0.40));
-    // Then the section comes up while it stands still: the dark lifts first,
-    // the blur after.
-    const q = clamp01((y - range) / (HOLD_VH * 0.75 / 100 * screen));
-    const dark = a * (1 - smooth(clamp01(q / 0.6)));
-    const soft = bk * (1 - smooth(clamp01((q - 0.3) / 0.7)));
-    const key = `${dark.toFixed(3)}|${soft.toFixed(2)}|${p < 0.96}`;
-    if (key === shown) return;
-    shown = key;
-    blur.style.visibility = soft > 0.001 ? 'visible' : 'hidden';
-    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft > 0.001 ? `blur(${(soft * maxBlur).toFixed(1)}px)` : '';
-    veil.style.visibility = dark > 0.001 ? 'visible' : 'hidden';
-    veil.style.opacity = dark.toFixed(3);
-    // Nothing of the section shows until the screen is dark.
-    content.style.visibility = p < 0.96 ? 'hidden' : '';
+  const root = document.documentElement;
+  let busy = false;
+  let tl = null;
+  let away = false;     // has been well into the page since last at its top
+  let armedAt = 0;      // scrolling up from the section's top plays the way back only after this (a trackpad tail must not)
+  const lock = () => { busy = true; root.style.overflow = 'hidden'; window.__lenis?.stop?.(); };
+  const unlock = () => { busy = false; root.style.overflow = ''; window.__lenis?.start?.(); };
+
+  const goDown = () => {
+    if (busy) return;
+    lock();
+    tl = gsap.timeline({ onComplete: () => { armedAt = performance.now() + 700; away = false; unlock(); } })
+      .call(() => setLight(false), null, 0)
+      .to(level, { soft: 1, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.45)
+      .to(level, { dark: 1, duration: 0.7, ease: 'power2.inOut', onUpdate: render }, 0.9)
+      .call(() => jump(sectionY()), null, 1.7)
+      .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 1.8)
+      .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.95);
   };
-  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-  const onResize = () => { measure(); shown = ''; onScroll(); };
-  const ro = new ResizeObserver(onResize);
-  ro.observe(host);
+  const goUp = () => {
+    if (busy) return;
+    lock();
+    tl = gsap.timeline({ onComplete: unlock })
+      .to(level, { soft: 1, duration: 0.45, ease: 'power2.out', onUpdate: render }, 0)
+      .to(level, { dark: 1, duration: 0.55, ease: 'power2.inOut', onUpdate: render }, 0.1)
+      .call(() => { jump(0); setLight(true); }, null, 0.75)
+      .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.85)
+      .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.0);
+  };
+
+  const atTop = () => window.scrollY <= 4;
+  const atSection = () => Math.abs(window.scrollY - sectionY()) <= 4;
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  // dir: +1 = heading down the page, -1 = heading up
+  const intent = (dir, e) => {
+    if (busy) return stop(e);
+    if (dir > 0 && atTop()) { stop(e); goDown(); return; }
+    if (dir < 0 && atSection()) {
+      stop(e);
+      if (performance.now() >= armedAt) goUp();
+    }
+  };
+  const onWheel = (e) => { if (e.deltaY) intent(Math.sign(e.deltaY), e); };
+  let touchY = 0;
+  const onTouchStart = (e) => { touchY = e.touches[0].clientY; };
+  const onTouchMove = (e) => {
+    const dy = touchY - e.touches[0].clientY; // finger up = heading down
+    if (busy) return stop(e);
+    if (Math.abs(dy) > 6) intent(Math.sign(dy), e);
+  };
+  const DOWN = new Set([' ', 'PageDown', 'ArrowDown', 'End']);
+  const UP = new Set(['PageUp', 'ArrowUp', 'Home']);
+  const onKey = (e) => {
+    if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === ' ' && e.shiftKey) return intent(-1, e);
+    if (DOWN.has(e.key)) intent(1, e);
+    else if (UP.has(e.key)) intent(-1, e);
+  };
+  // Anything else that moves the page (scrollbar, find, anchors): never rest
+  // between the header and the section, settle on the nearer one.
+  const onScroll = () => {
+    if (busy) return;
+    const y = window.scrollY;
+    const top = sectionY();
+    if (y > top + 40) away = true;
+    else if (y <= top + 2 && away) { away = false; armedAt = performance.now() + 700; }
+    if (y > 4 && y < top - 4) jump(y > top / 2 ? top : 0);
+  };
+
+  const cap = { capture: true, passive: false };
+  window.addEventListener('wheel', onWheel, cap);
+  window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+  window.addEventListener('touchmove', onTouchMove, cap);
+  window.addEventListener('keydown', onKey, { capture: true });
   window.addEventListener('scroll', onScroll, { passive: true });
-  measure();
-  update();
+  onScroll();
   return () => {
+    tl?.kill();
     gsap.killTweensOf(lit);
-    ro.disconnect();
+    root.style.overflow = '';
+    window.removeEventListener('wheel', onWheel, cap);
+    window.removeEventListener('touchstart', onTouchStart, { capture: true });
+    window.removeEventListener('touchmove', onTouchMove, cap);
+    window.removeEventListener('keydown', onKey, { capture: true });
     window.removeEventListener('scroll', onScroll);
     blur.remove();
     veil.remove();
-    content.style.visibility = '';
   };
 }
 

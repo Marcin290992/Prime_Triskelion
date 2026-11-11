@@ -43,7 +43,6 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
 >
   <main id="services-page">
 
-    <div class="hx-pin">
     <header class="svc-hero" data-side-rays data-rays-pin>
       <h1 class="svc-title">
         <span class="svc-title__line"><span class="svc-title__word">My</span></span>
@@ -51,15 +50,13 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       </h1>
       <p class="svc-hero__lead">Websites, branding, motion and strategy — designed and built end to end.</p>
     </header>
-    <div class="hx-spacer" aria-hidden="true"></div>
-    </div>
 
     <!-- Desktop: the cards on the left are stacked sticky panels — each
          next one slides up over the last — while the copy on the right
          scrolls normally beside them. Phones and tablets: the wrappers
          dissolve (display: contents) and each card sits above its own
          copy, a plain stack. -->
-    <div class="svc-split hx-next" data-after-hero>
+    <div class="svc-split" data-after-hero>
       <div class="svc-deck">
         {SERVICES.map((s, i) => (
           <div class="svc-card" data-svc-card style={`order: ${i * 2}`}>
@@ -277,12 +274,6 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     border-bottom: 1px solid rgb(var(--c-cream) / 0.06);
   }
   .svc-text:last-child { border-bottom: 0; }
-  /* The first service holds longer (--pin-hold, set by the header's exit in
-     utils/sideRays.js): card and copy stand still while they come up out of
-     the dark, before the scroll carries on to the next service. */
-  .svc-text:first-child {
-    min-height: calc(var(--app-stable-vh, 1vh) * (100 + var(--svc-hold)) + var(--pin-hold, 0px));
-  }
   .svc-text__body {
     position: sticky;
     top: 0;
@@ -378,7 +369,9 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-split {
       flex-direction: column;
       align-items: stretch;
-      padding: 0 var(--site-gutter) clamp(4rem, 10vw, 6rem);
+      /* top: the first card starts clear of the logo and the top blur band,
+         as the page comes up out of the dark on the first scroll */
+      padding: max(4.5rem, calc(var(--app-stable-vh, 1svh) * 10)) var(--site-gutter) clamp(4rem, 10vw, 6rem);
       box-sizing: border-box;
     }
     .svc-deck, .svc-texts { display: contents; }
@@ -392,30 +385,17 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       margin-top: clamp(2.5rem, 8vw, 4rem);
     }
     .svc-card:nth-child(even) { background: none; }
-    /* The first service is one stage (card + copy, built in the script):
-       it is held on screen for --pin-hold while it comes up out of the
-       dark, then scrolls on. Clear of the logo and the top blur band. */
-    :global(.svc-first) { order: 0; }
-    :global(.svc-first__stick) {
-      position: sticky;
-      top: 0;
-      padding-top: max(4.8rem, calc(var(--app-stable-vh, 1svh) * 11));
-    }
-    :global(.svc-first__stick) > .svc-card { margin-top: 0; }
-    :global(.svc-first__hold) { height: var(--pin-hold, 0px); }
     .svc-card__inner { position: relative; padding: 0; will-change: auto; }
     .svc-card__shade { display: none; }
-    /* Short, wide tiles: never taller than a third of the screen, so a card
-       and its copy fit between the top blur band and the menu. */
+    /* Short, wide tiles: never taller than a third of the screen. */
     .svc-card__frame {
       width: 100%;
       aspect-ratio: auto;
-      height: min(calc(var(--app-stable-vh, 1svh) * 26), 70vw);
+      height: min(calc(var(--app-stable-vh, 1svh) * 22), 70vw);
     }
     .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
     .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
-    .svc-text,
-    .svc-text:first-child {
+    .svc-text {
       min-height: 0;
       padding: clamp(1rem, calc(var(--app-stable-vh, 1svh) * 2.6), 2.4rem) 0 0;
       border-bottom: 0;
@@ -461,26 +441,8 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       revealAfterHero();
     });
 
-    // Phones and tablets: the plain stack, except that the first service
-    // (card + copy) becomes one stage that stays on screen while it comes up
-    // out of the dark (.svc-first in the styles above).
-    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-      const card = document.querySelector<HTMLElement>('[data-svc-card]');
-      const text = document.querySelector<HTMLElement>('[data-svc-text]');
-      if (card && text && !card.closest('.svc-first')) {
-        const first = document.createElement('div');
-        const stick = document.createElement('div');
-        const hold = document.createElement('div');
-        first.className = 'svc-first';
-        stick.className = 'svc-first__stick';
-        hold.className = 'svc-first__hold';
-        hold.setAttribute('aria-hidden', 'true');
-        card.before(first);
-        stick.append(card, text);
-        first.append(stick, hold);
-      }
-      return;
-    }
+    // Phones and tablets: the plain stack, nothing more to set up.
+    if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-svc-card]'));
     const texts = Array.from(document.querySelectorAll<HTMLElement>('[data-svc-text]'));

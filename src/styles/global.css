@@ -626,22 +626,3 @@ html.sw-hscroll .gradual-blur__layer {
 @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
   html.sw-hscroll .gradual-blur { display: none; }
 }
-
-/* Hero exit on Projects and Services (driven by utils/sideRays.js): the header
-   is pinned for one screen while it goes out, and the page's first section is
-   pulled up under it so it is exactly in place when the pin ends. Static CSS
-   (not set by script) so a page restored by Back is laid out from the first
-   frame. --pin-hold is how long that first section then stands still. */
-.hx-spacer { display: none; }
-@media (prefers-reduced-motion: no-preference) {
-  .hx-pin { position: relative; }
-  .hx-pin > [data-rays-pin] { position: sticky; top: 0; }
-  .hx-spacer { display: block; height: calc(var(--app-stable-vh, 1svh) * 100); }
-  .hx-next {
-    --pin-hold: calc(var(--app-stable-vh, 1svh) * 60);
-    margin-top: calc(var(--app-stable-vh, 1svh) * -100);
-    position: relative;
-    z-index: 2;
-    background: rgb(var(--c-bg));
-  }
-}

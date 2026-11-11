@@ -26,7 +26,6 @@ const projects = await Promise.all(
   <main id="projects-page">
 
     <!-- Brief header -->
-    <div class="hx-pin">
     <header class="proj-header" data-side-rays data-rays-pin>
       <h1 class="proj-title">
         <span class="proj-title__line"><span class="proj-title__word">My</span></span>
@@ -34,11 +33,9 @@ const projects = await Promise.all(
       </h1>
       <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
     </header>
-    <div class="hx-spacer" aria-hidden="true"></div>
-    </div>
 
     <!-- Mask reveal sections -->
-    <div class="hx-next" data-after-hero>
+    <div data-after-hero>
     {projects.map((p) => (
       <section
         class="proj-section"
@@ -132,14 +129,6 @@ const projects = await Promise.all(
 
 
   /* â•â• MASK SECTION â•â• */
-  /* The first project stands still for a stretch of scroll (--pin-hold, set by
-     the header's exit in utils/sideRays.js) while it comes up out of the dark:
-     its window is taller and the panel in it is fixed. */
-  .proj-section:first-of-type {
-    height: calc(100vh + var(--pin-hold, 0px));
-    height: calc(100dvh + var(--pin-hold, 0px));
-    height: calc(var(--app-stable-vh, 1svh) * 100 + var(--pin-hold, 0px));
-  }
   .proj-section {
     position: relative;
     height: 100vh;
