@@ -495,73 +495,132 @@ function mountSideRays(host) {
 }
 
 // Like the home hero: the header stays put for a stretch of scrolling while
-// its light goes out (scrubbed, so it follows the wheel both ways), and only
-// then does the page carry on and the next section come in. Hosts opt in with
+// its light goes out, then the screen goes soft and dark, and the page comes
+// up out of that dark (the same going-out as the home page's). Hosts opt in with
 // [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
-const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
-const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
-const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
+const PIN_VH = 100;       // extra scroll the header stays pinned for, in screens x 100 (as on the home page)
+const PIN_VH_TOUCH = 70;  // a finger covers more ground than a wheel: a little shorter
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
   const wrap = document.createElement('div');
   // (a spacer, not padding: a sticky child only travels within its parent's content box)
   const spacer = document.createElement('div');
   spacer.setAttribute('aria-hidden', 'true');
-  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${PIN_VH})`;
+  const pinVh = window.matchMedia('(pointer: coarse)').matches ? PIN_VH_TOUCH : PIN_VH;
+  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${pinVh})`;
   host.before(wrap);
   wrap.append(host, spacer);
   host.style.position = 'sticky';
   host.style.top = '0';
   const smooth = (t) => t * t * (3 - 2 * t);
-  // Going down the light follows the scroll (scrubbed). Coming back to the
-  // header it does NOT follow: it lights again by itself, at its own pace.
-  const lit = { v: 1 };   // what the light has been allowed back up to
-  let relight = null;
-  let scrub = 1;          // what the scroll alone would show
-  let lastTop = 0;
-  const apply = () => {
+  const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+  // The going-out, like the home page's: after the light, the whole screen goes
+  // soft (blur layer) and then sinks into the dark (black layer); when the
+  // header has left, the page comes up out of that dark and into focus. Two
+  // fixed layers over the page rather than a filter on it: the project cards
+  // are position:fixed, which a filter on an ancestor would break. Two layers
+  // so the blur does not fade with the dark.
+  const mkLayer = (z, css) => {
+    const el = document.createElement('div');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = `position:fixed;inset:0;pointer-events:none;visibility:hidden;z-index:${z};${css}`;
+    document.body.append(el);
+    return el;
+  };
+  const after = wrap.nextElementSibling;
+  const blurEl = mkLayer(19, '');
+  const veilEl = mkLayer(20, 'background:#000;opacity:0;');
+  const lift = { v: 0 };  // the lift of the dark, on the clock
+  let liftOn = false;
+  let hold = 0;   // extra scroll the first block of the page stays put for, once the dark lifts
+  const veil = (pos, range) => {
+    const p = pos / range;
+    // The light goes out first: the blur and the dark do not start until it is
+    // (nearly) gone, however fast the scroll runs ahead of its fade.
+    const out = smooth(clamp01((1 - lightState.v - 0.5) / 0.5));
+    let bk = smooth(clamp01((p - 0.40) / 0.40)) * out;
+    let a = smooth(clamp01((p - 0.60) / 0.35)) * out;
+    // Fully dark: the header is not needed any more. It is hidden (not scrolled
+    // away, blurred) and the content below has been pulled up to the very spot
+    // it stood on, so the first block comes out of the dark where you are.
+    // (The content stays out of sight until then: it would show through the
+    // header's transparent background.)
+    const inB = pos > range && out > 0.999;
+    const dark = inB || (p >= 0.92 && a > 0.98);
+    host.style.visibility = dark ? 'hidden' : '';
+    if (after) after.style.visibility = dark ? '' : 'hidden';
+    if (inB) {
+      // The dark lifts and the blur clears quickly: slowly, over a stretch of
+      // scroll or a couple of seconds on the clock, whichever comes first — so a
+      // fast scroll cannot carry the block away while it is still soft.
+      if (!liftOn) {
+        liftOn = true;
+        lift.v = 0;
+        gsap.killTweensOf(lift);
+        gsap.to(lift, { v: 1, duration: 2.2, ease: 'sine.inOut', onUpdate: redraw });
+      }
+      const byScroll = (pos - range) / (hold > 0 ? hold * 0.6 : window.innerHeight * 0.8);
+      const lp = clamp01(Math.max(lift.v, byScroll));
+      a = 1 - smooth(clamp01(lp / 0.7));
+      bk = 1 - smooth(clamp01((lp - 0.2) / 0.8));
+    } else if (liftOn && pos <= range) {
+      liftOn = false;
+      gsap.killTweensOf(lift);
+      lift.v = 0;
+    }
+    blurEl.style.visibility = bk > 0 ? 'visible' : 'hidden';
+    blurEl.style.backdropFilter = blurEl.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+    veilEl.style.visibility = a > 0 ? 'visible' : 'hidden';
+    veilEl.style.opacity = a.toFixed(3);
+  };
+  const redraw = () => veil(Math.max(0, -wrap.getBoundingClientRect().top), Math.max(1, wrap.offsetHeight - host.offsetHeight));
+  // The light, as on the home page: it goes out (and comes back) on the clock,
+  // one slow fade of the same length however fast you scroll. Brightness, not
+  // opacity: the entrance tween owns the canvas's opacity.
+  const lightState = { v: 1 };
+  let lightOff = null;
+  const applyLight = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
-    const light = Math.min(lit.v, scrub);
-    // brightness, not opacity: the entrance tween owns the canvas's opacity
     if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      canvas.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+      canvas.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
     }
+  };
+  const setLight = (off) => {
+    if (off === lightOff) return;
+    const first = lightOff === null;
+    lightOff = off;
+    gsap.killTweensOf(lightState);
+    if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
+    gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.1 : 1.2, ease: 'power2.out', onUpdate: () => { applyLight(); redraw(); } });
   };
   let ticking = false;
   const update = () => {
     ticking = false;
+    // the content starts where the pin ends (the header is gone by then)
+    wrap.style.marginBottom = `-${host.offsetHeight}px`;
+    hold = after && after.dataset.pinHold ? (window.innerHeight * parseFloat(after.dataset.pinHold)) / 100 : 0;
+    if (after) after.style.setProperty('--pin-hold', `${Math.round(hold)}px`);
     const top = wrap.getBoundingClientRect().top;
     const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
-    scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
-    const down = top < lastTop;
-    const up = top > lastTop;
-    lastTop = top;
-    if (down) {
-      // heading away again: the scroll takes over from wherever the light is
-      relight?.kill();
-      relight = null;
-      lit.v = Math.min(lit.v, scrub);
-    } else if (up && -top < range && lit.v < 1 && !relight) {
-      // back on the header: it lights up on its own
-      relight = gsap.to(lit, {
-        v: 1,
-        duration: RELIGHT_S,
-        ease: 'power2.out',
-        onUpdate: apply,
-        onComplete: () => { relight = null; },
-      });
-    }
-    apply();
+    setLight(-top / range > 0.02);
+    veil(Math.max(0, -top), range);
   };
   const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
   onScroll();
   return () => {
-    relight?.kill();
+    gsap.killTweensOf(lightState);
+    gsap.killTweensOf(lift);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
+    blurEl.remove();
+    veilEl.remove();
+    host.style.visibility = '';
+    if (after) { after.style.visibility = ''; after.style.removeProperty('--pin-hold'); }
+    wrap.style.marginBottom = '';
   };
 }
 
