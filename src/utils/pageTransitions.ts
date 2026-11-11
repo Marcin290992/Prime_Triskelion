@@ -3,7 +3,7 @@ import ScrollTrigger from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-type RouteKind = 'idle' | 'standard' | 'menu' | 'case-study' | 'history' | 'native-history';
+type RouteKind = 'idle' | 'standard' | 'menu' | 'case-study' | 'history';
 type IncomingEffect = 'blur' | 'none';
 
 interface RouteRun {
@@ -57,7 +57,6 @@ let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
 let transitionReady: Promise<void> = Promise.resolve();
 let caseShot: HTMLElement | null = null;
-let nativeHistoryTransition = false;
 let restoring = false;
 let cutSwapComplete = false;
 let cutTransitionComplete = false;
@@ -94,16 +93,14 @@ export function holdRestore(): () => void {
 	return release;
 }
 
-window.addEventListener('popstate', (event) => {
-	nativeHistoryTransition = !!(event as PopStateEvent & { hasUAVisualTransition?: boolean }).hasUAVisualTransition;
-}, true);
-
+// (the flag is set by an early popstate listener in Layout.astro's head script)
 document.addEventListener('astro:before-preparation', (rawEvent) => {
 	const event = rawEvent as PreparationEvent;
 	const incoming = requestedIncoming;
-	const isNativeSwipe = nativeHistoryTransition;
+	const native = window as Window & { __nativeBack?: boolean };
+	const isNativeSwipe = !!native.__nativeBack;
 	requestedIncoming = null;
-	nativeHistoryTransition = false;
+	native.__nativeBack = false;
 	caseShot?.remove();
 	caseShot = null;
 
@@ -112,12 +109,18 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 		document.documentElement.classList.add('vt-cut');
 	} else if (event.navigationType === 'traverse') {
 		activeRun = {
-			kind: isNativeSwipe ? 'native-history' : 'history',
+			kind: 'history',
 			skipNative: !isNativeSwipe,
 			incoming: 'none',
 			restoreY: typeof history.state?.scrollY === 'number' ? history.state.scrollY : null,
 		};
-		if (!isNativeSwipe) {
+		// The browser's own swipe-back animation has already played by the time
+		// popstate fires and the old page is on screen again: fading it out too
+		// would show it twice. So it goes black at once and the new page fades in
+		// from that black. Any other back gets the page's own fade-out.
+		if (isNativeSwipe) {
+			coverAtOnce();
+		} else {
 			document.documentElement.classList.add('vt-cut');
 			if (!reducedMotion()) preparePageExit(event);
 		}
@@ -138,6 +141,16 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	nativeSkipped = activeRun.skipNative;
 	inlineNewStylesheets(event);
 });
+
+// Black over the leaving page, now, with no animation. It lives in the old
+// <body>, so the swap removes it; beginHistoryTransition then puts the next
+// black veil (opacity 1) on the new page in the same task, and fades that out.
+function coverAtOnce(): void {
+	const veil = document.createElement('div');
+	veil.setAttribute('aria-hidden', 'true');
+	veil.style.cssText = 'position:fixed;inset:0;z-index:997;pointer-events:none;background:#000';
+	document.body.append(veil);
+}
 
 function preparePageExit(event: PreparationEvent): void {
 	const content = Array.from(document.querySelectorAll<HTMLElement>(
@@ -381,16 +394,13 @@ document.addEventListener('astro:after-swap', (rawEvent) => {
 		clearCutClassWhenReady();
 	}
 
-	if (run.kind !== 'history' && run.kind !== 'native-history') {
+	if (run.kind !== 'history') {
 		ScrollTrigger.clearScrollMemory();
 		ScrollTrigger.update();
 	}
 
 	if (run.kind === 'case-study') finishCaseStudyTransition();
 	else if (run.kind === 'history') beginHistoryTransition(run.restoreY);
-	// The browser's own swipe-back animation has no veil, but the restored
-	// page still needs its scroll and scrubbed scenes put back in place.
-	else if (run.kind === 'native-history') void settleRestoredPage(run.restoreY);
 	else if (run.incoming === 'blur') beginBlurIn();
 
 	waitForStylesheets();

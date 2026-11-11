@@ -56,7 +56,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</style>
 
 	<script>
-		import gsap from 'gsap';
 		// The hero's exit: scrolling through the pinned screen, the light (the
 		// source) goes out first, then the veil darkens and blurs what is left
 		// (it sits over the hero, under the manifesto); once it is black the
@@ -82,38 +81,24 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				range = Math.max(1, pin.offsetHeight - hero.offsetHeight);
 				pinStart = man.getBoundingClientRect().top + window.scrollY;
 			};
-			// The light's own fade (see update): 1 = lit, 0 = out.
-			const lightState = { v: 1 };
-			let lightOff: boolean | null = null;
-			const applyLight = () => {
-				if (!rays) return;
-				const dark = lightState.v <= 0.001;
-				if (rays.dataset.dark !== (dark ? '1' : '')) {
-					rays.dataset.dark = dark ? '1' : '';
-					// Fully out: nothing to see, so the hero stops drawing it
-					// (HeroSection's initRays listens) and starts again on the way back.
-					rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
-				}
-				rays.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
-			};
-			const setLight = (off: boolean) => {
-				if (off === lightOff) return;
-				const first = lightOff === null;
-				lightOff = off;
-				gsap.killTweensOf(lightState);
-				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
-				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
-			};
 			let ticking = false;
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
-				// It goes out (and comes back) on the clock — one slow fade of the
-				// same length however fast you scroll — never scrubbed by the scroll.
 				// Brightness, not opacity (the intro owns the canvas's opacity).
-				if (rays) setLight(p > 0.02);
+				if (rays) {
+					const light = p > 0 ? 1 - smooth(clamp01(p / 0.35)) : 1;
+					// Fully out: nothing to see, so the hero stops drawing it
+					// (HeroSection's initRays listens) and starts again on the way back.
+					const dark = light <= 0;
+					if (rays.dataset.dark !== (dark ? '1' : '')) {
+						rays.dataset.dark = dark ? '1' : '';
+						rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
+					}
+					rays.style.filter = p > 0 ? `brightness(${light.toFixed(3)})` : '';
+				}
 				// Three beats, one after the other: the light goes out first (0–0.35)
 				// while the type is still sharp; only then does the rest go soft
 				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
@@ -138,7 +123,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
-				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
