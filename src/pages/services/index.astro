@@ -56,7 +56,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
          scrolls normally beside them. Phones and tablets: the wrappers
          dissolve (display: contents) and each card sits above its own
          copy, a plain stack. -->
-    <div class="svc-split" data-after-hero data-pin-hold="70" data-pin-hold-touch="0">
+    <div class="svc-split" data-after-hero data-pin-hold="70" data-pin-hold-touch="60" data-pin-hold-shift>
       <div class="svc-deck">
         {SERVICES.map((s, i) => (
           <div class="svc-card" data-svc-card style={`order: ${i * 2}`}>
@@ -375,7 +375,8 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-split {
       flex-direction: column;
       align-items: stretch;
-      padding: 0 var(--site-gutter) clamp(4rem, 10vw, 6rem);
+      /* (+ --shift-pad: the room the hold's shift needs at the bottom, see utils/sideRays.js) */
+      padding: 0 var(--site-gutter) calc(clamp(4rem, 10vw, 6rem) + var(--shift-pad, 0px));
       box-sizing: border-box;
     }
     .svc-deck, .svc-texts { display: contents; }

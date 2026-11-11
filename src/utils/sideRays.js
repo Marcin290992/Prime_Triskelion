@@ -507,7 +507,7 @@ function mountSideRays(host) {
 // Two fixed layers rather than a filter on the content: the project cards are
 // position:fixed, which a filter on an ancestor would break.
 const PIN_VH = 100;       // extra scroll the header stays pinned for, in screens x 100 (as on the home page)
-const PIN_VH_TOUCH = 70;  // a finger covers more ground than a wheel: a little shorter
+const PIN_VH_TOUCH = 100; // the same on phones and tablets, as on the home page
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
   const wrap = document.createElement('div');
@@ -561,7 +561,7 @@ function pinHost(host) {
     lightOff = off;
     gsap.killTweensOf(lightState);
     if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
-    gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.1 : 1.2, ease: 'power2.out', onUpdate: () => { applyLight(); update(); } });
+    gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: () => { applyLight(); update(); } });
   };
 
   // Every write below happens only when the value changed, and the sizes are
@@ -603,16 +603,28 @@ function pinHost(host) {
       last.hold = Math.round(hold);
       after.style.setProperty('--pin-hold', `${last.hold}px`);
     }
+    // Layouts with nothing sticky to hold the first block (the phone/tablet
+    // stack of Services; [data-pin-hold-shift]): the content is carried down
+    // by exactly as much as the page scrolls, so it stands still on screen
+    // for the hold; the room it needs at the bottom is made by --shift-pad.
+    const shift = !!after && stacked && after.hasAttribute('data-pin-hold-shift') && hold > 0;
+    if (after) {
+      const pad = shift ? `${last.hold}px` : '0px';
+      if (last.pad !== pad) { last.pad = pad; after.style.setProperty('--shift-pad', pad); }
+      const tr = shift && pos > range ? `translate3d(0, ${Math.min(pos - range, hold).toFixed(1)}px, 0)` : '';
+      if (last.tr !== tr) { last.tr = tr; after.style.transform = tr; }
+    }
 
     // 1. the light, first
     setLight(p > 0.02);
     // the blur and the dark do not start until it is (nearly) gone
     const out = smooth(clamp01((1 - lightState.v - 0.5) / 0.5));
 
-    // 2. the header: soft (0.40-0.80 of the pin), then dark (0.60-0.95); it
+    // 2. the header: soft (0.30-0.70 of the pin), then dark (0.55-0.95) — the
+    //    home page's numbers exactly (index.astro, initHeroExit); it
     //    stays dark while it scrolls away under the content
-    const bk = smooth(clamp01((p - 0.40) / 0.40)) * out;
-    const a = smooth(clamp01((p - 0.60) / 0.35)) * out;
+    const bk = smooth(clamp01((p - 0.30) / 0.40)) * out;
+    const a = smooth(clamp01((p - 0.55) / 0.40)) * out;
     const live = pos < range + vh;
     setBlur(blurEl, 'b', live ? bk : 0);
     put(veilEl, 'vv', 'visibility', a > 0.002 && live ? 'visible' : 'hidden');
@@ -644,8 +656,9 @@ function pinHost(host) {
     veilEl.remove();
     focusEl.remove();
     if (after) {
-      ['position', 'zIndex', 'transition', 'opacity', 'pointerEvents'].forEach((k) => { after.style[k] = ''; });
+      ['position', 'zIndex', 'transition', 'opacity', 'pointerEvents', 'transform'].forEach((k) => { after.style[k] = ''; });
       after.style.removeProperty('--pin-hold');
+      after.style.removeProperty('--shift-pad');
     }
     wrap.style.marginBottom = '';
   };
