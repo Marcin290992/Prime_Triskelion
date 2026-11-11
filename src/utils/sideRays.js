@@ -664,7 +664,11 @@ function mountAll() {
     }
   });
   if (!cleanups.length) return;
-  document.addEventListener('astro:before-swap', () => cleanups.forEach((c) => c()), { once: true });
+  // Torn down once the old page is gone (after-swap), not before: while it is
+  // still on screen the page's exit is fading it to black, and undoing the
+  // hero's styles then (the content's opacity, the dark layers) would flash it
+  // back for a moment before the swap.
+  document.addEventListener('astro:after-swap', () => cleanups.forEach((c) => c()), { once: true });
 }
 
 document.addEventListener('astro:page-load', mountAll);
