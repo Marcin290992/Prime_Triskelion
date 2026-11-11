@@ -390,9 +390,21 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
       margin-top: clamp(2.5rem, 8vw, 4rem);
     }
     .svc-card:nth-child(even) { background: none; }
+    /* The first card stands still on screen while it comes into focus (the
+       hold): start it below the logo, not under it. */
+    .svc-card:first-child {
+      margin-top: max(6rem, calc(var(--app-stable-vh, 1svh) * 17));
+    }
     .svc-card__inner { position: relative; padding: 0; will-change: auto; }
     .svc-card__shade { display: none; }
-    .svc-card__frame { width: 100%; aspect-ratio: 4 / 5; }
+    /* 4:5, but never taller than half the screen: on a short phone a full 4:5
+       card ran under the logo and pushed its title off the bottom. */
+    .svc-card__frame {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      max-height: 50svh;
+      max-height: calc(var(--app-stable-vh, 1svh) * 50);
+    }
     .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
     .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
     .svc-text,
