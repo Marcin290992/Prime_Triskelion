@@ -578,7 +578,10 @@ function pinHost(host) {
     const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
     const pos = Math.max(0, -top);
     const p = pos / range;
-    const hold = after && after.dataset.pinHold ? (vh * parseFloat(after.dataset.pinHold)) / 100 : 0;
+    // (data-pin-hold-touch: for the phone/tablet layouts, where nothing is held)
+    const stacked = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+    const holdAttr = after && (stacked && after.dataset.pinHoldTouch != null ? after.dataset.pinHoldTouch : after.dataset.pinHold);
+    const hold = holdAttr ? (vh * parseFloat(holdAttr)) / 100 : 0;
     if (after) after.style.setProperty('--pin-hold', `${Math.round(hold)}px`);
 
     // 1. the light, first
