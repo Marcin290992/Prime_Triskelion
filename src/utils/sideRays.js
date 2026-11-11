@@ -572,7 +572,7 @@ function pinHost(host) {
   let ticking = false;
   function update() {
     ticking = false;
-    attachLenis();   // (Lenis may only exist after the first scroll)
+    attachLenis();   // (Lenis may only exist once the page has started scrolling)
     const vh = window.innerHeight;
     if (!hostH || last.vh !== vh) {
       hostH = host.offsetHeight;
@@ -636,11 +636,10 @@ function pinHost(host) {
   const attachLenis = () => {
     const lenis = window.__lenis;
     if (!lenis || lenis === lenisOn) return;
-    lenisOn?.off?.('scroll', update);
+    lenisOn?.off('scroll', update);
     lenisOn = lenis;
     lenis.on('scroll', update);
   };
-  attachLenis();
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll, { passive: true });
   // the header's own size can settle late (fonts, copy): measure it again then
@@ -649,7 +648,7 @@ function pinHost(host) {
   update();
   return () => {
     hostRO.disconnect();
-    lenisOn?.off?.('scroll', update);
+    lenisOn?.off('scroll', update);
     window.removeEventListener('scroll', onScroll);
     window.removeEventListener('resize', onScroll);
     dimEl.remove();

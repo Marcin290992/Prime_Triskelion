@@ -114,14 +114,16 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 			incoming: 'none',
 			restoreY: typeof history.state?.scrollY === 'number' ? history.state.scrollY : null,
 		};
-		if (!isNativeSwipe) document.documentElement.classList.add('vt-cut');
 		// The browser's own swipe-back animation has already played by the time
-		// popstate fires, and the old page is on screen again for a moment:
-		// fading it out too would show it twice. Then it goes black at once and
-		// the new page fades in from that black. Any other back (button, desktop)
-		// gets the page's own fade-out.
-		if (isNativeSwipe) coverAtOnce();
-		else if (!reducedMotion()) preparePageExit(event);
+		// popstate fires and the old page is on screen again: fading it out too
+		// would show it twice. So it goes black at once and the new page fades in
+		// from that black. Any other back gets the page's own fade-out.
+		if (isNativeSwipe) {
+			coverAtOnce();
+		} else {
+			document.documentElement.classList.add('vt-cut');
+			if (!reducedMotion()) preparePageExit(event);
+		}
 	} else {
 		const caseTransition = prepareCaseStudy(event);
 		if (caseTransition) {
