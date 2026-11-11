@@ -68,9 +68,9 @@ const OPTS = {
   // (the lead runs 0.15-0.85s in titleIn/supportIn's short entrance), and the
   // rays grow out of their source to full length (reveal) while the light
   // fades up (opacity) — a sunrise of about two seconds. Seconds.
-  inAt: 0.5,
-  inOpacity: 2.0,
-  inReveal: 2.0,
+  inAt: 0.2,
+  inOpacity: 2.5,
+  inReveal: 2.5,
   // Phones and tablets: same start, then a sunrise — the light creeps up
   // from nothing (slow start, power1.in) and keeps growing for seconds,
   // never jumping in (power2.out did most of its change at once). Kept to
@@ -470,7 +470,7 @@ function mountSideRays(host) {
     }
     const c = compact.matches
       ? OPTS.inCompact
-      : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power2.out' };
+      : { at: OPTS.inAt, opacity: OPTS.inOpacity, reveal: OPTS.inReveal, ease: 'power1.inOut' };
     tweens = [
       gsap.to(canvas, { opacity: 1, duration: c.opacity, delay: c.at, ease: c.ease }),
       gsap.to(intro, { reveal: 1, duration: c.reveal, delay: c.at, ease: c.ease }),
