@@ -1282,10 +1282,10 @@ import { createLightRays } from '../../utils/lightRays';
 			if (on === isHeroVisible) return;
 			isHeroVisible = on;
 			clearTimeout(raysStopTimer);
-			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
+			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 0.5s ease';
 			canvas!.style.filter = on ? '' : 'opacity(0)';
 			if (on) startRaysAnimation();
-			else raysStopTimer = setTimeout(stopRaysAnimation, 1450);
+			else raysStopTimer = setTimeout(stopRaysAnimation, 550);
 		}
 
 		function onVisibilityChange() {
@@ -1393,10 +1393,10 @@ import { createLightRays } from '../../utils/lightRays';
 			if (on === isHeroVisible) return;
 			isHeroVisible = on;
 			clearTimeout(raysStopTimer);
-			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
+			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 0.5s ease';
 			canvas!.style.filter = on ? '' : 'opacity(0)';
 			if (on) { if (!document.hidden && !raysDark) rays!.start(); }
-			else raysStopTimer = setTimeout(() => rays!.stop(), 1450);
+			else raysStopTimer = setTimeout(() => rays!.stop(), 550);
 		}
 		canvas.addEventListener('pt:rays-dark', (event) => {
 			raysDark = (event as CustomEvent<boolean>).detail;
