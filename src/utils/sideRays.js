@@ -494,76 +494,157 @@ function mountSideRays(host) {
   };
 }
 
-// Like the home hero: the header stays put for a stretch of scrolling while
-// its light goes out (scrubbed, so it follows the wheel both ways), and only
-// then does the page carry on and the next section come in. Hosts opt in with
-// [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
-const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
-const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
-const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
+// The hero's exit on Projects and Services, the same going-out as the home
+// page's but on the clock, not on the scroll: the first scroll down plays it
+// through and holds the page until it is done. The light goes out, then the
+// rest goes soft (blur), then sinks into the dark; the first section is then
+// put in place under the dark and comes up out of it (dark lifts, then blur),
+// and only when it is sharp does the scroll carry on. Scrolling up from the
+// top of that section plays it back the other way. Hosts opt in with
+// [data-rays-pin]; the section that follows the header is the one that
+// comes up. Nothing on the page is moved by script until the first scroll.
+// Reduced motion: plain scrolling.
+const LIGHT_OUT_S = 1.0; // the light going out
+const LIGHT_IN_S = 1.2;  // and coming back
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-  const wrap = document.createElement('div');
-  // (a spacer, not padding: a sticky child only travels within its parent's content box)
-  const spacer = document.createElement('div');
-  spacer.setAttribute('aria-hidden', 'true');
-  spacer.style.height = `calc(var(--app-stable-vh, 1svh) * ${PIN_VH})`;
-  host.before(wrap);
-  wrap.append(host, spacer);
-  host.style.position = 'sticky';
-  host.style.top = '0';
-  const smooth = (t) => t * t * (3 - 2 * t);
-  // Going down the light follows the scroll (scrubbed). Coming back to the
-  // header it does NOT follow: it lights again by itself, at its own pace.
-  const lit = { v: 1 };   // what the light has been allowed back up to
-  let relight = null;
-  let scrub = 1;          // what the scroll alone would show
-  let lastTop = 0;
+  const content = host.nextElementSibling;
+  if (!content) return null;
+  const maxBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 14 : 22;
+
+  const layer = (z, extra) => {
+    const el = document.createElement('div');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.cssText = `position:fixed;inset:0;z-index:${z};pointer-events:none;visibility:hidden;${extra}`;
+    document.body.appendChild(el);
+    return el;
+  };
+  // (over the page and the grid lines, under the top blur band and the chrome)
+  const blur = layer(900, '');
+  const veil = layer(901, 'background:#000;opacity:0;');
+  const level = { dark: 0, soft: 0 };
+  const render = () => {
+    const soft = level.soft > 0.001;
+    blur.style.visibility = soft ? 'visible' : 'hidden';
+    blur.style.backdropFilter = blur.style.webkitBackdropFilter = soft ? `blur(${(level.soft * maxBlur).toFixed(1)}px)` : '';
+    const dark = level.dark > 0.001;
+    veil.style.visibility = dark ? 'visible' : 'hidden';
+    veil.style.opacity = level.dark.toFixed(3);
+  };
+
+  // The light: 1 = lit, 0 = out.
+  const lit = { v: 1 };
   const apply = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
-    const light = Math.min(lit.v, scrub);
     // brightness, not opacity: the entrance tween owns the canvas's opacity
     if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      canvas.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+      canvas.style.filter = lit.v < 0.999 ? `brightness(${lit.v.toFixed(3)})` : '';
     }
   };
-  let ticking = false;
-  const update = () => {
-    ticking = false;
-    const top = wrap.getBoundingClientRect().top;
-    const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
-    scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
-    const down = top < lastTop;
-    const up = top > lastTop;
-    lastTop = top;
-    if (down) {
-      // heading away again: the scroll takes over from wherever the light is
-      relight?.kill();
-      relight = null;
-      lit.v = Math.min(lit.v, scrub);
-    } else if (up && -top < range && lit.v < 1 && !relight) {
-      // back on the header: it lights up on its own
-      relight = gsap.to(lit, {
-        v: 1,
-        duration: RELIGHT_S,
-        ease: 'power2.out',
-        onUpdate: apply,
-        onComplete: () => { relight = null; },
-      });
-    }
-    apply();
+  const setLight = (on) => {
+    gsap.killTweensOf(lit);
+    gsap.to(lit, { v: on ? 1 : 0, duration: on ? LIGHT_IN_S : LIGHT_OUT_S, ease: 'power2.out', onUpdate: apply });
   };
-  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+
+  // Where the section sits when it is "in place": its top at the top of the screen.
+  const sectionY = () => Math.round(content.getBoundingClientRect().top + window.scrollY);
+  const jump = (y) => {
+    const lenis = window.__lenis;
+    if (lenis) lenis.scrollTo(y, { immediate: true, force: true });
+    else window.scrollTo(0, y);
+  };
+
+  const root = document.documentElement;
+  let busy = false;
+  let tl = null;
+  let away = false;     // has been well into the page since last at its top
+  let armedAt = 0;      // scrolling up from the section's top plays the way back only after this (a trackpad tail must not)
+  const lock = () => { busy = true; root.style.overflow = 'hidden'; window.__lenis?.stop?.(); };
+  const unlock = () => { busy = false; root.style.overflow = ''; window.__lenis?.start?.(); };
+
+  const goDown = () => {
+    if (busy) return;
+    lock();
+    tl = gsap.timeline({ onComplete: () => { armedAt = performance.now() + 700; away = false; unlock(); } })
+      .call(() => setLight(false), null, 0)
+      .to(level, { soft: 1, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.45)
+      .to(level, { dark: 1, duration: 0.7, ease: 'power2.inOut', onUpdate: render }, 0.9)
+      .call(() => jump(sectionY()), null, 1.7)
+      .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 1.8)
+      .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.95);
+  };
+  const goUp = () => {
+    if (busy) return;
+    lock();
+    tl = gsap.timeline({ onComplete: unlock })
+      .to(level, { soft: 1, duration: 0.45, ease: 'power2.out', onUpdate: render }, 0)
+      .to(level, { dark: 1, duration: 0.55, ease: 'power2.inOut', onUpdate: render }, 0.1)
+      .call(() => { jump(0); setLight(true); }, null, 0.75)
+      .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.85)
+      .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.0);
+  };
+
+  const atTop = () => window.scrollY <= 4;
+  const atSection = () => Math.abs(window.scrollY - sectionY()) <= 4;
+  const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+  // dir: +1 = heading down the page, -1 = heading up
+  const intent = (dir, e) => {
+    if (busy) return stop(e);
+    if (dir > 0 && atTop()) { stop(e); goDown(); return; }
+    if (dir < 0 && atSection()) {
+      stop(e);
+      if (performance.now() >= armedAt) goUp();
+    }
+  };
+  const onWheel = (e) => { if (e.deltaY) intent(Math.sign(e.deltaY), e); };
+  let touchY = 0;
+  const onTouchStart = (e) => { touchY = e.touches[0].clientY; };
+  const onTouchMove = (e) => {
+    const dy = touchY - e.touches[0].clientY; // finger up = heading down
+    if (busy) return stop(e);
+    if (Math.abs(dy) > 6) intent(Math.sign(dy), e);
+  };
+  const DOWN = new Set([' ', 'PageDown', 'ArrowDown', 'End']);
+  const UP = new Set(['PageUp', 'ArrowUp', 'Home']);
+  const onKey = (e) => {
+    if (e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (e.key === ' ' && e.shiftKey) return intent(-1, e);
+    if (DOWN.has(e.key)) intent(1, e);
+    else if (UP.has(e.key)) intent(-1, e);
+  };
+  // Anything else that moves the page (scrollbar, find, anchors): never rest
+  // between the header and the section, settle on the nearer one.
+  const onScroll = () => {
+    if (busy) return;
+    const y = window.scrollY;
+    const top = sectionY();
+    if (y > top + 40) away = true;
+    else if (y <= top + 2 && away) { away = false; armedAt = performance.now() + 700; }
+    if (y > 4 && y < top - 4) jump(y > top / 2 ? top : 0);
+  };
+
+  const cap = { capture: true, passive: false };
+  window.addEventListener('wheel', onWheel, cap);
+  window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
+  window.addEventListener('touchmove', onTouchMove, cap);
+  window.addEventListener('keydown', onKey, { capture: true });
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll, { passive: true });
   onScroll();
   return () => {
-    relight?.kill();
+    tl?.kill();
+    gsap.killTweensOf(lit);
+    root.style.overflow = '';
+    window.removeEventListener('wheel', onWheel, cap);
+    window.removeEventListener('touchstart', onTouchStart, { capture: true });
+    window.removeEventListener('touchmove', onTouchMove, cap);
+    window.removeEventListener('keydown', onKey, { capture: true });
     window.removeEventListener('scroll', onScroll);
-    window.removeEventListener('resize', onScroll);
+    blur.remove();
+    veil.remove();
   };
 }
+
 
 function mountAll() {
   if (!ENABLED) return;
