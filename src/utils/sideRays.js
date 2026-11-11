@@ -498,7 +498,7 @@ function mountSideRays(host) {
 // its light goes out (scrubbed, so it follows the wheel both ways), and only
 // then does the page carry on and the next section come in. Hosts opt in with
 // [data-rays-pin]; the extra stretch is a padded wrapper the header sticks in.
-const PIN_VH = 18;      // extra scroll the header stays pinned for, in screens x 100
+const PIN_VH = 50;      // extra scroll the header stays pinned for, in screens x 100
 const RELIGHT_S = 1.6;  // coming back, the light takes this long to come up again
 const PIN_LIGHT = 0.85; // the light is out by this fraction of that stretch
 function pinHost(host) {
@@ -519,6 +519,7 @@ function pinHost(host) {
   let relight = null;
   let scrub = 1;          // what the scroll alone would show
   let lastTop = 0;
+  let touched = false;
   const apply = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
@@ -534,6 +535,14 @@ function pinHost(host) {
     const top = wrap.getBoundingClientRect().top;
     const range = Math.max(1, wrap.offsetHeight - host.offsetHeight);
     scrub = 1 - smooth(Math.max(0, Math.min(1, -top / (range * PIN_LIGHT))));
+    // The header's text goes soft and fades as you scroll (both ways).
+    const t = smooth(Math.max(0, Math.min(1, -top / range)));
+    // (untouched until the first scroll, so the entrance owns the page's start)
+    if (t > 0) touched = true;
+    if (touched) host.querySelectorAll(':scope > :not(.side-rays)').forEach((el) => {
+      el.style.filter = `blur(${(t * 20).toFixed(1)}px)`;
+      el.style.opacity = (1 - t).toFixed(3);
+    });
     const down = top < lastTop;
     const up = top > lastTop;
     lastTop = top;
