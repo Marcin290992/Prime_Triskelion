@@ -376,8 +376,11 @@ function mountSideRays(host) {
   const setActive = (on) => {
     if (on === active) return;
     active = on;
-    canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
-    canvas.style.filter = on ? '' : 'opacity(0)';
+    // While the hero's exit drives the light (data-hx, see pinHost) it is left alone
+    if (canvas.dataset.hx !== '1') {
+      canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
+      canvas.style.filter = on ? '' : 'opacity(0)';
+    }
     if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
     ensureLoop();
   };
@@ -534,22 +537,35 @@ function pinHost(host) {
 
   // The light: 1 = lit, 0 = out.
   const lit = { v: 1 };
+  let wantOn = true;
   const apply = () => {
     const canvas = host.querySelector(':scope > .side-rays');
     if (!canvas) return;
-    // brightness, not opacity: the entrance tween owns the canvas's opacity
-    if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
-      // no CSS transition under our own tween: the light's dim/relight
-      // transition (setActive) is left on the element after it has been out
-      // of view, and made every later fade lag far behind the tween
-      canvas.style.transition = 'none';
-      canvas.style.filter = lit.v < 0.999 ? `brightness(${lit.v.toFixed(3)})` : '';
+    // brightness, not opacity: the entrance tween owns the canvas's opacity.
+    // Once the exit has taken the light it keeps it (data-hx) until the light
+    // is fully back: the light's own show/hide for being out of view
+    // (setActive) must not flash it on in between. No CSS transition under
+    // our own tween either: it would lag far behind it.
+    if (canvas.dataset.hx !== '1' && canvas.style.filter && !canvas.style.filter.startsWith('brightness')) return;
+    canvas.style.transition = 'none';
+    if (lit.v < 0.999 || !wantOn) {
+      canvas.dataset.hx = '1';
+      canvas.style.filter = `brightness(${lit.v.toFixed(3)})`;
+    } else {
+      canvas.dataset.hx = '';
+      canvas.style.filter = '';
     }
   };
   const setLight = (on) => {
+    // taken at once, before the light's own dimming (setActive) can set a filter
+    wantOn = on;
+    if (!on) { const c = host.querySelector(':scope > .side-rays'); if (c) c.dataset.hx = '1'; }
     gsap.killTweensOf(lit);
     gsap.to(lit, { v: on ? 1 : 0, duration: on ? LIGHT_IN_S : LIGHT_OUT_S, ease: 'power2.out', onUpdate: apply });
   };
+
+  // Takes the light out (whatever state it was in) so it can come back from nothing.
+  const holdLight = () => { wantOn = false; lit.v = 0; const c = host.querySelector(':scope > .side-rays'); if (c) c.dataset.hx = '1'; apply(); };
 
   // Where the section sits when it is "in place": its top at the top of the screen.
   const sectionY = () => Math.round(content.getBoundingClientRect().top + window.scrollY);
@@ -592,7 +608,7 @@ function pinHost(host) {
     tl = gsap.timeline({ onComplete: unlock })
       .to(level, { soft: 1, duration: 0.45, ease: 'power2.out', onUpdate: render }, 0)
       .to(level, { dark: 1, duration: 0.55, ease: 'power2.inOut', onUpdate: render }, 0.1)
-      .call(() => { jump(0); heldY = 0; setLight(true); }, null, 0.75)
+      .call(() => { holdLight(); jump(0); heldY = 0; setLight(true); }, null, 0.75)
       .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 0.85)
       .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.0);
   };
