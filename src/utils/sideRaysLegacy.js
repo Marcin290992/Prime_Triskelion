@@ -281,11 +281,8 @@ export function mountSideRaysLegacy(host) {
   const setActive = (on) => {
     if (on === active) return;
     active = on;
-    // While the hero's exit drives the light (data-hx, see pinHost) it is left alone
-    if (canvas.dataset.hx !== '1') {
-      canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
-      canvas.style.filter = on ? '' : 'opacity(0)';
-    }
+    canvas.style.transition = on ? `filter ${OPTS.relightMs}ms ease` : `filter ${OPTS.dimMs}ms ease`;
+    canvas.style.filter = on ? '' : 'opacity(0)';
     if (!on) stopAt = performance.now() + OPTS.dimMs + 50;
     ensureLoop();
   };
