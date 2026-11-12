@@ -539,6 +539,10 @@ function pinHost(host) {
     if (!canvas) return;
     // brightness, not opacity: the entrance tween owns the canvas's opacity
     if (!canvas.style.filter || canvas.style.filter.startsWith('brightness')) {
+      // no CSS transition under our own tween: the light's dim/relight
+      // transition (setActive) is left on the element after it has been out
+      // of view, and made every later fade lag far behind the tween
+      canvas.style.transition = 'none';
       canvas.style.filter = lit.v < 0.999 ? `brightness(${lit.v.toFixed(3)})` : '';
     }
   };
