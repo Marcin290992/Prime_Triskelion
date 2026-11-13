@@ -142,12 +142,6 @@ function initOxygenMenu() {
     return (window as any).__lenis;
   }
 
-  function getCurrentScrollY() {
-    const lenis = getLenis();
-    const lenisPos = Number(lenis?.animatedScroll ?? lenis?.scroll ?? lenis?.targetScroll);
-    return Number.isFinite(lenisPos) ? lenisPos : window.scrollY;
-  }
-
   function createScrollLockRelease() {
     const scrollKeys = new Set([' ', 'PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown']);
 
@@ -205,7 +199,11 @@ function initOxygenMenu() {
   }
 
   function lockBodyScroll() {
-    state.scrollPosition = getCurrentScrollY();
+    // The real, on-screen scroll position — not Lenis's internal value, which
+    // can lag it on pages with pinned ScrollTriggers (project pages), and
+    // forcing the page to that value made the screen jump up when the menu
+    // opened. Lenis is only stopped here; nothing is scrolled.
+    state.scrollPosition = window.scrollY;
     document.body.classList.add('oxygen-menu-open');
     setPageCovered(true);
 
@@ -213,11 +211,7 @@ function initOxygenMenu() {
       state.releaseScrollLock = createScrollLockRelease();
     }
 
-    const lenis = getLenis();
-    if (lenis) {
-      lenis.scrollTo(state.scrollPosition, { immediate: true });
-      lenis.stop();
-    }
+    getLenis()?.stop();
   }
 
   function unlockBodyScroll() {
