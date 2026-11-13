@@ -22,7 +22,7 @@ const [line1, line2] = d.titleLines;
     <section class="wos-cin" id="wos-cin">
       <h1 class="wos-cin__sr">{project.title} — Case Study</h1>
       <div class="wos-cin__image" aria-hidden="true">
-        <img src={d.heroImage} alt="" draggable="false">
+        <img src={d.heroImage.src} alt="" draggable="false">
       </div>
       <div class="wos-cin__texts" aria-hidden="true">
         <span class="wos-cin__l"><span class="wos-cin__w">{d.heroWords[0]}</span></span>
@@ -840,13 +840,17 @@ const [line1, line2] = d.titleLines;
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
       .to([wordL, wordR], { filter: 'blur(16px)', duration: 0.6, ease: 'sine.in' }, 0)
       .to([wordL, wordR], { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25)
-      .to(image, { opacity: 1, scale: 1.06, yPercent: 0, ease: 'sine.inOut', duration: 0.9 }, 0.7);
+      // The picture starts once the title is nearly gone and fades up slowly,
+      // its scale/shift running longer than the fade, so it never "pops" in
+      // over the last of the title.
+      .to(image, { opacity: 1, ease: 'power1.inOut', duration: 1.1 }, 0.85)
+      .to(image, { scale: 1.06, yPercent: 0, ease: 'sine.out', duration: 1.5 }, 0.8);
 
     if (bottomEls.length) {
       tl.to(bottomEls, {
         opacity: 1, y: 0, filter: 'blur(0px)',
         stagger: 0.12, duration: 0.6, ease: 'sine.out',
-      }, 1.15);
+      }, 1.6);
     }
 
     // Entrance: the word split focus-pulls in like every other page title.
@@ -856,7 +860,7 @@ const [line1, line2] = d.titleLines;
     _cinST = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: '+=140%',
+      end: '+=170%',
       scrub: 1.2,
       pin: true,
       invalidateOnRefresh: true,

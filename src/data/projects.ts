@@ -30,7 +30,7 @@ export interface ProjectDetail {
   /** Live site (the "Live" pill and the hero button). */
   url?: string;
   /** Picture of the desktop cinematic hero. */
-  heroImage: string;
+  heroImage: ImageMetadata;
   /** The two big words that part on the desktop hero. */
   heroWords: [string, string];
   /** Title broken over two lines. */
@@ -68,7 +68,7 @@ export const projects: Project[] = [
       summary:
         'Full brand identity and website for a premium desert travel & experiences brand rooted in the Sinai Peninsula.',
       url: 'https://windsofsinai.com',
-      heroImage: 'https://picsum.photos/seed/sinai/800/1200?grayscale',
+      heroImage: deeer2,
       heroWords: ['WINDS OF', 'SINAI'],
       titleLines: ['Winds', 'Of Sinai'],
       tabs: [
