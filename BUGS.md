@@ -142,6 +142,34 @@ Sekcja "What we've created." (`src/components/sections/SelectedWorkSection.astro
 
 **Uwaga o tekście i kafelkach na desktopie:** tekst nie rusza się z miejsca, wychodzi z ciemności dopiero po przypięciu sekcji; kafelki startują wcześniej (osobny `ScrollTrigger`).
 
+## Winds of Sinai: skok strony przy otwieraniu menu
+
+**Objaw:** po kliknięciu menu na podstronie Winds of Sinai zawartość strony najpierw skakała, a dopiero potem pojawiał się overlay menu. Na innych stronach tego nie było.
+
+**Przyczyna:** przy otwarciu menu `lockBodyScroll()` w `oxygenMenu.ts` brało pozycję scrolla z Lenisa (`animatedScroll`) i wymuszało ją przez `lenis.scrollTo(pozycja, { immediate: true })`. Na stronie z przypiętym hero (ScrollTrigger `pin`) wewnętrzna wartość Lenisa potrafi się różnić od prawdziwej pozycji strony, więc wymuszenie jej przesuwało stronę. Dodatkowo strony (index, about, Winds of Sinai) tworzyły własne instancje Lenisa z różnymi ustawieniami, więc na każdej scroll zachowywał się trochę inaczej.
+
+**Poprawka:**
+1. Menu bierze prawdziwą pozycję (`window.scrollY`) i przy otwarciu tylko zatrzymuje Lenisa (`lenis.stop()`), niczego nie przewija (commit `e498723`).
+2. Jeden, globalny Lenis w `src/layouts/Layout.astro` (zawsze podpięty do `ScrollTrigger.update`). Strony nie tworzą już własnych instancji (commit `eb3307b`).
+
+**Pliki:** `src/utils/oxygenMenu.ts` (`lockBodyScroll`), `src/layouts/Layout.astro` (`initLayoutLenis`), `src/pages/index.astro`, `src/pages/_about-fluid.astro`, `src/pages/projects/[slug].astro`.
+
+**Uwaga:** przyczyny nie odtworzyłem na komputerze (w teście lokalnym skoku nie było), wniosek wynika z kodu i z potwierdzenia, że po obu poprawkach menu działa. Nie wiadomo, która z dwóch poprawek była rozstrzygająca.
+
+**Nie wracać do:** ustawiania pozycji strony z wartości Lenisa przy otwieraniu menu (`scrollTo` z `animatedScroll`) oraz do własnych instancji Lenisa na podstronach.
+
+## Winds of Sinai: zacięcie przy znikaniu napisu i wejściu zdjęcia hero
+
+**Objaw:** pod koniec znikania napisu "Winds of Sinai" (blur) animacja lekko się zacinała, a zdjęcie (`deeer2`) pojawiało się zbyt agresywnie.
+
+**Przyczyna:** zdjęcie zaczynało się pojawiać (od 0,7 osi czasu) jeszcze w trakcie znikania napisu (do ok. 0,85) i naraz zmieniało krycie, skalę i położenie. Do tego duży blur 16px na tekście i duże zdjęcie z maską są ciężkie dla przeglądarki.
+
+**Poprawka:** w `initCinematic()` fade zdjęcia startuje w 0,85 i trwa 1,1 (`power1.inOut`), a skala i przesunięcie idą osobno i dłużej (start 0,8, czas 1,5, `sine.out`). Blur napisu zmniejszony do 12px, dolny tekst wchodzi w 1,6, a przewijanie hero jest dłuższe (`end: '+=170%'`). Dodane `will-change` dla napisu i zdjęcia.
+
+**Plik:** `src/pages/projects/[slug].astro`, `initCinematic()` oraz `.wos-cin__image` i `.wos-cin__l/.wos-cin__r` w CSS.
+
+**Gdyby zacinało:** zmniejszyć plik `src/img/deeer2.webp` (ma 1,5 MB) i uprościć maskę zdjęcia.
+
 ## Reguły na przyszłe projekty (Safari / mobile)
 
 1. Przypięcia i poziome paski: **sticky + jedna animacja `scrub: true`**, bez snapu, bez `normalizeScroll`, bez animacji CSS sterowanych scrollem.

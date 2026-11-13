@@ -155,13 +155,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		import ScrollTrigger from 'gsap/ScrollTrigger';
 		let _isTraverseNav = false;
 
-		function initLenis() {
+		function initHome() {
 			gsap.registerPlugin(ScrollTrigger);
 			ScrollTrigger.config({ ignoreMobileResize: true });
 
 			if (!_isTraverseNav) window.scrollTo(0, 0);
-
-			// Scroll: the one global Lenis from Layout.astro — this page no longer makes its own.
 
 			requestAnimationFrame(() => ScrollTrigger.refresh());
 
@@ -175,7 +173,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 						});
 
 		document.addEventListener('astro:page-load', () => {
-			initLenis();
+			initHome();
 		});
 	</script>
 </Layout>
