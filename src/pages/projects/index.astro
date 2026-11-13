@@ -356,16 +356,12 @@ const projects = await Promise.all(
     .proj-inner {
       height: 100svh;
       height: calc(var(--app-stable-vh, 1svh) * 100);
-      box-sizing: border-box;
-      /* The photo is centred in the free space between the logo (top) and
-         the name / tags / MENU block (bottom), not in the whole screen. */
-      padding: clamp(4.5rem, calc(var(--app-stable-vh, 1svh) * 10), 6rem) 0 clamp(11rem, calc(var(--app-stable-vh, 1svh) * 26), 13rem);
     }
     .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
     .proj-img-wrap {
       width: clamp(240px, 72vw, 680px);
-      height: clamp(180px, 50svh, 520px);
-      height: clamp(180px, calc(var(--app-stable-vh, 1svh) * 50), 520px);
+      height: clamp(180px, 48svh, 480px);
+      height: clamp(180px, calc(var(--app-stable-vh, 1svh) * 48), 480px);
     }
     /* Name and year on one line, the tags under — above the bottom MENU button. */
     .proj-foot {

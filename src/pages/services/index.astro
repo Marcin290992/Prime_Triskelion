@@ -369,9 +369,7 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-split {
       flex-direction: column;
       align-items: stretch;
-      /* top: the first card starts clear of the logo and the top blur band,
-         as the page comes up out of the dark on the first scroll */
-      padding: max(4.5rem, calc(var(--app-stable-vh, 1svh) * 10)) var(--site-gutter) clamp(4rem, 10vw, 6rem);
+      padding: 0 var(--site-gutter) clamp(4rem, 10vw, 6rem);
       box-sizing: border-box;
     }
     .svc-deck, .svc-texts { display: contents; }
@@ -387,35 +385,27 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
     .svc-card:nth-child(even) { background: none; }
     .svc-card__inner { position: relative; padding: 0; will-change: auto; }
     .svc-card__shade { display: none; }
-    /* Short, wide tiles: never taller than a third of the screen. */
-    .svc-card__frame {
-      width: 100%;
-      aspect-ratio: auto;
-      height: min(calc(var(--app-stable-vh, 1svh) * 22), 70vw);
-    }
+    .svc-card__frame { width: 100%; aspect-ratio: 4 / 5; }
     .svc-card__ghost { font-size: clamp(8rem, 42vw, 14rem); }
     .svc-card__name { font-size: clamp(1.6rem, 7vw, 2.4rem); }
     .svc-text {
       min-height: 0;
-      padding: clamp(1rem, calc(var(--app-stable-vh, 1svh) * 2.6), 2.4rem) 0 0;
+      padding: clamp(1.6rem, 5vw, 2.4rem) 0 0;
       border-bottom: 0;
     }
     .svc-text__body { position: static; min-height: 0; display: block; padding: 0; max-width: none; }
     .svc-content__title {
       max-width: none;
-      font-size: clamp(1.35rem, min(6.2vw, calc(var(--app-stable-vh, 1svh) * 3.8)), 2.6rem);
-      margin-bottom: clamp(0.8rem, calc(var(--app-stable-vh, 1svh) * 2), 1.5rem);
+      font-size: clamp(1.6rem, 6.2vw, 2.6rem);
+      margin-bottom: 1.5rem;
     }
-    .svc-text__label { margin-bottom: clamp(0.6rem, calc(var(--app-stable-vh, 1svh) * 1.6), 1.4rem); }
-    .svc-list li {
-      font-size: clamp(0.8rem, calc(var(--app-stable-vh, 1svh) * 1.9), 0.9rem);
-      padding: clamp(0.4rem, calc(var(--app-stable-vh, 1svh) * 1.3), 0.8rem) 0;
-    }
+    .svc-text__label { margin-bottom: 1.4rem; }
+    .svc-list li { font-size: 0.9rem; padding: 0.8rem 0; }
   }
 
   /* Tablet: the same stack, the card in a wider frame. */
   @media (max-width: 1024px) and (min-width: 700px), (hover: none) and (pointer: coarse) and (min-width: 700px) {
-    .svc-card__frame { height: calc(var(--app-stable-vh, 1svh) * 34); }
+    .svc-card__frame { aspect-ratio: 16 / 10; }
     .svc-card__ghost { font-size: clamp(10rem, 24vw, 16rem); }
     .svc-text__body { max-width: 680px; }
     .svc-content__title { font-size: clamp(1.9rem, 4vw, 2.8rem); }

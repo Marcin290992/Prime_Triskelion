@@ -22,7 +22,7 @@ const [line1, line2] = d.titleLines;
     <section class="wos-cin" id="wos-cin">
       <h1 class="wos-cin__sr">{project.title} — Case Study</h1>
       <div class="wos-cin__image" aria-hidden="true">
-        <img src={typeof d.heroImage === 'string' ? d.heroImage : d.heroImage.src} alt="" draggable="false">
+        <img src={d.heroImage} alt="" draggable="false">
       </div>
       <div class="wos-cin__texts" aria-hidden="true">
         <span class="wos-cin__l"><span class="wos-cin__w">{d.heroWords[0]}</span></span>

@@ -1282,11 +1282,8 @@ import { createLightRays } from '../../utils/lightRays';
 			if (on === isHeroVisible) return;
 			isHeroVisible = on;
 			clearTimeout(raysStopTimer);
-			// Home: the pinned exit (index.astro) owns the filter (see initRays).
-			if (!document.getElementById('hero-pin')) {
-				canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
-				canvas!.style.filter = on ? '' : 'opacity(0)';
-			}
+			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
+			canvas!.style.filter = on ? '' : 'opacity(0)';
 			if (on) startRaysAnimation();
 			else raysStopTimer = setTimeout(stopRaysAnimation, 1450);
 		}
@@ -1396,13 +1393,8 @@ import { createLightRays } from '../../utils/lightRays';
 			if (on === isHeroVisible) return;
 			isHeroVisible = on;
 			clearTimeout(raysStopTimer);
-			// On the home page the pinned exit (index.astro) owns the canvas's
-			// filter (brightness): writing it here would switch a dark light back
-			// on, as a frozen frame, when the hero comes back into view.
-			if (!document.getElementById('hero-pin')) {
-				canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
-				canvas!.style.filter = on ? '' : 'opacity(0)';
-			}
+			canvas!.style.transition = on ? 'filter 1.6s ease' : 'filter 1.4s ease';
+			canvas!.style.filter = on ? '' : 'opacity(0)';
 			if (on) { if (!document.hidden && !raysDark) rays!.start(); }
 			else raysStopTimer = setTimeout(() => rays!.stop(), 1450);
 		}

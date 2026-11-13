@@ -30,7 +30,7 @@ export interface ProjectDetail {
   /** Live site (the "Live" pill and the hero button). */
   url?: string;
   /** Picture of the desktop cinematic hero. */
-  heroImage: ImageMetadata | string;
+  heroImage: string;
   /** The two big words that part on the desktop hero. */
   heroWords: [string, string];
   /** Title broken over two lines. */
@@ -68,7 +68,7 @@ export const projects: Project[] = [
       summary:
         'Full brand identity and website for a premium desert travel & experiences brand rooted in the Sinai Peninsula.',
       url: 'https://windsofsinai.com',
-      heroImage: deeer2,
+      heroImage: 'https://picsum.photos/seed/sinai/800/1200?grayscale',
       heroWords: ['WINDS OF', 'SINAI'],
       titleLines: ['Winds', 'Of Sinai'],
       tabs: [
@@ -112,7 +112,7 @@ export const projects: Project[] = [
     title: 'Project Two',
     categories: ['Web Design', 'Development'],
     year: '2024',
-    card: deeer2,
+    card: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400&fit=crop',
     bg: '#0d0b0b',
     speed: -1,
   },
@@ -121,7 +121,7 @@ export const projects: Project[] = [
     title: 'Project Three',
     categories: ['Brand Identity', 'Strategy'],
     year: '2023',
-    card: deeer2,
+    card: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1400&fit=crop',
     bg: '#0b0b0d',
     speed: 1,
   },
