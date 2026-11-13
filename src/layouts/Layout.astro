@@ -423,7 +423,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       // content itself was ever going to fix. __lenisHandled is the
       // explicit "a page already decided" signal those pages also set;
       // check it first.
-      if ((window as any).__lenisHandled || (window as any).__lenis) return;
+      if ((window as any).__lenis) return;
 
       const isTouch = window.matchMedia('(pointer: coarse)').matches;
       // Touch (phones, tablets, Safari too): the same Lenis on every page —
@@ -439,7 +439,7 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       _layoutRaf = (t: number) => _layoutLenis?.raf(t * 1000);
       gsap.ticker.add(_layoutRaf);
       syncTickerToScroll();
-      if (isTouch) _layoutLenis.on('scroll', ScrollTrigger.update);
+      _layoutLenis.on('scroll', ScrollTrigger.update);
     });
   }
 

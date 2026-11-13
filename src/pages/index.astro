@@ -151,58 +151,17 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</script>
 
 	<script>
-		import Lenis from 'lenis';
 		import gsap from 'gsap';
 		import ScrollTrigger from 'gsap/ScrollTrigger';
-		import { syncTickerToScroll } from '../utils/afterPageTransition';
-		import { TOUCH_LENIS_OPTIONS } from '../utils/touchLenis';
-
-		let lenisInstance: Lenis | null = null;
-		let lenisTickerCb: ((time: number) => void) | null = null;
 		let _isTraverseNav = false;
 
 		function initLenis() {
-			if (lenisInstance) { lenisInstance.destroy(); lenisInstance = null; }
-			if (lenisTickerCb) { gsap.ticker.remove(lenisTickerCb); lenisTickerCb = null; }
-
-			const isTouch = window.matchMedia('(pointer: coarse)').matches;
-
 			gsap.registerPlugin(ScrollTrigger);
 			ScrollTrigger.config({ ignoreMobileResize: true });
 
 			if (!_isTraverseNav) window.scrollTo(0, 0);
 
-			if (isTouch) {
-				// TEST (Home only): scroll on touch is driven by Lenis, as on the
-				// reference site (white-desert.com) that holds up on iOS Safari.
-				// The page scroll position is then set from the same GSAP ticker
-				// frame that moves the horizontal strip, so sticky and the strip's
-				// transform can't drift apart during the finger's momentum.
-				// autoRaf is off: the GSAP ticker calls raf (below).
-				lenisInstance = new Lenis({ ...TOUCH_LENIS_OPTIONS });
-				(window as any).__lenis = lenisInstance;
-				// This page chose its Lenis: the Layout fallback must not add another.
-				(window as any).__lenisHandled = true;
-				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
-				gsap.ticker.add(lenisTickerCb);
-				syncTickerToScroll(); // gsap.ticker.lagSmoothing(0)
-				lenisInstance.on('scroll', ScrollTrigger.update);
-			} else {
-				// A continuous lerp, not a timed ease: a timed ease restarts on every
-				// wheel/trackpad event, which made the horizontal work section
-				// stutter.
-				lenisInstance = new Lenis({
-					// Narrow windows (phone/tablet widths) get a much lighter drag.
-        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
-					smoothWheel: true,
-					wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
-				});
-				(window as any).__lenis = lenisInstance;
-				lenisTickerCb = (time: number) => lenisInstance?.raf(time * 1000);
-				gsap.ticker.add(lenisTickerCb);
-				syncTickerToScroll();
-				lenisInstance.on('scroll', ScrollTrigger.update);
-			}
+			// Scroll: the one global Lenis from Layout.astro — this page no longer makes its own.
 
 			requestAnimationFrame(() => ScrollTrigger.refresh());
 
@@ -213,8 +172,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const navType: string = event.navigationType ?? '';
 			_isTraverseNav = navType === 'traverse';
 			if (!_isTraverseNav) window.scrollTo(0, 0);
-			if (lenisTickerCb) { gsap.ticker.remove(lenisTickerCb); lenisTickerCb = null; }
-			if (lenisInstance) { lenisInstance.destroy(); lenisInstance = null; }
 						});
 
 		document.addEventListener('astro:page-load', () => {

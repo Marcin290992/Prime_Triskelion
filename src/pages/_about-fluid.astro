@@ -564,7 +564,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 </style>
 
 <script>
-  import Lenis from 'lenis';
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero, titleIn, syncTickerToScroll } from '../utils/afterPageTransition';
@@ -573,8 +572,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
   gsap.registerPlugin(ScrollTrigger);
 
-  let _lenis: InstanceType<typeof Lenis> | null = null;
-  let _lenisRaf: ((time: number) => void) | null = null;
 
   interface FluidPortraitOpts {
     topUrl: string;
@@ -1821,23 +1818,7 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
     });
     if (!engine) return;
 
-    // -- Lenis --
-
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    _lenis = new Lenis(isTouch ? {
-      duration: 0.7,
-      easing: (t: number) => 1 - Math.pow(1 - t, 2.4),
-      } : {
-        // Narrow windows (phone/tablet widths) get a much lighter drag.
-        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
-        smoothWheel: true,
-        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
-      });
-    (window as any).__lenis = _lenis;
-    _lenis.on('scroll', ScrollTrigger.update);
-    _lenisRaf = (time: number) => { _lenis!.raf(time * 1000); };
-    gsap.ticker.add(_lenisRaf);
-    syncTickerToScroll();
+    // Scroll: the one global Lenis from Layout.astro.
 
     // -- Scroll scrub: overlay fades → portrait emerges from darkness --
 
@@ -1969,10 +1950,6 @@ const ditherTexture = await getImage({ src: portraitTop, width: 1600, format: 'w
 
     document.addEventListener('astro:before-swap', () => {
       engine.destroy();
-      if (_lenisRaf) { gsap.ticker.remove(_lenisRaf); _lenisRaf = null; }
-      _lenis?.destroy();
-      _lenis = null;
-      (window as any).__lenis = null;
       ScrollTrigger.getAll().forEach(st => st.kill());
     }, { once: true });
   }
