@@ -500,7 +500,8 @@ const SCREENS = projects.length + HOLD;
 		// The beam crosses the whole step (as in the test file); the snap makes every
 		// picture come to rest exactly on its own stop, on a mouse and on a finger alike.
 		const RANGE: [number, number] = [0, 1];
-		const TEXT_AT = 0.12;     // |pos - frame| below which the beam has finished and the text may come
+		const TEXT_IN = 0.5;      // |pos - frame| below which the text starts to come: the beam is half way across
+		const TEXT_OUT = 0.62;    // ... and above which it leaves (a little wider, so it never flickers at the edge)
 		const fallback = () => stage.classList.add('swb--fallback');
 		let beam: BeamSlides | null = null;
 		if (reduced()) fallback();
@@ -511,19 +512,24 @@ const SCREENS = projects.length + HOLD;
 
 		let pos = 0;      // 0 .. n: the dark, then each project in turn
 
-		// The text does not follow the scroll: when a picture's beam has finished the
-		// text of that picture comes in by itself (time-based, out of blur, a beat after
-		// the light), and it goes out quickly the moment the next beam starts.
-		gsap.set(slides, { y: 14, filter: 'blur(10px)' });
+		// The text does not follow the scroll: it comes in by itself (time-based) while the
+		// beam is still crossing, line by line (title, text, button), each rising out of blur
+		// on a long soft ease, so by the time the light has landed it is already there and
+		// settled. It leaves quickly the moment the next beam begins.
+		const partsOf = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLElement>('.swb__name, p, .swb__cta'));
+		gsap.set(slides, { opacity: 1 });
+		slides.forEach((el) => gsap.set(partsOf(el), { opacity: 0, y: 26, filter: 'blur(12px)' }));
 		const revealText = (el: HTMLElement) => {
 			el.style.visibility = 'visible';
 			el.style.pointerEvents = 'auto';
-			gsap.to(el, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, delay: 0.18, ease: 'power3.out', overwrite: true });
+			gsap.fromTo(partsOf(el),
+				{ opacity: 0, y: 26, filter: 'blur(12px)' },
+				{ opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.2, ease: 'expo.out', stagger: 0.12, overwrite: true, onComplete: () => partsOf(el).forEach((p) => { p.style.filter = ''; }) });
 		};
 		const hideText = (el: HTMLElement) => {
 			el.style.pointerEvents = 'none';
-			gsap.to(el, {
-				opacity: 0, y: 14, filter: 'blur(10px)', duration: 0.3, ease: 'power2.in', overwrite: true,
+			gsap.to(partsOf(el), {
+				opacity: 0, y: -10, filter: 'blur(8px)', duration: 0.3, ease: 'power2.in', overwrite: true,
 				onComplete: () => { el.style.visibility = 'hidden'; },
 			});
 		};
@@ -537,7 +543,8 @@ const SCREENS = projects.length + HOLD;
 			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
 			let nowText = -1;
-			slides.forEach((_, i) => { if (Math.abs(pos - (i + 1)) < TEXT_AT) nowText = i; });
+			if (activeText >= 0 && Math.abs(pos - (activeText + 1)) < TEXT_OUT) nowText = activeText;
+			else slides.forEach((_, i) => { if (Math.abs(pos - (i + 1)) < TEXT_IN) nowText = i; });
 			if (nowText !== activeText) {
 				activeText = nowText;
 				slides.forEach((el, i) => (i === nowText ? revealText(el) : hideText(el)));
