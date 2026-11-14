@@ -19,7 +19,7 @@ const projects = [
 	{ title: 'Mousa Export', desc: 'International export logistics platform', img: imgMousa, fx: 0.5, href: '/work/mousa-export' },
 ];
 
-// Scroll length: see LEAD / PER in the script (longer on touch screens). The
+// Scroll length: see LEAD / PER in the script (one screen per step, the snap lands each picture exactly). The
 // value here is only the no-JS default.
 const HOLD = 0.4;
 const SCREENS = projects.length + HOLD;
@@ -341,7 +341,6 @@ const SCREENS = projects.length + HOLD;
 
 	const clamp = (v: number, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 	const smooth = (v: number) => { v = clamp(v); return v * v * (3 - 2 * v); };
-	const TOUCH = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	let cleanup: (() => void) | null = null;
@@ -368,10 +367,13 @@ const SCREENS = projects.length + HOLD;
 		// before and after the beam (which keeps the hero's one-screen sweep), so
 		// the text and the button can be reached with a thumb; on a mouse the rest
 		// is short.
-		const touch = window.matchMedia(TOUCH).matches;
-		const RANGE: [number, number] = touch ? [0.295, 0.705] : [0.15, 0.85];
-		const TEXT_HOLD = touch ? 0.2 : 0.05;   // |pos - frame| below which the text is fully in
-		const TEXT_FADE = touch ? 0.09 : 0.13;  // ... and the distance over which it goes out
+		// With the snap below every picture comes to rest exactly on its own stop, so
+		// the same numbers do for a mouse and a finger.
+		const lenis = (window as any).__lenis;
+		const snapOn = !!lenis && !reduced();
+		const RANGE: [number, number] = [0.15, 0.85];
+		const TEXT_HOLD = 0.05;   // |pos - frame| below which the text is fully in
+		const TEXT_FADE = 0.13;   // ... and the distance over which it goes out
 		const fallback = () => stage.classList.add('swb--fallback');
 		let beam: BeamSlides | null = null;
 		if (reduced()) fallback();
@@ -407,13 +409,10 @@ const SCREENS = projects.length + HOLD;
 			}
 		};
 
-		// How much scroll each step takes: the beam itself keeps the home hero's
-		// one screen of scroll for a whole transition; on touch screens a rest of
-		// about a screen on top of it (PER). The title
-		// first stands alone for LEAD screens, then each picture gets PER screens
-		// (the beam sweeps across most of it).
+		// How much scroll each step takes: one screen, as the home hero's exit. The title
+		// first stands alone for LEAD screens, then each picture gets PER screens.
 		const LEAD = 0.8;
-		const PER = touch ? 1.7 : 1;
+		const PER = 1;
 		const length = LEAD + PER * (n + hold);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
@@ -438,10 +437,93 @@ const SCREENS = projects.length + HOLD;
 		});
 		render();
 
+		// ── The snap ───────────────────────────────────────────────────────────
+		// As on the Forge listing: every picture is a stop. The first push away from
+		// a stop (a wheel tick, a flick) carries the whole step to the next one on a
+		// critically damped ease, the light sweeping by itself, and the scroll is
+		// locked until it has settled; if scrolling just stops somewhere in between,
+		// it settles on the nearest stop after a moment. Beyond the first and the
+		// last stop the page scrolls freely. Needs the site's Lenis; without it the
+		// light simply follows the scroll.
+		let snapOff = () => {};
+		if (snapOn) {
+			const settle = (t: number) => { const k = 5; return (1 - (1 + k * t) * Math.exp(-k * t)) / (1 - (1 + k) * Math.exp(-k)); };
+			const unit = () => (stPin.end - stPin.start) / length;   // one screen of scroll
+			const stop = (k: number) => stPin.start + (LEAD + PER * k) * unit();
+			const inZone = (y: number) => y > stop(0) - 0.6 * unit() && y < stop(n) + 0.45 * unit();
+			const nearest = (y: number) => {
+				let b = 0;
+				for (let k = 1; k <= n; k++) if (Math.abs(stop(k) - y) < Math.abs(stop(b) - y)) b = k;
+				return b;
+			};
+			let rest = -1;          // the stop we stand on, -1 = not known
+			let snapping = false;
+			let cooling = false;    // a moment after landing: trackpad / finger inertia is ignored
+			let idle = 0, fail = 0, cool = 0;
+
+			const go = (k: number) => {
+				const y = lenis.scroll;
+				const dist = Math.abs(stop(k) - y);
+				snapping = true;
+				rest = k;
+				clearTimeout(fail);
+				fail = window.setTimeout(() => { snapping = false; }, 3000);   // never stay locked
+				lenis.scrollTo(stop(k), {
+					duration: 0.55 + Math.min(0.85, (dist / unit()) * 0.85),
+					easing: settle,
+					lock: true,
+					force: true,
+					onComplete: () => {
+						clearTimeout(fail);
+						snapping = false;
+						cooling = true;
+						clearTimeout(cool);
+						cool = window.setTimeout(() => {
+							cooling = false;
+							// drop whatever the inertia drifted while it was ignored
+							if (rest >= 0 && Math.abs(lenis.scroll - stop(rest)) < 0.4 * unit()) lenis.scrollTo(stop(rest), { immediate: true, force: true });
+						}, 500);
+					},
+				});
+			};
+
+			const onScroll = (e: { scroll: number }) => {
+				if (snapping || cooling || root.classList.contains('pt-restoring')) return;
+				window.clearTimeout(idle);
+				const y = e.scroll;
+				if (!inZone(y)) { rest = -1; return; }
+				if (rest >= 0) {
+					const dy = y - stop(rest);
+					if (Math.abs(dy) > 0.035 * unit()) {
+						const k = rest + (dy > 0 ? 1 : -1);
+						if (k >= 0 && k <= n) { go(k); return; }
+						rest = -1;   // past the first or the last picture: free scroll
+					}
+				}
+				idle = window.setTimeout(() => {
+					if (snapping || cooling) return;
+					const y2 = lenis.scroll;
+					if (!inZone(y2)) return;
+					const k = nearest(y2);
+					if (Math.abs(stop(k) - y2) < 1) { rest = k; return; }
+					go(k);
+				}, 180);
+			};
+			lenis.on('scroll', onScroll);
+			snapOff = () => {
+				lenis.off('scroll', onScroll);
+				window.clearTimeout(idle);
+				window.clearTimeout(fail);
+				window.clearTimeout(cool);
+				if (snapping) lenis.scrollTo(lenis.scroll, { immediate: true, force: true });
+			};
+		}
+
 		const ro = new ResizeObserver(() => beam?.resize());
 		ro.observe(frame);
 
 		cleanup = () => {
+			snapOff();
 			stPin.kill();
 			ro.disconnect();
 			beam?.destroy();
