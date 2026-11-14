@@ -1,5 +1,44 @@
 # Błędy i poprawki
 
+## Selected work (pełnoekranowy beam): dociąganie nie działało, było za szybkie, napisy pojawiały się razem ze scrollem
+
+**Objaw:** w pełnoekranowej karuzeli ze światłem (sekcja "What we've created.") zdjęcie nie dociągało się samo po przewinięciu, albo dociągało zbyt gwałtownie ("nie premium"). Beam jechał za wolno razem z kółkiem, a na telefonie i tablecie zmiana zdjęć była za szybka. Napisy wchodziły stopniowo razem ze scrollem, przez co łatwo je było przeoczyć. W samodzielnym pliku testowym (`beam-carousel-demo.html`, poza repo) to wszystko działało idealnie na desktopie, tablecie i telefonie.
+
+**Przyczyny (kilka, nakładały się):**
+1. **Snap był wyłączony przy każdym wczytaniu.** Lenis jest tworzony dopiero klatkę po `astro:page-load` (`src/layouts/Layout.astro`, `requestAnimationFrame`), a sekcja odczytywała `window.__lenis` jeden raz przy starcie, więc dostawała `undefined`.
+2. **Za szybkie dociąganie.** Snap trwał 0,45 s na krzywej critically damped (mocny start, hamowanie na końcu), co wygląda jak szarpnięcie.
+3. **Beam pełzał.** Pozycja światła przechodziła przez `smoothstep` i była ściśnięta do przedziału 0,15–0,85 kroku, a do tego wygładzał ją jeszcze Lenis.
+4. **Napisy zależały od pozycji scrolla** (przezroczystość liczona z odległości do zdjęcia), więc pojawiały się dopiero na końcu i bez ruchu.
+5. **Winieta malowała się nad tekstem:** `::after` miała `z-index: 1` bez własnego kontekstu nakładania.
+6. **Mruganie przed beamem w shaderze:** `pow(x, 2.0)` dla ujemnego `x` jest w GLSL niezdefiniowane (na części kart i telefonów daje NaN).
+
+**Poprawka:**
+- **Lenis wszędzie**, jeden mechanizm na wszystkich urządzeniach. Snap wzorowany na stronie Forge (podgląd: `forgeautomotive-co-uk/app/src/components/Listing.jsx`): sekcja czeka na Lenis (`attach`, do około 3 s), po 140 ms ciszy (nie, gdy palec jest na ekranie: `lenis.isTouching`) dociąga do zdjęcia. Idzie dalej, gdy przeleciano 10% drogi w stronę ruchu (`DEPART`), inaczej wraca do poprzedniego.
+- **Tempo:** `lenis.scrollTo`, 0,9 s plus do 0,6 s za dłuższą drogę, krzywa in-out cubic. Wolno i miękko.
+- **Jeden gest = najwyżej jedno zdjęcie** (`anchor`): mocny rzut palcem z bezwładnością Lenis potrafił przeskoczyć dwa.
+- **Swobodny scroll** przed pierwszym i po ostatnim zdjęciu (strefa snapu zaczyna się 0,6 ekranu przed pierwszym i kończy 0,45 po ostatnim).
+- **Beam** przechodzi liniowo przez cały krok (`RANGE = [0, 1]`); krzywą daje snap i Lenis. DPR ograniczony do 1,25 na dotyku i 1,75 na desktopie.
+- **Napisy:** czasowe (nie od scrolla), startują, gdy beam jest w połowie (`TEXT_IN = 0.5`, wyjście przy 0.62, żeby nie migało), linia po linii (tytuł, opis, przycisk co 0,12 s), z blura i przesunięcia 26 px, `expo.out`, 1,2 s.
+- **Winieta:** `isolation: isolate` na ramce zdjęcia.
+- **Shader:** `x * x` zamiast `pow(x, 2.0)`.
+
+**Pliki:** `src/components/sections/SelectedWorkSection.astro` (skrypt: `setupSnap`, `attach`, `revealText`), `src/utils/beamSlides.ts` (shader, DPR), `src/styles/global.css` (reguła `html.sw-hscroll`: na telefonach pasma blur zostają, tylko lżejsze), test `tests/e2e/selected-work.spec.ts`. Poprzednia pozioma karuzela: `src/components/backup/SelectedWorkSection.before-gsap-beam.astro`.
+
+**Próbowane i porzucone (nie wracać bez powodu):**
+- **`data-lenis-prevent` na scenie + snap ze ScrollTrigger** (tak jak w pliku testowym, natywny scroll). Działa, ale strona ma mieć jeden Lenis na każdym ekranie, więc odrzucone.
+- **Wyłączanie `smoothWheel` / `syncTouch` w Lenis w locie** na czas przypięcia: zbyt kruche przy wejściu i wyjściu z sekcji, wycofane.
+- **`lenis.stop()` na czas sekcji:** nie nadaje się. Zatrzymany Lenis wywołuje `preventDefault`, więc blokuje też natywny scroll.
+- **Dłuższy krok na dotyku (2 ekrany na zdjęcie)** jako lekarstwo na za szybką zmianę: dawał tylko dłuższą sekcję, nie poprawiał płynności.
+- **W samym demie:** `scroll-snap` w CSS na `html` i własne przechwytywanie kółka. Snap cofał stronę, nie dało się wyjść z sekcji i migało na skrajnych zdjęciach.
+
+**Wskazówki na przyszłość:**
+- `window.__lenis` czytać **leniwie** (po `requestAnimationFrame`), nigdy tylko raz przy starcie skryptu sekcji.
+- W shaderach **nie używać `pow(x, 2.0)`** (ani `pow` z podstawą, która może być ujemna). Pisać `x * x`.
+- Pokrętła tempa są w skrypcie sekcji: `IDLE` (cisza przed snapem), `DEPART`, `0.9` i `0.6` w `move(k, …)`, `TEXT_IN` / `TEXT_OUT`, `PER` (ekranów na zdjęcie) i `LEAD`.
+- **Test e2e:** dotyk przy Lenis `syncTouch` trzeba symulować zdarzeniami `TouchEvent` (`touchstart` / `touchmove` / `touchend`). Gesty z CDP (`Input.synthesizeScrollGesture`) nie ruszają Lenis. Uruchamiać na osobnym porcie, żeby nie trafić w serwer deweloperski: `PLAYWRIGHT_PORT=4399 npx playwright test selected-work`.
+- **Do sprawdzenia na prawdziwym iPhonie:** reguła nr 1 z sekcji "Reguły na przyszłe projekty" mówi "bez snapu" i dotyczyła poziomego paska. Ta sekcja jest pełnoekranowa i ma snap na Lenis, ale gdyby na iPhonie wróciło "cofanie po puszczeniu palca" (jak w wpisie o poziomym pasku), pierwszym ruchem jest usunięcie snapu i zostawienie samego beama podążającego za scrollem.
+- W kopii Forge Lenis na dotyku ma `syncTouch: false` (natywny dotyk), a u nas `true` (`src/utils/touchLenis.ts`). To możliwa różnica w odczuciu na telefonie, ale zmiana dotyczy całej strony, więc najpierw test na prawdziwym urządzeniu.
+
 ## About na mobile/tablecie: cofanie bez przejścia i ucięcie w połowie
 
 **Objaw:** po cofnięciu z podstrony About na telefonie lub tablecie nie było przejścia między stronami. W połowie strona ucinała się twardo. Na innych podstronach działało poprawnie. Występowało tylko na mobile i tablecie, przy dużym portrecie ze zdjęciem.
@@ -216,3 +255,4 @@ Sekcja "What we've created." (`src/components/sections/SelectedWorkSection.astro
 - `d5b5e8c` — ten sam Lenis na dotyku na całej stronie (wspólne opcje w `src/utils/touchLenis.ts`)
 - `2447885`, `bc52fe8`, `48212d8`, `4890e46` — About: portret z kafelków (WebGL), mrugnięcie na końcu, dłuższe przypięcie na telefonie; światło wygaszane na zegarze na wszystkich stronach
 - `aa8526b` — Winds of Sinai (iPhone): napis startowy na całą szerokość ekranu (kreski W i O przy lewej krawędzi)
+- `e60865c`, `8d4a589`, `e6f3a20`, `10c4ce8` — Selected work: pełnoekranowy beam, Lenis wszędzie, snap w stylu Forge, napisy czasowe, usunięte strzałki
