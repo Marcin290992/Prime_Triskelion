@@ -621,5 +621,8 @@ html.sw-hscroll .gradual-blur__layer {
   -webkit-mask-image: var(--mask-solid);
   mask-image: var(--mask-solid);
 }
-/* (On phones the bands stay on here too: the Selected work frames need their
-   top and bottom blur on every device, so the bands are only lightened, not hidden.) */
+/* Phones (Safari especially) can't re-blur backdrops over the moving strip
+   at all: no bands while it is pinned. */
+@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+  html.sw-hscroll .gradual-blur { display: none; }
+}
