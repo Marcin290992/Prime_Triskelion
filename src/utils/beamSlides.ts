@@ -42,7 +42,7 @@ uniform float uP;
 varying vec2 vUv;
 
 const float BEAM_WIDTH = 0.12;
-const float BEAM_GAIN = 1.2;
+const float BEAM_GAIN = 1.35;
 const float ZOOM = 1.12;
 const float DRIFT = 0.05;
 const vec2 PIVOT = vec2(0.5, 0.4);
@@ -79,18 +79,37 @@ void main() {
   vec2 outUv = PIVOT + (uv - PIVOT) / mix(1.0, ZOOM, p) - vec2(0.0, DRIFT * p);
   vec2 inUv = PIVOT + (uv - PIVOT) / mix(ZOOM, 1.0, p) + vec2(0.0, DRIFT * (1.0 - p));
 
-  float reveal = smoothstep(head + BEAM_WIDTH * 0.3, head - BEAM_WIDTH * 0.3, x);
-  float fade = smoothstep(0.0, 0.08, p) * (1.0 - smoothstep(0.92, 1.0, p));
-  float glow = exp(-pow((x - head) / BEAM_WIDTH, 2.0)) * fade * BEAM_GAIN;
-  float streak = tall
-    ? exp(-abs(x - head) * 60.0) * exp(-abs(across - 0.5) * 1.5)
-    : exp(-abs(uv.y - 0.5) * 60.0) * exp(-abs(uv.x - head) * 1.5);
-  float flare = streak * fade * BEAM_GAIN * 0.6;
+  // The Forge light beam: a hot narrow core inside a wide halo, both zero at rest
+  // (env), a lens-like warp of the picture along the beam, a colour split inside
+  // it, and the pictures lit up (exposure) as it passes. (x * x, not pow(x, 2.0):
+  // pow of a negative is undefined in GLSL and flickers on some GPUs.)
+  float env = sin(p * 3.14159265);
+  float d = x - head;
+  float dc = d / 0.04;
+  float dh = d / 0.16;
+  float core = exp(-dc * dc) * env;
+  float halo = exp(-dh * dh) * env;
+  float beam = (core * 1.35 + halo * 0.65) * BEAM_GAIN;
+  float reveal = 1.0 - smoothstep(head - 0.12, head + 0.12, x);
 
-  vec3 col = mix(frame(uFrom, uFromAspect, uFromFocus, outUv), frame(uTo, uToAspect, uToFocus, inUv), reveal);
-  col *= 1.0 + glow * 0.3;
-  col += vec3(1.0, 0.95, 0.85) * glow * 0.6 + vec3(0.75, 0.85, 1.0) * flare;
-  gl_FragColor = vec4(col, 1.0);
+  vec2 n = tall ? normalize(vec2(tilt, 1.0)) : normalize(vec2(1.0, tilt));
+  vec2 warp = n * d * halo * 0.2;
+  float ca = core * 0.02 + halo * 0.008;
+  vec2 uo = outUv + warp;
+  vec2 ui = inUv - warp * 1.25;
+  vec3 a = vec3(
+    frame(uFrom, uFromAspect, uFromFocus, uo + n * ca).r,
+    frame(uFrom, uFromAspect, uFromFocus, uo).g,
+    frame(uFrom, uFromAspect, uFromFocus, uo - n * ca).b);
+  vec3 b = vec3(
+    frame(uTo, uToAspect, uToFocus, ui + n * ca * 1.2).r,
+    frame(uTo, uToAspect, uToFocus, ui).g,
+    frame(uTo, uToAspect, uToFocus, ui - n * ca * 1.2).b);
+  vec3 base = mix(a, b, reveal);
+
+  vec3 tint = mix(vec3(0.82, 0.9, 1.0), vec3(1.0, 0.93, 0.82), core);
+  vec3 col = base * (1.0 + beam * 1.4) + tint * pow(max(beam, 0.0), 1.45) * 0.5;
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
 const smooth = (v: number) => { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); };
