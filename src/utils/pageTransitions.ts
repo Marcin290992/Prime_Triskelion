@@ -157,7 +157,9 @@ function preparePageExit(event: PreparationEvent): void {
 	// (The Projects page pins its cards with position:fixed; a filter on an
 	// ancestor becomes their containing block, so they'd un-pin and jump
 	// mid-exit. It gets the same opacity-only exit.)
-	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo, .proj-inner');
+	// (Same for the project pages' pinned hero, #wos-cin / #wos-stage: blurring
+	// its pin-spacer made the pinned screen jump to the top while leaving.)
+	const heavy = !!document.querySelector('.am-portrait-img, .ac-photo, .proj-inner, #wos-cin, #wos-stage');
 
 	// On phones and tablets fading the live masked/filtered portrait layers
 	// stutters and the page cuts away halfway. One black layer fading in over
