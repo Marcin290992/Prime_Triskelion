@@ -112,7 +112,6 @@ void main() {
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
-const smooth = (v: number) => { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); };
 
 interface Frame { tex: WebGLTexture; aspect: number; ready: boolean; fx: number; fy: number; }
 
@@ -200,7 +199,10 @@ export function createBeamSlides(
 	});
 
 	const resize = () => {
-		const dpr = Math.min(window.devicePixelRatio || 1, 2);
+		// the shader reads six textures a pixel: capped as in the test file (a phone's 3x screen
+		// would cost 9x the pixels for nothing the eye can see in motion)
+		const coarse = window.matchMedia('(pointer: coarse)').matches;
+		const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
 		const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
 		const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
 		if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -217,7 +219,9 @@ export function createBeamSlides(
 		const last = frames.length - 1;
 		const i = Math.min(Math.floor(pos), last - 1);
 		const f = pos - i;
-		const p = smooth((f - range[0]) / (range[1] - range[0]));
+		// linear: the easing comes from the scroll (the snap's ease and the glide), as
+		// in the test file; a smoothstep on top made the light crawl at both ends
+		const p = Math.min(1, Math.max(0, (f - range[0]) / (range[1] - range[0])));
 		const a = frames[i], b = frames[i + 1];
 		gl!.activeTexture(gl!.TEXTURE0);
 		gl!.bindTexture(gl!.TEXTURE_2D, (a.ready ? a : frames[0]).tex);
