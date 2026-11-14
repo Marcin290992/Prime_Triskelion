@@ -3,7 +3,7 @@
 //
 // Frame 0 is the dark; frames 1..N are the <img> elements handed in. The scene
 // is driven by one number, `pos` (0 .. N): at a whole number a frame stands
-// still, and between two of them (the middle 40% of the way) a tilted beam
+// still, and between two of them (the middle 70% of the way) a tilted beam
 // sweeps across and swaps one for the other. On a landscape screen the beam
 // runs left to right, on a portrait one (phones) top to bottom.
 //
@@ -195,7 +195,7 @@ export function createBeamSlides(
 		const last = frames.length - 1;
 		const i = Math.min(Math.floor(pos), last - 1);
 		const f = pos - i;
-		const p = smooth((f - 0.3) / 0.4);   // holds for 30% either side of the beam
+		const p = smooth((f - 0.15) / 0.7);   // the beam takes most of the way, with a short rest either side
 		const a = frames[i], b = frames[i + 1];
 		gl!.activeTexture(gl!.TEXTURE0);
 		gl!.bindTexture(gl!.TEXTURE_2D, (a.ready ? a : frames[0]).tex);

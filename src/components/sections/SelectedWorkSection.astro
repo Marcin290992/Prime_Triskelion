@@ -311,7 +311,6 @@ const SCREENS = projects.length + HOLD;
 
 	const clamp = (v: number, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 	const smooth = (v: number) => { v = clamp(v); return v * v * (3 - 2 * v); };
-	const TOUCH = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	let cleanup: (() => void) | null = null;
@@ -352,28 +351,27 @@ const SCREENS = projects.length + HOLD;
 		const render = () => {
 			beam?.setPos(pos);
 			// the opener goes out (blur) as the first picture comes
-			const t = 1 - smooth((pos - 0.05) / 0.25);
+			const t = 1 - smooth(pos / 0.2);
 			intro.style.opacity = t.toFixed(3);
 			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
 			slides.forEach((el, i) => {
-				const o = 1 - smooth((Math.abs(pos - (i + 1)) - 0.12) / 0.18);
+				const o = 1 - smooth((Math.abs(pos - (i + 1)) - 0.05) / 0.13);
 				show(el, o);
 				el.style.transform = o >= 0.999 ? '' : `translateY(${((1 - o) * 14).toFixed(1)}px)`;
 				el.style.pointerEvents = o > 0.5 ? 'auto' : 'none';
 			});
 			if (stage.classList.contains('swb--fallback')) {
-				images.forEach((im, k) => { im.style.opacity = (1 - smooth((Math.abs(pos - (k + 1)) - 0.3) / 0.4)).toFixed(3); });
+				images.forEach((im, k) => { im.style.opacity = (1 - smooth((Math.abs(pos - (k + 1)) - 0.1) / 0.5)).toFixed(3); });
 			}
 		};
 
-		// How much scroll each step takes. The title first stands alone for LEAD
-		// screens (it was easy to scroll past), then each picture gets PER screens
-		// (the beam sweeps in the middle 40% of it): longer on touch, where a flick
-		// would otherwise carry through a whole transition.
-		const touch = window.matchMedia(TOUCH).matches;
-		const LEAD = touch ? 1.1 : 0.9;
-		const PER = touch ? 2.2 : 1.6;
+		// How much scroll each step takes: the same as the home hero's exit, one
+		// screen of scroll for a whole transition, on every device. The title
+		// first stands alone for LEAD screens, then each picture gets PER screens
+		// (the beam sweeps across most of it).
+		const LEAD = 0.8;
+		const PER = 1;
 		const length = LEAD + PER * (n + hold);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
@@ -410,13 +408,6 @@ const SCREENS = projects.length + HOLD;
 	}
 
 	document.addEventListener('astro:page-load', initWork);
-	// (a phone turned on its side, a window resized across the tablet width)
-	let wasTouch = window.matchMedia(TOUCH).matches;
-	window.addEventListener('resize', () => {
-		const now = window.matchMedia(TOUCH).matches;
-		if (now === wasTouch) return;
-		wasTouch = now;
-		if (document.getElementById('sw-scroll-section')) { initWork(); ScrollTrigger.refresh(); }
-	});
+
 	document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = null; });
 </script>
