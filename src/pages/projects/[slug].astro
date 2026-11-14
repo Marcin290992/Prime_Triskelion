@@ -716,6 +716,19 @@ const [line1, line2] = d.titleLines;
   // scrollTo on closing, which ScrollTrigger reads as a short scroll backwards and
   // answered by snapping the hero back to the title.
   let menuHold = false;
+  // The snap only acts after a real gesture (wheel, touch, key). Without this, the
+  // scroll the page makes by itself on arrival (reset / restore) stopped somewhere
+  // inside the sequence and the snap carried the page on by itself.
+  let userGesture = false;
+  const _gestureEvents = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
+  function onGesture() { userGesture = true; }
+  function watchGesture() {
+    userGesture = false;
+    _gestureEvents.forEach((e) => window.addEventListener(e, onGesture, { passive: true }));
+  }
+  function unwatchGesture() {
+    _gestureEvents.forEach((e) => window.removeEventListener(e, onGesture));
+  }
   let _menuHoldTimer = 0;
   let _menuObserver: MutationObserver | null = null;
   function watchMenu() {
@@ -734,6 +747,7 @@ const [line1, line2] = d.titleLines;
     _menuObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
   document.addEventListener('astro:before-swap', () => {
+    unwatchGesture();
     _beam?.destroy();
     _beam = null;
     _menuObserver?.disconnect();
@@ -901,6 +915,7 @@ const [line1, line2] = d.titleLines;
     afterPageTransition(() => { titleIn(gsap.timeline(), words); });
 
     watchMenu();
+    watchGesture();
     _cinST = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
@@ -912,7 +927,7 @@ const [line1, line2] = d.titleLines;
       // still while the menu is open or has just closed — see menuHold)
       snap: {
         snapTo: (value: number, self?: ScrollTrigger) => {
-          if (menuHold || value <= 0 || value >= 1) return value;
+          if (menuHold || !userGesture || value <= 0 || value >= 1) return value;
           return (self?.direction ?? 1) >= 0 ? 1 : 0;
         },
         duration: { min: 0.4, max: 1.1 }, delay: 0.08, ease: 'power2.inOut',
