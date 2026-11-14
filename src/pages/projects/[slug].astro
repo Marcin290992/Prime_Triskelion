@@ -710,7 +710,37 @@ const [line1, line2] = d.titleLines;
 
   let _cinST: ReturnType<typeof ScrollTrigger.create> | null = null;
   let _beam: BeamReveal | null = null;
-  document.addEventListener('astro:before-swap', () => { _beam?.destroy(); _beam = null; });
+
+  // While the menu is open, and for a moment after it closes, the hero's snap must
+  // not act: the menu stops Lenis and puts the scroll back with an immediate
+  // scrollTo on closing, which ScrollTrigger reads as a short scroll backwards and
+  // answered by snapping the hero back to the title.
+  let menuHold = false;
+  let _menuHoldTimer = 0;
+  let _menuObserver: MutationObserver | null = null;
+  function watchMenu() {
+    _menuObserver?.disconnect();
+    window.clearTimeout(_menuHoldTimer);
+    menuHold = document.body.classList.contains('oxygen-menu-open');
+    let wasOpen = menuHold;
+    _menuObserver = new MutationObserver(() => {
+      const open = document.body.classList.contains('oxygen-menu-open');
+      if (open === wasOpen) return;
+      wasOpen = open;
+      window.clearTimeout(_menuHoldTimer);
+      if (open) menuHold = true;
+      else _menuHoldTimer = window.setTimeout(() => { menuHold = false; }, 1200);
+    });
+    _menuObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+  document.addEventListener('astro:before-swap', () => {
+    _beam?.destroy();
+    _beam = null;
+    _menuObserver?.disconnect();
+    _menuObserver = null;
+    window.clearTimeout(_menuHoldTimer);
+    menuHold = false;
+  });
 
   // ── Mobile/tablet: the title alone on black, laid over the panel (one pinned screen).
   // Scrolling blurs the title away, and the panel comes up out of blur in the same place ──
@@ -870,6 +900,7 @@ const [line1, line2] = d.titleLines;
     const words = section.querySelectorAll<HTMLElement>('.wos-cin__w');
     afterPageTransition(() => { titleIn(gsap.timeline(), words); });
 
+    watchMenu();
     _cinST = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
@@ -877,7 +908,15 @@ const [line1, line2] = d.titleLines;
       scrub: 0.8,
       // One flick of the wheel carries the whole sequence home: when the
       // scrolling stops it is pushed on to the end (or back to the start).
-      snap: { snapTo: [0, 1], directional: true, duration: { min: 0.4, max: 1.1 }, delay: 0.08, ease: 'power2.inOut' },
+      // (the same as snapTo [0, 1] + directional, written out so it can stand
+      // still while the menu is open or has just closed — see menuHold)
+      snap: {
+        snapTo: (value: number, self?: ScrollTrigger) => {
+          if (menuHold || value <= 0 || value >= 1) return value;
+          return (self?.direction ?? 1) >= 0 ? 1 : 0;
+        },
+        duration: { min: 0.4, max: 1.1 }, delay: 0.08, ease: 'power2.inOut',
+      },
       pin: true,
       invalidateOnRefresh: true,
       animation: tl,
