@@ -170,6 +170,30 @@ Sekcja "What we've created." (`src/components/sections/SelectedWorkSection.astro
 
 **Gdyby zacinało:** zmniejszyć plik `src/img/deeer2.webp` (ma 1,5 MB) i uprościć maskę zdjęcia.
 
+## Wyjście z projektu: przypięty ekran skakał na górę, zanim strona zniknęła
+
+**Objaw:** na stronie projektu (napis "Winds of Sinai" lub hero z jeleniem) przy cofaniu lub wyjściu przejście było twarde, a przypięty ekran najpierw skakał na górę i dopiero potem znikał.
+
+**Przyczyna:** przy wyjściu `preparePageExit()` robi fade z blurem na elementach `body`. Hero projektu jest przypięty przez ScrollTrigger (`position: fixed` w pin-spacerze), a `filter` na rodzicu zmienia blok odniesienia dla elementów `fixed`. Przypięty ekran się "odpinał" i skakał na górę. Ten sam problem miała wcześniej strona Projects (`.proj-inner`).
+
+**Poprawka:** `#wos-cin` i `#wos-stage` dodane do listy "heavy" w `preparePageExit()`. Takie strony wychodzą tylko przez opacity, bez blura. Przy okazji hero projektu na desktopie: pin `+=110%`, `scrub: 0.8` i snap `[0, 1]`, żeby jeden ruch kółkiem dociągał sekwencję do końca.
+
+**Pliki:** `src/utils/pageTransitions.ts` (`preparePageExit`), `src/pages/projects/[slug].astro` (`initCinematic`).
+
+**Uwaga:** przyczyna wynika z czytania kodu, potwierdzona tym, że po poprawce wyjście działa dobrze. Snap może się gryźć z Lenisem. Jeśli na końcu sekwencji będzie szarpać, wyłączyć snap i zostawić samo skrócenie pinu.
+
+**Nie wracać do:** blura (`filter`) na elementach `body` na stronach z pinem. Każda nowa strona z przypięciem ma trafić na listę "heavy".
+
+## About w Safari desktop: portret wyłaniał się z ciemności zamiast z kafelków
+
+**Objaw:** w Safari desktop portret na About pojawiał się z ciemności (zapasowa animacja), a w Chrome i na iOS Safari budował się z kafelków.
+
+**Przyczyna (podejrzenie):** zdjęcie miało `loading="lazy"`. Safari desktop potrafi go nie załadować albo odpalić `load` przed nasłuchem, więc tekstura WebGL nigdy się nie tworzyła i kafelki nic nie rysowały.
+
+**Poprawka:** `loading="eager"` i `decoding="sync"` w `about.astro`, a w `src/utils/faceTiles.ts` tekstura tworzy się też po `decode()` oraz ponownie po 400 ms i 1,5 s, jeśli jeszcze jej nie ma.
+
+**Potwierdzone:** po poprawce działa w Safari desktop.
+
 ## Reguły na przyszłe projekty (Safari / mobile)
 
 1. Przypięcia i poziome paski: **sticky + jedna animacja `scrub: true`**, bez snapu, bez `normalizeScroll`, bez animacji CSS sterowanych scrollem.
