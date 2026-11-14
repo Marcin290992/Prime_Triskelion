@@ -320,6 +320,13 @@ const SCREENS = projects.length + HOLD;
 	@media (min-width: 1025px) and (max-width: 1600px) {
 		.swb__title { font-size: clamp(3rem, 6vw, 8rem); }
 	}
+	/* Touch: no filter blur on the opener (it stutters), a light backdrop on the button. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.swb__intro, .swb__slide { will-change: opacity, transform; }
+		.swb__intro:not(.in) .swb__title, .swb__intro:not(.in) .sw-link { filter: none; }
+		.swb__intro .swb__title, .swb__intro .sw-link { transition: opacity 0.6s ease, transform 0.6s ease; }
+		.swb__cta .h-hero-cta { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+	}
 	/* Phones and tablets: the original's smaller steps. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.swb__intro { padding: 0 6vw; }
@@ -390,18 +397,23 @@ const SCREENS = projects.length + HOLD;
 
 		let pos = 0;      // 0 .. n: the dark with the title, then each project in turn
 
+		// Phones and tablets: no blur filters on the text while scrolling (they stutter);
+		// opacity and a small lift only.
+		const light = window.matchMedia('(pointer: coarse), (max-width: 1024px)').matches;
+
 		const show = (el: HTMLElement, o: number) => {
 			el.style.opacity = o.toFixed(3);
 			el.style.visibility = o < 0.02 ? 'hidden' : 'visible';
-			el.style.filter = o >= 0.999 ? '' : `blur(${((1 - o) * 14).toFixed(1)}px)`;
+			el.style.filter = light || o >= 0.999 ? '' : `blur(${((1 - o) * 14).toFixed(1)}px)`;
 		};
 
 		const render = () => {
 			beam?.setPos(pos);
 			// the opener goes out (blur) as the first picture comes
-			const t = 1 - smooth(pos / 0.25);
+			// the title holds a while, then leaves as the first picture comes
+			const t = 1 - smooth((pos - 0.2) / 0.45);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
+			intro.style.filter = light || t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
 			slides.forEach((el, i) => {
 				const o = 1 - smooth((Math.abs(pos - (i + 1)) - TEXT_HOLD) / TEXT_FADE);
