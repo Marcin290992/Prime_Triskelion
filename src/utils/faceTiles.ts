@@ -151,8 +151,13 @@ export function initFaceTiles(host: HTMLElement, img: HTMLImageElement, opts: Fa
 	};
 	img.loading = 'eager';
 	img.style.willChange = 'opacity';   // keep it rastered, ready to be uncovered
-	img.decode?.().catch(() => {});
+	// Desktop Safari can leave a lazy image unloaded (or fire `load` before we
+	// listen), so the texture is also made when decode() resolves and once more
+	// shortly after, whichever comes first.
+	img.decode?.().then(upload).catch(() => {});
 	img.addEventListener('load', upload);
+	setTimeout(() => { if (!ready) upload(); }, 400);
+	setTimeout(() => { if (!ready) upload(); }, 1500);
 
 	// grid of tiles over the whole box
 	let W = 1, H = 1, cols = 1, rows = 1, tw = 1, th = 1;
