@@ -57,8 +57,10 @@ const SCREENS = projects.length + HOLD;
 
 			{projects.map((p) => (
 				<div class="swb__slide">
-					<a href={p.href} class="swb__name"><h3>{p.title}</h3></a>
-					<p>{p.desc}</p>
+					<div>
+						<a href={p.href} class="swb__name"><h3>{p.title}</h3></a>
+						<p>{p.desc}</p>
+					</div>
 					<div class="h-hero-cta-wrap swb__cta">
 						<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
 						<div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
@@ -190,18 +192,20 @@ const SCREENS = projects.length + HOLD;
 	.swb__slide {
 		position: absolute;
 		left: calc(var(--site-gutter, 2rem) + 1rem);
-		bottom: calc(var(--band) + 0.75rem + 1rem);
-		width: min(28rem, calc(100% - 2 * (var(--site-gutter, 2rem) + 1rem)));
+		bottom: calc(var(--band) + 3.5rem);
+		width: min(30rem, calc(100% - 2 * (var(--site-gutter, 2rem) + 1rem)));
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
 		--ink-shadow:
-			0 0 1px rgb(0 0 0 / 0.95),
-			0 0 4px rgb(0 0 0 / 0.9),
-			0 0 10px rgb(0 0 0 / 0.8),
-			0 0 22px rgb(0 0 0 / 0.7),
-			0 0 44px rgb(0 0 0 / 0.55);
+			0 0 1px rgb(0 0 0 / 1),
+			0 1px 2px rgb(0 0 0 / 0.95),
+			0 0 5px rgb(0 0 0 / 0.95),
+			0 0 12px rgb(0 0 0 / 0.85),
+			0 0 26px rgb(0 0 0 / 0.75),
+			0 0 52px rgb(0 0 0 / 0.6),
+			0 0 90px rgb(0 0 0 / 0.4);
 		opacity: 0;
 		visibility: hidden;
 		will-change: opacity, filter, transform;
@@ -231,23 +235,24 @@ const SCREENS = projects.length + HOLD;
 	.swb__slide p {
 		text-shadow: var(--ink-shadow);
 		margin: 0 0 1.4rem;
-		max-width: 320px;
+		max-width: 340px;
 		font-family: var(--f-body);
-		font-size: 0.9rem;
-		font-weight: 300;
+		font-size: 1rem;
+		font-weight: 500;
 		line-height: 1.6;
 		color: rgb(var(--c-cream) / 0.9);
 	}
-	/* The button is the site's own (.h-hero-cta, as START A PROJECT and EXPLORE
-	   MORE PROJECTS), not a lookalike. */
-	/* Wider than its text, the label centred in it. */
-	.swb__cta { width: min(100%, 20rem) !important; max-width: none !important; margin: 0; }
-	.swb__cta .h-hero-cta { width: 100%; box-sizing: border-box; justify-content: center; text-align: center; }
-	/* Only its backdrop is changed, the way the top-bar START A PROJECT button does
-	   it (.nav-cta in global.css): dark glass with a blur, so the button reads over
-	   any picture. (A small element: the blur is cheap.) */
+	/* Explore is the site's own button (.h-hero-cta, as START A PROJECT), small,
+	   under the text on the left. Only its size and backdrop are set here: dark
+	   glass with a blur, the way the top-bar button does it (.nav-cta in
+	   global.css), so it reads over any picture. A small element: the blur is
+	   cheap. */
+	.swb__cta { width: auto !important; max-width: none !important; margin: 0; }
 	.swb__cta .h-hero-cta {
 		--cta-bg: rgb(0 0 0 / 0.55);
+		min-height: 46px;
+		min-width: 11rem;
+		padding: 0.7rem 1.8rem;
 		-webkit-backdrop-filter: blur(20px);
 		backdrop-filter: blur(20px);
 	}
@@ -313,10 +318,10 @@ const SCREENS = projects.length + HOLD;
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.swb__intro { padding: 0 6vw; }
 		.swb__title { margin-bottom: 2rem; font-size: clamp(3rem, 15vw, 6rem); }
-		.swb__slide { left: var(--site-gutter, 2rem); bottom: calc(var(--band) + 0.5rem); width: calc(100% - 2 * var(--site-gutter, 2rem)); }
+		.swb__slide { left: var(--site-gutter, 2rem); bottom: calc(var(--band) + 1.75rem); width: calc(100% - 2 * var(--site-gutter, 2rem)); }
 		/* (the shadow is on the letters themselves, see --ink-shadow) */
 		.swb__slide h3 { font-size: clamp(1.25rem, 5.4vw, 1.9rem); }
-		.swb__slide p { font-size: 0.88rem; line-height: 1.55; max-width: none; margin-bottom: 1.2rem; }
+		.swb__slide p { font-size: 0.95rem; line-height: 1.55; max-width: none; margin-bottom: 1.2rem; }
 		.swb-panel { padding-left: 8vw; padding-right: 8vw; }
 		.swb-cover { gap: 1.75rem; }
 		.swb-cover h2 { font-size: clamp(1.5rem, 6.8vw, 3rem); }
