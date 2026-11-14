@@ -446,8 +446,10 @@ const SCREENS = projects.length + HOLD;
 			let dir = 1;                // which way the last move went
 			let last = lenis.scroll;
 			let freeTimer = 0;
+			const touch = window.matchMedia('(pointer: coarse)').matches;
+			let fingerDown = false;   // never snap under a finger that is still on the glass
 			const snap = () => {
-				if (lenis.isStopped || document.body.classList.contains('oxygen-menu-open') || root.classList.contains('pt-restoring')) return;
+				if (fingerDown || lenis.isStopped || document.body.classList.contains('oxygen-menu-open') || root.classList.contains('pt-restoring')) return;
 				const r = wrap.getBoundingClientRect();
 				const vh = stage.getBoundingClientRect().height || window.innerHeight;
 				const start = r.top + window.scrollY;               // scroll where the pin begins
@@ -458,7 +460,12 @@ const SCREENS = projects.length + HOLD;
 				// (only a hair off a stop settles back onto it).
 				const k = (y - start) / gap;
 				const near = Math.round(k);
-				const to = Math.abs(k - near) < 0.04 ? near : dir > 0 ? Math.ceil(k) : Math.floor(k);
+				// Phones and tablets are less eager: a small swipe falls back to the stop it
+				// started from, the next one is taken only after ~30% of the step.
+				const pull = touch ? 0.3 : 0.04;
+				const from = dir > 0 ? Math.floor(k) : Math.ceil(k);
+				const moved = Math.abs(k - from);
+				const to = Math.abs(k - near) < 0.04 ? near : moved >= pull ? (dir > 0 ? Math.ceil(k) : Math.floor(k)) : from;
 				const nearest = start + clamp(to, 0, n) * gap;
 				const dist = Math.abs(nearest - y);
 				if (dist < 1) return;
@@ -483,15 +490,19 @@ const SCREENS = projects.length + HOLD;
 				// snap back, the slow tail does not, so it fires right after the hand stops.
 				if (Math.abs(d) > 3 || !timer) {
 					window.clearTimeout(timer);
-					timer = window.setTimeout(() => { timer = 0; snap(); }, 150);
+					timer = window.setTimeout(() => { timer = 0; snap(); }, touch ? 220 : 150);
 				}
 			};
 			// the user taking over during a snap hands the scroll back at once
 			const onInput = () => { snapping = false; };
+			const down = () => { fingerDown = true; snapping = false; window.clearTimeout(timer); timer = 0; };
+			const up = () => { fingerDown = false; window.clearTimeout(timer); timer = window.setTimeout(() => { timer = 0; snap(); }, 220); };
 			window.addEventListener('wheel', onInput, { passive: true });
-			window.addEventListener('touchstart', onInput, { passive: true });
+			window.addEventListener('touchstart', down, { passive: true });
+			window.addEventListener('touchend', up, { passive: true });
+			window.addEventListener('touchcancel', up, { passive: true });
 			lenis.on('scroll', onScroll);
-			offs.push(() => { window.clearTimeout(timer); window.clearTimeout(freeTimer); window.removeEventListener('wheel', onInput); window.removeEventListener('touchstart', onInput); lenis.off('scroll', onScroll); });
+			offs.push(() => { window.clearTimeout(timer); window.clearTimeout(freeTimer); window.removeEventListener('wheel', onInput); window.removeEventListener('touchstart', down); window.removeEventListener('touchend', up); window.removeEventListener('touchcancel', up); lenis.off('scroll', onScroll); });
 		};
 		if (!reduced()) {
 			let tries = 0;
