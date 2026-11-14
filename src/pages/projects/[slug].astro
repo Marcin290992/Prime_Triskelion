@@ -856,8 +856,11 @@ const [line1, line2] = d.titleLines;
     _cinST = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: '+=170%',
-      scrub: 1.2,
+      end: '+=110%',
+      scrub: 0.8,
+      // One flick of the wheel carries the whole sequence home: when the
+      // scrolling stops it is pushed on to the end (or back to the start).
+      snap: { snapTo: [0, 1], directional: true, duration: { min: 0.4, max: 1.1 }, delay: 0.08, ease: 'power2.inOut' },
       pin: true,
       invalidateOnRefresh: true,
       animation: tl,
