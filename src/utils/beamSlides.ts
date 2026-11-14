@@ -101,6 +101,9 @@ export function createBeamSlides(
 	canvas: HTMLCanvasElement,
 	images: HTMLImageElement[],
 	onLost?: () => void,
+	// where in each step (0..1) the beam starts and ends; the rest is a still
+	// frame. A wider rest gives a finger time to land on the text and the button.
+	range: [number, number] = [0.15, 0.85],
 ): BeamSlides | null {
 	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
 	if (!gl) return null;
@@ -195,7 +198,7 @@ export function createBeamSlides(
 		const last = frames.length - 1;
 		const i = Math.min(Math.floor(pos), last - 1);
 		const f = pos - i;
-		const p = smooth((f - 0.15) / 0.7);   // the beam takes most of the way, with a short rest either side
+		const p = smooth((f - range[0]) / (range[1] - range[0]));
 		const a = frames[i], b = frames[i + 1];
 		gl!.activeTexture(gl!.TEXTURE0);
 		gl!.bindTexture(gl!.TEXTURE_2D, (a.ready ? a : frames[0]).tex);
