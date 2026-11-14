@@ -41,7 +41,6 @@ const SCREENS = projects.length + HOLD;
 					<Image class="swb__img" src={p.img} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="eager" decoding="async" data-fx={p.fx} />
 				))}
 
-				<div class="swb__shade" aria-hidden="true"></div>
 			</div>
 
 			<div class="swb__intro">
@@ -49,13 +48,18 @@ const SCREENS = projects.length + HOLD;
 				<a href="/projects" class="link-btn sw-link">View All Projects</a>
 			</div>
 
+			<!-- The picture itself opens the project too, with a mouse only (CSS below):
+			     on a touch screen it is the scrolling surface, and a tap to stop it
+			     must not open anything. Real links, so they prefetch and middle-click. -->
+			{projects.map((p) => (
+				<a class="swb__hit" href={p.href} tabindex="-1" aria-hidden="true"></a>
+			))}
+
 			{projects.map((p) => (
 				<div class="swb__slide">
-					<div>
-						<a href={p.href} class="swb__name"><h3>{p.title}</h3></a>
-						<p>{p.desc}</p>
-					</div>
-					<a href={p.href} class="link-btn sw-link">Explore</a>
+					<a href={p.href} class="swb__name"><h3>{p.title}</h3></a>
+					<p>{p.desc}</p>
+					<a href={p.href} class="swb__btn">Explore</a>
 				</div>
 			))}
 		</div>
@@ -133,16 +137,6 @@ const SCREENS = projects.length + HOLD;
 	.swb--fallback .swb__img { visibility: visible; }
 	.swb--fallback .swb__canvas { display: none; }
 
-	/* A light darkening under the copy only (no blur anywhere on the pictures). */
-	.swb__shade {
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background:
-			radial-gradient(ellipse 75% 60% at 12% 100%, rgb(0 0 0 / 0.62) 0%, rgb(0 0 0 / 0.3) 45%, transparent 75%),
-			linear-gradient(to top, rgb(0 0 0 / 0.5) 0%, rgb(0 0 0 / 0.18) 22%, transparent 40%);
-	}
-
 	/* Type and spacing are the original section's (title, card title, line,
 	   text link, closing panels) — only the layout around them is new. */
 
@@ -184,24 +178,41 @@ const SCREENS = projects.length + HOLD;
 	}
 	.swb__title em { font-style: normal; color: rgb(var(--c-red)); }
 
-	/* The card's info row: title and line left, Explore right. */
+	/* Every letter carries its own shadow (no box, no cloud): a tight dark edge
+	   plus wider layers, so each line reads on bright and busy pictures alike. */
 	.swb__slide {
 		position: absolute;
-		left: calc(var(--site-gutter, 2rem) + 1.5rem);
-		bottom: calc(var(--band) + 0.75rem + 1.5rem);
-		width: min(44rem, calc(100% - 2 * (var(--site-gutter, 2rem) + 1.5rem)));
+		left: calc(var(--site-gutter, 2rem) + 1rem);
+		bottom: calc(var(--band) + 0.75rem + 1rem);
+		width: min(28rem, calc(100% - 2 * (var(--site-gutter, 2rem) + 1rem)));
+		box-sizing: border-box;
 		display: flex;
-		justify-content: space-between;
+		flex-direction: column;
 		align-items: flex-start;
-		gap: 1rem;
+		--ink-shadow:
+			0 0 1px rgb(0 0 0 / 0.95),
+			0 0 4px rgb(0 0 0 / 0.9),
+			0 0 10px rgb(0 0 0 / 0.8),
+			0 0 22px rgb(0 0 0 / 0.7),
+			0 0 44px rgb(0 0 0 / 0.55);
 		opacity: 0;
 		visibility: hidden;
 		will-change: opacity, filter, transform;
-		/* a soft dark halo, so the copy reads over bright grass and water alike */
-		text-shadow: 0 1px 2px rgb(0 0 0 / 0.5), 0 2px 22px rgb(0 0 0 / 0.65);
+	}
+	/* The picture as a link: one per project, only the one on screen answers,
+	   and only to a mouse. */
+	.swb__hit {
+		position: absolute;
+		inset: 0;
+		display: block;
+		pointer-events: none;
+	}
+	@media (hover: hover) and (pointer: fine) {
+		.swb__hit.is-active { pointer-events: auto; cursor: pointer; }
 	}
 	.swb__name { display: block; text-decoration: none; }
 	.swb__slide h3 {
+		text-shadow: var(--ink-shadow);
 		margin: 0 0 0.5rem;
 		font-family: var(--f-display);
 		font-weight: 600;
@@ -211,13 +222,36 @@ const SCREENS = projects.length + HOLD;
 		color: rgb(var(--c-cream));
 	}
 	.swb__slide p {
-		margin: 0;
+		text-shadow: var(--ink-shadow);
+		margin: 0 0 1.4rem;
 		max-width: 320px;
 		font-family: var(--f-body);
 		font-size: 0.9rem;
 		font-weight: 300;
 		line-height: 1.6;
-		color: rgb(var(--c-cream) / 0.95);
+		color: rgb(var(--c-cream) / 0.9);
+	}
+	/* The button, as START A PROJECT: dark, thin light border, spaced capitals. */
+	.swb__btn {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.85rem 1.3rem;
+		font-family: var(--f-body);
+		font-size: 11px;
+		font-weight: 500;
+		letter-spacing: 0.28em;
+		text-transform: uppercase;
+		text-decoration: none;
+		white-space: nowrap;
+		color: rgb(var(--c-cream));
+		text-shadow: var(--ink-shadow);
+		background: rgb(0 0 0 / 0.35);
+		border: 1px solid rgb(255 255 255 / 0.4);
+		box-shadow: 0 0 24px rgb(0 0 0 / 0.45);
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+	@media (hover: hover) {
+		.swb__btn:hover { background: rgb(255 255 255 / 0.1); border-color: rgb(255 255 255 / 0.7); }
 	}
 
 	/* Text link whose underline draws in on hover. (Size and tracking come
@@ -246,14 +280,6 @@ const SCREENS = projects.length + HOLD;
 	@media (hover: hover) {
 		.sw-link:hover { color: rgb(var(--c-cream)); transform: translateX(5px); }
 		.sw-link:hover::after { transform: scaleX(1); }
-	}
-
-	/* On the pictures the link is full cream with its underline already drawn
-	   (it is dimmer elsewhere, on the plain black of the opener). */
-	.swb__slide .sw-link { color: rgb(var(--c-cream)); }
-	.swb__slide .sw-link::after { transform: scaleX(1); opacity: 0.45; transition: transform 0.4s cubic-bezier(0.25,1,0.5,1), opacity 0.3s ease; }
-	@media (hover: hover) {
-		.swb__slide .sw-link:hover::after { opacity: 1; }
 	}
 
 	/* After the pinned view: the two closing screens, in the page's own
@@ -289,9 +315,10 @@ const SCREENS = projects.length + HOLD;
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		.swb__intro { padding: 0 6vw; }
 		.swb__title { margin-bottom: 2rem; font-size: clamp(3rem, 15vw, 6rem); }
-		.swb__slide { left: calc(var(--site-gutter, 2rem) + 1rem); bottom: calc(var(--band) + 0.75rem + 1rem); width: calc(100% - 2 * (var(--site-gutter, 2rem) + 1rem)); }
+		.swb__slide { left: var(--site-gutter, 2rem); bottom: calc(var(--band) + 0.5rem); width: calc(100% - 2 * var(--site-gutter, 2rem)); }
+		/* (the shadow is on the letters themselves, see --ink-shadow) */
 		.swb__slide h3 { font-size: clamp(1.25rem, 5.4vw, 1.9rem); }
-		.swb__slide p { font-size: 0.88rem; line-height: 1.55; }
+		.swb__slide p { font-size: 0.88rem; line-height: 1.55; max-width: none; margin-bottom: 1.2rem; }
 		.swb-panel { padding-left: 8vw; padding-right: 8vw; }
 		.swb-cover { gap: 1.75rem; }
 		.swb-cover h2 { font-size: clamp(1.5rem, 6.8vw, 3rem); }
@@ -329,6 +356,7 @@ const SCREENS = projects.length + HOLD;
 		const hold = Number(wrap.dataset.hold) || 0;
 		const images = Array.from(wrap.querySelectorAll<HTMLImageElement>('.swb__img'));
 		const slides = Array.from(wrap.querySelectorAll<HTMLElement>('.swb__slide'));
+		const hits = Array.from(wrap.querySelectorAll<HTMLElement>('.swb__hit'));
 		const intro = wrap.querySelector<HTMLElement>('.swb__intro')!;
 		const root = document.documentElement;
 
@@ -360,6 +388,7 @@ const SCREENS = projects.length + HOLD;
 				show(el, o);
 				el.style.transform = o >= 0.999 ? '' : `translateY(${((1 - o) * 14).toFixed(1)}px)`;
 				el.style.pointerEvents = o > 0.5 ? 'auto' : 'none';
+				hits[i]?.classList.toggle('is-active', o > 0.5);
 			});
 			if (stage.classList.contains('swb--fallback')) {
 				images.forEach((im, k) => { im.style.opacity = (1 - smooth((Math.abs(pos - (k + 1)) - 0.1) / 0.5)).toFixed(3); });
