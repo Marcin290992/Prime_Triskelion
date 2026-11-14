@@ -240,7 +240,9 @@ const SCREENS = projects.length + HOLD;
 	}
 	/* The button is the site's own (.h-hero-cta, as START A PROJECT and EXPLORE
 	   MORE PROJECTS), not a lookalike. */
-	.swb__cta { width: auto !important; margin: 0; }
+	/* Wider than its text, the label centred in it. */
+	.swb__cta { width: min(100%, 20rem) !important; max-width: none !important; margin: 0; }
+	.swb__cta .h-hero-cta { width: 100%; box-sizing: border-box; justify-content: center; text-align: center; }
 	/* Only its backdrop is changed, the way the top-bar START A PROJECT button does
 	   it (.nav-cta in global.css): dark glass with a blur, so the button reads over
 	   any picture. (A small element: the blur is cheap.) */
