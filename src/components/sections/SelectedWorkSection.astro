@@ -438,15 +438,23 @@ const SCREENS = projects.length + HOLD;
 		render();
 
 		// ── The snap ───────────────────────────────────────────────────────────
-		// As on the Forge listing: every picture is a stop. The first push away from
-		// a stop (a wheel tick, a flick) carries the whole step to the next one on a
-		// critically damped ease, the light sweeping by itself, and the scroll is
-		// locked until it has settled; if scrolling just stops somewhere in between,
-		// it settles on the nearest stop after a moment. Beyond the first and the
-		// last stop the page scrolls freely. Needs the site's Lenis; without it the
-		// light simply follows the scroll.
+		// The mechanism of the Forge stock page (read from its code, not guessed):
+		// the light FOLLOWS the wheel or the finger, and the snap decides on release.
+		//  - wheel / trackpad: once it has been quiet for 200 ms and the smooth
+		//    scroll has settled, go on to the next picture if the scroll got far enough
+		//    towards it (DEPART of the gap), else fall back to the one it left; 0.45 s on
+		//    a critically damped ease (damping 5).
+		//  - finger: on release, under 32 px of drag the picture stays (falls back),
+		//    over it the next or previous one comes, 0.5 s on the same ease.
+		// Before the first and after the last picture the page scrolls freely. Needs the
+		// site's Lenis; without it (or with reduced motion) the light just follows.
 		let snapOff = () => {};
 		if (snapOn) {
+			const WHEEL_IDLE = 200;     // ms of quiet before the wheel snap decides
+			const WHEEL_DUR = 0.45;     // s
+			const DEPART = 0.15;        // share of the gap to have travelled (Forge: 0.5 at a 1x wheel; ours is 0.3x)
+			const TOUCH_DUR = 0.5;      // s
+			const TOUCH_MIN = 32;       // px of drag
 			const settle = (t: number) => { const k = 5; return (1 - (1 + k * t) * Math.exp(-k * t)) / (1 - (1 + k) * Math.exp(-k)); };
 			const unit = () => (stPin.end - stPin.start) / length;   // one screen of scroll
 			const stop = (k: number) => stPin.start + (LEAD + PER * k) * unit();
@@ -456,66 +464,75 @@ const SCREENS = projects.length + HOLD;
 				for (let k = 1; k <= n; k++) if (Math.abs(stop(k) - y) < Math.abs(stop(b) - y)) b = k;
 				return b;
 			};
-			let rest = -1;          // the stop we stand on, -1 = not known
 			let snapping = false;
-			let cooling = false;    // a moment after landing: trackpad / finger inertia is ignored
-			let idle = 0, fail = 0, cool = 0;
+			let touching = false;
+			let idle = 0, fail = 0;
+			let touchY = 0, touchAnchor = 0;
 
-			const go = (k: number) => {
-				const y = lenis.scroll;
-				const dist = Math.abs(stop(k) - y);
+			const go = (k: number, duration: number) => {
 				snapping = true;
-				rest = k;
 				clearTimeout(fail);
-				fail = window.setTimeout(() => { snapping = false; }, 3000);   // never stay locked
+				fail = window.setTimeout(() => { snapping = false; }, 3000);   // never stay stuck
 				lenis.scrollTo(stop(k), {
-					duration: 0.55 + Math.min(0.85, (dist / unit()) * 0.85),
+					duration,
 					easing: settle,
-					lock: true,
 					force: true,
-					onComplete: () => {
-						clearTimeout(fail);
-						snapping = false;
-						cooling = true;
-						clearTimeout(cool);
-						cool = window.setTimeout(() => {
-							cooling = false;
-							// drop whatever the inertia drifted while it was ignored
-							if (rest >= 0 && Math.abs(lenis.scroll - stop(rest)) < 0.4 * unit()) lenis.scrollTo(stop(rest), { immediate: true, force: true });
-						}, 500);
-					},
+					onComplete: () => { clearTimeout(fail); snapping = false; },
 				});
 			};
 
-			const onScroll = (e: { scroll: number }) => {
-				if (snapping || cooling || root.classList.contains('pt-restoring')) return;
+			// the wheel: decide after it has been quiet
+			const decide = () => {
+				idle = 0;
+				if (snapping || touching || root.classList.contains('pt-restoring')) return;
+				if (Math.abs(lenis.targetScroll - lenis.animatedScroll) > 12) { idle = window.setTimeout(decide, 50); return; }
+				const y = lenis.targetScroll;
+				if (!inZone(y)) return;
+				const lo = Math.max(0, Math.min(n - 1, Math.floor((y - stop(0)) / (PER * unit()))));
+				const a = stop(lo), c = stop(lo + 1);
+				if (y <= a + 1) { if (Math.abs(y - a) > 1) go(lo, WHEEL_DUR); return; }
+				if (y >= c - 1) { if (Math.abs(y - c) > 1) go(lo + 1, WHEEL_DUR); return; }
+				const forward = lenis.direction >= 0;
+				const need = (c - a) * DEPART;
+				// moving on: got far enough from the one it left; moving back: far enough from the next
+				go(forward ? (y - a >= need ? lo + 1 : lo) : (c - y >= need ? lo : lo + 1), WHEEL_DUR);
+			};
+			const onScroll = () => {
+				if (snapping || touching) return;
 				window.clearTimeout(idle);
-				const y = e.scroll;
-				if (!inZone(y)) { rest = -1; return; }
-				if (rest >= 0) {
-					const dy = y - stop(rest);
-					if (Math.abs(dy) > 0.035 * unit()) {
-						const k = rest + (dy > 0 ? 1 : -1);
-						if (k >= 0 && k <= n) { go(k); return; }
-						rest = -1;   // past the first or the last picture: free scroll
-					}
-				}
-				idle = window.setTimeout(() => {
-					if (snapping || cooling) return;
-					const y2 = lenis.scroll;
-					if (!inZone(y2)) return;
-					const k = nearest(y2);
-					if (Math.abs(stop(k) - y2) < 1) { rest = k; return; }
-					go(k);
-				}, 180);
+				idle = window.setTimeout(decide, WHEEL_IDLE);
+			};
+
+			// the finger: decide on release
+			const onTouchStart = (e: TouchEvent) => {
+				window.clearTimeout(idle);
+				if (e.touches.length !== 1) return;
+				touching = true;
+				touchY = e.touches[0].clientY;
+				touchAnchor = nearest(lenis.scroll);
+			};
+			const onTouchEnd = (e: TouchEvent) => {
+				if (!touching || e.touches.length) return;
+				touching = false;
+				const end = e.changedTouches[0]?.clientY ?? touchY;
+				const drag = touchY - end;   // + = scrolling on
+				if (!inZone(lenis.scroll)) return;
+				if (Math.abs(drag) < TOUCH_MIN) { go(touchAnchor, TOUCH_DUR); return; }
+				const k = touchAnchor + (drag > 0 ? 1 : -1);
+				if (k < 0 || k > n) return;   // past the first / last picture: free scroll
+				go(k, TOUCH_DUR);
 			};
 			lenis.on('scroll', onScroll);
+			window.addEventListener('touchstart', onTouchStart, { passive: true });
+			window.addEventListener('touchend', onTouchEnd, { passive: true });
+			window.addEventListener('touchcancel', onTouchEnd, { passive: true });
 			snapOff = () => {
 				lenis.off('scroll', onScroll);
+				window.removeEventListener('touchstart', onTouchStart);
+				window.removeEventListener('touchend', onTouchEnd);
+				window.removeEventListener('touchcancel', onTouchEnd);
 				window.clearTimeout(idle);
 				window.clearTimeout(fail);
-				window.clearTimeout(cool);
-				if (snapping) lenis.scrollTo(lenis.scroll, { immediate: true, force: true });
 			};
 		}
 
