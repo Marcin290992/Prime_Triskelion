@@ -529,8 +529,45 @@ const SCREENS = projects.length + HOLD;
 			};
 			// the user taking over during a snap hands the scroll back at once
 			const onInput = () => { snapping = false; };
-			const down = () => { fingerDown = true; snapping = false; window.clearTimeout(timer); timer = 0; };
-			const up = () => { fingerDown = false; window.clearTimeout(timer); timer = window.setTimeout(() => { timer = 0; snap(); }, 200); };
+			// Touch: one swipe = at most one picture. The finger's momentum is cut on release
+			// and the page is taken to the next (or back to the same) picture, so a flick
+			// cannot carry through all of them.
+			let y0 = 0;
+			const geometry = () => {
+				const vh = stage.getBoundingClientRect().height || window.innerHeight;
+				const start = wrap.getBoundingClientRect().top + window.scrollY + (LEAD - RANGE[0]) * vh;
+				return { start, gap: PER * vh };
+			};
+			const down = () => {
+				fingerDown = true; snapping = false; window.clearTimeout(timer); timer = 0;
+				y0 = lenis.scroll;
+			};
+			const stepRelease = () => {
+				if (lenis.isStopped || document.body.classList.contains('oxygen-menu-open') || root.classList.contains('pt-restoring')) return false;
+				const { start, gap } = geometry();
+				const y = lenis.scroll;
+				const lo = start + RANGE[0] * gap;           // where the pictures begin
+				const hi = start + n * gap;
+				if ((y0 < lo - 1 && y < lo - 1) || (y0 > hi + 1 && y > hi + 1)) return false;   // not on the pictures
+				const from = y0 < lo - 1 ? 0 : clamp(Math.round((y0 - start) / gap), 1, n);   // 0 = still in the opener
+				const moved = y - y0;
+				let to = from;
+				if (Math.abs(moved) > gap * 0.06) to = from + (moved > 0 ? 1 : -1);
+				if (to < 1 || to > n) return false;           // (a swipe that stays in the opener, or leaves)
+				// leaving the section: the page carries on by itself
+				const target = start + to * gap;
+				snapping = true;
+				window.clearTimeout(freeTimer);
+				freeTimer = window.setTimeout(() => { snapping = false; }, 1100);
+				lenis.scrollTo(target, { duration: 0.8, easing: settle, force: true, onComplete: () => { snapping = false; } });
+				return true;
+			};
+			const up = () => {
+				fingerDown = false;
+				window.clearTimeout(timer);
+				if (touch && stepRelease()) return;
+				timer = window.setTimeout(() => { timer = 0; snap(); }, 200);
+			};
 			window.addEventListener('wheel', onInput, { passive: true });
 			window.addEventListener('touchstart', down, { passive: true });
 			window.addEventListener('touchend', up, { passive: true });
