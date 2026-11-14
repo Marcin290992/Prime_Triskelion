@@ -10,15 +10,17 @@ import imgMousa from '../../img/process/development.jpg';
 // components/backup/SelectedWorkSection.before-beam.astro.
 //
 // Pictures are stored locally (the site's CSP blocks remote images). Swap each
-// for the project's own shot (wide, ~2400px).
+// for the project's own shot (wide, ~2400px). `fx` is where its subject sits
+// across the picture (0 left .. 1 right): on a portrait screen the picture is
+// cropped to a narrow window, and this keeps the subject (the deer) in it.
 const projects = [
-	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', img: deeer2, href: '/projects/winds-of-sinai/' },
-	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', img: imgUnfall, href: '/work/unfallfix24' },
-	{ title: 'Mousa Export', desc: 'International export logistics platform', img: imgMousa, href: '/work/mousa-export' },
+	{ title: 'Winds of Sinai', desc: 'Luxury travel brand identity & digital presence', img: deeer2, fx: 0.15, href: '/projects/winds-of-sinai/' },
+	{ title: 'UnfallFix24', desc: 'Accident reporting & claims management platform', img: imgUnfall, fx: 0.5, href: '/work/unfallfix24' },
+	{ title: 'Mousa Export', desc: 'International export logistics platform', img: imgMousa, fx: 0.5, href: '/work/mousa-export' },
 ];
 
-// Scroll length in screens: the dark with the title, then one screen per
-// project, plus a short hold on the last one. The script reads it back.
+// Scroll length: see LEAD / PER in the script (longer on touch screens). The
+// value here is only the no-JS default.
 const HOLD = 0.4;
 const SCREENS = projects.length + HOLD;
 ---
@@ -36,7 +38,7 @@ const SCREENS = projects.length + HOLD;
 				<!-- The same pictures, as ordinary images: they are the textures of the
 				     canvas, and the cross-fade for browsers without WebGL. -->
 				{projects.map((p) => (
-					<Image class="swb__img" src={p.img} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="eager" decoding="async" />
+					<Image class="swb__img" src={p.img} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="eager" decoding="async" data-fx={p.fx} />
 				))}
 
 				<div class="swb__shade" aria-hidden="true"></div>
@@ -309,6 +311,7 @@ const SCREENS = projects.length + HOLD;
 
 	const clamp = (v: number, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
 	const smooth = (v: number) => { v = clamp(v); return v * v * (3 - 2 * v); };
+	const TOUCH = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 	let cleanup: (() => void) | null = null;
@@ -364,8 +367,16 @@ const SCREENS = projects.length + HOLD;
 			}
 		};
 
-		const total = n + hold;
-		const setFrom = (progress: number) => { pos = Math.min(n, progress * total); render(); };
+		// How much scroll each step takes. The title first stands alone for LEAD
+		// screens (it was easy to scroll past), then each picture gets PER screens
+		// (the beam sweeps in the middle 40% of it): longer on touch, where a flick
+		// would otherwise carry through a whole transition.
+		const touch = window.matchMedia(TOUCH).matches;
+		const LEAD = touch ? 1.1 : 0.9;
+		const PER = touch ? 2.2 : 1.6;
+		const length = LEAD + PER * (n + hold);   // in screens
+		wrap.style.setProperty('--screens', String(length + 1));
+		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
 
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
@@ -399,5 +410,13 @@ const SCREENS = projects.length + HOLD;
 	}
 
 	document.addEventListener('astro:page-load', initWork);
+	// (a phone turned on its side, a window resized across the tablet width)
+	let wasTouch = window.matchMedia(TOUCH).matches;
+	window.addEventListener('resize', () => {
+		const now = window.matchMedia(TOUCH).matches;
+		if (now === wasTouch) return;
+		wasTouch = now;
+		if (document.getElementById('sw-scroll-section')) { initWork(); ScrollTrigger.refresh(); }
+	});
 	document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = null; });
 </script>

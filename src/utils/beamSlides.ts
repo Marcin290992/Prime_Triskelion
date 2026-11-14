@@ -35,6 +35,8 @@ uniform sampler2D uFrom;
 uniform sampler2D uTo;
 uniform float uFromAspect;
 uniform float uToAspect;
+uniform vec2 uFromFocus;
+uniform vec2 uToFocus;
 uniform float uView;
 uniform float uP;
 varying vec2 vUv;
@@ -45,25 +47,25 @@ const float ZOOM = 1.12;
 const float DRIFT = 0.05;
 const vec2 PIVOT = vec2(0.5, 0.4);
 
-// Fill the screen (cover). Where the picture is cropped vertically, the crop is
-// shared between top and bottom (FOCUS_Y 0 = bottom kept, 1 = top kept), so the
-// subject is not pushed into the blurred edge bands.
-const float FOCUS_Y = 0.4;
-vec2 fit(vec2 uv, float img) {
+// Fill the screen (cover). Where the picture is cropped, the crop is shared
+// around the picture's own focus point (x: 0 left .. 1 right, y: 0 bottom .. 1
+// top), so the subject stays in view on any screen shape and is not pushed into
+// the blurred edge bands.
+vec2 fit(vec2 uv, float img, vec2 focus) {
   vec2 s = uView > img ? vec2(1.0, img / uView) : vec2(uView / img, 1.0);
-  return vec2((uv.x - 0.5) * s.x + 0.5, uv.y * s.y + (1.0 - s.y) * FOCUS_Y);
+  return vec2(uv.x * s.x + (1.0 - s.x) * focus.x, uv.y * s.y + (1.0 - s.y) * focus.y);
 }
 
-vec3 frame(sampler2D tex, float aspect, vec2 uv) {
-  vec2 st = fit(uv, aspect);
+vec3 frame(sampler2D tex, float aspect, vec2 focus, vec2 uv) {
+  vec2 st = fit(uv, aspect, focus);
   return texture2D(tex, vec2(clamp(st.x, 0.001, 0.999), 1.0 - clamp(st.y, 0.001, 0.999))).rgb;
 }
 
 void main() {
   vec2 uv = vUv;
   float p = clamp(uP, 0.0, 1.0);
-  if (p <= 0.0) { gl_FragColor = vec4(frame(uFrom, uFromAspect, uv), 1.0); return; }
-  if (p >= 1.0) { gl_FragColor = vec4(frame(uTo, uToAspect, uv), 1.0); return; }
+  if (p <= 0.0) { gl_FragColor = vec4(frame(uFrom, uFromAspect, uFromFocus, uv), 1.0); return; }
+  if (p >= 1.0) { gl_FragColor = vec4(frame(uTo, uToAspect, uToFocus, uv), 1.0); return; }
 
   bool tall = uView < 1.0;
   float along = tall ? uv.y : uv.x;
@@ -85,7 +87,7 @@ void main() {
     : exp(-abs(uv.y - 0.5) * 60.0) * exp(-abs(uv.x - head) * 1.5);
   float flare = streak * fade * BEAM_GAIN * 0.6;
 
-  vec3 col = mix(frame(uFrom, uFromAspect, outUv), frame(uTo, uToAspect, inUv), reveal);
+  vec3 col = mix(frame(uFrom, uFromAspect, uFromFocus, outUv), frame(uTo, uToAspect, uToFocus, inUv), reveal);
   col *= 1.0 + glow * 0.3;
   col += vec3(1.0, 0.95, 0.85) * glow * 0.6 + vec3(0.75, 0.85, 1.0) * flare;
   gl_FragColor = vec4(col, 1.0);
@@ -93,7 +95,7 @@ void main() {
 
 const smooth = (v: number) => { v = v < 0 ? 0 : v > 1 ? 1 : v; return v * v * (3 - 2 * v); };
 
-interface Frame { tex: WebGLTexture; aspect: number; ready: boolean; }
+interface Frame { tex: WebGLTexture; aspect: number; ready: boolean; fx: number; fy: number; }
 
 export function createBeamSlides(
 	canvas: HTMLCanvasElement,
@@ -125,12 +127,12 @@ export function createBeamSlides(
 	const aPos = gl.getAttribLocation(prog, 'aPos');
 	gl.enableVertexAttribArray(aPos);
 	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uView', 'uP']
+	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uFromFocus', 'uToFocus', 'uView', 'uP']
 		.map((n) => [n, gl.getUniformLocation(prog, n)]));
 	gl.uniform1i(U.uFrom, 0);
 	gl.uniform1i(U.uTo, 1);
 
-	const makeTexture = (source: TexImageSource, w: number, h: number): Frame => {
+	const makeTexture = (source: TexImageSource, w: number, h: number, fx = 0.5, fy = 0.4): Frame => {
 		const tex = gl.createTexture()!;
 		gl.bindTexture(gl.TEXTURE_2D, tex);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
@@ -139,7 +141,7 @@ export function createBeamSlides(
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		return { tex, aspect: w / h, ready: true };
+		return { tex, aspect: w / h, ready: true, fx, fy };
 	};
 
 	// frame 0: the dark (1x1 black); the rest fill in as their images decode
@@ -152,15 +154,20 @@ export function createBeamSlides(
 	let raf = 0;
 	let dead = false;
 
+	// each picture says where its subject is (data-fx / data-fy)
+	const focusOf = (img: HTMLImageElement, axis: 0 | 1) => {
+		const v = parseFloat(axis === 0 ? img.dataset.fx ?? '' : img.dataset.fy ?? '');
+		return Number.isFinite(v) ? v : axis === 0 ? 0.5 : 0.4;
+	};
 	const upload = (k: number) => {
 		const img = images[k];
 		if (dead || !img.naturalWidth) return;
 		if (frames[k + 1]?.ready) return;
-		frames[k + 1] = makeTexture(img, img.naturalWidth, img.naturalHeight);
+		frames[k + 1] = makeTexture(img, img.naturalWidth, img.naturalHeight, focusOf(img, 0), focusOf(img, 1));
 		requestDraw();
 	};
 	images.forEach((img, k) => {
-		frames[k + 1] = { tex: gl.createTexture()!, aspect: 1, ready: false };
+		frames[k + 1] = { tex: gl.createTexture()!, aspect: 1, ready: false, fx: 0.5, fy: 0.4 };
 		const go = () => upload(k);
 		if (img.complete && img.naturalWidth) go();
 		else img.addEventListener('load', go, { once: true });
@@ -196,6 +203,8 @@ export function createBeamSlides(
 		gl!.bindTexture(gl!.TEXTURE_2D, (b.ready ? b : frames[0]).tex);
 		gl!.uniform1f(U.uFromAspect, a.ready ? a.aspect : 1);
 		gl!.uniform1f(U.uToAspect, b.ready ? b.aspect : 1);
+		gl!.uniform2f(U.uFromFocus, a.ready ? a.fx : 0.5, a.ready ? a.fy : 0.4);
+		gl!.uniform2f(U.uToFocus, b.ready ? b.fx : 0.5, b.ready ? b.fy : 0.4);
 		gl!.uniform1f(U.uP, p);
 		gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
 	}
