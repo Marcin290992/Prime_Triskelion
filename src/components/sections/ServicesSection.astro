@@ -6,9 +6,8 @@
 // pulled up into the manifesto's dark last screen, so the first name is already rising as the statement is gone.
 //
 // The list of the 12 Studio reference (12-studio/app/src/components/sections.jsx) gave the idea (big names, a list
-// of options). On a desktop with a mouse the name under the pointer rolls to white,
-// the others stay dimmed; there is no hover picture (it was in the way: an earlier version opened a WebGL one, then a
-// still one, see git history).
+// of options). No hover effect: the names are plain links (an earlier version had hover pictures, then a white
+// roll; both were dropped, see git history).
 const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 ---
 <!-- ═══════ SERVICES: the options, a ghost train up the screen ═══════ -->
@@ -17,12 +16,9 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		<ul class="svc__list">
 			{services.map((name, i) => (
 				<li class="svc__row">
-					<a href="/services" class="svc__link">
-						<span class="svc__roll">
-							<span class="svc__roll__base">{name}</span>
-							<span class="svc__roll__red" aria-hidden="true">{name}</span>
-						</span>
-					</a>
+					<div class="svc__link">
+						{name}
+					</div>
 				</li>
 			))}
 		</ul>
@@ -56,15 +52,15 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		padding: 0 var(--site-gutter);
 	}
 	.svc__list { width: 100%; list-style: none; margin: 0; padding: 0; }
-	/* Only the name itself answers the pointer (and so opens the picture): the row is a click-through band and
-	   the link is as wide as its word, not the whole line. */
+	/* The names are plain text, not links: the row is a click-through band and
+	   only "See more" leads to /services. */
 	.svc__row { position: relative; padding: 0; display: flex; justify-content: center; pointer-events: none; }
 	.svc__link {
 		position: relative;
 		display: block;
 		width: auto;
 		max-width: 100%;
-		pointer-events: auto;
+		pointer-events: none;
 		text-align: center;
 		padding: clamp(0.9rem, 3.6vw, 1.6rem) 0;
 		font-family: var(--f-display);
@@ -75,100 +71,23 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		text-transform: uppercase;
 		color: rgb(var(--c-cream));
 		text-decoration: none;
-		-webkit-tap-highlight-color: transparent;
-	}
-	.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
-
-	/* Rolling text, as in the menu: the dimmed name slides up, the white one comes in
-	   from below. (Mouse only, below.) */
-	.svc__roll { position: relative; display: block; overflow: hidden; }
-	.svc__roll__base, .svc__roll__red {
-		display: block;
-		transition: transform 0.34s cubic-bezier(0.65, 0, 0.35, 1);
-	}
-	.svc__roll__red {
-		position: absolute;
-		top: 100%;
-		left: 0;
-		width: 100%;
-		color: rgb(var(--c-red));
 	}
 
-	.svc__btn {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		gap: 1rem;
-		margin-top: clamp(2rem, 6vw, 3.5rem);
-		font-family: var(--f-body);
-		font-size: clamp(0.75rem, 1.1vw, 0.9rem);
-		font-weight: 300;
-		letter-spacing: 0.38em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.7);
-		text-decoration: none;
-		cursor: pointer;
-	}
-	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
-	.svc__btn__line {
-		display: block;
-		width: 36px;
-		height: 1px;
-		background: rgb(var(--c-red) / 0.9);
-		transform-origin: left;
-		transition: width 0.35s ease;
-		flex-shrink: 0;
-	}
-	.svc__btn:hover .svc__btn__line { width: 56px; }
-	/* Touch: the link's text line is 18px tall: tap 44px. */
-	@media (pointer: coarse) {
-		.svc__btn::before { content: ''; position: absolute; inset: -13px 0; }
-	}
-
-	@media (min-width: 700px) and (max-width: 1024px) {
-		.svc__link { font-size: clamp(5rem, 15vw, 11rem); }
-	}
-
-	/* ── Desktop (mouse): the names dimmed, the one under the pointer rolls to white and has the picture ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__body { position: relative; }
 		.svc__link {
 			/* BIG, sized by the width AND the height: the four names fill about one screen */
 			padding: clamp(0.5rem, 1.6vh, 1.4rem) 0;
 			font-size: clamp(3.4rem, min(11vw, 17vh), 15rem);
-			color: rgb(var(--c-cream) / 0.38);
-			transition: color 0.4s ease;
-		}
-		/* The names stay above the WebGL picture (a canvas in this section, z 2). */
-		.svc__row .svc__roll { position: relative; z-index: 3; }
-
-		/* Mouse only. At rest, and whenever the mouse is off the names (on the picture too),
-		   every name is dimmed. The one under the mouse rolls to white. */
-		@media (hover: hover) and (pointer: fine) {
-			.svc__link:hover .svc__roll__base,
-			.svc__link:hover .svc__roll__red,
-			.svc__row.is-hot .svc__roll__base,
-			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
 		}
 	}
 	/* The ghost train: every name's opacity, blur and lift are set by the script from where it is on the screen. No
 	   transitions while it is, or they would lag behind the scroll. */
 	#services [data-scrub] { transition: none !important; will-change: opacity, filter, transform; }
-	@media (prefers-reduced-motion: reduce) {
-		.svc__roll__base, .svc__roll__red { transition: none; }
-	}
 </style>
 
 <script>
 	import { onReady } from '../../utils/onReady';
-
-	// Where the mouse last was, kept for the whole visit: a page's own scripts
-	// start knowing nothing, but the pointer is still where the click that
-	// brought the visitor here left it. Bound once; -1 = not known / outside.
-	const pointer = { x: -1, y: -1 };
-	const track = (e: MouseEvent) => { pointer.x = e.clientX; pointer.y = e.clientY; };
-	['mousemove', 'mousedown', 'click'].forEach((type) => window.addEventListener(type, track as EventListener, { passive: true, capture: true }));
-	document.documentElement.addEventListener('mouseleave', () => { pointer.x = -1; pointer.y = -1; });
 
 	// Everything this section starts, undone on leaving the page.
 	let _svcOff: (() => void) | null = null;
@@ -221,44 +140,6 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
 		const list = section.querySelector<HTMLElement>('.svc__list');
 
-		// A real mouse, on a wide screen: the name under the pointer rolls to white (.is-hot), the others stay dimmed.
-		// The browser does not update :hover (nor send mouse events) while the page scrolls under a resting pointer, so
-		// the name is found from the pointer's last known position (kept across pages, see `pointer`); :hover only
-		// backs it up when no position is known yet.
-		const mouse =
-			!window.matchMedia('(max-width: 1024px)').matches &&
-			window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-		if (mouse) {
-			const sync = () => {
-				const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
-				// the name under the pointer (not the empty part of its line)
-				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
-					?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
-				rows.forEach((r) => r.classList.toggle('is-hot', r === row));
-			};
-			let syncing = false;
-			let settle = 0;
-			const onScroll = () => {
-				// The browser refreshes :hover a moment after a scroll stops, so check again then as well as while it runs.
-				clearTimeout(settle);
-				settle = window.setTimeout(sync, 160);
-				if (syncing) return;
-				syncing = true;
-				requestAnimationFrame(() => { syncing = false; sync(); });
-			};
-			const onLeave = () => rows.forEach((r) => r.classList.remove('is-hot'));
-			window.addEventListener('mousemove', sync, { passive: true });
-			window.addEventListener('scroll', onScroll, { passive: true });
-			document.documentElement.addEventListener('mouseleave', onLeave);
-			list?.addEventListener('mouseleave', onLeave);
-			offs.push(() => {
-				clearTimeout(settle);
-				window.removeEventListener('mousemove', sync);
-				window.removeEventListener('scroll', onScroll);
-				document.documentElement.removeEventListener('mouseleave', onLeave);
-				list?.removeEventListener('mouseleave', onLeave);
-			});
-		}
 		_svcOff = () => offs.forEach((off) => off());
 	}
 
