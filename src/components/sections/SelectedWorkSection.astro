@@ -559,18 +559,8 @@ const SCREENS = projects.length + HOLD;
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
 		// section, global.css html.sw-hscroll).
-		let lastY = window.scrollY;
+		// (The title's own in / out is the stIn trigger below: a pure function of the scroll position.)
 		const sync = (st: ScrollTrigger) => {
-			const y = st.scroll();
-			const pinned = y >= st.start;
-			// The title comes in once the view is pinned. Scrolling back up it must go out
-			// in blur WHILE the pinned view is still on screen (the stage is hidden at the
-			// start of the pin, so a blur-out that began there would never be seen): it
-			// starts 0.4 of a screen before the way out.
-			const up = y < lastY;
-			lastY = y;
-			if (up) { if (y < st.start + window.innerHeight * 0.4) intro.classList.remove('in'); }
-
 			root.classList.toggle('sw-hscroll', st.isActive);
 		};
 		const stPin = ScrollTrigger.create({
@@ -585,9 +575,13 @@ const SCREENS = projects.length + HOLD;
 		const stIn = ScrollTrigger.create({
 			// phones and tablets get a little more room (18%) than a mouse screen (11%): a breath of dark before it
 			trigger: wrap, start: window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'top -18%' : 'top -11%', invalidateOnRefresh: true,
-			onEnter: () => intro.classList.add('in'),
-			// landing past it (reload, back / forward): already in
-			onRefresh: (s) => { if (s.scroll() >= s.start) intro.classList.add('in'); },
+			end: 'bottom top',
+			// The title is in exactly while the scroll is inside this range and out above it (it blurs out on the
+			// way back up while the pinned view is still on screen). A pure function of the position: it used to
+			// be "add on entering, remove by a separate rule further down", and turning back into the gap between
+			// the two left it removed with nothing to bring it back (the title got lost).
+			onToggle: (s) => intro.classList.toggle('in', s.isActive),
+			onRefresh: (s) => intro.classList.toggle('in', s.isActive),
 		});
 		render();
 
