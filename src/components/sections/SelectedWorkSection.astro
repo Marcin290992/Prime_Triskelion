@@ -165,6 +165,19 @@ const SCREENS = projects.length + HOLD;
 			radial-gradient(ellipse 75% 70% at 50% 46%, transparent 38%, rgb(0 0 0 / 0.55) 72%, rgb(0 0 0 / 0.9) 100%),
 			linear-gradient(180deg, rgb(0 0 0 / 0.55) 0%, transparent 24%, transparent 58%, rgb(0 0 0 / 0.78) 100%);
 	}
+	/* The picture ends in the page's black, not in an edge: the last stretch of the frame fades to the
+	   background colour, so there is no visible border of the picture above the closing panel. */
+	.swb__frame::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		height: clamp(9rem, 32vh, 22rem);
+		pointer-events: none;
+		z-index: 1;
+		background: linear-gradient(180deg, rgb(var(--c-bg) / 0) 0%, rgb(var(--c-bg) / 0.55) 45%, rgb(var(--c-bg)) 100%);
+	}
 	/* Without WebGL the images themselves cross-fade (the script sets opacity). */
 	.swb__img {
 		position: absolute;

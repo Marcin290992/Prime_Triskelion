@@ -47,9 +47,6 @@ const { steps, center = 'image' } = Astro.props;
 			<div class="pw__cards">
 				{steps.map((st, i) => (
 					<article class="pw-card" data-i={i} data-side={i % 2 === 0 ? 'left' : 'right'}>
-						<div class="pw-card__top">
-							<span class="pw-card__num">{String(i + 1).padStart(2, '0')}</span>
-						</div>
 						<span class="pw-card__rule"></span>
 						<h3 class="pw-card__title">{st.title}</h3>
 						<p class="pw-card__desc">{st.desc}</p>
@@ -64,7 +61,6 @@ const { steps, center = 'image' } = Astro.props;
 			Start a project
 		</a>
 
-		<p class="pw__count" aria-hidden="true"><span class="pw__count-now">01</span> / {String(steps.length).padStart(2, '0')}</p>
 	</div>
 </div>
 
