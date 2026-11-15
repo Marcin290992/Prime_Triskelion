@@ -6,8 +6,9 @@
 // pulled up into the manifesto's dark last screen, so the first name is already rising as the statement is gone.
 //
 // The list of the 12 Studio reference (12-studio/app/src/components/sections.jsx) gave the idea (big names, a list
-// of options). On a desktop with a mouse a picture unfolds in WebGL at the right edge while the pointer is on a
-// word (utils/hoverGallery.ts); phones and tablets get the plain list. Earlier versions: git history and
+// of options). On a desktop with a mouse a still picture stands at the right edge, at the vertical centre of the
+// screen, while the pointer is on a word, and changes with the word (a short cross-fade, opacity only: no WebGL, so
+// nothing to warm up and nothing to stutter on the first hover); phones and tablets get the plain list. Earlier versions: git history and
 // components/backup/ServicesSection.before-12-studio.astro.
 import { getImage } from 'astro:assets';
 // The desktop hover picture is WebGL (437px on screen): one local photo per service
@@ -44,6 +45,14 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			<span class="svc__btn__line"></span>
 			See more
 		</a>
+	</div>
+
+	<!-- The hover picture (desktop with a mouse only): one box, always in the same place, one picture per name on top
+	     of each other; the script switches which one shows. -->
+	<div class="svc__peek" aria-hidden="true">
+		{services.map((sv, i) => (
+			<img class="svc__peek__img" src={glSrcs[i]} alt="" width="960" height="540" decoding="async" loading="eager" data-i={i} />
+		))}
 	</div>
 </section>
 
@@ -164,6 +173,39 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
 		}
 	}
+	/* The hover picture: a plain box, fixed to the right edge at the vertical centre of the screen, shown only while a
+	   name is hovered (.is-on on the section). Pictures change by opacity alone (cheap, on the compositor). */
+	.svc__peek { display: none; }
+	@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
+		.svc__peek {
+			display: block;
+			position: fixed;
+			right: clamp(24px, 5vw, 80px);
+			top: 50%;
+			width: clamp(280px, 24vw, 380px);
+			aspect-ratio: 16 / 9;
+			transform: translateY(-50%);
+			pointer-events: none;
+			z-index: 5;
+			opacity: 0;
+			transition: opacity 0.25s ease;
+		}
+		#services.peek-on .svc__peek { opacity: 0.95; }
+		.svc__peek__img {
+			position: absolute;
+			inset: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			opacity: 0;
+			transition: opacity 0.3s ease;
+		}
+		.svc__peek__img.is-on { opacity: 1; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.svc__peek, .svc__peek__img { transition: none; }
+	}
+
 	/* The ghost train: every name's opacity, blur and lift are set by the script from where it is on the screen. No
 	   transitions while it is, or they would lag behind the scroll. */
 	#services [data-scrub] { transition: none !important; will-change: opacity, filter, transform; }
@@ -174,7 +216,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 
 <script>
 	import { onReady } from '../../utils/onReady';
-	import { createHoverGallery } from '../../utils/hoverGallery';
 
 	// Where the mouse last was, kept for the whole visit: a page's own scripts
 	// start knowing nothing, but the pointer is still where the click that
@@ -235,56 +276,51 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
 		const list = section.querySelector<HTMLElement>('.svc__list');
 
-		// A real mouse (and no request for less motion), on a wide screen: the picture is a WebGL plane that opens
-		// at the right edge while the pointer is on a word (see utils/hoverGallery.ts). Everyone else gets the
-		// plain list.
-		const wantGallery =
+		// A real mouse (and no request for less motion), on a wide screen: a still picture at the right edge while the
+		// pointer is on a word, changing with the word (see .svc__peek). Everyone else gets the plain list.
+		const peekOn =
 			!window.matchMedia('(max-width: 1024px)').matches &&
-			window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
-			!reduce;
-		const gallery = wantGallery
-			? createHoverGallery(
-				section,
-				rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
-				// Brighter than the original's half opacity, and over the list's rules (unfold slowed from 1.75 s to 2.6 s).
-				{ opacity: 0.92, above: true, openSeconds: 2.6, side: 'right', scale: 0.78 },
-			)
-			: null;
-
-		if (gallery) {
-			// The row under the pointer is lit by the script (see .is-hot in the CSS) and has the
-			// picture. The browser does not update :hover (nor send mouse events) while the page
-			// scrolls under a resting pointer, so the row is found from the pointer's last known
-			// position (kept across pages, see `pointer`); :hover only backs it up when no position
-			// is known yet.
+			window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+		const imgs = Array.from(section.querySelectorAll<HTMLElement>('.svc__peek__img'));
+		if (peekOn && imgs.length) {
+			// The name under the pointer lights its row (.is-hot) and shows its picture. The browser does not update
+			// :hover (nor send mouse events) while the page scrolls under a resting pointer, so the name is found from
+			// the pointer's last known position (kept across pages, see `pointer`); :hover only backs it up when no
+			// position is known yet.
+			let current = -1;
+			const show = (i: number) => {
+				if (i === current) return;
+				current = i;
+				imgs.forEach((im, k) => im.classList.toggle('is-on', k === i));
+				section.classList.toggle('peek-on', i >= 0);
+			};
 			const sync = () => {
 				const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
 				// the name under the pointer (not the empty part of its line)
 				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
 					?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
 				rows.forEach((r) => r.classList.toggle('is-hot', r === row));
-				gallery.setHovered(row ? row.dataset.key! : null);
+				show(row ? rows.indexOf(row) : -1);
 			};
 			let syncing = false;
 			let settle = 0;
 			const onScroll = () => {
-				// The browser refreshes :hover a moment after a scroll stops, so check
-				// again then as well as while it runs.
+				// The browser refreshes :hover a moment after a scroll stops, so check again then as well as while it runs.
 				clearTimeout(settle);
 				settle = window.setTimeout(sync, 160);
 				if (syncing) return;
 				syncing = true;
 				requestAnimationFrame(() => { syncing = false; sync(); });
 			};
-			const onLeave = () => gallery.setHovered(null);
+			const onLeave = () => show(-1);
 			window.addEventListener('mousemove', sync, { passive: true });
 			window.addEventListener('scroll', onScroll, { passive: true });
 			document.documentElement.addEventListener('mouseleave', onLeave);
 			list?.addEventListener('mouseleave', onLeave);
-			rows.forEach((row) => {
+			rows.forEach((row, i) => {
 				row.querySelector('a')?.addEventListener('mouseenter', sync);
-				// Keyboard focus opens the picture too.
-				row.querySelector('a')?.addEventListener('focus', () => gallery.setHovered(row.dataset.key!));
+				// Keyboard focus shows the picture too.
+				row.querySelector('a')?.addEventListener('focus', () => show(i));
 				row.querySelector('a')?.addEventListener('blur', onLeave);
 			});
 			offs.push(() => {
@@ -292,7 +328,7 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 				window.removeEventListener('mousemove', sync);
 				window.removeEventListener('scroll', onScroll);
 				document.documentElement.removeEventListener('mouseleave', onLeave);
-				gallery.destroy();
+				section.classList.remove('peek-on');
 			});
 		}
 		_svcOff = () => offs.forEach((off) => off());
