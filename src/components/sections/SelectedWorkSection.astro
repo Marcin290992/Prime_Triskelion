@@ -522,9 +522,18 @@ const SCREENS = projects.length + HOLD;
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
 		// section, global.css html.sw-hscroll).
+		let lastY = window.scrollY;
 		const sync = (st: ScrollTrigger) => {
-			const pinned = st.scroll() >= st.start;
-			intro.classList.toggle('in', pinned);
+			const y = st.scroll();
+			const pinned = y >= st.start;
+			// The title comes in once the view is pinned. Scrolling back up it must go out
+			// in blur WHILE the pinned view is still on screen (the stage is hidden at the
+			// start of the pin, so a blur-out that began there would never be seen): it
+			// starts 0.4 of a screen before the way out.
+			const up = y < lastY;
+			lastY = y;
+			if (y < st.start + window.innerHeight * 0.4 && (up || y < st.start)) intro.classList.remove('in');
+			else if (pinned) intro.classList.add('in');
 			// Hidden until its pin starts: pulled up a screen, its black stage would
 			// otherwise slide up over the manifesto's last screen like a curtain
 			// (and scrolling back up it goes away the same way).
