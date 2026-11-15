@@ -54,8 +54,8 @@ export interface GalleryOptions {
   above?: boolean;
   // Seconds the picture takes to unfold (default 1.75).
   openSeconds?: number;
-  // Keep the picture on the RIGHT edge of the container instead of under the pointer: it still follows the
-  // pointer up and down (with the same soft lag), but never sideways, so it cannot cross the list.
+  // Keep the picture in ONE fixed place: against the right edge of the container and at the vertical centre of the
+  // screen, instead of under the pointer (every picture opens there, with the same soft lag when it switches).
   side?: 'right';
   // Size of the picture relative to the original 437 x 245 (default 1).
   scale?: number;
@@ -420,6 +420,10 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
       // kept inside the container vertically
       const margin = clamp(r.width * 0.05, 24, 80);
       tx = r.width / 2 - margin - pw / 2;
+      // ...and always at the VERTICAL CENTRE of the screen: one fixed place, whichever word the pointer is on (a picture that
+      // followed the pointer up and down could be carried over the header or the MENU button by a pointer held high or low).
+      const vh = window.innerHeight;
+      ty = r.height / 2 - (vh / 2 - r.top);
       const room = Math.max(0, r.height / 2 - ph / 2);
       ty = clamp(ty, -room, room);
     }
