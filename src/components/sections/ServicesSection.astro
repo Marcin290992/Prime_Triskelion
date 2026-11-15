@@ -6,36 +6,21 @@
 // pulled up into the manifesto's dark last screen, so the first name is already rising as the statement is gone.
 //
 // The list of the 12 Studio reference (12-studio/app/src/components/sections.jsx) gave the idea (big names, a list
-// of options). On a desktop with a mouse a still picture stands at the right edge, at the vertical centre of the
-// screen, while the pointer is on a word, and changes with the word (a short cross-fade, opacity only: no WebGL, so
-// nothing to warm up and nothing to stutter on the first hover); phones and tablets get the plain list. Earlier versions: git history and
-// components/backup/ServicesSection.before-12-studio.astro.
-import { getImage } from 'astro:assets';
-// The desktop hover picture is WebGL (437px on screen): one local photo per service
-// (the site's CSP blocks remote images).
-import glWebsites from '../../img/services/websites.jpg';
-import glBranding from '../../img/services/branding.jpg';
-import glMotion from '../../img/services/motion.jpg';
-import glStrategy from '../../img/services/strategy.jpg';
-
-const services = [
-	{ name: 'Websites', gl: glWebsites },
-	{ name: 'Branding', gl: glBranding },
-	{ name: 'Motion', gl: glMotion },
-	{ name: 'Strategy', gl: glStrategy },
-];
-const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ src: sv.gl, width: 960 })).src));
+// of options, a small red number beside each). On a desktop with a mouse the name under the pointer rolls to white,
+// the others stay dimmed; there is no hover picture (it was in the way: an earlier version opened a WebGL one, then a
+// still one, see git history).
+const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 ---
 <!-- ═══════ SERVICES: the options, a ghost train up the screen ═══════ -->
 <section id="services">
 	<div class="svc__body">
 		<ul class="svc__list">
-			{services.map((sv, i) => (
-				<li class="svc__row" data-key={`s${i}`} data-src={glSrcs[i]}>
-					<a href="/services" class="svc__link">
+			{services.map((name, i) => (
+				<li class="svc__row">
+					<a href="/services" class="svc__link" data-index={String(i + 1).padStart(2, '0')}>
 						<span class="svc__roll">
-							<span class="svc__roll__base">{sv.name}</span>
-							<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
+							<span class="svc__roll__base">{name}</span>
+							<span class="svc__roll__red" aria-hidden="true">{name}</span>
 						</span>
 					</a>
 				</li>
@@ -47,13 +32,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		</a>
 	</div>
 
-	<!-- The hover picture (desktop with a mouse only): one box, always in the same place, one picture per name on top
-	     of each other; the script switches which one shows. -->
-	<div class="svc__peek" aria-hidden="true">
-		{services.map((sv, i) => (
-			<img class="svc__peek__img" src={glSrcs[i]} alt="" width="960" height="540" decoding="async" loading="eager" data-i={i} />
-		))}
-	</div>
 </section>
 
 <style>
@@ -100,6 +78,22 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		-webkit-tap-highlight-color: transparent;
 	}
 	.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
+
+	/* A small red number, to the LEFT of the name. On a phone or tablet the name takes nearly the whole width, so
+	   there it sits just above the name's left edge instead. */
+	.svc__link::before {
+		content: attr(data-index);
+		display: block;
+		text-align: left;
+		margin-bottom: 0.15rem;
+		font-family: var(--f-body);
+		font-size: 0.78rem;
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: 0.2em;
+		color: rgb(var(--c-red));
+		user-select: none;
+	}
 
 	/* Rolling text, as in the menu: the dimmed name slides up, the white one comes in
 	   from below. (Mouse only, below.) */
@@ -154,6 +148,14 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 	/* ── Desktop (mouse): the names dimmed, the one under the pointer rolls to white and has the picture ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__body { position: relative; }
+		/* wide screen: the number stands beside the name, vertically centred on it, a little to its left */
+		.svc__link::before {
+			position: absolute;
+			right: 100%;
+			top: 50%;
+			margin: 0 clamp(0.9rem, 1.6vw, 1.6rem) 0 0;
+			transform: translateY(-50%);
+		}
 		.svc__link {
 			/* BIG, sized by the width AND the height: the four names fill about one screen */
 			padding: clamp(0.5rem, 1.6vh, 1.4rem) 0;
@@ -173,39 +175,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
 		}
 	}
-	/* The hover picture: a plain box, fixed to the right edge at the vertical centre of the screen, shown only while a
-	   name is hovered (.is-on on the section). Pictures change by opacity alone (cheap, on the compositor). */
-	.svc__peek { display: none; }
-	@media (min-width: 1025px) and (hover: hover) and (pointer: fine) {
-		.svc__peek {
-			display: block;
-			position: fixed;
-			right: clamp(24px, 5vw, 80px);
-			top: 50%;
-			width: clamp(280px, 24vw, 380px);
-			aspect-ratio: 16 / 9;
-			transform: translateY(-50%);
-			pointer-events: none;
-			z-index: 5;
-			opacity: 0;
-			transition: opacity 0.25s ease;
-		}
-		#services.peek-on .svc__peek { opacity: 0.95; }
-		.svc__peek__img {
-			position: absolute;
-			inset: 0;
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-			opacity: 0;
-			transition: opacity 0.3s ease;
-		}
-		.svc__peek__img.is-on { opacity: 1; }
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.svc__peek, .svc__peek__img { transition: none; }
-	}
-
 	/* The ghost train: every name's opacity, blur and lift are set by the script from where it is on the screen. No
 	   transitions while it is, or they would lag behind the scroll. */
 	#services [data-scrub] { transition: none !important; will-change: opacity, filter, transform; }
@@ -276,31 +245,20 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
 		const list = section.querySelector<HTMLElement>('.svc__list');
 
-		// A real mouse (and no request for less motion), on a wide screen: a still picture at the right edge while the
-		// pointer is on a word, changing with the word (see .svc__peek). Everyone else gets the plain list.
-		const peekOn =
+		// A real mouse, on a wide screen: the name under the pointer rolls to white (.is-hot), the others stay dimmed.
+		// The browser does not update :hover (nor send mouse events) while the page scrolls under a resting pointer, so
+		// the name is found from the pointer's last known position (kept across pages, see `pointer`); :hover only
+		// backs it up when no position is known yet.
+		const mouse =
 			!window.matchMedia('(max-width: 1024px)').matches &&
 			window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-		const imgs = Array.from(section.querySelectorAll<HTMLElement>('.svc__peek__img'));
-		if (peekOn && imgs.length) {
-			// The name under the pointer lights its row (.is-hot) and shows its picture. The browser does not update
-			// :hover (nor send mouse events) while the page scrolls under a resting pointer, so the name is found from
-			// the pointer's last known position (kept across pages, see `pointer`); :hover only backs it up when no
-			// position is known yet.
-			let current = -1;
-			const show = (i: number) => {
-				if (i === current) return;
-				current = i;
-				imgs.forEach((im, k) => im.classList.toggle('is-on', k === i));
-				section.classList.toggle('peek-on', i >= 0);
-			};
+		if (mouse) {
 			const sync = () => {
 				const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
 				// the name under the pointer (not the empty part of its line)
 				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
 					?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
 				rows.forEach((r) => r.classList.toggle('is-hot', r === row));
-				show(row ? rows.indexOf(row) : -1);
 			};
 			let syncing = false;
 			let settle = 0;
@@ -312,23 +270,17 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 				syncing = true;
 				requestAnimationFrame(() => { syncing = false; sync(); });
 			};
-			const onLeave = () => show(-1);
+			const onLeave = () => rows.forEach((r) => r.classList.remove('is-hot'));
 			window.addEventListener('mousemove', sync, { passive: true });
 			window.addEventListener('scroll', onScroll, { passive: true });
 			document.documentElement.addEventListener('mouseleave', onLeave);
 			list?.addEventListener('mouseleave', onLeave);
-			rows.forEach((row, i) => {
-				row.querySelector('a')?.addEventListener('mouseenter', sync);
-				// Keyboard focus shows the picture too.
-				row.querySelector('a')?.addEventListener('focus', () => show(i));
-				row.querySelector('a')?.addEventListener('blur', onLeave);
-			});
 			offs.push(() => {
 				clearTimeout(settle);
 				window.removeEventListener('mousemove', sync);
 				window.removeEventListener('scroll', onScroll);
 				document.documentElement.removeEventListener('mouseleave', onLeave);
-				section.classList.remove('peek-on');
+				list?.removeEventListener('mouseleave', onLeave);
 			});
 		}
 		_svcOff = () => offs.forEach((off) => off());
