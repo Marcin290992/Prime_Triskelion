@@ -118,10 +118,9 @@ const SCREENS = projects.length + HOLD;
 	   cannot stretch it. */
 	.swb {
 		position: relative;
-		/* Pulled up by one screen, so the pinned view takes over exactly where the
-		   manifesto's pin ends: the title comes up out of the dark on the spot
-		   (nothing slides in from below), as in the original section. */
-		margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+		/* It follows Services as an ordinary block: the black view scrolls up and pins, and the title
+		   comes out of the dark on the spot (it used to be pulled up a screen to take over where
+		   the manifesto's pin ended, before Services was moved in between). */
 		height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens));
 	}
 	.swb__stage {
@@ -558,10 +557,6 @@ const SCREENS = projects.length + HOLD;
 			lastY = y;
 			if (y < st.start + window.innerHeight * 0.4 && (up || y < st.start)) intro.classList.remove('in');
 			else if (pinned) intro.classList.add('in');
-			// Hidden until its pin starts: pulled up a screen, its black stage would
-			// otherwise slide up over the manifesto's last screen like a curtain
-			// (and scrolling back up it goes away the same way).
-			stage.style.visibility = pinned ? '' : 'hidden';
 			root.classList.toggle('sw-hscroll', st.isActive);
 		};
 		const stPin = ScrollTrigger.create({

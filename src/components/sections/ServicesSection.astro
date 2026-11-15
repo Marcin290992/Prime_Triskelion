@@ -1,7 +1,7 @@
 ---
-// The Expertise + services layout of the 12 Studio reference (12-studio/app/src/components/sections.jsx):
-// a small label, a big heading and a short text, then the services as one big numbered list ruled
-// between its rows. Only what the earlier section did better is kept: on a desktop with a mouse a
+// The services list of the 12 Studio reference (12-studio/app/src/components/sections.jsx): one big
+// numbered list ruled between its rows. Its heading is the manifesto right above it (the label
+// "Expertise" and the statement, see ManifestoSection): the two are one section to the eye. Only what the earlier section did better is kept: on a desktop with a mouse a
 // picture unfolds in WebGL under the pointer and trails it (utils/hoverGallery.ts); phones and tablets
 // get the plain list (the pinned scene is gone). The earlier version is in
 // components/backup/ServicesSection.before-12-studio.astro.
@@ -21,25 +21,15 @@ const services = [
 ];
 const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ src: sv.gl, width: 960 })).src));
 ---
-<!-- ═══════ SERVICES (Expertise) ═══════ -->
+<!-- ═══════ SERVICES (Expertise): the services as a centred list of options ═══════ -->
 <section id="services">
-
-	<!-- The label, the heading and the text: the copy is a stand-in, change it freely. -->
-	<div class="svc__intro">
-		<h6 class="svc__label svc-rv">Expertise</h6>
-		<h2 class="svc__heading svc-rv" style="--d:0.08s">Bold digital work,<br><em>built with intent.</em></h2>
-		<p class="svc__text svc-rv" style="--d:0.16s">
-			Four disciplines in one studio: from the first strategy sketch to the last frame of motion
-			and the final line of code.
-		</p>
-	</div>
 
 	<!-- All four names readable at once. Desktop: one picture follows the name under the mouse. -->
 	<div class="svc__body">
 		<ul class="svc__list">
 			{services.map((sv, i) => (
 				<li class="svc__row svc-rv" style={`--d:${(i * 0.08).toFixed(2)}s`} data-key={`s${i}`} data-src={glSrcs[i]}>
-					<a href="/services" class="svc__link" data-index={String(i + 1).padStart(2, '0')}>
+					<a href="/services" class="svc__link">
 						<span class="svc__roll">
 							<span class="svc__roll__base">{sv.name}</span>
 							<span class="svc__roll__red" aria-hidden="true">{sv.name}</span>
@@ -61,94 +51,39 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		position: relative;
 		z-index: 46;
 		color: rgb(var(--c-cream));
-		padding-bottom: var(--section-space-bottom);
+		padding-bottom: clamp(3rem, 7vw, 7rem);
+		/* The list comes up UNDER the manifesto's statement while its stage is still pinned: pulled
+		   into the empty lower part of that screen (transparent, so the statement stays in view), so
+		   the two read as one section and there is no black gap between them. */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -14);
 	}
 
-	/* ── The intro: label, big heading, a short text (12 Studio's Expertise) ──────── */
-	.svc__intro {
-		display: grid;
-		grid-template-columns: repeat(12, minmax(0, 1fr));
-		column-gap: clamp(0.75rem, 2vw, 2rem);
-		padding: var(--section-space-top) var(--site-gutter) clamp(3rem, 7vw, 6rem);
-		box-sizing: border-box;
+	/* ── The list: big names, centred like a menu of options (no numbers, no rules) ─────── */
+	/* The manifesto above is the heading, so the list starts a little way under it. */
+	.svc__body {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: clamp(1rem, 3vw, 2.5rem) var(--site-gutter) 0;
 	}
-	.svc__label {
-		grid-column: 1 / -1;
-		margin: 0 0 1.2rem;
-		font-family: var(--f-body);
-		font-size: 0.78rem;
-		font-weight: 600;
-		line-height: 1.32;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.6);
-		user-select: none;
-	}
-	.svc__heading {
-		grid-column: 1 / -1;
-		margin: 0;
-		font-family: var(--f-display);
-		font-weight: 600;
-		font-size: clamp(2.4rem, 8.6vw, 5.2rem);
-		line-height: 1.02;
-		letter-spacing: -0.02em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream));
-		user-select: none;
-	}
-	.svc__heading em { font-style: normal; color: rgb(var(--c-red) / 1); }
-	.svc__text {
-		grid-column: 1 / -1;
-		margin: 2.4rem 0 0;
-		max-width: 34ch;
-		font-family: var(--f-body);
-		font-size: 1rem;
-		font-weight: 300;
-		line-height: 1.6;
-		color: rgb(var(--c-cream) / 0.6);
-		user-select: none;
-	}
-
-	/* ── The list: big names, a number above each, ruled between the rows ────────── */
-	.svc__body { padding: 0 var(--site-gutter); }
+	.svc__list { width: 100%; }
 	.svc__list { list-style: none; margin: 0; padding: 0; }
 	.svc__row { position: relative; padding: 0; }
-	.svc__row::after {
-		content: '';
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 1px;
-		background: rgb(var(--c-cream) / 0.14);
-		pointer-events: none;
-	}
-	.svc__row:last-child::after { display: none; }
 	.svc__link {
 		position: relative;
 		display: block;
 		width: 100%;
-		padding: clamp(1.6rem, 6vw, 2.6rem) 0;
+		text-align: center;
+		padding: clamp(0.9rem, 3.6vw, 1.6rem) 0;
 		font-family: var(--f-display);
 		font-weight: 700;
-		font-size: clamp(2.6rem, 12vw, 5rem);
+		font-size: clamp(3rem, 15vw, 6.4rem);
 		line-height: 1.04;
 		letter-spacing: 0.005em;
 		text-transform: uppercase;
 		color: rgb(var(--c-cream));
 		text-decoration: none;
 		-webkit-tap-highlight-color: transparent;
-	}
-	.svc__link::before {
-		content: attr(data-index);
-		display: block;
-		margin-bottom: 0.6rem;
-		font-family: var(--f-body);
-		font-size: 0.78rem;
-		font-weight: 600;
-		line-height: 1.32;
-		letter-spacing: 0.2em;
-		color: rgb(var(--c-cream) / 0.6);
 	}
 	.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
 
@@ -199,69 +134,25 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		.svc__btn::before { content: ''; position: absolute; inset: -13px 0; }
 	}
 
-	/* Phones and tablets: the plain list, opaque so it covers the closing screen of Selected work. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#services { background: rgb(var(--c-bg)); }
-		.svc__heading { font-size: clamp(2.4rem, 10vw, 4.4rem); }
-	}
 	@media (min-width: 700px) and (max-width: 1024px) {
-		.svc__text { font-size: 1.1rem; max-width: 38ch; }
-		.svc__link { font-size: clamp(3.4rem, 10vw, 6rem); }
+		.svc__link { font-size: clamp(4rem, 13vw, 9rem); }
 	}
 
-	/* ── Desktop (mouse): the 12 Studio grid ─────────────────────────────────────────
-	   The label in the first columns, the heading beside it, the text lower and to the
-	   right; the list starts a third of the way in, its numbers in the space on the left. */
+	/* ── Desktop (mouse): the names big, in the middle; the picture follows the one under the mouse ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
-		#services { padding-bottom: clamp(5rem, 12vh, 8rem); }
-		.svc__label { grid-column: 1 / 3; margin: 0; transform: translateY(1.4rem); }
-		.svc__heading { grid-column: 3 / 11; font-size: clamp(3rem, 5.6vw, 6.4rem); }
-		.svc__text { grid-column: 7 / 11; margin-top: clamp(3rem, 7vw, 9.6rem); }
+		#services { padding-bottom: clamp(3rem, 8vh, 6rem); margin-top: calc(var(--app-stable-vh, 1svh) * -26); }
 
-		.svc__list { margin-left: 33.333%; width: 58.333%; }
+		.svc__list { width: 100%; }
 		.svc__link {
-			padding: clamp(1.1rem, 3.4vh, 2.6rem) 0;
-			font-size: clamp(2.8rem, min(7vw, 10vh), 8rem);
+			/* the name is sized by the width AND the height, so all four rows fill about one screen */
+			padding: clamp(0.4rem, 1.3vh, 1.1rem) 0;
+			font-size: clamp(3.4rem, min(11vw, 17vh), 15rem);
 			color: rgb(var(--c-cream) / 0.38);
 			transition: color 0.4s ease;
 		}
-		.svc__link::before {
-			position: absolute;
-			top: 50%;
-			right: calc(100% + clamp(1.5rem, 3vw, 3.6rem));
-			margin: 0;
-			transform: translateY(-50%);
-			text-align: right;
-			transition: color 0.4s ease;
-		}
-		/* Ruled above and below the row under the pointer too, so what is under it is plain to see:
-		   the whole band answers, not only the letters. The lines light up on that row. */
-		.svc__row::before {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 0;
-			right: 0;
-			height: 1px;
-			background: rgb(var(--c-cream) / 0.14);
-			transition: background-color 0.4s ease;
-			pointer-events: none;
-		}
-		.svc__row::after { transition: background-color 0.4s ease; }
-		.svc__row:last-child::after { display: block; }
-		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::before,
-		.svc__row:has(.svc__link:hover, .svc__link:focus-visible)::after,
-		/* .is-hot: set by the script for the name under the pointer: the browser does not
-		   update :hover while the page scrolls under a pointer that is not moving. */
-		.svc__row.is-hot::before,
-		.svc__row.is-hot::after { background: rgb(var(--c-cream) / 0.6); }
-		.svc__row.is-hot .svc__link::before { color: rgb(var(--c-red)); }
-
-		/* The names stay above the WebGL picture (a canvas in this section, z 2) and its rules. */
+		/* The names stay above the WebGL picture (a canvas in this section, z 2). */
 		.svc__body { position: relative; }
 		.svc__row .svc__roll { position: relative; z-index: 3; }
-		.svc__link::before { z-index: 3; }
-		.svc__btn { margin-left: 33.333%; }
 
 		/* Mouse only. At rest, and whenever the mouse is off the names (on the picture too),
 		   every name is dimmed. The one under the mouse rolls to white. */
@@ -280,14 +171,11 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16, 1, 0.3, 1), filter 0.72s cubic-bezier(0.16, 1, 0.3, 1);
 			transition-delay: var(--d, 0s);
 		}
-		.svc__label.svc-rv { transform: translateY(calc(1.4rem + 14px)); }
 		.svc-rv.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
-		.svc__label.svc-rv.visible { transform: translateY(1.4rem); }
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.svc__roll__base, .svc__roll__red { transition: none; }
 		.svc-rv { transition: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
-		.svc__label.svc-rv { transform: none !important; }
 	}
 </style>
 
