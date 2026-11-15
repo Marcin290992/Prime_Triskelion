@@ -30,6 +30,11 @@
 - **`lenis.stop()` na czas sekcji:** nie nadaje się. Zatrzymany Lenis wywołuje `preventDefault`, więc blokuje też natywny scroll.
 - **Dłuższy krok na dotyku (2 ekrany na zdjęcie)** jako lekarstwo na za szybką zmianę: dawał tylko dłuższą sekcję, nie poprawiał płynności.
 - **W samym demie:** `scroll-snap` w CSS na `html` i własne przechwytywanie kółka. Snap cofał stronę, nie dało się wyjść z sekcji i migało na skrajnych zdjęciach.
+- **Lżejszy shader** (czytanie tylko widocznego zdjęcia, rozdzielenie kolorów tylko tam, gdzie widać) oraz najtańszy wariant na Chrome Android (bez rozdzielenia kolorów, canvas 1x): zmiana słuszna, ale **nie tu leżała przyczyna zacięć na Chrome mobile**.
+
+**Zacięcia na Chrome mobile (Android) — przyczyna znaleziona:** zacinało się dokładnie w chwili, gdy wchodził tekst projektu i przycisk Explore. Po wyłączeniu ich (`SHOW_TEXT = false` w `SelectedWorkSection.astro`) wszystko działa płynnie, a Safari na iPhonie było płynne od początku. Winowajcy to prawdopodobnie: animowany `filter: blur()` na trzech liniach naraz, siedmiowarstwowy `text-shadow` (do 90 px) i `backdrop-filter: blur(20px)` na Explore, wszystko malowane **nad canvasem WebGL, który zmienia się co klatkę**. Chrome Android musi wtedy przeliczać te warstwy razem z canvasem. Który z trzech elementów jest najgorszy, nie sprawdzono (do tego służą przełączniki `?lite=text`, `?lite=cta`, ale z wyłączonym tekstem nie mają już czego testować).
+
+**Jak przywrócić tekst bez zacięć (plan):** jedna animowana warstwa zamiast trzech, tylko `opacity` i `transform` (bez `filter`), `text-shadow` w dwóch warstwach zamiast siedmiu, Explore z pełnym ciemnym tłem zamiast `backdrop-filter`, `will-change` tylko na czas animacji. Po każdej zmianie sprawdzać na Chrome Android.
 
 **Wskazówki na przyszłość:**
 - `window.__lenis` czytać **leniwie** (po `requestAnimationFrame`), nigdy tylko raz przy starcie skryptu sekcji.
