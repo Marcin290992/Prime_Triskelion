@@ -22,6 +22,11 @@ const projects = [
 // Scroll length: see LEAD / PER in the script (one screen per step, the snap lands each picture exactly). The
 // value here is only the no-JS default.
 const HOLD = 0.4;
+
+// The project text and the Explore button under each picture. Off for now: on Chrome (Android) the
+// stutter starts the moment they come in, so they are left out to see how the pictures alone run.
+// Set to true to bring them back (the script handles both).
+const SHOW_TEXT = false;
 const SCREENS = projects.length + HOLD;
 ---
 <section id="selected-work">
@@ -62,8 +67,7 @@ const SCREENS = projects.length + HOLD;
 				<span class="swb__count" aria-hidden="true">01 / {String(projects.length).padStart(2, '0')}</span>
 			</div>
 
-			<!-- Bottom: a rule, the project's text on the left, the controls on the
-			     right (buttons and the progress bar), as in the test file. -->
+			{SHOW_TEXT && (
 			<div class="swb__bottom">
 				<div class="swb__info">
 					{projects.map((p) => (
@@ -82,6 +86,7 @@ const SCREENS = projects.length + HOLD;
 					))}
 				</div>
 			</div>
+			)}
 		</div>
 	</div>
 
@@ -477,7 +482,7 @@ const SCREENS = projects.length + HOLD;
 		// on a long soft ease, so by the time the light has landed it is already there and
 		// settled. It leaves quickly the moment the next beam begins.
 		const partsOf = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLElement>('.swb__name, p, .swb__cta'));
-		gsap.set(slides, { opacity: 1 });
+		if (slides.length) gsap.set(slides, { opacity: 1 });
 		slides.forEach((el) => gsap.set(partsOf(el), { opacity: 0, y: 26, ...(textBlur ? { filter: 'blur(12px)' } : {}) }));
 		const revealText = (el: HTMLElement) => {
 			el.style.visibility = 'visible';
