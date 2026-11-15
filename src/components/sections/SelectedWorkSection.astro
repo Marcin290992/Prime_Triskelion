@@ -579,11 +579,11 @@ const SCREENS = projects.length + HOLD;
 			onRefresh: (s) => { setFrom(s.progress); sync(s); },
 			onToggle: sync,
 		});
-		// Going down, the title comes in once the view has been pinned for a little (6% of a screen): after the
+		// Going down, the title comes in once the view has been pinned for a little (11% of a screen): after the
 		// options of Services have blurred out there is a short stretch of dark, and only then the title. (Too
 		// early it broke the cinematic feel.) Its own trigger, so the moment is easy to move.
 		const stIn = ScrollTrigger.create({
-			trigger: wrap, start: 'top -6%', invalidateOnRefresh: true,
+			trigger: wrap, start: 'top -11%', invalidateOnRefresh: true,
 			onEnter: () => intro.classList.add('in'),
 			// landing past it (reload, back / forward): already in
 			onRefresh: (s) => { if (s.scroll() >= s.start) intro.classList.add('in'); },
