@@ -239,8 +239,22 @@ const SCREENS = projects.length + HOLD;
 		--ink-shadow:
 			0 1px 2px rgb(0 0 0 / 0.9),
 			0 0 16px rgb(0 0 0 / 0.75);
+		/* The site's blur-in (as the title and the other headings: opacity .8s, blur 1s, rise .8s on the
+		   same soft ease), as CSS transitions: Chrome runs opacity, transform and filter on the
+		   compositor, so the entrance does not repaint text over the live canvas on every frame (what
+		   stuttered on Android with the scripted blur, BUGS.md). It goes out quicker, like the title. */
 		opacity: 0;
 		visibility: hidden;
+		transform: translateY(14px);
+		filter: blur(14px);
+		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
+	}
+	.swb__slide.in {
+		opacity: 1;
+		visibility: visible;
+		transform: none;
+		filter: none;
+		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 	}
 	/* The picture as a link: one per project, only the one on screen answers,
 	   and only to a mouse. */
@@ -471,24 +485,16 @@ const SCREENS = projects.length + HOLD;
 		let pos = 0;      // 0 .. n: the dark, then each project in turn
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
-		// is still crossing, rising a little on a long soft ease, so by the time the light has
-		// landed it is already there. It leaves quickly the moment the next beam begins.
-		// ONE layer per picture and only opacity + transform (compositor): a filter blur, a wide
-		// text-shadow or a backdrop blur repainted over the live canvas made Chrome on Android
-		// stutter exactly when the text came in (BUGS.md). will-change only while it moves.
-		if (slides.length) gsap.set(slides, { opacity: 0, y: 22 });
+		// is still crossing, out of blur, so by the time the light has landed it is already there.
+		// It leaves quickly the moment the next beam begins. All of it is the .in class and the CSS
+		// transitions above (nothing is animated from the script).
 		const revealText = (el: HTMLElement) => {
-			el.style.visibility = 'visible';
+			el.classList.add('in');
 			el.style.pointerEvents = 'auto';
-			el.style.willChange = 'opacity, transform';
-			gsap.to(el, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out', delay: 0.05, overwrite: true, onComplete: () => { el.style.willChange = ''; } });
 		};
 		const hideText = (el: HTMLElement) => {
+			el.classList.remove('in');
 			el.style.pointerEvents = 'none';
-			gsap.to(el, {
-				opacity: 0, y: -8, duration: 0.3, ease: 'power2.in', overwrite: true,
-				onComplete: () => { el.style.visibility = 'hidden'; el.style.willChange = ''; },
-			});
 		};
 		let activeText = -1;
 
