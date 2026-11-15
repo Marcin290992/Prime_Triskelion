@@ -518,16 +518,6 @@ const num = (i: number) => String(i + 1).padStart(2, '0');
 
   document.addEventListener('astro:page-load', () => {
     if (document.getElementById('services-page')) initServicesPage();
-    // Arriving from the home page's service names (/services#motion): the browser's own jump does not happen on a
-    // client-side page change, so go to the card ourselves, once the page and Lenis exist.
-    const id = location.hash.slice(1);
-    if (id) setTimeout(() => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const lenis = (window as any).__lenis;
-      if (lenis) lenis.scrollTo(el, { immediate: true, force: true });
-      else el.scrollIntoView();
-    }, 250);
   });
 </script>
 
