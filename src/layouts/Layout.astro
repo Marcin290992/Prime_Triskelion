@@ -419,9 +419,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       // Touch (phones, tablets, Safari too): the same Lenis on every page —
       // see utils/touchLenis.ts.
       _layoutLenis = new Lenis(isTouch ? { ...TOUCH_LENIS_OPTIONS } : {
-        // Narrow windows (phone/tablet widths) get a much lighter drag. A wide screen: 0.1 (it was 0.06, which
-        // read as too strong a glide: ~1.2 s to come to rest; 0.1 is ~0.8 s, the value of the Forge reference).
-        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.1,
+        // 0.2 on every mouse screen, narrow windows too (it was 0.06 on a wide one: ~1.2 s to come to rest, which
+        // read as far too strong a glide; 0.2 comes to rest in ~0.35 s: still soft, but the page follows the wheel).
+        lerp: 0.2,
         smoothWheel: true,
         wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
       });
