@@ -42,7 +42,7 @@ uniform float uP;
 varying vec2 vUv;
 
 const float BEAM_WIDTH = 0.12;
-const float BEAM_GAIN = 1.35;
+const float BEAM_GAIN = 0.6;
 const float ZOOM = 1.12;
 const float DRIFT = 0.05;
 const vec2 PIVOT = vec2(0.5, 0.4);
@@ -100,15 +100,15 @@ void main() {
   float env = sin(p * 3.14159265);
   float d = x - head;
   float dc = d / 0.04;
-  float dh = d / 0.16;
+  float dh = d / 0.13;
   float core = exp(-dc * dc) * env;
   float halo = exp(-dh * dh) * env;
-  float beam = (core * 1.35 + halo * 0.65) * BEAM_GAIN;
+  float beam = (core * 1.2 + halo * 0.5) * BEAM_GAIN;
   float reveal = 1.0 - smoothstep(head - 0.12, head + 0.12, x);
 
   vec2 n = tall ? normalize(vec2(tilt, 1.0)) : normalize(vec2(1.0, tilt));
-  vec2 warp = n * d * halo * 0.2;
-  float ca = core * 0.02 + halo * 0.008;
+  vec2 warp = n * d * halo * 0.08;
+  float ca = core * 0.004 + halo * 0.002;
   vec2 uo = outUv + warp;
   vec2 ui = inUv - warp * 1.25;
   // Only what is seen is read: far from the beam one picture needs one texture read
@@ -121,7 +121,8 @@ void main() {
   vec3 base = mix(a, b, reveal);
 
   vec3 tint = mix(vec3(0.82, 0.9, 1.0), vec3(1.0, 0.93, 0.82), core);
-  vec3 col = base * (1.0 + beam * 1.4) + tint * pow(max(beam, 0.0), 1.45) * 0.5;
+  // the picture is lit, not burnt out: about twice as bright at the very core, a little white on top
+  vec3 col = base * (1.0 + beam * 1.0) + tint * pow(max(beam, 0.0), 1.6) * 0.3;
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
 
