@@ -54,6 +54,11 @@ export interface GalleryOptions {
   above?: boolean;
   // Seconds the picture takes to unfold (default 1.75).
   openSeconds?: number;
+  // Keep the picture on the RIGHT edge of the container instead of under the pointer: it still follows the
+  // pointer up and down (with the same soft lag), but never sideways, so it cannot cross the list.
+  side?: 'right';
+  // Size of the picture relative to the original 437 x 245 (default 1).
+  scale?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -254,10 +259,10 @@ interface Plane {
 }
 
 export function createHoverGallery(container: HTMLElement, items: GalleryItem[], options: GalleryOptions = {}) {
-  const { fill = false, blurMix = 0.5, axis = 'y', soft = false, above = false, openSeconds = 1.75 } = options;
+  const { fill = false, blurMix = 0.5, axis = 'y', soft = false, above = false, openSeconds = 1.75, side, scale = 1 } = options;
   const opacity = options.opacity ?? (fill ? 1 : 0.5);
   const motionBlur = options.motionBlur ?? !fill;
-  let pw = PLANE_W, ph = PLANE_H; // plane size in px (the container's, when filling)
+  let pw = PLANE_W * scale, ph = PLANE_H * scale; // plane size in px (the container's, when filling)
   let dpr = 1;
 
   const canvas = document.createElement('canvas');
@@ -410,6 +415,14 @@ export function createHoverGallery(container: HTMLElement, items: GalleryItem[],
     const r = container.getBoundingClientRect();
     tx = cx - r.left - r.width / 2;
     ty = r.height / 2 - (cy - r.top);
+    if (side === 'right' && !fill) {
+      // fixed against the right edge (a margin of 5% of the width, 24 - 80 px), free only up and down, and
+      // kept inside the container vertically
+      const margin = clamp(r.width * 0.05, 24, 80);
+      tx = r.width / 2 - margin - pw / 2;
+      const room = Math.max(0, r.height / 2 - ph / 2);
+      ty = clamp(ty, -room, room);
+    }
   }
   // The page scrolling under a resting pointer: keep the picture under it.
   function onScroll() {
