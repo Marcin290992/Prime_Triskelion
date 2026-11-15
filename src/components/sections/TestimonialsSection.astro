@@ -297,8 +297,12 @@
 			if (!started) { started = true; }
 			show((current + dir + count) % count);
 		};
-		const onPrev = () => step(-1);
-		const onNext = () => step(1);
+		// A click or a tap focuses the button, and a focused button keeps its "pressed" look (and, on a phone, its
+		// hover) until the visitor touches something else. These arrows have nothing to do with focus afterwards, so a
+		// pointer click (detail > 0; a keyboard Enter / Space has 0) lets it go at once. The keyboard keeps its focus.
+		const release = (e: Event) => { if ((e as MouseEvent).detail > 0) (e.currentTarget as HTMLElement | null)?.blur(); };
+		const onPrev = (e: Event) => { release(e); step(-1); };
+		const onNext = (e: Event) => { release(e); step(1); };
 		prevBtn?.addEventListener('click', onPrev);
 		nextBtn?.addEventListener('click', onNext);
 
