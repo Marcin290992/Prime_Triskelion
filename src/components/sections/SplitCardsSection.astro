@@ -84,7 +84,7 @@
     /* Pinned for 240vh of scroll (it was 150): the four phases have room, and the cards are held
        once revealed (the last 16% of the scroll), so the page does not leave while they are
        still turning over. */
-    height: 340vh;
+    height: 380vh;
     background: rgb(var(--c-bg));
   }
   #sc-sticky {
@@ -134,7 +134,9 @@
   #sc-cards {
     display: flex;
     gap: calc(var(--split) * 28px);
-    transform: scale(calc(1.5 - 0.2 * var(--zoom)));
+    /* The picture comes in HUGE, filling the screen, and pulls back to the cards' size as the page scrolls (the
+       12 Studio teaser's zoom-out: a picture at 1.6x settling to 1x, here from 3.4x to 1.3x). */
+    transform: scale(calc(1.3 + 2.1 * (1 - var(--zoom))));
     transform-style: preserve-3d;
     will-change: transform, gap;
   }
@@ -327,7 +329,8 @@
     /* Extra top padding moves the flex-centred card stack down with the
        lowered title. */
     #sc-scene { padding-top: calc(12vh + 3rem); padding-bottom: 12vh; }
-    #sc-cards { transform: scale(calc(1.34 - 0.18 * var(--zoom))); }
+    /* Same pull-back as above (the picture fills the screen, then settles to 1.16x). */
+    #sc-cards { transform: scale(calc(1.16 + 2.2 * (1 - var(--zoom)))); }
     /* Larger than they were: laptops (A15, MacBook Air) left wide black
        sides and small, hard-to-read copy. Height is capped by the title
        above and the MENU button below, so the extra size goes into the
@@ -474,14 +477,14 @@
       clamp01((p - start) / (end - start));
 
     const apply = (p: number) => {
-      // 0.00–0.26  zoom-in (title + full image landing)
-      // 0.26–0.38  HOLD full image  (no cuts visible)
-      // 0.38–0.58  split (cards separate)
-      // 0.58–0.84  flip (reveal pillar copy)
-      // 0.84–1.00  HOLD the revealed cards, still pinned, before the page goes on
-      scene.style.setProperty('--zoom',  phase(p, 0.00, 0.26).toFixed(4));
-      scene.style.setProperty('--split', phase(p, 0.38, 0.58).toFixed(4));
-      scene.style.setProperty('--flip',  phase(p, 0.58, 0.84).toFixed(4));
+      // 0.00–0.34  the picture pulls back from filling the screen (3.4x -> 1.3x); the title comes in at its end
+      // 0.34–0.44  HOLD full image  (no cuts visible)
+      // 0.44–0.62  split (cards separate)
+      // 0.62–0.86  flip (reveal pillar copy)
+      // 0.86–1.00  HOLD the revealed cards, still pinned, before the page goes on
+      scene.style.setProperty('--zoom',  phase(p, 0.00, 0.34).toFixed(4));
+      scene.style.setProperty('--split', phase(p, 0.44, 0.62).toFixed(4));
+      scene.style.setProperty('--flip',  phase(p, 0.62, 0.86).toFixed(4));
     };
 
     apply(0);
@@ -491,7 +494,7 @@
     // titleIn: rises out of the black soft, then sharpens, settling from a
     // hair oversized). Scrolling back above that point sends it back out.
     const title = document.getElementById('sc-title');
-    const TITLE_AT = 0.19;
+    const TITLE_AT = 0.27;
     let titleShown = false;
     let titleTl: gsap.core.Timeline | null = null;
     const setTitle = (show: boolean) => {
