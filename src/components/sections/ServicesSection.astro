@@ -65,12 +65,12 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		display: block;
 		width: 100%;
 		text-align: center;
-		/* sized by the width AND the height: the four names and the statement above them
-		   always fit one screen */
-		padding: clamp(0.25rem, 0.9vh, 0.6rem) 0;
+		/* BIG: sized by the width AND the height, so all four names fill the screen (the statement
+		   has lifted away by then, see ManifestoSection) */
+		padding: clamp(0.3rem, 1.3vh, 1.1rem) 0;
 		font-family: var(--f-display);
 		font-weight: 700;
-		font-size: clamp(2.3rem, min(11vw, 9.4vh), 9rem);
+		font-size: clamp(2.6rem, min(14vw, 17vh), 15rem);
 		line-height: 1.04;
 		letter-spacing: 0.005em;
 		text-transform: uppercase;
@@ -97,12 +97,13 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 
 	/* Tablets: a little more room for the names. */
 	@media (min-width: 700px) and (max-width: 1024px) {
-		.svc__link { font-size: clamp(3.4rem, min(11vw, 9.4vh), 8rem); }
+		.svc__link { font-size: clamp(4rem, min(13vw, 17vh), 15rem); }
 	}
 
 	/* ── Desktop (mouse): the names dimmed, the one under the pointer rolls to white and has the picture ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__link {
+			font-size: clamp(3.4rem, min(11vw, 17vh), 15rem);
 			color: rgb(var(--c-cream) / 0.38);
 			transition: color 0.4s ease;
 		}
