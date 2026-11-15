@@ -51,9 +51,12 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		position: relative;
 		z-index: 46;
 		color: rgb(var(--c-cream));
-		/* The spacing of every other section of the page. The manifesto above ends first (its pinned stage
-		   is over before this starts), so none of the names is seen while the statement is still appearing. */
-		padding-top: var(--section-space-top);
+		/* Pulled up into the empty lower half of the manifesto's last screen (the statement stands in the
+		   middle of it), so there is no long empty scroll between the two. 30 of its 100 is safe: the
+		   statement has finished appearing (the hold after it is about a third of a screen of scroll)
+		   before the first name can come into view, so no name is seen while it is still appearing. */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -30);
+		padding-top: calc(var(--app-stable-vh, 1svh) * 8);
 		padding-bottom: var(--section-space-bottom);
 	}
 
