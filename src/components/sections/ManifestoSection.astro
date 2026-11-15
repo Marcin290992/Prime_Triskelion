@@ -1,4 +1,5 @@
 ---
+import ServicesSection from './ServicesSection.astro';
 const lines = [
 	['I', 'craft', 'digital', 'experiences', 'that', 'push', 'boundaries,'],
 	['challenge', 'conventions,', 'and', 'leave', 'a', 'lasting', 'mark', 'on', 'the', 'world.'],
@@ -15,10 +16,11 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:220vh;height:220lvh;height:calc(var(--app-stable-vh) * 220);z-index:10">
-	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
-		<!-- The label of the Expertise section: the manifesto below is its heading, and the services list
-		     follows it in the same flow (see ServicesSection). -->
+<section id="manifesto" class="relative" style="height:250vh;height:250lvh;height:calc(var(--app-stable-vh) * 250);z-index:10">
+	<div class="sticky top-0 h-lvh flex flex-col items-start justify-start px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100);padding-top:clamp(5.5rem,16vh,10rem)">
+		<!-- The label of the Expertise screen: the manifesto below is its heading, and the services names sit
+		     under it in the same pinned stage (ServicesSection, below): nothing scrolls in, the timeline brings
+		     the names in where they stand. -->
 		<h6 class="mf-label">Expertise</h6>
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
@@ -29,6 +31,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			<span class="mw br"></span>
 			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
 		</h2>
+		<ServicesSection />
 	</div>
 </section>
 
@@ -87,6 +90,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		const tl = gsap.timeline();
 		tl.to({}, { duration: 1.0 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+
+		// The services names (they stand in the lower part of this same stage, see ServicesSection)
+		// come out of blur one after another once the statement is whole. Hidden until then, so they
+		// are not clickable early.
+		const names = section.querySelectorAll<HTMLElement>('.svc__row');
+		gsap.set(names, { autoAlpha: 0, y: 16, filter: 'blur(8px)' });
+		tl.to(names, { autoAlpha: 1, y: 0, filter: 'blur(0px)', stagger: 0.25, duration: 0.7, ease: 'none' }, '>');
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the

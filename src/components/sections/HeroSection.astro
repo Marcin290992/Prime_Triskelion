@@ -1041,8 +1041,8 @@
 		// spot, after the manifesto, so its own box starts a screen earlier than
 		// anything is seen); on phones and tablets, when the carousel reaches
 		// half the screen. (Without that section: past most of the hero.)
-		// (Services now follows the manifesto, so the button comes in with it: half a screen into it.)
-		const work = document.getElementById('services');
+		// (The manifesto and the services are one pinned screen now: the button comes in when it is done.)
+		const work = document.getElementById('manifesto');
 		const pinned: HTMLElement | null = null;
 		function update() {
 			const scrollY = window.scrollY || window.pageYOffset;
@@ -1050,7 +1050,7 @@
 			const past = pinned && pinned.offsetParent
 				? -pinned.getBoundingClientRect().top > ih * 0.35
 				: work
-					? work.getBoundingClientRect().top < ih * 0.5
+					? work.getBoundingClientRect().bottom < ih * 1.1
 					: scrollY > hero!.offsetHeight * 0.6;
 			wrap!.classList.toggle('hero-nav-cta--visible', gate.allow(past));
 		}
