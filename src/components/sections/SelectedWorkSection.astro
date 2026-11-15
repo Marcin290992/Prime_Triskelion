@@ -148,6 +148,10 @@ const SCREENS = projects.length + HOLD;
 	   black, so each one comes up out of the dark and centres on the middle (and the
 	   text at the bottom has a darker ground). Over the canvas and the fallback images,
 	   under the title and the text. */
+	/* ?lite=… switches (see the script): one cost off at a time on a slow phone */
+	:global(html.sw-lite-bands .gradual-blur) { display: none !important; }
+	.swb--lite-vig .swb__frame::after { display: none; }
+	.swb--lite-cta .swb__cta .h-hero-cta { -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.swb__frame::after {
 		content: '';
 		position: absolute;
@@ -442,6 +446,17 @@ const SCREENS = projects.length + HOLD;
 		let lastShown = 0;
 		const root = document.documentElement;
 
+		// Diagnostics for a slow phone: open the page with ?lite=bands,vig,cta,text,dpr (or ?lite=all)
+		// and each named cost is switched off, so the one that makes it stutter can be found.
+		//   bands = the edge blur bands, vig = the vignette, cta = the Explore button's backdrop blur,
+		//   text = the blur in the text entrance, dpr = the canvas at 1x.
+		const lite = new URLSearchParams(window.location.search).get('lite') ?? '';
+		const liteOn = (k: string) => lite === 'all' || lite.split(',').includes(k);
+		if (liteOn('bands')) root.classList.add('sw-lite-bands');
+		if (liteOn('vig')) stage.classList.add('swb--lite-vig');
+		if (liteOn('cta')) stage.classList.add('swb--lite-cta');
+		const textBlur = !liteOn('text');
+
 		// The beam crosses the whole step (as in the test file); the snap makes every
 		// picture come to rest exactly on its own stop, on a mouse and on a finger alike.
 		const RANGE: [number, number] = [0, 1];
@@ -463,18 +478,18 @@ const SCREENS = projects.length + HOLD;
 		// settled. It leaves quickly the moment the next beam begins.
 		const partsOf = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLElement>('.swb__name, p, .swb__cta'));
 		gsap.set(slides, { opacity: 1 });
-		slides.forEach((el) => gsap.set(partsOf(el), { opacity: 0, y: 26, filter: 'blur(12px)' }));
+		slides.forEach((el) => gsap.set(partsOf(el), { opacity: 0, y: 26, ...(textBlur ? { filter: 'blur(12px)' } : {}) }));
 		const revealText = (el: HTMLElement) => {
 			el.style.visibility = 'visible';
 			el.style.pointerEvents = 'auto';
 			gsap.fromTo(partsOf(el),
-				{ opacity: 0, y: 26, filter: 'blur(12px)' },
-				{ opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.2, ease: 'expo.out', stagger: 0.12, overwrite: true, onComplete: () => partsOf(el).forEach((p) => { p.style.filter = ''; }) });
+				{ opacity: 0, y: 26, ...(textBlur ? { filter: 'blur(12px)' } : {}) },
+				{ opacity: 1, y: 0, ...(textBlur ? { filter: 'blur(0px)' } : {}), duration: 1.2, ease: 'expo.out', stagger: 0.12, overwrite: true, onComplete: () => partsOf(el).forEach((p) => { p.style.filter = ''; }) });
 		};
 		const hideText = (el: HTMLElement) => {
 			el.style.pointerEvents = 'none';
 			gsap.to(partsOf(el), {
-				opacity: 0, y: -10, filter: 'blur(8px)', duration: 0.3, ease: 'power2.in', overwrite: true,
+				opacity: 0, y: -10, ...(textBlur ? { filter: 'blur(8px)' } : {}), duration: 0.3, ease: 'power2.in', overwrite: true,
 				onComplete: () => { el.style.visibility = 'hidden'; },
 			});
 		};
@@ -656,7 +671,7 @@ const SCREENS = projects.length + HOLD;
 			stPin.kill();
 			ro.disconnect();
 			beam?.destroy();
-			root.classList.remove('sw-hscroll');
+			root.classList.remove('sw-hscroll', 'sw-lite-bands');
 		};
 	}
 

@@ -211,7 +211,8 @@ export function createBeamSlides(
 		// the shader reads six textures a pixel: capped as in the test file (a phone's 3x screen
 		// would cost 9x the pixels for nothing the eye can see in motion)
 		const coarse = window.matchMedia('(pointer: coarse)').matches;
-		const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
+		const lite = /[?&]lite=(all|[^&]*dpr)/.test(window.location.search);   // ?lite=dpr: diagnostics, see SelectedWorkSection
+		const dpr = lite ? 1 : Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
 		const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
 		const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
 		if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
