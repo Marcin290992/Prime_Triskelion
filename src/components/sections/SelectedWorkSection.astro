@@ -3,6 +3,7 @@ import { Image } from 'astro:assets';
 import deeer2 from '../../img/deeer2.webp';
 import imgUnfall from '../../img/services/websites.jpg';
 import imgMousa from '../../img/process/development.jpg';
+import ProjectsHoverList from '../ProjectsHoverList.astro';
 
 // Selected work as full-screen frames: one pinned screen on every device, the
 // scroll melts one project into the next along a band of light (WebGL, see
@@ -88,6 +89,15 @@ const SCREENS = projects.length + HOLD;
 			</div>
 			)}
 		</div>
+	</div>
+
+	<!-- An index of the same projects right under the pinned view: a visitor who does not want to
+	     scroll through the pictures one by one sees them all at once. Mouse: hovering a title opens its
+	     picture in WebGL and carries it after the cursor; phones get the plain list. It is the same
+	     `projects` as the pictures above, so a new project appears in both. -->
+	<div class="swb-index">
+		<p class="swb-index__label">All selected work</p>
+		<ProjectsHoverList projects={projects.map(({ title, href, img }) => ({ title, href, img }))} />
 	</div>
 
 	<div class="swb-panel swb-cover">
@@ -375,6 +385,22 @@ const SCREENS = projects.length + HOLD;
 		.sw-link:hover::after { transform: scaleX(1); }
 	}
 
+	/* The index under the pinned view, in the page's own background. */
+	.swb-index {
+		position: relative;
+		padding-top: clamp(4rem, 10vw, 8rem);
+		background: rgb(var(--c-bg));
+		color: rgb(var(--c-cream));
+	}
+	.swb-index__label {
+		margin: 0;
+		padding: 0 var(--site-gutter);
+		font: 300 0.8rem/1 var(--f-body);
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.5);
+	}
+
 	/* After the pinned view: the two closing screens, in the page's own
 	   background, centred, as before. */
 	.swb-panel {
@@ -472,8 +498,9 @@ const SCREENS = projects.length + HOLD;
 		// The beam crosses the whole step (as in the test file); the snap makes every
 		// picture come to rest exactly on its own stop, on a mouse and on a finger alike.
 		const RANGE: [number, number] = [0, 1];
-		const TEXT_IN = 0.5;      // |pos - frame| below which the text starts to come: the beam is half way across
-		const TEXT_OUT = 0.62;    // ... and above which it leaves (a little wider, so it never flickers at the edge)
+		const TEXT_REST = 0.05;   // within this of a whole number a picture stands still
+		let lastPos = 0;
+		let forward = true;       // the way the page is moving
 		const fallback = () => stage.classList.add('swb--fallback');
 		let beam: BeamSlides | null = null;
 		if (reduced()) fallback();
@@ -506,8 +533,13 @@ const SCREENS = projects.length + HOLD;
 			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
 			let nowText = -1;
-			if (activeText >= 0 && Math.abs(pos - (activeText + 1)) < TEXT_OUT) nowText = activeText;
-			else slides.forEach((_, i) => { if (Math.abs(pos - (i + 1)) < TEXT_IN) nowText = i; });
+			// The name of the picture the light is going TO comes in the moment the beam starts (and
+			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one
+			// in the direction of the scroll.
+			if (pos !== lastPos) { forward = pos > lastPos; lastPos = pos; }
+			const nearestPic = Math.round(pos);
+			const dest = Math.abs(pos - nearestPic) < TEXT_REST ? nearestPic : forward ? Math.ceil(pos) : Math.floor(pos);
+			if (dest >= 1 && dest <= n) nowText = dest - 1;
 			if (nowText !== activeText) {
 				activeText = nowText;
 				slides.forEach((el, i) => (i === nowText ? revealText(el) : hideText(el)));
