@@ -23,10 +23,10 @@ const projects = [
 // value here is only the no-JS default.
 const HOLD = 0.4;
 
-// The project text and the Explore button under each picture. Off for now: on Chrome (Android) the
-// stutter starts the moment they come in, so they are left out to see how the pictures alone run.
-// Set to true to bring them back (the script handles both).
-const SHOW_TEXT = false;
+// The project text and the Explore button under each picture. They were the cause of the stutter on
+// Chrome (Android): see BUGS.md. Now a light version (one layer, opacity and a short rise only, no
+// filter, no backdrop blur). Set to false to leave them out.
+const SHOW_TEXT = true;
 const SCREENS = projects.length + HOLD;
 ---
 <section id="selected-work">
@@ -156,7 +156,6 @@ const SCREENS = projects.length + HOLD;
 	/* ?lite=… switches (see the script): one cost off at a time on a slow phone */
 	:global(html.sw-lite-bands .gradual-blur) { display: none !important; }
 	.swb--lite-vig .swb__frame::after { display: none; }
-	.swb--lite-cta .swb__cta .h-hero-cta { -webkit-backdrop-filter: none; backdrop-filter: none; }
 	.swb__frame::after {
 		content: '';
 		position: absolute;
@@ -234,17 +233,14 @@ const SCREENS = projects.length + HOLD;
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
+		/* Two layers (it was seven, up to 90px wide): painted over a canvas that changes every
+		   frame, wide shadows are what Chrome on Android could not keep up with. The picture's
+		   own dark vignette at the bottom does the rest. */
 		--ink-shadow:
-			0 0 1px rgb(0 0 0 / 1),
-			0 1px 2px rgb(0 0 0 / 0.95),
-			0 0 5px rgb(0 0 0 / 0.95),
-			0 0 12px rgb(0 0 0 / 0.85),
-			0 0 26px rgb(0 0 0 / 0.75),
-			0 0 52px rgb(0 0 0 / 0.6),
-			0 0 90px rgb(0 0 0 / 0.4);
+			0 1px 2px rgb(0 0 0 / 0.9),
+			0 0 16px rgb(0 0 0 / 0.75);
 		opacity: 0;
 		visibility: hidden;
-		will-change: opacity, filter, transform;
 	}
 	/* The picture as a link: one per project, only the one on screen answers,
 	   and only to a mouse. */
@@ -285,12 +281,12 @@ const SCREENS = projects.length + HOLD;
 	   cheap. */
 	.swb__cta { width: auto !important; max-width: none !important; margin: 0; }
 	.swb__cta .h-hero-cta {
-		--cta-bg: rgb(0 0 0 / 0.55);
+		/* dark, nearly solid ground instead of a backdrop blur: a blur over the live canvas
+		   is what stuttered on Chrome (Android) */
+		--cta-bg: rgb(0 0 0 / 0.72);
 		min-height: 46px;
 		min-width: 11rem;
 		padding: 0.7rem 1.8rem;
-		-webkit-backdrop-filter: blur(20px);
-		backdrop-filter: blur(20px);
 	}
 
 	/* Previous / next, bottom right, level with the text block. Dark glass like the
@@ -451,16 +447,13 @@ const SCREENS = projects.length + HOLD;
 		let lastShown = 0;
 		const root = document.documentElement;
 
-		// Diagnostics for a slow phone: open the page with ?lite=bands,vig,cta,text,dpr (or ?lite=all)
+		// Diagnostics for a slow phone: open the page with ?lite=bands,vig,dpr (or ?lite=all)
 		// and each named cost is switched off, so the one that makes it stutter can be found.
-		//   bands = the edge blur bands, vig = the vignette, cta = the Explore button's backdrop blur,
-		//   text = the blur in the text entrance, dpr = the canvas at 1x.
+		//   bands = the edge blur bands, vig = the vignette, dpr = the canvas at 1x.
 		const lite = new URLSearchParams(window.location.search).get('lite') ?? '';
 		const liteOn = (k: string) => lite === 'all' || lite.split(',').includes(k);
 		if (liteOn('bands')) root.classList.add('sw-lite-bands');
 		if (liteOn('vig')) stage.classList.add('swb--lite-vig');
-		if (liteOn('cta')) stage.classList.add('swb--lite-cta');
-		const textBlur = !liteOn('text');
 
 		// The beam crosses the whole step (as in the test file); the snap makes every
 		// picture come to rest exactly on its own stop, on a mouse and on a finger alike.
@@ -477,25 +470,24 @@ const SCREENS = projects.length + HOLD;
 
 		let pos = 0;      // 0 .. n: the dark, then each project in turn
 
-		// The text does not follow the scroll: it comes in by itself (time-based) while the
-		// beam is still crossing, line by line (title, text, button), each rising out of blur
-		// on a long soft ease, so by the time the light has landed it is already there and
-		// settled. It leaves quickly the moment the next beam begins.
-		const partsOf = (el: HTMLElement) => Array.from(el.querySelectorAll<HTMLElement>('.swb__name, p, .swb__cta'));
-		if (slides.length) gsap.set(slides, { opacity: 1 });
-		slides.forEach((el) => gsap.set(partsOf(el), { opacity: 0, y: 26, ...(textBlur ? { filter: 'blur(12px)' } : {}) }));
+		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
+		// is still crossing, rising a little on a long soft ease, so by the time the light has
+		// landed it is already there. It leaves quickly the moment the next beam begins.
+		// ONE layer per picture and only opacity + transform (compositor): a filter blur, a wide
+		// text-shadow or a backdrop blur repainted over the live canvas made Chrome on Android
+		// stutter exactly when the text came in (BUGS.md). will-change only while it moves.
+		if (slides.length) gsap.set(slides, { opacity: 0, y: 22 });
 		const revealText = (el: HTMLElement) => {
 			el.style.visibility = 'visible';
 			el.style.pointerEvents = 'auto';
-			gsap.fromTo(partsOf(el),
-				{ opacity: 0, y: 26, ...(textBlur ? { filter: 'blur(12px)' } : {}) },
-				{ opacity: 1, y: 0, ...(textBlur ? { filter: 'blur(0px)' } : {}), duration: 1.2, ease: 'expo.out', stagger: 0.12, overwrite: true, onComplete: () => partsOf(el).forEach((p) => { p.style.filter = ''; }) });
+			el.style.willChange = 'opacity, transform';
+			gsap.to(el, { opacity: 1, y: 0, duration: 1.1, ease: 'expo.out', delay: 0.05, overwrite: true, onComplete: () => { el.style.willChange = ''; } });
 		};
 		const hideText = (el: HTMLElement) => {
 			el.style.pointerEvents = 'none';
-			gsap.to(partsOf(el), {
-				opacity: 0, y: -10, ...(textBlur ? { filter: 'blur(8px)' } : {}), duration: 0.3, ease: 'power2.in', overwrite: true,
-				onComplete: () => { el.style.visibility = 'hidden'; },
+			gsap.to(el, {
+				opacity: 0, y: -8, duration: 0.3, ease: 'power2.in', overwrite: true,
+				onComplete: () => { el.style.visibility = 'hidden'; el.style.willChange = ''; },
 			});
 		};
 		let activeText = -1;

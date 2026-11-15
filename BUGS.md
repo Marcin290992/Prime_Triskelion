@@ -34,7 +34,7 @@
 
 **Zacięcia na Chrome mobile (Android) — przyczyna znaleziona:** zacinało się dokładnie w chwili, gdy wchodził tekst projektu i przycisk Explore. Po wyłączeniu ich (`SHOW_TEXT = false` w `SelectedWorkSection.astro`) wszystko działa płynnie, a Safari na iPhonie było płynne od początku. Winowajcy to prawdopodobnie: animowany `filter: blur()` na trzech liniach naraz, siedmiowarstwowy `text-shadow` (do 90 px) i `backdrop-filter: blur(20px)` na Explore, wszystko malowane **nad canvasem WebGL, który zmienia się co klatkę**. Chrome Android musi wtedy przeliczać te warstwy razem z canvasem. Który z trzech elementów jest najgorszy, nie sprawdzono (do tego służą przełączniki `?lite=text`, `?lite=cta`, ale z wyłączonym tekstem nie mają już czego testować).
 
-**Jak przywrócić tekst bez zacięć (plan):** jedna animowana warstwa zamiast trzech, tylko `opacity` i `transform` (bez `filter`), `text-shadow` w dwóch warstwach zamiast siedmiu, Explore z pełnym ciemnym tłem zamiast `backdrop-filter`, `will-change` tylko na czas animacji. Po każdej zmianie sprawdzać na Chrome Android.
+**Lekka wersja tekstu (wdrożona, do sprawdzenia na Chrome Android):** jedna animowana warstwa na zdjęcie zamiast trzech, tylko `opacity` i `transform` (bez `filter`), `text-shadow` w dwóch warstwach zamiast siedmiu, Explore z ciemnym, prawie pełnym tłem zamiast `backdrop-filter`, `will-change` tylko na czas animacji. Jeśli zacięcia wrócą, wyłączyć tekst (`SHOW_TEXT = false`) i dodawać elementy po jednym: najpierw sam tekst bez cienia, potem cień, potem przycisk.
 
 **Wskazówki na przyszłość:**
 - `window.__lenis` czytać **leniwie** (po `requestAnimationFrame`), nigdy tylko raz przy starcie skryptu sekcji.
