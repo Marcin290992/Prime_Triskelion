@@ -1,9 +1,13 @@
 ---
-// The services list of the 12 Studio reference (12-studio/app/src/components/sections.jsx): one big
-// numbered list ruled between its rows. Its heading is the manifesto right above it (the label
-// "Expertise" and the statement, see ManifestoSection): the two are one section to the eye. Only what the earlier section did better is kept: on a desktop with a mouse a
-// picture unfolds in WebGL under the pointer and trails it (utils/hoverGallery.ts); phones and tablets
-// get the plain list (the pinned scene is gone). The earlier version is in
+// The services as a centred list of big names, a plain section right after the manifesto (which blurs out into
+// the dark, see ManifestoSection). A "ghost train": as the page scrolls, each name comes up from the bottom of the
+// screen out of blur, is sharp in the middle, and goes out of the top into blur again, one after another, all by
+// its own position on the screen (nothing timed: the same on the way back, in the reverse order). The section is
+// pulled up into the manifesto's dark last screen, so the first name is already rising as the statement is gone.
+//
+// The list of the 12 Studio reference (12-studio/app/src/components/sections.jsx) gave the idea (big names, a list
+// of options). On a desktop with a mouse a picture unfolds in WebGL at the right edge while the pointer is on a
+// word (utils/hoverGallery.ts); phones and tablets get the plain list. Earlier versions: git history and
 // components/backup/ServicesSection.before-12-studio.astro.
 import { getImage } from 'astro:assets';
 // The desktop hover picture is WebGL (437px on screen): one local photo per service
@@ -21,14 +25,12 @@ const services = [
 ];
 const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ src: sv.gl, width: 960 })).src));
 ---
-<!-- ═══════ SERVICES (Expertise): the services as a centred list of options ═══════ -->
+<!-- ═══════ SERVICES: the options, a ghost train up the screen ═══════ -->
 <section id="services">
-
-	<!-- All four names readable at once. Desktop: one picture follows the name under the mouse. -->
 	<div class="svc__body">
 		<ul class="svc__list">
 			{services.map((sv, i) => (
-				<li class="svc__row svc-rv" style={`--d:${(i * 0.08).toFixed(2)}s`} data-key={`s${i}`} data-src={glSrcs[i]}>
+				<li class="svc__row" data-key={`s${i}`} data-src={glSrcs[i]}>
 					<a href="/services" class="svc__link">
 						<span class="svc__roll">
 							<span class="svc__roll__base">{sv.name}</span>
@@ -43,7 +45,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			See more
 		</a>
 	</div>
-
 </section>
 
 <style>
@@ -51,8 +52,11 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		position: relative;
 		z-index: 46;
 		color: rgb(var(--c-cream));
-		/* The spacing of every other section of the page. The manifesto above ends first (its pinned stage
-		   is over before this starts), so none of the names is seen while the statement is still appearing. */
+		/* Pulled up into the manifesto's last screen (dark by then, the statement blurred out): the first name is
+		   just starting to rise at the bottom of the screen as it ends, so there is no long empty scroll. A name
+		   is invisible while low on the screen (its blur-in by position, script), so none shows while the statement
+		   is still appearing. */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -25);
 		padding-top: clamp(1.5rem, 5vh, 3.5rem);
 		padding-bottom: var(--section-space-bottom);
 	}
@@ -64,8 +68,7 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		align-items: center;
 		padding: 0 var(--site-gutter);
 	}
-	.svc__list { width: 100%; }
-	.svc__list { list-style: none; margin: 0; padding: 0; }
+	.svc__list { width: 100%; list-style: none; margin: 0; padding: 0; }
 	/* Only the name itself answers the pointer (and so opens the picture): the row is a click-through band and
 	   the link is as wide as its word, not the whole line. */
 	.svc__row { position: relative; padding: 0; display: flex; justify-content: center; pointer-events: none; }
@@ -118,7 +121,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		color: rgb(var(--c-cream) / 0.7);
 		text-decoration: none;
 		cursor: pointer;
-		transition: color 0.3s ease;
 	}
 	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
 	.svc__btn__line {
@@ -140,9 +142,9 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		.svc__link { font-size: clamp(5rem, 15vw, 11rem); }
 	}
 
-	/* ── Desktop (mouse): the names big, in the middle; the picture follows the one under the mouse ── */
+	/* ── Desktop (mouse): the names dimmed, the one under the pointer rolls to white and has the picture ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
-		.svc__list { width: 100%; }
+		.svc__body { position: relative; }
 		.svc__link {
 			/* BIG, sized by the width AND the height: the four names fill about one screen */
 			padding: clamp(0.5rem, 1.6vh, 1.4rem) 0;
@@ -151,7 +153,6 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			transition: color 0.4s ease;
 		}
 		/* The names stay above the WebGL picture (a canvas in this section, z 2). */
-		.svc__body { position: relative; }
 		.svc__row .svc__roll { position: relative; z-index: 3; }
 
 		/* Mouse only. At rest, and whenever the mouse is off the names (on the picture too),
@@ -162,33 +163,18 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 			.svc__row.is-hot .svc__roll__base,
 			.svc__row.is-hot .svc__roll__red { transform: translateY(-100%); }
 		}
-
-		/* The site's blur-in, desktop only (on phones it is instant, see global.css). */
-		.svc-rv {
-			opacity: 0;
-			filter: blur(8px);
-			transform: translateY(14px);
-			transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16, 1, 0.3, 1), filter 0.72s cubic-bezier(0.16, 1, 0.3, 1);
-			transition-delay: var(--d, 0s);
-		}
-		.svc-rv.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
 	}
-	/* The hand-over to Selected work: as the options scroll up out of view they blur out, and when the page goes
-	   back they come back the same way, each by its own position on the screen (the script sets opacity, blur and
-	   a small lift per row from where the row is; no timing, so nothing can come back in a different order).
-	   The transitions are off while a row is being scrubbed, or they would lag behind the scroll. */
+	/* The ghost train: every name's opacity, blur and lift are set by the script from where it is on the screen. No
+	   transitions while it is, or they would lag behind the scroll. */
 	#services [data-scrub] { transition: none !important; will-change: opacity, filter, transform; }
 	@media (prefers-reduced-motion: reduce) {
 		.svc__roll__base, .svc__roll__red { transition: none; }
-		.svc-rv { transition: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
 	}
 </style>
 
 <script>
 	import { onReady } from '../../utils/onReady';
 	import { createHoverGallery } from '../../utils/hoverGallery';
-
-	let _isBackNav = false;
 
 	// Where the mouse last was, kept for the whole visit: a page's own scripts
 	// start knowing nothing, but the pointer is still where the click that
@@ -198,150 +184,118 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 	['mousemove', 'mousedown', 'click'].forEach((type) => window.addEventListener(type, track as EventListener, { passive: true, capture: true }));
 	document.documentElement.addEventListener('mouseleave', () => { pointer.x = -1; pointer.y = -1; });
 
-	document.addEventListener('astro:before-swap', (e: any) => {
-		_isBackNav = (e.navigationType ?? '') === 'traverse';
-	});
-
-	// Desktop: the reveal observer, the WebGL hover gallery and their listeners, undone on leaving the page.
-	let _svcDesk: (() => void) | null = null;
-	let _svcHand: (() => void) | null = null;
-	document.addEventListener('astro:before-swap', () => { _svcDesk?.(); _svcDesk = null; _svcHand?.(); _svcHand = null; });
+	// Everything this section starts, undone on leaving the page.
+	let _svcOff: (() => void) | null = null;
+	document.addEventListener('astro:before-swap', () => { _svcOff?.(); _svcOff = null; });
 
 	function initServices() {
-		_svcDesk?.();
-		_svcDesk = null;
-		_svcHand?.();
-		_svcHand = null;
+		_svcOff?.();
+		_svcOff = null;
 		const section = document.getElementById('services');
 		if (!section) return;
+		const offs: Array<() => void> = [];
+		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-		// The hand-over to Selected work, on every device: each row (and See more) blurs out as it scrolls up into the
-		// upper part of the screen and comes back by the same rule on the way back, by its position only. In the zone
-		// between 40% and 12% of the screen height its centre goes from sharp to gone; the title of Selected work
-		// comes in later (SelectedWorkSection). Reduced motion: left alone.
+		// ── The ghost train ─────────────────────────────────────────────────────────────────────────
+		// By the centre of each name (and of See more) on the screen, as a share of its height:
+		//   below 95%: gone; 95% -> 70%: out of blur, rising;  70% -> 35%: sharp;  35% -> 10%: into blur;  above 10%: gone.
+		// Both ends are the same kind of ramp, so the way back is the exact reverse, name by name. Always set (never
+		// cleared), so a name low on the screen is invisible from the first frame the script runs.
 		const scrubEls = Array.from(section.querySelectorAll<HTMLElement>('.svc__row, .svc__btn'));
-		if (scrubEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			const ZONE_BOT = 0.40, ZONE_TOP = 0.12;
-			const place = () => {
-				const vh = window.innerHeight;
-				scrubEls.forEach((el) => {
-					const r = el.getBoundingClientRect();
-					const p = Math.min(1, Math.max(0, ((r.top + r.height / 2) / vh - ZONE_TOP) / (ZONE_BOT - ZONE_TOP)));
-					if (p >= 1) {
-						if (el.dataset.scrub) {
-							delete el.dataset.scrub;
-							el.style.removeProperty('opacity'); el.style.removeProperty('filter'); el.style.removeProperty('transform'); el.style.removeProperty('pointer-events');
-						}
-						return;
-					}
-					el.dataset.scrub = '1';
-					el.style.opacity = p.toFixed(3);
-					el.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * 9).toFixed(1)}px)`;
-					el.style.transform = `translateY(${(-(1 - p) * 8).toFixed(1)}px)`;
-					el.style.pointerEvents = p < 0.3 ? 'none' : '';
-				});
-			};
-			let ticking = false;
-			const onHandScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
-			window.addEventListener('scroll', onHandScroll, { passive: true });
-			place();
-			_svcHand = () => {
-				window.removeEventListener('scroll', onHandScroll);
-				scrubEls.forEach((el) => { delete el.dataset.scrub; ['opacity', 'filter', 'transform', 'pointer-events'].forEach((p) => el.style.removeProperty(p)); });
-			};
-		}
-
-		// Phones and tablets: the plain list, nothing hidden, nothing to start.
-		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) { _isBackNav = false; return; }
-
-		const isBack = _isBackNav;
-		_isBackNav = false;
-
-		// The blur-in of the label, the heading, the text and every row, as the section comes up.
-		const reveals = Array.from(section.querySelectorAll<HTMLElement>('.svc-rv'));
-		let rio: IntersectionObserver | null = null;
-		if (isBack) {
-			reveals.forEach((el) => {
-				el.style.transition = 'none';
-				el.classList.add('visible');
+		const IN_FROM = 0.95, IN_TO = 0.70, OUT_FROM = 0.35, OUT_TO = 0.10;
+		const place = () => {
+			const vh = window.innerHeight;
+			scrubEls.forEach((el) => {
+				const r = el.getBoundingClientRect();
+				const c = (r.top + r.height / 2) / vh;
+				const pin = Math.min(1, Math.max(0, (IN_FROM - c) / (IN_FROM - IN_TO)));
+				const pout = Math.min(1, Math.max(0, (c - OUT_TO) / (OUT_FROM - OUT_TO)));
+				const p = Math.min(pin, pout);
+				el.dataset.scrub = '1';
+				el.style.opacity = p.toFixed(3);
+				el.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * 9).toFixed(1)}px)`;
+				const lift = (1 - pin) * 12 - (1 - pout) * 8; // rising in from below, lifting out at the top
+				el.style.transform = Math.abs(lift) < 0.05 ? 'none' : `translateY(${lift.toFixed(1)}px)`;
+				el.style.pointerEvents = p < 0.3 ? 'none' : '';
 			});
-			requestAnimationFrame(() => reveals.forEach((el) => { el.style.transition = ''; }));
-		} else {
-			rio = new IntersectionObserver((entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						entry.target.classList.add('visible');
-						rio?.unobserve(entry.target);
-					}
-				});
-			}, { threshold: 0.15 });
-			reveals.forEach((el) => rio!.observe(el));
+		};
+		if (!reduce) {
+			let ticking = false;
+			const onScrollTrain = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
+			window.addEventListener('scroll', onScrollTrain, { passive: true });
+			window.addEventListener('resize', onScrollTrain, { passive: true });
+			place();
+			offs.push(() => {
+				window.removeEventListener('scroll', onScrollTrain);
+				window.removeEventListener('resize', onScrollTrain);
+				scrubEls.forEach((el) => { delete el.dataset.scrub; ['opacity', 'filter', 'transform', 'pointer-events'].forEach((k) => el.style.removeProperty(k)); });
+			});
 		}
 
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
 		const list = section.querySelector<HTMLElement>('.svc__list');
 
-		// A real mouse (and no request for less motion): the picture is a WebGL
-		// plane that unfolds under the pointer and trails it (see
-		// utils/hoverGallery.ts). Everyone else gets the plain list.
-		if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-			_svcDesk = () => rio?.disconnect();
-			return;
-		}
-		const gallery = createHoverGallery(
-			section,
-			rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
-			// Brighter than the original's half opacity, and over the list's rules (unfold slowed from 1.75 s to 2.6 s).
-			{ opacity: 0.92, above: true, openSeconds: 2.6, side: 'right', scale: 0.78 },
-		);
-		if (!gallery) {
-			_svcDesk = () => rio?.disconnect();
-			return;
-		}
+		// A real mouse (and no request for less motion), on a wide screen: the picture is a WebGL plane that opens
+		// at the right edge while the pointer is on a word (see utils/hoverGallery.ts). Everyone else gets the
+		// plain list.
+		const wantGallery =
+			!window.matchMedia('(max-width: 1024px)').matches &&
+			window.matchMedia('(hover: hover) and (pointer: fine)').matches &&
+			!reduce;
+		const gallery = wantGallery
+			? createHoverGallery(
+				section,
+				rows.map((r) => ({ key: r.dataset.key!, src: r.dataset.src! })),
+				// Brighter than the original's half opacity, and over the list's rules (unfold slowed from 1.75 s to 2.6 s).
+				{ opacity: 0.92, above: true, openSeconds: 2.6, side: 'right', scale: 0.78 },
+			)
+			: null;
 
-		// The row under the pointer is lit by the script (see .is-hot in the CSS)
-		// and has the picture. The browser does not update :hover (nor send mouse
-		// events) while the list scrolls under a resting pointer, so the row is found
-		// from the pointer's last known position (kept across pages, see `pointer`);
-		// :hover only backs it up when no position is known yet.
-		const sync = () => {
-			const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
-			// the name under the pointer (not the empty part of its line)
-			const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
-				?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
-			rows.forEach((r) => r.classList.toggle('is-hot', r === row));
-			gallery.setHovered(row ? row.dataset.key! : null);
-		};
-		let syncing = false;
-		let settle = 0;
-		const onScroll = () => {
-			// The browser refreshes :hover a moment after a scroll stops, so check
-			// again then as well as while it runs.
-			clearTimeout(settle);
-			settle = window.setTimeout(sync, 160);
-			if (syncing) return;
-			syncing = true;
-			requestAnimationFrame(() => { syncing = false; sync(); });
-		};
-		const onLeave = () => gallery.setHovered(null);
-		window.addEventListener('mousemove', sync, { passive: true });
-		window.addEventListener('scroll', onScroll, { passive: true });
-		document.documentElement.addEventListener('mouseleave', onLeave);
-		list?.addEventListener('mouseleave', onLeave);
-		rows.forEach((row) => {
-			row.querySelector('a')?.addEventListener('mouseenter', sync);
-			// Keyboard focus opens the picture too.
-			row.querySelector('a')?.addEventListener('focus', () => gallery.setHovered(row.dataset.key!));
-			row.querySelector('a')?.addEventListener('blur', onLeave);
-		});
-		_svcDesk = () => {
-			rio?.disconnect();
-			clearTimeout(settle);
-			window.removeEventListener('mousemove', sync);
-			window.removeEventListener('scroll', onScroll);
-			document.documentElement.removeEventListener('mouseleave', onLeave);
-			gallery.destroy();
-		};
+		if (gallery) {
+			// The row under the pointer is lit by the script (see .is-hot in the CSS) and has the
+			// picture. The browser does not update :hover (nor send mouse events) while the page
+			// scrolls under a resting pointer, so the row is found from the pointer's last known
+			// position (kept across pages, see `pointer`); :hover only backs it up when no position
+			// is known yet.
+			const sync = () => {
+				const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
+				// the name under the pointer (not the empty part of its line)
+				const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
+					?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
+				rows.forEach((r) => r.classList.toggle('is-hot', r === row));
+				gallery.setHovered(row ? row.dataset.key! : null);
+			};
+			let syncing = false;
+			let settle = 0;
+			const onScroll = () => {
+				// The browser refreshes :hover a moment after a scroll stops, so check
+				// again then as well as while it runs.
+				clearTimeout(settle);
+				settle = window.setTimeout(sync, 160);
+				if (syncing) return;
+				syncing = true;
+				requestAnimationFrame(() => { syncing = false; sync(); });
+			};
+			const onLeave = () => gallery.setHovered(null);
+			window.addEventListener('mousemove', sync, { passive: true });
+			window.addEventListener('scroll', onScroll, { passive: true });
+			document.documentElement.addEventListener('mouseleave', onLeave);
+			list?.addEventListener('mouseleave', onLeave);
+			rows.forEach((row) => {
+				row.querySelector('a')?.addEventListener('mouseenter', sync);
+				// Keyboard focus opens the picture too.
+				row.querySelector('a')?.addEventListener('focus', () => gallery.setHovered(row.dataset.key!));
+				row.querySelector('a')?.addEventListener('blur', onLeave);
+			});
+			offs.push(() => {
+				clearTimeout(settle);
+				window.removeEventListener('mousemove', sync);
+				window.removeEventListener('scroll', onScroll);
+				document.documentElement.removeEventListener('mouseleave', onLeave);
+				gallery.destroy();
+			});
+		}
+		_svcOff = () => offs.forEach((off) => off());
 	}
 
 	onReady(initServices);
