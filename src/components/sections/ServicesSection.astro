@@ -17,7 +17,7 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		<ul class="svc__list">
 			{services.map((name, i) => (
 				<li class="svc__row">
-					<a href="/services" class="svc__link">
+					<a href={`/services#${name.toLowerCase()}`} class="svc__link">
 						<span class="svc__roll">
 							<span class="svc__roll__base">{name}</span>
 							<span class="svc__roll__red" aria-hidden="true">{name}</span>
