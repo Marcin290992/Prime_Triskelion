@@ -17,9 +17,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 <!-- ═══════ MANIFESTO ═══════ -->
 <section id="manifesto" class="relative" style="height:220vh;height:220lvh;height:calc(var(--app-stable-vh) * 220);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
-		<!-- The label of the Expertise section: the manifesto below is its heading, and the services list
-		     follows it in the same flow (see ServicesSection). -->
-		<h6 class="mf-label">Expertise</h6>
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
 			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
@@ -38,17 +35,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-left: var(--site-gutter) !important;
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
-	}
-	.mf-label {
-		margin: 0 0 1.4rem;
-		font-family: var(--f-body);
-		font-size: 0.78rem;
-		font-weight: 600;
-		line-height: 1.32;
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.6);
-		user-select: none;
 	}
 	.mw {
 		display: inline-block;
@@ -100,7 +86,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		}
 		if (picked.length && red) tl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, `-=${HOLD}`);
 
-		// The line then STAYS: it is the heading of the Expertise section, and the services
+		// The line then STAYS: it is the heading of the services block, and the services
 		// list comes up under it as the page goes on (it used to blur out here, into the dark).
 
 		_manifestoST = ScrollTrigger.create({
