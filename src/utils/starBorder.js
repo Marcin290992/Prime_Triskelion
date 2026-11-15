@@ -242,8 +242,11 @@ class StarBorder {
   }
 
   onFocus() {
-    this.focused = true;
-    if (this.btn.matches(':focus-visible') && !this.pulse(this.phase)) this.light();
+    // Only KEYBOARD focus holds the lit look. A mouse click also focuses a button, but the cursor
+    // leaving must still put the ring out: counting that focus kept the button lit (its periodic
+    // glare replaced by the one-shot, which then ends) until the visitor clicked somewhere else.
+    this.focused = this.btn.matches(':focus-visible');
+    if (this.focused && !this.pulse(this.phase)) this.light();
   }
 
   onBlur() {
