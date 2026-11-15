@@ -118,9 +118,10 @@ const SCREENS = projects.length + HOLD;
 	   cannot stretch it. */
 	.swb {
 		position: relative;
-		/* It follows Services as an ordinary block: the black view scrolls up and pins, and the title
-		   comes out of the dark on the spot (it used to be pulled up a screen to take over where
-		   the manifesto's pin ended, before Services was moved in between). */
+		/* Pulled up under the end of Services, so the pinned view takes over just as the options blur out:
+		   the title comes out of blur where they were, with no long black stretch between (Services is above
+		   it, so it stays readable until it blurs out). */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -55);
 		height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens));
 	}
 	.swb__stage {
@@ -568,7 +569,7 @@ const SCREENS = projects.length + HOLD;
 			// starts 0.4 of a screen before the way out.
 			const up = y < lastY;
 			lastY = y;
-			if (y < st.start + window.innerHeight * 0.4 && (up || y < st.start)) intro.classList.remove('in');
+			if (up) { if (y < st.start + window.innerHeight * 0.4) intro.classList.remove('in'); }
 			else if (pinned) intro.classList.add('in');
 			root.classList.toggle('sw-hscroll', st.isActive);
 		};
@@ -577,6 +578,13 @@ const SCREENS = projects.length + HOLD;
 			onUpdate: (s) => { setFrom(s.progress); sync(s); },
 			onRefresh: (s) => { setFrom(s.progress); sync(s); },
 			onToggle: sync,
+		});
+		// Going down, the title comes in a little BEFORE the pin (when the view's top is a tenth of a screen from
+		// the top), right after the options of Services have blurred out, so there is no empty black in
+		// between. (stPin's own callbacks only run inside its range, hence a trigger of its own.)
+		const stIn = ScrollTrigger.create({
+			trigger: wrap, start: 'top 12%', invalidateOnRefresh: true,
+			onEnter: () => intro.classList.add('in'),
 		});
 		render();
 
@@ -685,6 +693,7 @@ const SCREENS = projects.length + HOLD;
 			window.removeEventListener('keydown', onKey);
 			cancelAnimationFrame(waitRaf);
 			snapOff();
+			stIn.kill();
 			stPin.kill();
 			ro.disconnect();
 			beam?.destroy();
