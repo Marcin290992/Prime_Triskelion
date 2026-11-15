@@ -209,38 +209,22 @@ const SCREENS = projects.length + HOLD;
 		pointer-events: none;
 		will-change: opacity, filter;
 	}
-	/* The title comes in with the site's title entrance, the SAME focus pull as the home hero and Three pillars
-	   (titleIn in utils/pageEntrances.ts, its full version): opacity 0.9s sine.inOut, blur 1.8s power2.inOut,
-	   settling from 1.04x to 1x in 2s power2.out, nothing rising. The three curves below are those easings as
-	   cubic-beziers. Going out (scrolling back up) is quick. The script sets .in (see titleTick). */
-	.swb__intro .swb__title {
-		transition:
-			opacity 0.9s cubic-bezier(0.445, 0.05, 0.55, 0.95),
-			filter 1.8s cubic-bezier(0.455, 0.03, 0.515, 0.955),
-			transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-	}
-	.swb__intro:not(.in) .swb__title {
-		opacity: 0;
-		filter: blur(18px);
-		transform: scale(1.04);
-		transition: opacity 0.28s ease, filter 0.3s ease, transform 0.3s ease;
-	}
-	/* The link under it follows the same focus pull (no scale: it keeps its hover nudge). */
+	/* In from blur once the scroll has reached it (time-based, quick): opacity 0.8s, blur 1s and a rise of 14px, the
+	   way it was before the long focus pull of the hero was tried here. That one took ~2s to sharpen, so a visitor
+	   scrolling on, down or back up, could pass the title before it had resolved. Going out is quicker still. The
+	   script sets .in (see titleTick). */
+	.swb__intro .swb__title,
 	.swb__intro .sw-link {
-		transition:
-			opacity 0.9s cubic-bezier(0.445, 0.05, 0.55, 0.95),
-			filter 1.8s cubic-bezier(0.455, 0.03, 0.515, 0.955),
-			color 0.3s ease, transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	}
+	.swb__intro:not(.in) .swb__title,
 	.swb__intro:not(.in) .sw-link {
 		opacity: 0;
-		filter: blur(18px);
-		transition: opacity 0.28s ease, filter 0.3s ease;
+		filter: blur(14px);
+		transform: translateY(14px);
+		transition: opacity 0.28s ease, filter 0.3s ease, transform 0.3s ease;
 	}
-	.swb__intro.in .sw-link { transition-delay: 0.3s, 0.3s, 0s, 0s; }
-	/* Rests on blur(0px), not none, like the hero (a switch to filter: none blinks on iOS Safari). */
-	.swb__intro.in .swb__title,
-	.swb__intro.in .sw-link { filter: blur(0px); }
+	.swb__intro.in .sw-link { transition-delay: 0.15s; }
 	.swb__title {
 		margin: 0 0 2.5rem;
 		font-family: var(--f-display);
