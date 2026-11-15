@@ -6,7 +6,7 @@
 // pulled up into the manifesto's dark last screen, so the first name is already rising as the statement is gone.
 //
 // The list of the 12 Studio reference (12-studio/app/src/components/sections.jsx) gave the idea (big names, a list
-// of options, a small red number beside each). On a desktop with a mouse the name under the pointer rolls to white,
+// of options). On a desktop with a mouse the name under the pointer rolls to white,
 // the others stay dimmed; there is no hover picture (it was in the way: an earlier version opened a WebGL one, then a
 // still one, see git history).
 const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
@@ -17,7 +17,7 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		<ul class="svc__list">
 			{services.map((name, i) => (
 				<li class="svc__row">
-					<a href="/services" class="svc__link" data-index={String(i + 1).padStart(2, '0')}>
+					<a href="/services" class="svc__link">
 						<span class="svc__roll">
 							<span class="svc__roll__base">{name}</span>
 							<span class="svc__roll__red" aria-hidden="true">{name}</span>
@@ -79,22 +79,6 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 	}
 	.svc__link:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.6); outline-offset: 6px; }
 
-	/* A small red number, to the LEFT of the name. On a phone or tablet the name takes nearly the whole width, so
-	   there it sits just above the name's left edge instead. */
-	.svc__link::before {
-		content: attr(data-index);
-		display: block;
-		text-align: left;
-		margin-bottom: 0.15rem;
-		font-family: var(--f-body);
-		font-size: 0.78rem;
-		font-weight: 600;
-		line-height: 1;
-		letter-spacing: 0.2em;
-		color: rgb(var(--c-red));
-		user-select: none;
-	}
-
 	/* Rolling text, as in the menu: the dimmed name slides up, the white one comes in
 	   from below. (Mouse only, below.) */
 	.svc__roll { position: relative; display: block; overflow: hidden; }
@@ -148,14 +132,6 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 	/* ── Desktop (mouse): the names dimmed, the one under the pointer rolls to white and has the picture ── */
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__body { position: relative; }
-		/* wide screen: the number stands beside the name, vertically centred on it, a little to its left */
-		.svc__link::before {
-			position: absolute;
-			right: 100%;
-			top: 50%;
-			margin: 0 clamp(0.9rem, 1.6vw, 1.6rem) 0 0;
-			transform: translateY(-50%);
-		}
 		.svc__link {
 			/* BIG, sized by the width AND the height: the four names fill about one screen */
 			padding: clamp(0.5rem, 1.6vh, 1.4rem) 0;
