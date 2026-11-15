@@ -3,7 +3,6 @@ import { Image } from 'astro:assets';
 import deeer2 from '../../img/deeer2.webp';
 import imgUnfall from '../../img/services/websites.jpg';
 import imgMousa from '../../img/process/development.jpg';
-import ProjectsHoverList from '../ProjectsHoverList.astro';
 
 // Selected work as full-screen frames: one pinned screen on every device, the
 // scroll melts one project into the next along a band of light (WebGL, see
@@ -89,15 +88,6 @@ const SCREENS = projects.length + HOLD;
 			</div>
 			)}
 		</div>
-	</div>
-
-	<!-- An index of the same projects right under the pinned view: a visitor who does not want to
-	     scroll through the pictures one by one sees them all at once. Mouse: hovering a title opens its
-	     picture in WebGL and carries it after the cursor; phones get the plain list. It is the same
-	     `projects` as the pictures above, so a new project appears in both. -->
-	<div class="swb-index">
-		<p class="swb-index__label">All selected work</p>
-		<ProjectsHoverList projects={projects.map(({ title, href, img }) => ({ title, href, img }))} />
 	</div>
 
 	<div class="swb-panel swb-cover">
@@ -383,22 +373,6 @@ const SCREENS = projects.length + HOLD;
 	@media (hover: hover) {
 		.sw-link:hover { color: rgb(var(--c-cream)); transform: translateX(5px); }
 		.sw-link:hover::after { transform: scaleX(1); }
-	}
-
-	/* The index under the pinned view, in the page's own background. */
-	.swb-index {
-		position: relative;
-		padding-top: clamp(4rem, 10vw, 8rem);
-		background: rgb(var(--c-bg));
-		color: rgb(var(--c-cream));
-	}
-	.swb-index__label {
-		margin: 0;
-		padding: 0 var(--site-gutter);
-		font: 300 0.8rem/1 var(--f-body);
-		letter-spacing: 0.2em;
-		text-transform: uppercase;
-		color: rgb(var(--c-cream) / 0.5);
 	}
 
 	/* After the pinned view: the two closing screens, in the page's own
