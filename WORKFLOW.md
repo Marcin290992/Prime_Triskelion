@@ -39,7 +39,7 @@ export const TOUCH_LENIS_OPTIONS = {
 
 ```ts
 {
-  lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
+  lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.1,
   smoothWheel: true,
   wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
 }
