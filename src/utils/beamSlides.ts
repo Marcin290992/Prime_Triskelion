@@ -61,6 +61,16 @@ vec3 frame(sampler2D tex, float aspect, vec2 focus, vec2 uv) {
   return texture2D(tex, vec2(clamp(st.x, 0.001, 0.999), 1.0 - clamp(st.y, 0.001, 0.999))).rgb;
 }
 
+// The picture with its colours split along n by s (a fraction of the screen): three
+// reads, one per channel. Below half a pixel there is nothing to see, so one read.
+vec3 frameSplit(sampler2D tex, float aspect, vec2 focus, vec2 uv, vec2 n, float s) {
+  if (s < 0.0004) return frame(tex, aspect, focus, uv);
+  return vec3(
+    frame(tex, aspect, focus, uv + n * s).r,
+    frame(tex, aspect, focus, uv).g,
+    frame(tex, aspect, focus, uv - n * s).b);
+}
+
 void main() {
   vec2 uv = vUv;
   float p = clamp(uP, 0.0, 1.0);
@@ -97,14 +107,13 @@ void main() {
   float ca = core * 0.02 + halo * 0.008;
   vec2 uo = outUv + warp;
   vec2 ui = inUv - warp * 1.25;
-  vec3 a = vec3(
-    frame(uFrom, uFromAspect, uFromFocus, uo + n * ca).r,
-    frame(uFrom, uFromAspect, uFromFocus, uo).g,
-    frame(uFrom, uFromAspect, uFromFocus, uo - n * ca).b);
-  vec3 b = vec3(
-    frame(uTo, uToAspect, uToFocus, ui + n * ca * 1.2).r,
-    frame(uTo, uToAspect, uToFocus, ui).g,
-    frame(uTo, uToAspect, uToFocus, ui - n * ca * 1.2).b);
+  // Only what is seen is read: far from the beam one picture needs one texture read
+  // (not six), and the colour split costs three reads only where it can be seen.
+  // (The shader used to read both pictures three times at every pixel.)
+  vec3 a = vec3(0.0);
+  vec3 b = vec3(0.0);
+  if (reveal < 0.999) a = frameSplit(uFrom, uFromAspect, uFromFocus, uo, n, ca);
+  if (reveal > 0.001) b = frameSplit(uTo, uToAspect, uToFocus, ui, n, ca * 1.2);
   vec3 base = mix(a, b, reveal);
 
   vec3 tint = mix(vec3(0.82, 0.9, 1.0), vec3(1.0, 0.93, 0.82), core);
