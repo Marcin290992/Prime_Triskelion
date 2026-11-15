@@ -173,24 +173,12 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		}
 		.svc-rv.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
 	}
-	/* The hand-over to Selected work: as the options leave, they blur out (one transition, not tied to the
-	   scroll) and the next section's title comes out of blur in the same place (script below, and
-	   SelectedWorkSection). The class is on the section; scrolling back brings them back. */
-	#services.is-out .svc__row,
-	#services.is-out .svc__btn {
-		opacity: 0;
-		filter: blur(6px);
-		transform: translateY(-6px);
-		transition: opacity 0.9s ease, filter 1s ease, transform 1s ease !important;
-		transition-delay: 0s !important;
-		pointer-events: none;
-	}
-	/* Phones and tablets have no blur-in on the way in, but the way back needs a soft return too. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#services .svc__row, #services .svc__btn { transition: opacity 0.7s ease, filter 0.8s ease, transform 0.8s ease; }
-	}
+	/* The hand-over to Selected work: as the options scroll up out of view they blur out, and when the page goes
+	   back they come back the same way, each by its own position on the screen (the script sets opacity, blur and
+	   a small lift per row from where the row is; no timing, so nothing can come back in a different order).
+	   The transitions are off while a row is being scrubbed, or they would lag behind the scroll. */
+	#services [data-scrub] { transition: none !important; will-change: opacity, filter, transform; }
 	@media (prefers-reduced-motion: reduce) {
-		#services.is-out .svc__row, #services.is-out .svc__btn { filter: none; transform: none; transition: opacity 0.2s linear !important; }
 		.svc__roll__base, .svc__roll__red { transition: none; }
 		.svc-rv { transition: none !important; opacity: 1 !important; filter: none !important; transform: none !important; }
 	}
@@ -227,24 +215,40 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		const section = document.getElementById('services');
 		if (!section) return;
 
-		// The hand-over to Selected work, on every device: once the options have scrolled up to the upper part
-		// of the screen (the last of them, See more, above 56% of its height) they blur out, and the next
-		// section's title comes in where they were. Scrolling back brings them back (with a margin, so it
-		// never flickers at the threshold).
-		const handBtn = section.querySelector<HTMLElement>('.svc__btn');
-		if (handBtn) {
-			let out = false;
-			const check = () => {
-				const b = handBtn.getBoundingClientRect().bottom;
+		// The hand-over to Selected work, on every device: each row (and See more) blurs out as it scrolls up into the
+		// upper part of the screen and comes back by the same rule on the way back, by its position only. In the zone
+		// between 40% and 12% of the screen height its centre goes from sharp to gone; the title of Selected work
+		// comes in later (SelectedWorkSection). Reduced motion: left alone.
+		const scrubEls = Array.from(section.querySelectorAll<HTMLElement>('.svc__row, .svc__btn'));
+		if (scrubEls.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			const ZONE_BOT = 0.40, ZONE_TOP = 0.12;
+			const place = () => {
 				const vh = window.innerHeight;
-				if (!out && b < vh * 0.56) { out = true; section.classList.add('is-out'); }
-				else if (out && b > vh * 0.66) { out = false; section.classList.remove('is-out'); }
+				scrubEls.forEach((el) => {
+					const r = el.getBoundingClientRect();
+					const p = Math.min(1, Math.max(0, ((r.top + r.height / 2) / vh - ZONE_TOP) / (ZONE_BOT - ZONE_TOP)));
+					if (p >= 1) {
+						if (el.dataset.scrub) {
+							delete el.dataset.scrub;
+							el.style.removeProperty('opacity'); el.style.removeProperty('filter'); el.style.removeProperty('transform'); el.style.removeProperty('pointer-events');
+						}
+						return;
+					}
+					el.dataset.scrub = '1';
+					el.style.opacity = p.toFixed(3);
+					el.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * 9).toFixed(1)}px)`;
+					el.style.transform = `translateY(${(-(1 - p) * 8).toFixed(1)}px)`;
+					el.style.pointerEvents = p < 0.3 ? 'none' : '';
+				});
 			};
 			let ticking = false;
-			const onHandScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; check(); }); };
+			const onHandScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
 			window.addEventListener('scroll', onHandScroll, { passive: true });
-			check();
-			_svcHand = () => { window.removeEventListener('scroll', onHandScroll); section.classList.remove('is-out'); };
+			place();
+			_svcHand = () => {
+				window.removeEventListener('scroll', onHandScroll);
+				scrubEls.forEach((el) => { delete el.dataset.scrub; ['opacity', 'filter', 'transform', 'pointer-events'].forEach((p) => el.style.removeProperty(p)); });
+			};
 		}
 
 		// Phones and tablets: the plain list, nothing hidden, nothing to start.
