@@ -73,6 +73,41 @@ const services = ['Websites', 'Branding', 'Motion', 'Strategy'];
 		text-decoration: none;
 	}
 
+	.svc__btn {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		margin-top: clamp(2rem, 6vw, 3.5rem);
+		font-family: var(--f-body);
+		font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+		font-weight: 300;
+		letter-spacing: 0.38em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.7);
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.svc__btn:hover { color: rgb(var(--c-cream) / 0.9); }
+	.svc__btn__line {
+		display: block;
+		width: 36px;
+		height: 1px;
+		background: rgb(var(--c-red) / 0.9);
+		transform-origin: left;
+		transition: width 0.35s ease;
+		flex-shrink: 0;
+	}
+	.svc__btn:hover .svc__btn__line { width: 56px; }
+	/* Touch: the link's text line is 18px tall: tap 44px. */
+	@media (pointer: coarse) {
+		.svc__btn::before { content: ''; position: absolute; inset: -13px 0; }
+	}
+
+	@media (min-width: 700px) and (max-width: 1024px) {
+		.svc__link { font-size: clamp(5rem, 15vw, 11rem); }
+	}
+
 	@media (min-width: 1025px) and (hover: hover), (min-width: 1025px) and (pointer: fine) {
 		.svc__body { position: relative; }
 		.svc__link {
