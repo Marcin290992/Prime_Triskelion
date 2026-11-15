@@ -16,7 +16,7 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:280vh;height:280lvh;height:calc(var(--app-stable-vh) * 280);z-index:10">
+<section id="manifesto" class="relative" style="height:250vh;height:250lvh;height:calc(var(--app-stable-vh) * 250);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-start px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100);padding-top:clamp(5.5rem,16vh,10rem)">
 		<!-- The label of the Expertise screen: the manifesto below is its heading, and the services names sit
 		     under it in the same pinned stage (ServicesSection, below): nothing scrolls in, the timeline brings
@@ -91,6 +91,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		tl.to({}, { duration: 1.0 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
 
+		// The services names (they stand in the lower part of this same stage, see ServicesSection)
+		// come out of blur one after another once the statement is whole. Hidden until then, so they
+		// are not clickable early.
+		const names = section.querySelectorAll<HTMLElement>('.svc__row');
+		gsap.set(names, { autoAlpha: 0, y: 16, filter: 'blur(8px)' });
+		tl.to(names, { autoAlpha: 1, y: 0, filter: 'blur(0px)', stagger: 0.25, duration: 0.7, ease: 'none' }, '>');
+
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the
 		// sentence take the red, one after another.
@@ -103,18 +110,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		}
 		if (picked.length && red) tl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, `-=${HOLD}`);
 
-		// Then the same screen turns to the services: the statement and its label lift away (still
-		// the same pinned stage, nothing scrolls in) and the services names, BIG, come out of blur
-		// where they stand, one after another. They are hidden until then, so they cannot be
-		// clicked early; scrolling back up undoes it.
-		const names = section.querySelectorAll<HTMLElement>('.svc__row');
-		const label = section.querySelector<HTMLElement>('.mf-label');
-		gsap.set(names, { autoAlpha: 0, y: 24, filter: 'blur(10px)' });
-		const turn = tl.duration();
-		const leaving = [label, heading].filter(Boolean) as HTMLElement[];
-		tl.to(leaving, { y: () => -window.innerHeight * 0.14, opacity: 0, filter: 'blur(8px)', duration: 1.0, ease: 'power1.in' }, turn);
-		tl.to(names, { autoAlpha: 1, y: 0, filter: 'blur(0px)', stagger: 0.22, duration: 0.8, ease: 'none' }, turn + 0.3);
-		tl.to({}, { duration: 0.8 }); // the names stay a while, pinned
+		// The line then STAYS: it is the heading of the Expertise section, and the services
+		// list comes up under it as the page goes on (it used to blur out here, into the dark).
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
