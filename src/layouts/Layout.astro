@@ -422,7 +422,9 @@ const { title, description = "Prime Triskelion — one-person design studio craf
         // Narrow windows (phone/tablet widths) get a much lighter drag.
         lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.06,
         smoothWheel: true,
-        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.3,
+        // One wheel notch moves 0.5 of its normal distance on a wide screen (it was 0.3: far too little; the 12
+        // Studio reference uses the default, 1).
+        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.5,
       });
 
       (window as any).__lenis = _layoutLenis;
