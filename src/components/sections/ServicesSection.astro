@@ -66,11 +66,15 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 	}
 	.svc__list { width: 100%; }
 	.svc__list { list-style: none; margin: 0; padding: 0; }
-	.svc__row { position: relative; padding: 0; }
+	/* Only the name itself answers the pointer (and so opens the picture): the row is a click-through band and
+	   the link is as wide as its word, not the whole line. */
+	.svc__row { position: relative; padding: 0; display: flex; justify-content: center; pointer-events: none; }
 	.svc__link {
 		position: relative;
 		display: block;
-		width: 100%;
+		width: auto;
+		max-width: 100%;
+		pointer-events: auto;
 		text-align: center;
 		padding: clamp(0.9rem, 3.6vw, 1.6rem) 0;
 		font-family: var(--f-display);
@@ -298,7 +302,8 @@ const glSrcs = await Promise.all(services.map(async (sv) => (await getImage({ sr
 		// :hover only backs it up when no position is known yet.
 		const sync = () => {
 			const under = pointer.x >= 0 ? document.elementFromPoint(pointer.x, pointer.y) : null;
-			const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__row') : null)
+			// the name under the pointer (not the empty part of its line)
+			const row = (under && list?.contains(under) ? under.closest<HTMLElement>('.svc__link')?.closest<HTMLElement>('.svc__row') ?? null : null)
 				?? (pointer.x < 0 ? list?.querySelector('.svc__link:hover')?.closest<HTMLElement>('.svc__row') ?? null : null);
 			rows.forEach((r) => r.classList.toggle('is-hot', r === row));
 			gallery.setHovered(row ? row.dataset.key! : null);
