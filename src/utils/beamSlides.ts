@@ -64,11 +64,15 @@ vec3 frame(sampler2D tex, float aspect, vec2 focus, vec2 uv) {
 // The picture with its colours split along n by s (a fraction of the screen): three
 // reads, one per channel. Below half a pixel there is nothing to see, so one read.
 vec3 frameSplit(sampler2D tex, float aspect, vec2 focus, vec2 uv, vec2 n, float s) {
+#ifdef LOW_FRAGMENT_COST
+  return frame(tex, aspect, focus, uv);
+#else
   if (s < 0.0004) return frame(tex, aspect, focus, uv);
   return vec3(
     frame(tex, aspect, focus, uv + n * s).r,
     frame(tex, aspect, focus, uv).g,
     frame(tex, aspect, focus, uv - n * s).b);
+#endif
 }
 
 void main() {
@@ -134,6 +138,7 @@ export function createBeamSlides(
 ): BeamSlides | null {
 	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
 	if (!gl) return null;
+	const lowCostAndroidChrome = /Android/i.test(navigator.userAgent) && /Chrome\/\d+/i.test(navigator.userAgent);
 
 	const compile = (type: number, src: string) => {
 		const s = gl.createShader(type)!;
@@ -142,7 +147,7 @@ export function createBeamSlides(
 		return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null;
 	};
 	const vs = compile(gl.VERTEX_SHADER, VERT);
-	const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+	const fs = compile(gl.FRAGMENT_SHADER, `${lowCostAndroidChrome ? '#define LOW_FRAGMENT_COST\n' : ''}${FRAG}`);
 	if (!vs || !fs) return null;
 	const prog = gl.createProgram()!;
 	gl.attachShader(prog, vs);
@@ -212,7 +217,7 @@ export function createBeamSlides(
 		// would cost 9x the pixels for nothing the eye can see in motion)
 		const coarse = window.matchMedia('(pointer: coarse)').matches;
 		const lite = /[?&]lite=(all|[^&]*dpr)/.test(window.location.search);   // ?lite=dpr: diagnostics, see SelectedWorkSection
-		const dpr = lite ? 1 : Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
+		const dpr = lite || lowCostAndroidChrome ? 1 : Math.min(window.devicePixelRatio || 1, coarse ? 1.25 : 1.75);
 		const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
 		const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
 		if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
