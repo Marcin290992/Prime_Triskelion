@@ -81,7 +81,10 @@
   /* ───────── Desktop ───────── */
   #sc-root {
     position: relative;
-    height: 250vh;
+    /* Pinned for 240vh of scroll (it was 150): the four phases have room, and the cards are held
+       once revealed (the last 16% of the scroll), so the page does not leave while they are
+       still turning over. */
+    height: 340vh;
     background: rgb(var(--c-bg));
   }
   #sc-sticky {
@@ -471,13 +474,14 @@
       clamp01((p - start) / (end - start));
 
     const apply = (p: number) => {
-      // 0.00–0.30  zoom-in (title + full image landing)
-      // 0.30–0.48  HOLD full image  (no cuts visible)
-      // 0.48–0.72  split (cards separate)
-      // 0.72–1.00  flip (reveal pillar copy)
-      scene.style.setProperty('--zoom',  phase(p, 0.00, 0.30).toFixed(4));
-      scene.style.setProperty('--split', phase(p, 0.48, 0.72).toFixed(4));
-      scene.style.setProperty('--flip',  phase(p, 0.72, 1.00).toFixed(4));
+      // 0.00–0.26  zoom-in (title + full image landing)
+      // 0.26–0.38  HOLD full image  (no cuts visible)
+      // 0.38–0.58  split (cards separate)
+      // 0.58–0.84  flip (reveal pillar copy)
+      // 0.84–1.00  HOLD the revealed cards, still pinned, before the page goes on
+      scene.style.setProperty('--zoom',  phase(p, 0.00, 0.26).toFixed(4));
+      scene.style.setProperty('--split', phase(p, 0.38, 0.58).toFixed(4));
+      scene.style.setProperty('--flip',  phase(p, 0.58, 0.84).toFixed(4));
     };
 
     apply(0);
@@ -487,7 +491,7 @@
     // titleIn: rises out of the black soft, then sharpens, settling from a
     // hair oversized). Scrolling back above that point sends it back out.
     const title = document.getElementById('sc-title');
-    const TITLE_AT = 0.22;
+    const TITLE_AT = 0.19;
     let titleShown = false;
     let titleTl: gsap.core.Timeline | null = null;
     const setTitle = (show: boolean) => {
