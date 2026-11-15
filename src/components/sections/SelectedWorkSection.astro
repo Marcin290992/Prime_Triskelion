@@ -220,7 +220,7 @@ const SCREENS = projects.length + HOLD;
 		opacity: 0;
 		filter: blur(14px);
 		transform: translateY(14px);
-		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease;
+		transition: opacity 0.28s ease, filter 0.3s ease, transform 0.3s ease;
 	}
 	.swb__intro.in .sw-link { transition-delay: 0.15s; }
 	.swb__title {
@@ -559,7 +559,7 @@ const SCREENS = projects.length + HOLD;
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
 		// section, global.css html.sw-hscroll).
-		// (The title's own in / out is the stIn trigger below: a pure function of the scroll position.)
+		// (The title's own in / out: titleTick below, from the scroll position and its direction.)
 		const sync = (st: ScrollTrigger) => {
 			root.classList.toggle('sw-hscroll', st.isActive);
 		};
@@ -569,20 +569,37 @@ const SCREENS = projects.length + HOLD;
 			onRefresh: (s) => { setFrom(s.progress); sync(s); },
 			onToggle: sync,
 		});
-		// Going down, the title comes in once the view has been pinned for a little (11% of a screen): after the
-		// options of Services have blurred out there is a short stretch of dark, and only then the title. (Too
-		// early it broke the cinematic feel.) Its own trigger, so the moment is easy to move.
-		const stIn = ScrollTrigger.create({
-			// phones and tablets get a little more room (18%) than a mouse screen (11%): a breath of dark before it
-			trigger: wrap, start: window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'top -18%' : 'top -11%', invalidateOnRefresh: true,
-			end: 'bottom top',
-			// The title is in exactly while the scroll is inside this range and out above it (it blurs out on the
-			// way back up while the pinned view is still on screen). A pure function of the position: it used to
-			// be "add on entering, remove by a separate rule further down", and turning back into the gap between
-			// the two left it removed with nothing to bring it back (the title got lost).
-			onToggle: (s) => intro.classList.toggle('in', s.isActive),
-			onRefresh: (s) => intro.classList.toggle('in', s.isActive),
-		});
+		// The title's in / out, decided from the scroll position and its direction on EVERY scroll event:
+		//  - above the line (the pin start + A of a screen: 11% on a mouse screen, 18% on a phone / tablet, a breath of
+		//    dark after Services has blurred out): out;
+		//  - below the second line (60% of a screen after the pin start): in;
+		//  - between the two: in while the page goes DOWN, out as soon as it goes UP, so on the way back it blurs out
+		//    early, while the view is still pinned for a good stretch, instead of sliding down the screen while it fades.
+		// Above the pin start the stage is moving, so the title is hidden at once (no fade, nothing to slide).
+		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const TITLE_A = touchy ? 0.18 : 0.11;
+		const TITLE_B = 0.6;
+		let titleOn = false;
+		let titleY = window.scrollY;
+		const titleTick = () => {
+			const y = window.scrollY;
+			const vh = window.innerHeight;
+			const s = stPin.start;
+			const moved = y !== titleY;
+			const down = y > titleY;
+			titleY = y;
+			let want = titleOn;
+			if (y < s + TITLE_A * vh) want = false;
+			else if (y >= s + TITLE_B * vh) want = true;
+			else if (moved) want = down;
+			if (want !== titleOn) { titleOn = want; intro.classList.toggle('in', want); }
+			intro.style.visibility = y < s ? 'hidden' : '';
+		};
+		let titleRaf = 0;
+		const onTitleScroll = () => { if (titleRaf) return; titleRaf = requestAnimationFrame(() => { titleRaf = 0; titleTick(); }); };
+		window.addEventListener('scroll', onTitleScroll, { passive: true });
+		ScrollTrigger.addEventListener('refresh', titleTick);
+		titleTick();
 		render();
 
 		// ── The dock-in ────────────────────────────────────────────────────────
@@ -690,7 +707,10 @@ const SCREENS = projects.length + HOLD;
 			window.removeEventListener('keydown', onKey);
 			cancelAnimationFrame(waitRaf);
 			snapOff();
-			stIn.kill();
+			window.removeEventListener('scroll', onTitleScroll);
+			ScrollTrigger.removeEventListener('refresh', titleTick);
+			cancelAnimationFrame(titleRaf);
+			intro.style.visibility = '';
 			stPin.kill();
 			ro.disconnect();
 			beam?.destroy();
