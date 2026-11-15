@@ -583,7 +583,8 @@ const SCREENS = projects.length + HOLD;
 		// options of Services have blurred out there is a short stretch of dark, and only then the title. (Too
 		// early it broke the cinematic feel.) Its own trigger, so the moment is easy to move.
 		const stIn = ScrollTrigger.create({
-			trigger: wrap, start: 'top -11%', invalidateOnRefresh: true,
+			// phones and tablets get a little more room (18%) than a mouse screen (11%): a breath of dark before it
+			trigger: wrap, start: window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'top -18%' : 'top -11%', invalidateOnRefresh: true,
 			onEnter: () => intro.classList.add('in'),
 			// landing past it (reload, back / forward): already in
 			onRefresh: (s) => { if (s.scroll() >= s.start) intro.classList.add('in'); },
