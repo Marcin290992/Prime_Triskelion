@@ -483,7 +483,7 @@ const [line1, line2] = d.titleLines;
   }
   .wos-pd__row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
   .wos-pd__img {
-    position: relative; overflow: hidden; border-radius: 0.5rem; background: #111114;
+    position: relative; overflow: hidden; border-radius: 0; background: #111114;
     opacity: 0; transform: translateY(2.5rem);
     transition: transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.2s ease;
   }
@@ -539,7 +539,7 @@ const [line1, line2] = d.titleLines;
   .browser-frame {
     background: #131318;
     border: 1px solid rgba(255,255,255,0.17);
-    border-radius: 10px;
+    border-radius: 0;
     overflow: hidden;
     box-shadow: 0 24px 64px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
     width: 100%;
@@ -573,7 +573,7 @@ const [line1, line2] = d.titleLines;
     flex: 1;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 4px;
+    border-radius: 0;
     height: 20px;
     display: flex;
     align-items: center;
@@ -629,13 +629,13 @@ const [line1, line2] = d.titleLines;
 
   /* Wide variant (full-width showcase) */
   .browser-frame--wide {
-    border-radius: 12px;
+    border-radius: 0;
     width: min(calc(100% - var(--site-gutter) * 2), calc(var(--site-max-width) - var(--site-gutter) * 2));
     margin-inline: auto;
   }
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .browser-frame--wide {
-      border-radius: 12px;
+      border-radius: 0;
       width: calc(100% - var(--site-gutter) * 2);
       margin-inline: var(--site-gutter);
     }
