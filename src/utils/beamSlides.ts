@@ -42,7 +42,7 @@ uniform float uP;
 varying vec2 vUv;
 
 const float BEAM_WIDTH = 0.12;
-const float BEAM_GAIN = 0.6;
+const float BEAM_GAIN = 0.8;
 const float ZOOM = 1.12;
 const float DRIFT = 0.05;
 const vec2 PIVOT = vec2(0.5, 0.4);
