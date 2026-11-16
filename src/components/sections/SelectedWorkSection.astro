@@ -654,7 +654,8 @@ const SCREENS = projects.length + HOLD;
 			goTo = move;
 			const decide = () => {
 				timer = 0;
-				if (snapping || reduced() || lenis.isStopped || root.classList.contains('pt-restoring')) return;
+				if (snapping || reduced() || root.classList.contains('pt-restoring')) return;
+				if (lenis.isStopped) { anchor = -1; return; }   // the menu has the page: this gesture is over
 				if (lenis.isTouching) { timer = window.setTimeout(decide, 80); return; }
 				const y = lenis.scroll;
 				if (y < stop(0) - 0.6 * unit() || y > stop(n) + 0.45 * unit()) return;   // free scroll outside
