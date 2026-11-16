@@ -554,8 +554,8 @@ const SCREENS = projects.length + HOLD;
 
 		// How much scroll each step takes: one screen, as the home hero's exit. The title
 		// first stands alone for LEAD screens, then each picture gets PER screens.
-		const LEAD = 0.8;
-		const PER = 1;
+		const LEAD = 0.6;
+		const PER = 0.75;
 		const length = LEAD + PER * (n + hold);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
