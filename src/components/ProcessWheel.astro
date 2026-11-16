@@ -83,7 +83,7 @@ const { steps, center = 'image' } = Astro.props;
 			/* The title's own band at the top, and the band at the bottom where the
 			   fixed MENU button lives: the animated field sits between them, so the
 			   picture can never run under the title, on any screen height. */
-			--pw-top: calc(clamp(5.5rem, 6vw, 7rem) + clamp(1.6rem, 2.6vw, 3rem) + 1.75rem);
+			--pw-top: calc(clamp(5.5rem, 6vw, 7rem) + clamp(1.6rem, 2.6vw, 4.5rem) + 1.75rem);
 			--pw-bottom: clamp(124px, 16vh, 150px);
 			/* The picture is 4:3: as wide as the middle gap allows, and never taller than the field. */
 			--pw-pic: min(27vw, calc((100vh - var(--pw-top) - var(--pw-bottom)) * 0.86 * 4 / 3));
@@ -99,7 +99,7 @@ const { steps, center = 'image' } = Astro.props;
 			text-align: center;
 			font-family: var(--f-display);
 			font-weight: 600;
-			font-size: clamp(1.6rem, 2.6vw, 3rem);
+			font-size: clamp(1.6rem, 2.6vw, 4.5rem);
 			line-height: 1;
 			letter-spacing: -0.01em;
 			text-transform: uppercase;
