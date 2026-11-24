@@ -465,9 +465,13 @@
       flex-direction: column;
       padding: 1.15rem 1.35rem 1.45rem;
     }
-    .c1 { --card-top: #f5efe7; background: linear-gradient(180deg, #f5efe7 0%, #b9b3a9 100%); color: rgb(var(--c-bg)); }
-    .c2 { --card-top: #a9a9ad; background: linear-gradient(180deg, #a9a9ad 0%, #3a3a3e 55%, #1b1b1e 100%); color: rgb(var(--c-cream)); }
-    .c3 { --card-top: #1a1a1c; background: linear-gradient(180deg, #1a1a1c 0%, #050505 100%); color: rgb(var(--c-cream)); }
+    /* The photo melts into --card-top, and the text part starts from exactly that colour and runs down to --card-end,
+       so there is no seam where the picture ends. */
+    .c1 { --card-top: #f5efe7; --card-end: #b9b3a9; color: rgb(var(--c-bg)); }
+    .c2 { --card-top: #a9a9ad; --card-end: #1b1b1e; color: rgb(var(--c-cream)); }
+    .c3 { --card-top: #1a1a1c; --card-end: #050505; color: rgb(var(--c-cream)); }
+    .sc-card-m { background: var(--card-top); }
+    .sc-card-m__body { background: linear-gradient(180deg, var(--card-top) 0%, var(--card-end) 100%); }
     .sc-card-m .sc-name { font-size: clamp(1.7rem, 7vw, 2.2rem); line-height: 1; margin: 0 0 0.6rem; }
     .sc-card-m .sc-hook { font-size: 0.78rem; margin: 0 0 0.5rem; padding-top: 0.7rem; }
     .c3 .sc-hook { color: rgb(var(--c-red)); border-top-color: rgb(var(--c-red) / 0.45); }

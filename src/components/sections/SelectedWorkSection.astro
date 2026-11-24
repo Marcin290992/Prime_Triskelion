@@ -560,11 +560,8 @@ const SCREENS = projects.length + HOLD;
 
 		// How much scroll each step takes: one screen, as the home hero's exit. The title
 		// first stands alone for LEAD screens, then each picture gets PER screens.
-		// A finger is far more sensitive than the wheel: it moved on to the next picture after a tenth of a step (a
-		// short flick). On touch screens a step is longer and it takes about a third of it (DEPART below) to commit.
-		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		const LEAD = 0.6;
-		const PER = coarse ? 1.15 : 0.75;
+		const PER = 0.75;
 		const length = LEAD + PER * (n + hold);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
@@ -638,7 +635,7 @@ const SCREENS = projects.length + HOLD;
 		};
 		const setupSnap = () => {
 			const IDLE = 140;       // ms of quiet before it decides
-			const DEPART = coarse ? 0.32 : 0.1;     // share of the gap to have travelled (the wheel here is 0.3x; a finger needs more)
+			const DEPART = 0.1;     // share of the gap to have travelled (the wheel here is 0.3x)
 			let snapping = false;
 			let timer = 0, fail = 0;
 			// the picture the page stood on when this gesture began: one gesture moves at most one
@@ -649,17 +646,15 @@ const SCREENS = projects.length + HOLD;
 				for (let k = 1; k <= n; k++) if (Math.abs(stop(k) - y) < Math.abs(stop(b) - y)) b = k;
 				return b;
 			};
-			// called when a move has finished (or timed out): the touch code uses it to give the page back
-			let afterMove = () => {};
 			const move = (k: number, duration: number) => {
 				snapping = true;
 				clearTimeout(fail);
-				fail = window.setTimeout(() => { snapping = false; afterMove(); }, 4000);   // never stay stuck
+				fail = window.setTimeout(() => { snapping = false; }, 4000);   // never stay stuck
 				lenis.scrollTo(stop(k), {
 					duration,
 					easing: settle,
 					force: true,
-					onComplete: () => { clearTimeout(fail); snapping = false; afterMove(); },
+					onComplete: () => { clearTimeout(fail); snapping = false; },
 				});
 			};
 			goTo = move;
@@ -689,59 +684,10 @@ const SCREENS = projects.length + HOLD;
 			};
 			lenis.on('scroll', onScroll);
 
-			// Touch: one swipe is ONE move, played by itself. The finger no longer drags the light along: the page is
-			// held (lenis.stop) for the gesture, and as soon as the swipe is clearly up or down the beam goes on to
-			// the next / previous picture on its own, in one go. A swipe that leads out of the pinned view (up from
-			// the first picture, down from the last) hands the page back, so it scrolls on as usual.
-			let touch: { x: number; y: number; k: number } | null = null;
-			let decided = false;
-			let held = false;
-			const release = () => {
-				if (held) { held = false; lenis.start(); }
-			};
-			const inZone = () => {
-				const y = lenis.scroll;
-				return y >= stop(0) - 0.25 * unit() && y <= stop(n) + 0.25 * unit();
-			};
-			const onTouchStart = (e: TouchEvent) => {
-				touch = null;
-				decided = false;
-				if (e.touches.length !== 1 || lenis.isStopped || reduced() || root.classList.contains('pt-restoring')) return;
-				if (!inZone()) return;
-				touch = { x: e.touches[0].clientX, y: e.touches[0].clientY, k: nearest(lenis.scroll) };
-				if (snapping) decided = true;   // a move is still playing: hold the page, ignore this swipe
-				lenis.stop();
-				held = true;
-			};
-			const onTouchMove = (e: TouchEvent) => {
-				if (!touch || decided) return;
-				const dy = touch.y - e.touches[0].clientY;   // > 0: the finger goes up, the page goes on
-				const dx = touch.x - e.touches[0].clientX;
-				if (Math.abs(dy) < 24 && Math.abs(dx) < 24) return;
-				decided = true;
-				if (Math.abs(dx) > Math.abs(dy) * 1.2) { release(); return; }   // sideways: not ours
-				const k = touch.k + (dy > 0 ? 1 : -1);
-				if (k < 0 || k > n) { release(); return; }   // leaving the view
-				move(k, 1.25);
-			};
-			// Starting Lenis again would cancel the move that is playing, so the page is handed back when it is over
-			afterMove = () => { if (!touch) release(); };
-			const onTouchEnd = () => { touch = null; if (!snapping) release(); };
-			if (coarse) {
-				window.addEventListener('touchstart', onTouchStart, { passive: true });
-				window.addEventListener('touchmove', onTouchMove, { passive: true });
-				window.addEventListener('touchend', onTouchEnd, { passive: true });
-				window.addEventListener('touchcancel', onTouchEnd, { passive: true });
-			}
 			snapOff = () => {
 				lenis.off('scroll', onScroll);
 				window.clearTimeout(timer);
 				window.clearTimeout(fail);
-				window.removeEventListener('touchstart', onTouchStart);
-				window.removeEventListener('touchmove', onTouchMove);
-				window.removeEventListener('touchend', onTouchEnd);
-				window.removeEventListener('touchcancel', onTouchEnd);
-				release();
 			};
 		};
 		let waitRaf = 0;
