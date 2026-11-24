@@ -561,8 +561,9 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On touch the finger moves the page 0.8x as far as the wheel does, see utils/touchLenis.ts, so the steps are
 		// shorter by the same factor: the same push of the finger as before.)
-		const LEAD = coarse ? 0.9 : 1.0;
-		const PER = coarse ? 1.0 : 1.0;
+		// (On a wide screen the wheel moves the page 0.42/0.5 = 0.84x as far as it used to, see Layout.astro: steps 0.85.)
+		const LEAD = coarse ? 0.9 : 0.85;
+		const PER = coarse ? 1.0 : 0.85;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => {
