@@ -420,12 +420,12 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       // see utils/touchLenis.ts.
       _layoutLenis = new Lenis(isTouch ? { ...TOUCH_LENIS_OPTIONS } : {
         // Narrow windows (phone/tablet widths) get a much lighter drag.
-        // Cinematic on a wide screen: a longer glide (0.06 -> 0.045) and a heavier wheel (0.5 -> 0.42).
-        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.045,
+        // Cinematic on a wide screen: a longer glide (0.06 -> 0.035) and a heavier wheel (0.5 -> 0.36).
+        lerp: window.matchMedia('(max-width: 1024px)').matches ? 0.16 : 0.035,
         smoothWheel: true,
         // One wheel notch moves 0.5 of its normal distance on a wide screen (it was 0.3: far too little; the 12
         // Studio reference uses the default, 1).
-        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.42,
+        wheelMultiplier: window.matchMedia('(max-width: 1024px)').matches ? 0.8 : 0.36,
       });
 
       (window as any).__lenis = _layoutLenis;
