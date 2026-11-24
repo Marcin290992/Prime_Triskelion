@@ -623,3 +623,17 @@ html.sw-hscroll .gradual-blur__layer {
 }
 /* (On phones the bands stay on here too: the Selected work frames need their
    top and bottom blur on every device, so the bands are only lightened, not hidden.) */
+
+/* A button with the frame light as its hover (buttonFrameFx.ts): the light under the label. */
+/* Its turning beam stays at rest, and goes out the moment the frame light comes in (the two were laid over each
+   other): buttonFrameFx.ts sets .frame-fx-on while the light is up. */
+[data-frame-fx] .hud-spin-border { transition: opacity 0.3s ease; }
+[data-frame-fx].frame-fx-on .hud-spin-border { opacity: 0; }
+[data-frame-fx] .frame-border-canvas { z-index: 0; }
+[data-frame-fx] .h-hero-cta__text { position: relative; z-index: 1; }
+
+/* The MENU button: the frame light is its state while the menu is open; the specular beam it has at rest goes out with
+   it, and the icon and label stay above the light. */
+#hud-menu-btn .specular-button__fx { transition: opacity 0.3s ease; }
+#hud-menu-btn.frame-fx-on .specular-button__fx { opacity: 0; }
+#hud-menu-btn .hud-ico { position: relative; z-index: 1; }

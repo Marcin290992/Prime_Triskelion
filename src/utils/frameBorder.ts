@@ -7,6 +7,7 @@
 //   fb.replay()          the draw-in again
 //   fb.update({ ... })   change any option
 //   fb.setOpacity(0..1)  fade the whole canvas (the page uses it to hold it back until it is wanted)
+//   fb.retract()         the draw-in played backwards (the line draws itself back in, the glow recedes), then it is off
 //   fb.destroy()
 //
 // `bleed` (px) lets the canvas spill past the element on every side, so the outer halo is not clipped (the
@@ -50,6 +51,7 @@ export interface FrameBorderOptions {
 export interface FrameBorderControl {
 	pulse: (x?: number, y?: number) => void;
 	replay: () => void;
+	retract: () => void;
 	update: (opts: FrameBorderOptions) => void;
 	setOpacity: (v: number) => void;
 	destroy: () => void;
@@ -425,6 +427,55 @@ void main() {
 `;
 
 
+// ONE WebGL context for every frame on the page. Browsers allow only about 16 and drop the oldest beyond that; a page
+// with a few frames, the menu button and several CTAs would be near it. Each frame draws into this canvas for a moment
+// (only while it is lit and on screen) and is copied into its own 2D canvas straight after.
+interface SharedGL {
+	canvas: HTMLCanvasElement;
+	gl: WebGL2RenderingContext;
+	loc: Record<string, WebGLUniformLocation | null>;
+}
+let shared: SharedGL | null = null;
+const UNIFORMS = ['uSize', 'uDpr', 'uHalf', 'uRadius', 'uPath', 'uLine', 'uOuter', 'uGlow', 'uReach', 'uNoise', 'uCells', 'uGrains', 'uOctaves', 'uDrift', 'uPhase', 'uLchA', 'uLchB', 'uBack', 'uInk', 'uExposure', 'uIntensity', 'uOpacity', 'uGrain', 'uSeed', 'uLift', 'uIntro', 'uPulses', 'uIdle'];
+
+function getSharedGL(doc: Document): SharedGL | null {
+	if (shared && !shared.gl.isContextLost()) return shared;
+	shared = null;
+	const canvas = doc.createElement('canvas');
+	const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'high-performance' });
+	if (!gl) return null;
+	const compile = (type: number, src: string) => {
+		const sh = gl.createShader(type)!;
+		gl.shaderSource(sh, src);
+		gl.compileShader(sh);
+		if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) { console.warn('frameBorder shader:', gl.getShaderInfoLog(sh)); return null; }
+		return sh;
+	};
+	const vs = compile(gl.VERTEX_SHADER, vertexSrc);
+	const fs = compile(gl.FRAGMENT_SHADER, fragmentSrc);
+	if (!vs || !fs) return null;
+	const prog = gl.createProgram()!;
+	gl.attachShader(prog, vs);
+	gl.attachShader(prog, fs);
+	gl.linkProgram(prog);
+	if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+	gl.useProgram(prog);
+	const buf = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), gl.STATIC_DRAW);
+	const aPos = gl.getAttribLocation(prog, 'position');
+	gl.enableVertexAttribArray(aPos);
+	gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+	gl.disable(gl.BLEND);
+	gl.clearColor(0, 0, 0, 0);
+	const loc: Record<string, WebGLUniformLocation | null> = {};
+	for (const n of UNIFORMS) loc[n] = gl.getUniformLocation(prog, n);
+	// if the browser takes the context away, the next draw builds a new one
+	canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); if (shared?.canvas === canvas) shared = null; });
+	shared = { canvas, gl, loc };
+	return shared;
+}
+
 export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions = {}): FrameBorderControl | null {
 	const doc = root.ownerDocument;
 	const view = doc.defaultView ?? window;
@@ -439,10 +490,9 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	const onMotion = () => { reduced = motionQuery.matches; colorKey = ''; kick(); };
 	motionQuery.addEventListener('change', onMotion);
 
-	// The shader draws into a hidden WebGL canvas; what is on the page is an ordinary 2D canvas it is copied into. A
-	// WebGL canvas composited inside a 3D-transformed layer can come out wrong on real GPUs (the glow floods in full
+	// The shader draws into a hidden, shared WebGL canvas; what is on the page is an ordinary 2D canvas it is copied into.
+	// A WebGL canvas composited inside a 3D-transformed layer can come out wrong on real GPUs (the glow floods in full
 	// colour, or does not show at all); a plain bitmap layer does not have that problem.
-	const glCanvas = doc.createElement('canvas');
 	const canvas = doc.createElement('canvas');
 	const ctx2d = canvas.getContext('2d');
 	if (!ctx2d) return null;
@@ -456,42 +506,8 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	let canvasOpacity = 1;
 	placeCanvas();
 
-	let gl: WebGL2RenderingContext | null = null;
-	let prog: WebGLProgram | null = null;
-	const loc: Record<string, WebGLUniformLocation | null> = {};
-	const UNIFORMS = ['uSize', 'uDpr', 'uHalf', 'uRadius', 'uPath', 'uLine', 'uOuter', 'uGlow', 'uReach', 'uNoise', 'uCells', 'uGrains', 'uOctaves', 'uDrift', 'uPhase', 'uLchA', 'uLchB', 'uBack', 'uInk', 'uExposure', 'uIntensity', 'uOpacity', 'uGrain', 'uSeed', 'uLift', 'uIntro', 'uPulses', 'uIdle'];
-
-	const initGL = () => {
-		gl = glCanvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: false, powerPreference: 'high-performance' });
-		if (!gl) return false;
-		const compile = (type: number, src: string) => {
-			const sh = gl!.createShader(type)!;
-			gl!.shaderSource(sh, src);
-			gl!.compileShader(sh);
-			if (!gl!.getShaderParameter(sh, gl!.COMPILE_STATUS)) { console.warn('frameBorder shader:', gl!.getShaderInfoLog(sh)); return null; }
-			return sh;
-		};
-		const vs = compile(gl.VERTEX_SHADER, vertexSrc);
-		const fs = compile(gl.FRAGMENT_SHADER, fragmentSrc);
-		if (!vs || !fs) return false;
-		prog = gl.createProgram()!;
-		gl.attachShader(prog, vs);
-		gl.attachShader(prog, fs);
-		gl.linkProgram(prog);
-		if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
-		gl.useProgram(prog);
-		const buf = gl.createBuffer();
-		gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), gl.STATIC_DRAW);
-		const aPos = gl.getAttribLocation(prog, 'position');
-		gl.enableVertexAttribArray(aPos);
-		gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
-		gl.disable(gl.BLEND);
-		gl.clearColor(0, 0, 0, 0);
-		for (const n of UNIFORMS) loc[n] = gl.getUniformLocation(prog, n);
-		return true;
-	};
-	if (!initGL()) return null;
+	let sh: SharedGL | null = getSharedGL(doc);
+	if (!sh) return null;
 	root.appendChild(canvas);
 
 	let width = 0;
@@ -504,6 +520,7 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	let idleClock = 0;
 	let nextSwell = 0;
 	let introTime = INTRO_TIME;
+	let retracting = false;   // the draw-in running backwards (see retract())
 	let hover = 0;
 	let hoverVelocity = 0;
 	let hoverTarget = 0;
@@ -596,9 +613,8 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 		sized = true;
 		width = w;
 		height = h;
-		canvas.width = glCanvas.width = bw;
-		canvas.height = glCanvas.height = Math.round(h * ratio);
-		gl!.viewport(0, 0, canvas.width, canvas.height);
+		canvas.width = bw;
+		canvas.height = Math.round(h * ratio);
 		return true;
 	};
 
@@ -606,7 +622,8 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 
 	const applyUniforms = () => {
 		const s = settings;
-		const g = gl!;
+		const g = sh!.gl;
+		const loc = sh!.loc;
 		path = measure();
 		const p = path.perimeter;
 		const scale = clamp(finite(s.noiseScale, 3), 0.2, 12);
@@ -669,16 +686,23 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	};
 
 	const render = () => {
-		if (!sized || !gl || lost) return;
+		sh = getSharedGL(doc);
+		if (!sized || !sh || lost) return;
 		if (performance.now() - backgroundAt > 1000) {
 			backgroundAt = performance.now();
 			syncColors();
 		}
+		const g = sh.gl;
+		if (sh.canvas.width !== canvas.width || sh.canvas.height !== canvas.height) {
+			sh.canvas.width = canvas.width;
+			sh.canvas.height = canvas.height;
+		}
+		g.viewport(0, 0, canvas.width, canvas.height);
 		applyUniforms();
-		gl.clear(gl.COLOR_BUFFER_BIT);
-		gl.drawArrays(gl.TRIANGLES, 0, 3);
+		g.clear(g.COLOR_BUFFER_BIT);
+		g.drawArrays(g.TRIANGLES, 0, 3);
 		ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-		ctx2d.drawImage(glCanvas, 0, 0);
+		ctx2d.drawImage(sh.canvas, 0, 0);
 	};
 
 	const spawnSwell = () => {
@@ -720,7 +744,17 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 			flowTime += dt * clamp(finite(s.flowSpeed, 1), 0, 6) * legacy * (1 + 1.1 * hover);
 		}
 		clock += dt;
-		if (introTime < INTRO_TIME) introTime = reduced ? INTRO_TIME : introTime + dt;
+		if (retracting) {
+			introTime -= dt * 5;   // the draw-in backwards: about half a second
+			if (introTime <= 0) {
+				introTime = 0;
+				retracting = false;
+				canvasOpacity = 0;   // nothing is left to show: off, with no fade over a ghost of the frame
+				canvas.style.transition = 'none';
+				canvas.style.opacity = '0';
+				window.requestAnimationFrame(() => { canvas.style.transition = 'opacity .35s ease'; });
+			}
+		} else if (introTime < INTRO_TIME) introTime = reduced ? INTRO_TIME : introTime + dt;
 		const idleCount = reduced ? 0 : clamp(Math.round(finite(s.idlePulses, 3)), 0, MAX_IDLE);
 		if (moving) {
 			const step = dt * (1 + 0.6 * hover);
@@ -800,16 +834,6 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	};
 	const onPointerCancel = () => { press = null; };
 	const onVisibility = () => kick();
-	const onLost = (event: Event) => { event.preventDefault(); lost = true; cancelAnimationFrame(raf); raf = 0; };
-	const onRestored = () => {
-		if (!initGL()) return;
-		lost = false;
-		colorKey = '';
-		sized = false;
-		readSize();
-		kick();
-	};
-
 	const resizeObserver = new ResizeObserver(() => { if (readSize()) { render(); schedule(); } });
 	const intersection = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; kick(); }, { rootMargin: '120px' });
 
@@ -819,8 +843,6 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 	root.addEventListener('pointerleave', onPointerLeave);
 	root.addEventListener('pointercancel', onPointerCancel);
 	doc.addEventListener('visibilitychange', onVisibility);
-	glCanvas.addEventListener('webglcontextlost', onLost);
-	glCanvas.addEventListener('webglcontextrestored', onRestored);
 	resizeObserver.observe(root);
 	intersection.observe(root);
 	if (settings.intro && !reduced) introTime = 0;
@@ -837,6 +859,7 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 		},
 		replay: () => {
 			if (reduced) return;
+			retracting = false;
 			introTime = 0;
 			swells.length = 0;
 			nextSwell = idleClock;
@@ -849,7 +872,16 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 			readSize();
 			kick();
 		},
+		retract: () => {
+			if (canvasOpacity <= 0.001) return;
+			if (reduced) { canvasOpacity = 0; canvas.style.opacity = '0'; return; }
+			retracting = true;
+			introTime = Math.min(introTime, INTRO_TIME - 0.0001);
+			pulses.length = 0;
+			kick();
+		},
 		setOpacity: (v) => {
+			if (v > 0.001) retracting = false;
 			canvasOpacity = clamp(v, 0, 1);
 			canvas.style.opacity = canvasOpacity.toFixed(3);
 			if (canvasOpacity > 0.001) { readSize(); if (reduced) render(); kick(); }
@@ -866,10 +898,7 @@ export function createFrameBorder(root: HTMLElement, options: FrameBorderOptions
 			root.removeEventListener('pointerleave', onPointerLeave);
 			root.removeEventListener('pointercancel', onPointerCancel);
 			doc.removeEventListener('visibilitychange', onVisibility);
-			glCanvas.removeEventListener('webglcontextlost', onLost);
-			glCanvas.removeEventListener('webglcontextrestored', onRestored);
 			canvas.remove();
-			gl?.getExtension('WEBGL_lose_context')?.loseContext();
 		},
 	};
 }

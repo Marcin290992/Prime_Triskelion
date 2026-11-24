@@ -19,7 +19,8 @@
 // glow lives on the inside of the edge), made the first time it's used.
 // No comet with reduced motion.
 
-const CTA = '.h-hero-cta--fixed';
+// (A CTA that carries data-frame-fx has the frame light as its hover instead, see buttonFrameFx.ts.)
+const CTA = '.h-hero-cta--fixed:not([data-frame-fx])';
 // What a mouse sets the comets (and then the lit ring) off on: the main
 // CTAs, and the Contact page's options and Back / Next, which should answer
 // like them.

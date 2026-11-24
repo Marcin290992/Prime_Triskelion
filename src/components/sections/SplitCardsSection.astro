@@ -90,7 +90,7 @@
     /* Pinned for 240vh of scroll (it was 150): the four phases have room, and the cards are held
        once revealed (the last 16% of the scroll), so the page does not leave while they are
        still turning over. */
-    height: 290vh;
+    height: 330vh;
     background: rgb(var(--c-bg));
   }
   #sc-sticky {
@@ -169,7 +169,10 @@
   .card-3 { margin-left: calc(-2px * (1 - var(--split))); }
 
   /* The frame's light (utils/frameBorder.ts): a canvas a little bigger than the card, a hair in front of its faces. */
-  .sc-card .frame-border-canvas { transform: translateZ(2px); }
+  /* The frame's light lives ON the text side of each card (see the script), so it turns with that face: it can never
+     hang in the air as an empty rectangle beside a card that is turning away. That face does not clip, so the halo
+     can spill past the card's edge. */
+  .sc-back { overflow: visible; }
 
   .sc-flipper {
     width: 100%;
@@ -548,7 +551,7 @@
         } else if (!e.isIntersecting && shown.has(e.target) && e.boundingClientRect.top > 0) {
           // scrolled back above it: dim, so it draws itself in again next time
           shown.delete(e.target);
-          b.setOpacity(0);
+          b.retract();
         }
       });
     }, { threshold: 0.4 });
@@ -575,26 +578,36 @@
     const cards = Array.from(scene.querySelectorAll<HTMLElement>('.sc-card'));
     // One red light on every card, the site's #E83D22.
     const opts = { colors: ['#E83D22', '#E83D22'] as [string, string], radius: 2, lineWidth: 1.3, bleed: 26, glow: 0.4, glowWidth: 60, noise: 0.85, intensity: 1, idlePulses: 3, idleStrength: 0.9 };
-    const borders = cards.map((c) => createFrameBorder(c, opts));
+    // The light is made on each card's text face, not on the card: the face is the thing that turns over.
+    const faces = cards.map((c) => c.querySelector<HTMLElement>('.sc-back') ?? c);
+    const borders = faces.map((f) => createFrameBorder(f, opts));
     _borders = borders.filter((b): b is FrameBorderControl => !!b);
     let flipOn = false;
+    _borders.forEach((b) => b.setOpacity(0));   // off until the cards have turned over
 
     const apply = (p: number) => {
       // 0.00–0.34  the picture pulls back from filling the screen (3.4x -> 1.3x); the title comes in at its end
       // 0.34–0.44  HOLD full image  (no cuts visible)
       // 0.44–0.62  split (cards separate)
-      // 0.62–0.86  flip (reveal pillar copy)
-      // 0.86–1.00  HOLD the revealed cards, still pinned, before the page goes on
+      // 0.62–0.82  flip (reveal pillar copy)
+      // 0.82–1.00  HOLD the revealed cards, still pinned, before the page goes on: the frames draw themselves in here
+      //             (the section is longer, 330vh, and the flip a little quicker, so there is room for them to play)
       scene.style.setProperty('--zoom',  phase(p, 0.00, 0.34).toFixed(4));
       scene.style.setProperty('--split', phase(p, 0.44, 0.62).toFixed(4));
-      scene.style.setProperty('--flip',  phase(p, 0.62, 0.86).toFixed(4));
+      scene.style.setProperty('--flip',  phase(p, 0.62, 0.82).toFixed(4));
 
-      const done = phase(p, 0.62, 0.86) >= 0.985;
-      _borders.forEach((b) => b.setOpacity(done ? 1 : 0));
-      if (done && !flipOn) {
+      // The cards turn over and come to rest FIRST; only then the light: the line draws itself round each one and a
+      // pulse runs from the bottom (the hold after the flip is long enough for it to play). The light is on the text
+      // face, so turning back (scrolling up) it runs BACKWARDS as that face turns away, and it is never left hanging
+      // beside a card.
+      const flipP = phase(p, 0.62, 0.82);
+      if (flipP >= 0.985 && !flipOn) {
         flipOn = true;
-        borders.forEach((b, i) => { if (b) { b.replay(); b.pulse(cards[i].clientWidth / 2, cards[i].clientHeight); } });
-      } else if (!done && flipOn && phase(p, 0.62, 0.86) < 0.9) flipOn = false;
+        borders.forEach((b, i) => { if (b) { b.setOpacity(1); b.replay(); b.pulse(faces[i].clientWidth / 2, faces[i].clientHeight); } });
+      } else if (flipP < 0.97 && flipOn) {
+        flipOn = false;
+        _borders.forEach((b) => b.retract());
+      }
     };
 
     apply(0);
