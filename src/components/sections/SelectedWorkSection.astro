@@ -211,22 +211,9 @@ const SCREENS = projects.length + HOLD;
 		pointer-events: none;
 		will-change: opacity, filter;
 	}
-	/* In from blur once the scroll has reached it (time-based, quick): opacity 0.8s, blur 1s and a rise of 14px, the
-	   way it was before the long focus pull of the hero was tried here. That one took ~2s to sharpen, so a visitor
-	   scrolling on, down or back up, could pass the title before it had resolved. Going out is quicker still. The
-	   script sets .in (see titleTick). */
-	.swb__intro .swb__title,
-	.swb__intro .sw-link {
-		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.swb__intro:not(.in) .swb__title,
-	.swb__intro:not(.in) .sw-link {
-		opacity: 0;
-		filter: blur(14px);
-		transform: translateY(14px);
-		transition: opacity 0.28s ease, filter 0.3s ease, transform 0.3s ease;
-	}
-	.swb__intro.in .sw-link { transition-delay: 0.15s; }
+	/* The title comes in and goes out as ONE motion, driven by the scroll (opacity, blur and a small rise on the whole
+	   opener, see render()). It used to blur in twice: the opener's own blur, and a second one from a class toggle on
+	   the title and the link inside. */
 	.swb__title {
 		margin: 0 0 2.5rem;
 		font-family: var(--f-display);
@@ -517,18 +504,23 @@ const SCREENS = projects.length + HOLD;
 		let activeText = -1;
 
 		const render = () => {
-			// The first picture does not start until the title has had a moment alone (FIRST_DELAY of a
-			// step); from there it runs to its full strength at pos 1 as before. The later steps are untouched.
-			const FIRST_DELAY = 0.4;
-			// `bpos` is the position the LIGHT is at: the picture, its name and the controls all follow it, so they
-			// come in together with the beam (only the title's own exit follows `pos`).
-			const bpos = pos < 1 ? Math.max(0, (pos - FIRST_DELAY) / (1 - FIRST_DELAY)) : pos;
+			// The light and everything that follows it (picture, name, controls) share one position. The title has to
+			// be gone first, then a moment of dark, and only then the light: the light starts at DARK of the first
+			// step (the title is out by 0.25). It is the hand that walks through it, nothing plays by itself.
+			const DARK = 0.42;
+			const bpos = pos < 1 ? Math.max(0, (pos - DARK) / (1 - DARK)) : pos;
 			beam?.setPos(bpos);
-			// the opener goes out (blur) as before, then a dark stretch (up to FIRST_DELAY) before the first picture
-			const t = 1 - smooth(pos / 0.2);
+			// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
+			// it is one soft motion either way and never in two stages.
+			const vh = window.innerHeight;
+			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
+			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
+			const tout = 1 - smooth(pos / 0.25);
+			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
-			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
+			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
 			// The name of the picture the light is going TO comes in the moment the beam starts (and
 			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one
@@ -607,7 +599,6 @@ const SCREENS = projects.length + HOLD;
 			if (y < s + TITLE_A * vh) want = false;
 			else if (y >= s + TITLE_B * vh) want = true;
 			else if (moved) want = down;
-			if (want !== titleOn) { titleOn = want; intro.classList.toggle('in', want); }
 			intro.style.visibility = y < s ? 'hidden' : '';
 		};
 		let titleRaf = 0;
@@ -630,7 +621,7 @@ const SCREENS = projects.length + HOLD;
 		//  - before the first picture and after the last the page scrolls freely.
 		const unit = () => (stPin.end - stPin.start) / length;   // one screen of scroll
 		const stop = (k: number) => stPin.start + (LEAD + PER * k) * unit();
-		const settle = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
 		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
 		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
 		let lenis: any = null;
