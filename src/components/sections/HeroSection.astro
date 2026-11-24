@@ -10,9 +10,9 @@
 		<!-- CENTER -->
 		<div class="hero-stage">
 			<div class="hero-center">
-				<p class="hero-kicker">ONE-PERSON DESIGN STUDIO</p>
-				<p class="h-hero-claim text-[2.2rem] sm:text-[2.8rem] md:text-[4.25rem] desk:text-[92px] mt-16 sm:mt-10 md:mt-6 desk:mt-6"><span class="h-hero-claim__line">I BUILD FOR</span><span class="h-hero-claim__line h-hero-claim__line--word"><span class="h-hero-word-wrap"><span class="h-hero-word" id="hero-dynamic-word">MOMENTUM</span></span></span></p>
-				<p class="h-hero-sub">I design and build digital experiences that help ambitious brands move faster.</p>
+				<p class="hero-kicker">CREATIVE WEB DEVELOPER · LONDON</p>
+				<p class="h-hero-claim text-[2.2rem] sm:text-[2.8rem] md:text-[4.25rem] desk:text-[92px] mt-16 sm:mt-10 md:mt-6 desk:mt-6"><span class="h-hero-claim__line">CRAFTED FOR</span><span class="h-hero-claim__line h-hero-claim__line--word"><span class="h-hero-word-wrap"><span class="h-hero-word" id="hero-dynamic-word">ATTENTION</span></span></span></p>
+				<p class="h-hero-sub">One person. One standard. Bespoke websites, brands and motion for those who would rather be unforgettable than acceptable.</p>
 				<div class="hero-cta-row">
 					<div class="h-hero-cta-wrap mt-6 desk:mt-8" id="hero-main-cta-wrap">
 						<div class="h-hero-cta-grad-top" aria-hidden="true"></div>
@@ -24,11 +24,11 @@
 					</div>
 				</div>
 				<div class="hero-bottom__stats hero-inline-stats" aria-label="Key performance metrics">
-					<span class="hero-bottom__stat"><strong>5.0</strong><em>G2 REVIEWS</em></span>
-					<span class="hero-bottom__sep" aria-hidden="true">•</span>
-					<span class="hero-bottom__stat"><strong>7.5M+</strong><em>USERS REACHED</em></span>
-					<span class="hero-bottom__sep" aria-hidden="true">•</span>
 					<span class="hero-bottom__stat"><strong>0</strong><em>TEMPLATES</em></span>
+					<span class="hero-bottom__sep" aria-hidden="true">•</span>
+					<span class="hero-bottom__stat"><strong>100%</strong><em>HAND-CODED</em></span>
+					<span class="hero-bottom__sep" aria-hidden="true">•</span>
+					<span class="hero-bottom__stat"><strong>LTD</strong><em>LONDON, UK</em></span>
 				</div>
 			</div>
 		</div>
@@ -348,7 +348,7 @@
 			z-index: 30;
 		}
 		.hero-kicker { margin-top: 0; font-size: 0.63rem; white-space: normal; }
-		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.94; word-spacing: 0.08em; margin-top: 0 !important; }
+		.h-hero-claim { font-size: var(--hero-size) !important; line-height: 0.94; word-spacing: 0.08em; margin-top: 0 !important; text-align: center; }
 		.h-hero-sub { max-width: 27ch; margin-top: 0; font-size: 1.1rem; color: rgb(var(--c-cream) / 0.86); overflow-wrap: anywhere; }
 		.hero-cta-row {
 			width: 100%;
@@ -392,6 +392,8 @@
 	}
 
 	@media (max-width: 640px) {
+		/* "CRAFTED FOR" is one unbroken line: sized by the width so it never runs off the edge. */
+		.h-hero-claim { font-size: min(var(--hero-size), 11vw) !important; }
 		.hero-grid { padding-inline: 0.9rem; padding-top: clamp(4.5rem, 12vh, 6.5rem); padding-bottom: clamp(2rem, 5vh, 3.5rem); }
 		.h-hero-sub { font-size: 1.06rem; }
 		.hero-cta-row { max-width: 340px; }
@@ -403,7 +405,7 @@
 
 	@media (max-width: 420px) {
 		.hero-kicker { font-size: 0.6rem; letter-spacing: 0.1em; margin-top: 0; }
-		.h-hero-claim { font-size: var(--hero-size) !important; margin-top: 0 !important; }
+		.h-hero-claim { font-size: min(var(--hero-size), 11vw) !important; margin-top: 0 !important; }
 		.hero-center { padding-bottom: max(0.25rem, env(safe-area-inset-bottom)); }
 		.hero-cta-row { max-width: 300px; }
 		.hero-inline-stats { margin-top: 0.65rem; }
@@ -447,7 +449,7 @@
 		const wordNode = document.getElementById('hero-dynamic-word') as HTMLElement;
 		if (!wordNode) return () => {};
 
-		const words = ['OBSESSION', 'CLARITY', 'IMPACT'];
+		const words = ['ATTENTION', 'PRESTIGE', 'CLARITY', 'IMPACT'];
 		let currentIndex = 0;
 		let isAnimating = false;
 
@@ -459,8 +461,11 @@
 		const wrapEl = wordNode.closest<HTMLElement>('.h-hero-word-wrap');
 		if (wrapEl) {
 			const prevText = wordNode.textContent;
-			wordNode.textContent = 'OBSESSION';
-			const measuredW = wordNode.getBoundingClientRect().width;
+			let measuredW = 0;
+			for (const w of words) {
+				wordNode.textContent = w;
+				measuredW = Math.max(measuredW, wordNode.getBoundingClientRect().width);
+			}
 			wordNode.textContent = prevText;
 			if (measuredW > 0) wrapEl.style.width = measuredW + 'px';
 		}
