@@ -10,7 +10,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 
 		<aside class="faq__sidebar">
 			<div class="faq__photo">
-				<Image src={marcinPhoto} alt="Martin" width={240} height={288} densities={[1, 2]} loading="lazy" />
+				<Image src={marcinPhoto} alt="Marcin, founder of Prime Triskelion Ltd" width={240} height={288} densities={[1, 2]} loading="lazy" />
 				<!-- Desktop: the photo as a chroma card (initFaqPhoto). -->
 				<canvas class="faq__chroma" aria-hidden="true"></canvas>
 			</div>
@@ -26,7 +26,7 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		</aside>
 
 		<div class="disc-header">
-			<h2 class="disc-header__title">What you should<br><em>to know</em></h2>
+			<h2 class="disc-header__title">Good<br><em>to know.</em></h2>
 		</div>
 
 		<div class="faq__content">
@@ -36,50 +36,46 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 				<div class="disc-item">
 					<div class="disc-item__row">
 						<span class="disc-item__num">01</span>
-						<h3 class="disc-item__title">Discovery &amp; Strategy</h3>
+						<h3 class="disc-item__title">Who will I work with?</h3>
 					</div>
 					<div class="disc-item__body"><div>
-						<p class="disc-item__desc">I begin by understanding your brand, goals, and audience. Strategy workshops, competitor analysis, and a creative brief happen before a single line of code.</p>
+						<p class="disc-item__desc">Directly with the person who designs and builds your website. No account managers, no handoffs, no layers between your idea and the result.</p>
 					</div></div>
 				</div>
-
 				<div class="disc-item">
 					<div class="disc-item__row">
 						<span class="disc-item__num">02</span>
-						<h3 class="disc-item__title">Design &amp; Motion</h3>
+						<h3 class="disc-item__title">How does a project start?</h3>
 					</div>
 					<div class="disc-item__body"><div>
-						<p class="disc-item__desc">I design with pixel-level care: typography, color, rhythm, and microinteractions. Wireframe to high-fidelity in Figma, with collaborative iteration throughout.</p>
+						<p class="disc-item__desc">With a conversation about your brand, your audience and what the website has to win. A clear brief and a fixed scope come before a single line of code.</p>
 					</div></div>
 				</div>
-
 				<div class="disc-item">
 					<div class="disc-item__row">
 						<span class="disc-item__num">03</span>
-						<h3 class="disc-item__title">Development</h3>
+						<h3 class="disc-item__title">How long does it take?</h3>
 					</div>
 					<div class="disc-item__body"><div>
-						<p class="disc-item__desc">Astro, React, and GSAP — I choose the stack around the project, not the other way around. Motion, performance, SEO, and accessibility from the first commit.</p>
+						<p class="disc-item__desc">Every project has its own rhythm. A clear timeline is agreed before the work begins, and you always know where the project stands.</p>
 					</div></div>
 				</div>
-
 				<div class="disc-item">
 					<div class="disc-item__row">
 						<span class="disc-item__num">04</span>
-						<h3 class="disc-item__title">QA &amp; Launch</h3>
+						<h3 class="disc-item__title">What does it cost?</h3>
 					</div>
 					<div class="disc-item__body"><div>
-						<p class="disc-item__desc">Cross-browser, cross-device, and built to hit 90+ PageSpeed. I deploy to your server or Vercel/Netlify and hand over clear documentation for your team.</p>
+						<p class="disc-item__desc">Every project is quoted individually, since no two briefs are the same. Get in touch and a clear proposal follows, before anything is committed.</p>
 					</div></div>
 				</div>
-
 				<div class="disc-item">
 					<div class="disc-item__row">
 						<span class="disc-item__num">05</span>
-						<h3 class="disc-item__title">Support &amp; Growth</h3>
+						<h3 class="disc-item__title">What do I get at the end?</h3>
 					</div>
 					<div class="disc-item__body"><div>
-						<p class="disc-item__desc">After launch, I stay available for retainer support, iterations, and new features. I treat each project as a long-term partnership, not a one-off delivery.</p>
+						<p class="disc-item__desc">A finished, fast website, the source and clear documentation, so it is yours to run. After launch, support and new features are available whenever you need them.</p>
 					</div></div>
 				</div>
 
@@ -186,7 +182,9 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	}
 	.disc-header__title em { font-style: normal; color: rgb(var(--c-red)); }
 	.disc-list { width: 100%; padding: 0 var(--site-gutter) var(--section-space-bottom); box-sizing: border-box; }
-	.disc-item { }
+	/* a hairline between the questions, so they stand apart */
+	.disc-item { border-bottom: 1px solid rgb(var(--c-cream) / 0.1); }
+	.disc-item:first-child { border-top: 1px solid rgb(var(--c-cream) / 0.1); }
 	.disc-item__row {
 		display: grid;
 		grid-template-columns: 4rem 1fr;
@@ -206,11 +204,14 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	.disc-item__title {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(1.6rem, 3vw, 3.5rem);
-		letter-spacing: -0.01em;
-		text-transform: uppercase;
+		/* The titles are questions now, whole sentences: in capitals, in this wide, tight face, the words ran together
+		   ("WILL I WORK" read as one). Sentence case, a smaller size, real space between the words. */
+		font-size: clamp(1.45rem, 2.4vw, 2.7rem);
+		letter-spacing: -0.005em;
+		word-spacing: 0.12em;
+		text-transform: none;
 		color: rgb(var(--c-cream));
-		line-height: 1;
+		line-height: 1.12;
 		transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
 	}
 	.disc-item__body {
@@ -221,10 +222,10 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 	.disc-item__body > div { overflow: hidden; }
 	.disc-item__desc {
 		font-family: var(--f-body);
-		font-size: clamp(0.8rem, 1.05vw, 0.88rem);
+		font-size: clamp(0.9rem, 1.1vw, 1rem);
 		font-weight: 300;
-		line-height: 1.8;
-		color: rgb(var(--c-cream) / 0.82);
+		line-height: 1.75;
+		color: rgb(var(--c-cream) / 0.88);
 		padding-bottom: clamp(1.4rem, 2.2vw, 2.2rem);
 		max-width: 74ch;
 		padding-left: calc(4rem + clamp(0.75rem, 1.5vw, 1.5rem));
