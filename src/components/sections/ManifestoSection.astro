@@ -1,8 +1,9 @@
 ---
-const lines = [
-	['I', 'craft', 'digital', 'experiences', 'that', 'push', 'boundaries,'],
-	['challenge', 'conventions,', 'and', 'leave', 'a', 'lasting', 'mark', 'on', 'the', 'world.'],
+const paragraphs = [
+	'Every visitor who leaves in silence is a client you never met. A weak website never complains. It simply sends your leads to someone who looks the part.',
+	'Here, one person designs, codes and animates every detail, so your brand is chosen, not scrolled past.',
 ];
+const lines = paragraphs.map((p) => p.split(' '));
 const count = lines.flat().length;
 const total = 1 + (count - 1) * 0.1;
 const slice = (i: number) => {
@@ -10,20 +11,20 @@ const slice = (i: number) => {
 	const end = ((i * 0.1 + 1) / total) * 100;
 	return `--s:${start.toFixed(2)}%;--e:${end.toFixed(2)}%`;
 };
-const accent = new Set(['experiences', 'lasting', 'mark']);
+const accent = new Set(['silence', 'chosen,']);
 let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:260vh;height:260lvh;height:calc(var(--app-stable-vh) * 260);z-index:10">
+<section id="manifesto" class="relative" style="height:290vh;height:290lvh;height:calc(var(--app-stable-vh) * 290);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
-			style="font-size:clamp(2rem,3.5vw,3.2rem);font-family:var(--f-body);color:rgb(var(--c-cream))"
-			aria-label="I craft digital experiences that push boundaries, challenge conventions, and leave a lasting mark on the world."
+			style="font-size:clamp(1.55rem,2.5vw,2.5rem);max-width:68rem;font-family:var(--f-body);color:rgb(var(--c-cream))"
+			aria-label={paragraphs.join(" ")}
 		>
 			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
-			<span class="mw br"></span>
+			<span class="mw br gap"></span>
 			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
 		</h2>
 	</div>
@@ -40,6 +41,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		display: inline-block;
 		margin-right: 0.3em;
 	}
+	.mw.br.gap { height: 1em; }
 	.mw.br {
 		display: block;
 		height: 0;
@@ -72,7 +74,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
 		tl.to({}, { duration: 1.0 });
-		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.1, ease: 'none' });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.06, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the

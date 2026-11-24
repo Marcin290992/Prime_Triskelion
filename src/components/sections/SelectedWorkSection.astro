@@ -49,7 +49,7 @@ const SCREENS = projects.length + HOLD;
 			</div>
 
 			<div class="swb__intro">
-				<h2 class="swb__title">What we've<br><em>created.</em></h2>
+				<h2 class="swb__title">Selected<br><em>work.</em></h2>
 				<a href="/projects" class="link-btn sw-link">View All Projects</a>
 			</div>
 
@@ -211,22 +211,9 @@ const SCREENS = projects.length + HOLD;
 		pointer-events: none;
 		will-change: opacity, filter;
 	}
-	/* In from blur once the scroll has reached it (time-based, quick): opacity 0.8s, blur 1s and a rise of 14px, the
-	   way it was before the long focus pull of the hero was tried here. That one took ~2s to sharpen, so a visitor
-	   scrolling on, down or back up, could pass the title before it had resolved. Going out is quicker still. The
-	   script sets .in (see titleTick). */
-	.swb__intro .swb__title,
-	.swb__intro .sw-link {
-		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.swb__intro:not(.in) .swb__title,
-	.swb__intro:not(.in) .sw-link {
-		opacity: 0;
-		filter: blur(14px);
-		transform: translateY(14px);
-		transition: opacity 0.28s ease, filter 0.3s ease, transform 0.3s ease;
-	}
-	.swb__intro.in .sw-link { transition-delay: 0.15s; }
+	/* The title comes in and goes out as ONE motion, driven by the scroll (opacity, blur and a small rise on the whole
+	   opener, see render()). It used to blur in twice: the opener's own blur, and a second one from a class toggle on
+	   the title and the link inside. */
 	.swb__title {
 		margin: 0 0 2.5rem;
 		font-family: var(--f-display);
@@ -500,7 +487,12 @@ const SCREENS = projects.length + HOLD;
 			if (!beam) fallback();
 		}
 
-		let pos = 0;      // 0 .. n: the dark, then each project in turn
+		let pos = 0;      // 0 .. n: each project in turn (the light's position)
+		let uPos = 0;     // the scroll since the title's rest, in steps: first the title goes out and there is a moment of dark (0 .. DARK), then the light
+		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
+		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
+		// through exactly as far for the first picture as for the next two: the same resistance on all three.
+		const DARK = 0.42;
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
@@ -517,19 +509,27 @@ const SCREENS = projects.length + HOLD;
 		let activeText = -1;
 
 		const render = () => {
-			beam?.setPos(pos);
-			// the opener goes out (blur) as the first picture comes
-			const t = 1 - smooth(pos / 0.2);
+			// The light and everything that follows it (picture, name, controls) share one position.
+			const bpos = pos;
+			beam?.setPos(bpos);
+			// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
+			// it is one soft motion either way and never in two stages.
+			const vh = window.innerHeight;
+			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
+			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
+			const tout = 1 - smooth(uPos / (DARK * 0.6));
+			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
-			intro.style.pointerEvents = t > 0.5 && intro.classList.contains('in') ? 'auto' : 'none';
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
+			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
 			// The name of the picture the light is going TO comes in the moment the beam starts (and
 			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one
 			// in the direction of the scroll.
-			if (pos !== lastPos) { forward = pos > lastPos; lastPos = pos; }
-			const nearestPic = Math.round(pos);
-			const dest = Math.abs(pos - nearestPic) < TEXT_REST ? nearestPic : forward ? Math.ceil(pos) : Math.floor(pos);
+			if (bpos !== lastPos) { forward = bpos > lastPos; lastPos = bpos; }
+			const nearestPic = Math.round(bpos);
+			const dest = Math.abs(bpos - nearestPic) < TEXT_REST ? nearestPic : forward ? Math.ceil(bpos) : Math.floor(bpos);
 			if (dest >= 1 && dest <= n) nowText = dest - 1;
 			if (nowText !== activeText) {
 				activeText = nowText;
@@ -537,12 +537,12 @@ const SCREENS = projects.length + HOLD;
 			}
 			hits.forEach((h, i) => h.classList.toggle('is-active', i === nowText));
 			// previous / next arrive with the first picture; the ends are disabled
-			const on = smooth((pos - 0.35) / 0.3);
+			const on = smooth((bpos - 0.35) / 0.3);
 			chrome.forEach((el) => {
 				el.style.opacity = on.toFixed(3);
 				el.style.visibility = on < 0.02 ? 'hidden' : 'visible';
 			});
-			const shown = clamp(Math.round(pos), 1, n);
+			const shown = clamp(Math.round(bpos), 1, n);
 			if (shown !== lastShown) {
 				lastShown = shown;
 				count.textContent = `${String(shown).padStart(2, '0')} / ${String(n).padStart(2, '0')}`;
@@ -554,11 +554,23 @@ const SCREENS = projects.length + HOLD;
 
 		// How much scroll each step takes: one screen, as the home hero's exit. The title
 		// first stands alone for LEAD screens, then each picture gets PER screens.
-		const LEAD = 0.6;
-		const PER = 0.75;
-		const length = LEAD + PER * (n + hold);   // in screens
+		// Premium, so smooth and unhurried, never aggressive: long steps (the title stands a good while, a picture gets
+		// a full screen or more of scroll), a third of a step to commit to the next picture (a light touch just settles
+		// back), and a long, soft glide. A finger covers ground far faster than a wheel, so on touch everything is
+		// longer still.
+		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		// (On touch the finger moves the page 0.8x as far as the wheel does, see utils/touchLenis.ts, so the steps are
+		// shorter by the same factor: the same push of the finger as before.)
+		const LEAD = coarse ? 0.9 : 1.0;
+		const PER = coarse ? 1.0 : 1.0;
+		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
-		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
+		const setFrom = (progress: number) => {
+			const u = (progress * length - LEAD) / PER;
+			uPos = Math.max(0, u);
+			pos = clamp(u - DARK, 0, n);
+			render();
+		};
 
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
@@ -596,7 +608,6 @@ const SCREENS = projects.length + HOLD;
 			if (y < s + TITLE_A * vh) want = false;
 			else if (y >= s + TITLE_B * vh) want = true;
 			else if (moved) want = down;
-			if (want !== titleOn) { titleOn = want; intro.classList.toggle('in', want); }
 			intro.style.visibility = y < s ? 'hidden' : '';
 		};
 		let titleRaf = 0;
@@ -618,8 +629,9 @@ const SCREENS = projects.length + HOLD;
 		//    and out (Forge's is a quick 0.45 s: this is the slower, softer version);
 		//  - before the first picture and after the last the page scrolls freely.
 		const unit = () => (stPin.end - stPin.start) / length;   // one screen of scroll
-		const stop = (k: number) => stPin.start + (LEAD + PER * k) * unit();
-		const settle = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+		// where the page rests on picture k (0 = the title); the dark stretch sits between the title and the first picture
+		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();
+		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
 		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
 		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
 		let lenis: any = null;
@@ -628,8 +640,8 @@ const SCREENS = projects.length + HOLD;
 			window.scrollTo({ top: stop(k), behavior: reduced() ? 'auto' : 'smooth' });
 		};
 		const setupSnap = () => {
-			const IDLE = 140;       // ms of quiet before it decides
-			const DEPART = 0.1;     // share of the gap to have travelled (the wheel here is 0.3x)
+			const IDLE = coarse ? 240 : 180;       // ms of quiet before it decides (momentum has to die away first)
+			const DEPART = coarse ? 0.35 : 0.28;     // share of the gap to have travelled before it goes on
 			let snapping = false;
 			let timer = 0, fail = 0;
 			// the picture the page stood on when this gesture began: one gesture moves at most one
@@ -659,16 +671,16 @@ const SCREENS = projects.length + HOLD;
 				if (lenis.isTouching) { timer = window.setTimeout(decide, 80); return; }
 				const y = lenis.scroll;
 				if (y < stop(0) - 0.6 * unit() || y > stop(n) + 0.45 * unit()) return;   // free scroll outside
-				const p = clamp((y - stop(0)) / (PER * unit()), 0, n);
-				const lo = Math.min(Math.floor(p), n - 1);
-				const f = p - lo;
+				let lo = 0;
+				for (let i = 1; i < n; i++) if (y >= stop(i)) lo = i;   // the step the page is in (steps are not all the same length)
+				const f = clamp((y - stop(lo)) / (stop(lo + 1) - stop(lo)), 0, 1);
 				const forward = lenis.direction >= 0;
 				let k = f < 0.002 ? lo : f > 0.998 ? lo + 1 : forward ? (f >= DEPART ? lo + 1 : lo) : (f <= 1 - DEPART ? lo : lo + 1);
 				if (anchor >= 0) k = clamp(k, Math.max(anchor - 1, 0), Math.min(anchor + 1, n));
 				anchor = -1;
 				const dist = Math.abs(stop(k) - y);
 				if (dist < 1) return;
-				move(k, 0.9 + Math.min(0.6, dist / window.innerHeight));
+				move(k, (coarse ? 1.7 : 1.5) + Math.min(0.8, dist / window.innerHeight));   // a long, soft glide
 			};
 			const onScroll = () => {
 				if (snapping) return;
@@ -677,6 +689,7 @@ const SCREENS = projects.length + HOLD;
 				timer = window.setTimeout(decide, IDLE);
 			};
 			lenis.on('scroll', onScroll);
+
 			snapOff = () => {
 				lenis.off('scroll', onScroll);
 				window.clearTimeout(timer);
@@ -696,7 +709,7 @@ const SCREENS = projects.length + HOLD;
 		const step = (dir: number) => {
 			const k = Math.round(pos) + dir;
 			if (k < 1 || k > n) return;
-			goTo(k, 1.1);
+			goTo(k, 1.6);
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (!stPin.isActive || pos < 0.5) return;
