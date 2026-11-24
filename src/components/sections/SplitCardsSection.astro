@@ -457,7 +457,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, transparent 35%, var(--card-top) 100%);
+      background: linear-gradient(180deg, transparent 22%, color-mix(in srgb, var(--card-top) 55%, transparent) 70%, var(--card-top) 100%);
     }
     .sc-card-m__body {
       position: relative;
@@ -471,7 +471,18 @@
     .c2 { --card-top: #a9a9ad; --card-end: #1b1b1e; color: rgb(var(--c-cream)); }
     .c3 { --card-top: #1a1a1c; --card-end: #050505; color: rgb(var(--c-cream)); }
     .sc-card-m { background: var(--card-top); }
-    .sc-card-m__body { background: linear-gradient(180deg, var(--card-top) 0%, var(--card-end) 100%); }
+    /* The fade up to --card-top and the run down to --card-end meet in a peak of light, which the eye reads as a line
+       (a Mach band). So the run down starts slowly (eased, in a few steps) instead of at full slope, and a 1px
+       overlap hides the join itself. */
+    .sc-card-m__body {
+      background: linear-gradient(180deg,
+        var(--card-top) 0%,
+        color-mix(in srgb, var(--card-top) 94%, var(--card-end)) 14%,
+        color-mix(in srgb, var(--card-top) 78%, var(--card-end)) 32%,
+        color-mix(in srgb, var(--card-top) 45%, var(--card-end)) 62%,
+        var(--card-end) 100%);
+      box-shadow: 0 -1px 0 var(--card-top);
+    }
     .sc-card-m .sc-name { font-size: clamp(1.7rem, 7vw, 2.2rem); line-height: 1; margin: 0 0 0.6rem; }
     .sc-card-m .sc-hook { font-size: 0.78rem; margin: 0 0 0.5rem; padding-top: 0.7rem; }
     .c3 .sc-hook { color: rgb(var(--c-red)); border-top-color: rgb(var(--c-red) / 0.45); }

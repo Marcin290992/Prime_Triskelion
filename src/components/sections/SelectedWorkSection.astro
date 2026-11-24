@@ -560,8 +560,13 @@ const SCREENS = projects.length + HOLD;
 
 		// How much scroll each step takes: one screen, as the home hero's exit. The title
 		// first stands alone for LEAD screens, then each picture gets PER screens.
-		const LEAD = 0.6;
-		const PER = 0.75;
+		// Premium, so smooth and unhurried, never aggressive: long steps (the title stands a good while, a picture gets
+		// a full screen or more of scroll), a third of a step to commit to the next picture (a light touch just settles
+		// back), and a long, soft glide. A finger covers ground far faster than a wheel, so on touch everything is
+		// longer still.
+		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const LEAD = coarse ? 1.1 : 1.0;
+		const PER = coarse ? 1.25 : 1.0;
 		const length = LEAD + PER * (n + hold);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => { pos = clamp((progress * length - LEAD) / PER, 0, n); render(); };
@@ -634,8 +639,8 @@ const SCREENS = projects.length + HOLD;
 			window.scrollTo({ top: stop(k), behavior: reduced() ? 'auto' : 'smooth' });
 		};
 		const setupSnap = () => {
-			const IDLE = 140;       // ms of quiet before it decides
-			const DEPART = 0.1;     // share of the gap to have travelled (the wheel here is 0.3x)
+			const IDLE = coarse ? 240 : 180;       // ms of quiet before it decides (momentum has to die away first)
+			const DEPART = coarse ? 0.35 : 0.28;     // share of the gap to have travelled before it goes on
 			let snapping = false;
 			let timer = 0, fail = 0;
 			// the picture the page stood on when this gesture began: one gesture moves at most one
@@ -674,7 +679,7 @@ const SCREENS = projects.length + HOLD;
 				anchor = -1;
 				const dist = Math.abs(stop(k) - y);
 				if (dist < 1) return;
-				move(k, 0.9 + Math.min(0.6, dist / window.innerHeight));
+				move(k, (coarse ? 1.7 : 1.5) + Math.min(0.8, dist / window.innerHeight));   // a long, soft glide
 			};
 			const onScroll = () => {
 				if (snapping) return;
@@ -703,7 +708,7 @@ const SCREENS = projects.length + HOLD;
 		const step = (dir: number) => {
 			const k = Math.round(pos) + dir;
 			if (k < 1 || k > n) return;
-			goTo(k, 1.1);
+			goTo(k, 1.6);
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (!stPin.isActive || pos < 0.5) return;
