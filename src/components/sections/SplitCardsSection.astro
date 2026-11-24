@@ -168,6 +168,9 @@
   .card-2,
   .card-3 { margin-left: calc(-2px * (1 - var(--split))); }
 
+  /* The frame's light (utils/frameBorder.ts): a canvas a little bigger than the card, a hair in front of its faces. */
+  .sc-card .frame-border-canvas { transform: translateZ(2px); }
+
   .sc-flipper {
     width: 100%;
     height: 100%;
@@ -317,7 +320,8 @@
     color: rgb(var(--c-bg));
   }
   .card-2 .sc-back {
-    background: linear-gradient(160deg, #b81813 0%, #5e0604 100%);
+    /* the light of the hero's rays: a soft white-grey that falls off into the dark */
+    background: linear-gradient(160deg, #a9a9ad 0%, #3a3a3e 55%, #1b1b1e 100%);
     color: rgb(var(--c-cream));
   }
   .card-3 .sc-back {
@@ -462,10 +466,11 @@
       padding: 1.15rem 1.35rem 1.45rem;
     }
     .c1 { --card-top: #f5efe7; background: linear-gradient(180deg, #f5efe7 0%, #b9b3a9 100%); color: rgb(var(--c-bg)); }
-    .c2 { --card-top: #e8361c; background: linear-gradient(180deg, #e8361c 0%, #7a0a05 100%); color: rgb(var(--c-cream)); }
+    .c2 { --card-top: #a9a9ad; background: linear-gradient(180deg, #a9a9ad 0%, #3a3a3e 55%, #1b1b1e 100%); color: rgb(var(--c-cream)); }
     .c3 { --card-top: #1a1a1c; background: linear-gradient(180deg, #1a1a1c 0%, #050505 100%); color: rgb(var(--c-cream)); }
     .sc-card-m .sc-name { font-size: clamp(1.7rem, 7vw, 2.2rem); line-height: 1; margin: 0 0 0.6rem; }
-    .sc-card-m .sc-hook { font-size: 0.95rem; margin: 0 0 0.35rem; }
+    .sc-card-m .sc-hook { font-size: 0.78rem; margin: 0 0 0.5rem; padding-top: 0.7rem; }
+    .c3 .sc-hook { color: rgb(var(--c-red)); border-top-color: rgb(var(--c-red) / 0.45); }
     .sc-card-m .sc-desc { font-size: 0.86rem; line-height: 1.5; opacity: 0.8; max-width: 40ch; }
 
     @media (min-width: 700px) {
@@ -485,12 +490,59 @@
 <script>
   import gsap from 'gsap';
   import ScrollTrigger from 'gsap/ScrollTrigger';
+  import { createFrameBorder, type FrameBorderControl } from '../../utils/frameBorder';
   gsap.registerPlugin(ScrollTrigger);
 
   let _st: ScrollTrigger | null = null;
+  let _borders: FrameBorderControl[] = [];
+  let _mBorders: FrameBorderControl[] = [];
+  let _mIO: IntersectionObserver | null = null;
+
+  function killBorders() {
+    _borders.forEach((b) => b.destroy());
+    _borders = [];
+    _mIO?.disconnect();
+    _mIO = null;
+    _mBorders.forEach((b) => b.destroy());
+    _mBorders = [];
+  }
+
+  // Phones and tablets (the stacked / three-across cards): the same red light, drawn round each card as it comes
+  // into view, once per visit. Inside the card (the cards clip their contents, so no outer halo), capped dpr.
+  function initMobileBorders() {
+    if (!window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.sc-card-m'));
+    if (!cards.length) return;
+    const opts = { colors: ['#E83D22', '#E83D22'] as [string, string], radius: 2, lineWidth: 1.3, bleed: 0, glow: 0.4, glowWidth: 46, noise: 0.85, intensity: 1, idlePulses: 3, idleStrength: 0.9, dpr: 1.5 };
+    const made = new Map<Element, FrameBorderControl>();
+    cards.forEach((c) => {
+      const b = createFrameBorder(c, opts);
+      if (b) { b.setOpacity(0); made.set(c, b); _mBorders.push(b); }
+    });
+    const shown = new Set<Element>();
+    _mIO = new IntersectionObserver((entries) => {
+      entries.forEach((e) => {
+        const b = made.get(e.target);
+        if (!b) return;
+        if (e.isIntersecting && !shown.has(e.target)) {
+          shown.add(e.target);
+          b.setOpacity(1);
+          b.replay();
+          const el = e.target as HTMLElement;
+          b.pulse(el.clientWidth / 2, el.clientHeight);
+        } else if (!e.isIntersecting && shown.has(e.target) && e.boundingClientRect.top > 0) {
+          // scrolled back above it: dim, so it draws itself in again next time
+          shown.delete(e.target);
+          b.setOpacity(0);
+        }
+      });
+    }, { threshold: 0.4 });
+    cards.forEach((c) => _mIO!.observe(c));
+  }
 
   function initSplitCards() {
     if (_st) { _st.kill(); _st = null; }
+    killBorders();
 
     if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
 
@@ -502,6 +554,16 @@
     const phase = (p: number, start: number, end: number) =>
       clamp01((p - start) / (end - start));
 
+    // The frame's light round every card (the FrameBorder shader, utils/frameBorder.ts), in the white of the hero's rays:
+    // once the cards have turned over and stand still, the line draws itself round each one and a pulse runs from the
+    // bottom; the light then keeps drifting along the edge. Turning back dims it at once.
+    const cards = Array.from(scene.querySelectorAll<HTMLElement>('.sc-card'));
+    // One red light on every card, the site's #E83D22.
+    const opts = { colors: ['#E83D22', '#E83D22'] as [string, string], radius: 2, lineWidth: 1.3, bleed: 26, glow: 0.4, glowWidth: 60, noise: 0.85, intensity: 1, idlePulses: 3, idleStrength: 0.9 };
+    const borders = cards.map((c) => createFrameBorder(c, opts));
+    _borders = borders.filter((b): b is FrameBorderControl => !!b);
+    let flipOn = false;
+
     const apply = (p: number) => {
       // 0.00–0.34  the picture pulls back from filling the screen (3.4x -> 1.3x); the title comes in at its end
       // 0.34–0.44  HOLD full image  (no cuts visible)
@@ -511,6 +573,13 @@
       scene.style.setProperty('--zoom',  phase(p, 0.00, 0.34).toFixed(4));
       scene.style.setProperty('--split', phase(p, 0.44, 0.62).toFixed(4));
       scene.style.setProperty('--flip',  phase(p, 0.62, 0.86).toFixed(4));
+
+      const done = phase(p, 0.62, 0.86) >= 0.985;
+      _borders.forEach((b) => b.setOpacity(done ? 1 : 0));
+      if (done && !flipOn) {
+        flipOn = true;
+        borders.forEach((b, i) => { if (b) { b.replay(); b.pulse(cards[i].clientWidth / 2, cards[i].clientHeight); } });
+      } else if (!done && flipOn && phase(p, 0.62, 0.86) < 0.9) flipOn = false;
     };
 
     apply(0);
@@ -552,8 +621,10 @@
   }
 
   document.addEventListener('astro:page-load', initSplitCards);
+  document.addEventListener('astro:page-load', initMobileBorders);
 
   document.addEventListener('astro:before-swap', () => {
     if (_st) { _st.kill(); _st = null; }
+    killBorders();
   });
 </script>
