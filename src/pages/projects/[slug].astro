@@ -840,7 +840,13 @@ const [line1, line2] = d.titleLines;
     };
     (window as any).__wosTabsGate = false;
 
-    const tl = gsap.timeline({ defaults: { ease: 'none' } })
+    gsap.timeline({
+      defaults: { ease: 'none' },
+      scrollTrigger: {
+        trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true,
+        onUpdate: (self) => gate(self.progress >= 0.995),
+      },
+    })
       // Explicit start values: the entrance tween above is still running when this
       // is built, so a plain .to() would remember its blurred start and scroll back
       // to that blur instead of to a sharp title.
@@ -848,8 +854,6 @@ const [line1, line2] = d.titleLines;
       .fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: 'sine.inOut', immediateRender: false }, 0.2)
       .to(splash, { opacity: 0, duration: 0.4 }, 0.55)
       .to(items, { opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.5, ease: 'sine.out' }, 0.6);
-    // On the clock, like the desktop hero: the first swipe plays the title out and the panel in, then the scroll goes on.
-    playOnClock(tl, stage, '+=90%', { slow: 0.9, fast: 1.1, onPhase: (p) => gate(p === 'done') });
   }
 
   // ── Project detail: tabs that switch on their own (timer line under the active
