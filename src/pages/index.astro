@@ -124,19 +124,19 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				}
 				// Three beats, one after the other: the light goes out first (0–0.35)
 				// while the type is still sharp; only then does the rest go soft
-				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
-				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
-				const bk = smooth(clamp01((p - 0.30) / 0.40));
-				const a = smooth(clamp01((p - 0.55) / 0.40));
+				// (the blur layer, 0.38–0.78), and last it sinks into the dark (the
+				// black layer, 0.62–1.0: it ends where the manifesto's stage is pinned, so the black before the line is short) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.38) / 0.40));
+				const a = smooth(clamp01((p - 0.62) / 0.38));
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
 				veil.style.opacity = a.toFixed(3);
-				// The manifesto's line comes up slowly once its stage is pinned
-				// (about 0.4 of a screen), before the words start to focus.
+				// The manifesto's line comes up once its stage is pinned
+				// (0.3 of a screen), before the words start to focus.
 				const vh = window.innerHeight;
-				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
+				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.3 * vh))).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };

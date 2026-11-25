@@ -35,6 +35,11 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#manifesto { height: calc(var(--app-stable-vh) * 230) !important; }
 	}
+	/* The stage is as tall as the screen is NOW (dvh), not as it was when the page loaded (--app-stable-vh is locked at load): when
+	   a phone's address bar slides away the visible screen grows, and a stage left at the old height holds its text off centre. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto > .sticky { height: 100vh !important; height: 100dvh !important; }
+	}
 	#manifesto > .sticky {
 		width: 100%;
 		padding-left: var(--site-gutter) !important;
