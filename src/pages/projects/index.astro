@@ -586,6 +586,7 @@ const projects = await Promise.all(
         im.src = url;
         imgs.push(im);
       }
+      await Promise.all(imgs.map((im) => im.decode().catch(() => { /* the beam waits for load */ })));
       if (mine !== built) { drop(); return; }
       const cv = document.createElement('canvas');
       cv.setAttribute('aria-hidden', 'true');
@@ -605,23 +606,45 @@ const projects = await Promise.all(
     };
 
     // enter: the window that is coming in (-1: none), opening: 0 at the foot .. 1 at the top
+    // A finger flicks the page: from one frame to the next the window can jump from a third of the way up to the top (or
+    // the other way), and the beam would be cut off half way, a flash. So when the scroll leaves a transition early, the
+    // beam is carried on by the clock to the end it was heading for (the window is already there under it, and the
+    // painted frame is the same picture), in a quarter of a second, and only then is the canvas let go.
+    let lastEnter = -1;
+    let lastOp = 0;
+    let fin: { from: number; to: number; t0: number; enter: number } | null = null;
+    const hideBeam = () => {
+      fin = null;
+      if (beamOn && beamCanvas) { beamCanvas.style.opacity = '0'; beamCanvas.style.visibility = 'hidden'; }
+      beamOn = false;
+    };
+    // enter: the window that is coming in (-1: none), opening: 0 at the foot .. 1 at the top
     const seat = (enter: number, opening: number) => {
       if (!beam || !beamCanvas) return;
       // (the first project comes up out of the header and the dark, not from another project)
       const on = enter >= 1 && opening > 0.001 && opening < 0.9995;
-      if (!on) {
-        if (beamOn) { beamOn = false; beamCanvas.style.opacity = '0'; beamCanvas.style.visibility = 'hidden'; }
+      if (on) {
+        fin = null;
+        lastEnter = enter; lastOp = opening;
+        if (!beamOn) { beamOn = true; beamCanvas.style.visibility = 'visible'; }
+        beam.setPos(enter + opening);
+        // melts in over a few pixels of scroll (the big word of the window that leaves drifts with the scroll, the
+        // painted one does not). It does NOT melt out: the live window is still rising under the canvas until the very
+        // end, so a cross-fade there showed two copies of the photo and of the text. The painted frame equals the live
+        // window at rest, so the switch at the very end is a cut between two identical pictures.
+        beamCanvas.style.opacity = smooth(0.001, 0.004, opening).toFixed(3);
         return;
       }
-      // (a beam that is only just ready, or comes back after a resize, never joins a transition half way: it waits for the next)
-      if (!beamOn && opening > 0.06) return;
-      if (!beamOn) { beamOn = true; beamCanvas.style.visibility = 'visible'; }
-      beam.setPos(enter + opening);
-      // melts in as the beam starts (the window that leaves is standing still, so this hides nothing). It does NOT melt
-      // out: the live window is still rising under the canvas until the very end, so a cross-fade there showed two
-      // copies of the photo and of the text, one sliding into the other. The painted frame equals the live window
-      // at rest, so the switch at the very end is a cut between two identical pictures.
-      beamCanvas.style.opacity = smooth(0.001, 0.004, opening).toFixed(3);   // (a few pixels of scroll: the big word of the window that leaves drifts with the scroll, the painted one does not, so a long melt-in showed the two)
+      if (!beamOn) return;
+      if (!fin) {
+        const to = lastOp >= 0.5 ? 1 : 0;
+        if (Math.abs(to - lastOp) < 0.02) { hideBeam(); return; }
+        fin = { from: lastOp, to, t0: performance.now(), enter: lastEnter };
+      }
+      const t = Math.min(1, (performance.now() - fin.t0) / 260);
+      const e = 1 - Math.pow(1 - t, 3);
+      beam.setPos(fin.enter + fin.from + (fin.to - fin.from) * e);
+      if (t >= 1) hideBeam();
     };
     buildBeam();
     let rzT = 0;
