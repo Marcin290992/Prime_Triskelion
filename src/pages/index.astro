@@ -102,43 +102,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
-			// ── The hero's going out is a STEP, fired by the scroll and played on the clock (the manifesto stays on the scroll):
-			// step 0 = the hero as it is, step 1 = gone (the type out of focus, the dark down). goStep() lets the type go soft and then
-			// sink into the dark one way, and lifts the dark and the blur the other way; the last call wins. What is on screen is the
-			// greater of the step and the scroll's own value (the original beats below), so a flick that outruns the clock still finds
-			// the hero gone when it gets to the manifesto.
-			const T_DOWN = 0.10;   // of the exit stretch: past it, going down, the hero goes out
-			const T_UP = 0.92;     // below it, going up (the page leaves the manifesto's stage), the hero comes back at once
-			const hs = { b: 0, a: 0 };
-			let step = -1;
-			let live = true;
-			let scrollBk = 0;
-			let scrollA = 0;
-			let wantOn = true;
-			const sharp = () => Math.max(scrollBk, hs.b) < 0.03;
-			const paint = () => {
-				const bk = Math.max(scrollBk, hs.b);
-				const a = Math.max(scrollA, hs.a);
-				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
-				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
-				veil.style.opacity = a.toFixed(3);
-				// the light comes back last, once the type is sharp (also when that is the clock finishing, not a scroll)
-				if (rays && wantOn && step === 0 && lightOff === true && sharp()) setLight(false);
-			};
-			const goStep = (n: number, instant = false) => {
-				gsap.killTweensOf(hs);
-				if (instant || step < 0) { step = n; hs.b = hs.a = n; paint(); return; }
-				if (n === step) return;
-				step = n;
-				if (n === 1) {
-					gsap.to(hs, { b: 1, duration: 0.7, delay: 0.1, ease: 'power2.inOut', onUpdate: paint });
-					gsap.to(hs, { a: 1, duration: 0.7, delay: 0.45, ease: 'power2.inOut', onUpdate: paint });
-				} else {
-					gsap.to(hs, { a: 0, duration: 1.1, ease: 'power2.out', onUpdate: paint });
-					gsap.to(hs, { b: 0, duration: 1.3, delay: 0.15, ease: 'power2.out', onUpdate: paint });
-				}
-			};
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
@@ -147,27 +110,29 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const goingUp = y < lastY - 0.5;
 				lastY = y;
 				const p = y / range;
-				// The scroll's own value, the original beats: the light goes out first (0–0.35) while the type is still sharp; then the
-				// rest goes soft (the blur layer, 0.38–0.78), and last it sinks into the dark (the black layer, 0.62–1.0: it ends where
-				// the manifesto's stage is pinned, so the black before the line is short).
-				scrollBk = smooth(clamp01((p - 0.38) / 0.40));
-				scrollA = smooth(clamp01((p - 0.62) / 0.38));
-				live = y < pinStart + window.innerHeight;
-				// The step: one line down, another up (the way back is the page leaving the manifesto's stage, not the same line).
-				if (step < 0) goStep(p > T_DOWN ? 1 : 0, true);
-				else if (step === 0 && !goingUp && p > T_DOWN) goStep(1);
-				else if (step === 1 && goingUp && p < T_UP) goStep(0);
-				// The light goes first: it is the source of everything on screen. It goes out (and comes back) on the clock, never
-				// scrubbed. Brightness, not opacity (the intro owns the canvas's opacity). On the way back it comes on LAST: only once the
-				// type is sharp (the hero must never stand sharp and dark, nor lit and soft).
-				if (p <= 0.02 || (goingUp && p <= 0.30)) wantOn = true;
-				else if (!goingUp && p > 0.02) wantOn = false;
+				// The light goes first: it is the source of everything on screen.
+				// It goes out (and comes back) on the clock — one slow fade of the
+				// same length however fast you scroll — never scrubbed by the scroll.
+				// Brightness, not opacity (the intro owns the canvas's opacity).
+				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
+				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
 				if (rays) {
 					if (lightOff === null) setLight(p > 0.02);
-					else if (wantOn && step === 0 && sharp()) setLight(false);
-					else if (!wantOn) setLight(true);
+					else if (p <= 0.02) setLight(false);
+					else if (goingUp && p <= 0.30) setLight(false);
+					else if (!goingUp && p > 0.02) setLight(true);
 				}
-				paint();
+				// Three beats, one after the other: the light goes out first (0–0.35)
+				// while the type is still sharp; only then does the rest go soft
+				// (the blur layer, 0.38–0.78), and last it sinks into the dark (the
+				// black layer, 0.62–1.0: it ends where the manifesto's stage is pinned, so the black before the line is short) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.38) / 0.40));
+				const a = smooth(clamp01((p - 0.62) / 0.38));
+				const live = y < pinStart + window.innerHeight;
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+				veil.style.opacity = a.toFixed(3);
 				// The manifesto's line comes up once its stage is pinned
 				// (0.3 of a screen), before the words start to focus.
 				const vh = window.innerHeight;
@@ -182,7 +147,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
 				gsap.killTweensOf(lightState);
-				gsap.killTweensOf(hs);
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
