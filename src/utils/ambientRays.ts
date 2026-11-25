@@ -63,9 +63,11 @@ function createDesktopAmbient(canvas: HTMLCanvasElement): AmbientRays | null {
 		haze: 0.2,
 		maxDevicePixelRatio: 1,
 		frameMs: 1000 / 30,
-		mouseInfluence: 0,
-		cursorShadow: false,
-		clickPulse: false,
+		// Interactive like the hero's light (the listeners are on window, so the canvas can stay click-through):
+		// it leans toward the cursor, the cursor casts a soft shadow, a click sends a pulse.
+		mouseInfluence: 0.1,
+		cursorShadow: true,
+		clickPulse: true,
 	});
 	if (!rays) return null;
 	let running = false;
