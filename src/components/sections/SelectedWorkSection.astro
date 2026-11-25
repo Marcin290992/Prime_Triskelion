@@ -498,7 +498,7 @@ const SCREENS = projects.length + HOLD;
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
 		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
-		const DARK = 0.42;
+		const DARK = window.matchMedia("(max-width: 1024px), (hover: none) and (pointer: coarse)").matches ? 0.3 : 0.42;   // touch: a shorter moment of dark before the light
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
