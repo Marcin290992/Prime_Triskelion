@@ -87,6 +87,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			// The three beats, one clock: light (1 = lit), blur (0..1), black (0..1).
 			const st = { light: 1, blur: 0, black: 0 };
 			let live = true;
+			let fading = false;    // this script is holding #hero's opacity below 1
+			let stageScroll = 0;   // the manifesto stage's own, scroll-driven fade-in (see update)
 			const apply = () => {
 				if (rays) {
 					const dark = st.light <= 0.001;
@@ -102,6 +104,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = st.blur > 0 ? `blur(${(st.blur * 22).toFixed(1)}px)` : '';
 				veil.style.visibility = st.black > 0 && live ? 'visible' : 'hidden';
 				veil.style.opacity = st.black.toFixed(3);
+				// The manifesto's (blurred) line must not be seen before the exit has finished: it can only be as visible
+				// as the black is complete, whatever the scroll says.
+				stage.style.opacity = Math.min(stageScroll, st.black).toFixed(3);
 			};
 			const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply });
 			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
@@ -132,9 +137,18 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				else if (out && goingUp && p <= BACK) { out = false; tl.timeScale(1.15).reverse(); }
 				else if (out && p <= 0.001) { out = false; tl.timeScale(1.15).reverse(); }
 				else apply();
+				// Scrolled on faster than the exit plays: let it finish quickly, and take the hero itself out
+				// over the last of its pinned screen, so it is never seen scrolling away half-lit.
+				if (out && tl.isActive() && p > 0.45) tl.timeScale(2.5);
+				// (#hero's opacity is the intro's: it starts at 0 and the intro sets it to 1. Only touched here when the
+				// hero is about to leave the screen, and put back to 1 when it is on its pinned screen again.)
+				const leaving = out === true && p > 0.8;
+				if (leaving && !fading) { fading = true; gsap.to(hero, { opacity: 0, duration: 0.3, ease: 'sine.out', overwrite: true }); }
+				else if (!leaving && fading) { fading = false; gsap.to(hero, { opacity: 1, duration: 0.25, ease: 'sine.out', overwrite: true }); }
 				// The manifesto's line comes up once its stage is pinned
-				// (0.3 of a screen), before the words start to focus.
-				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.3 * window.innerHeight))).toFixed(3);
+				// (0.3 of a screen), before the words start to focus (and only once the black is in: apply).
+				stageScroll = smooth(clamp01((y - pinStart) / (0.3 * window.innerHeight)));
+				stage.style.opacity = Math.min(stageScroll, st.black).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
@@ -145,6 +159,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
 				tl.kill();
+				gsap.killTweensOf(hero);
+				if (fading) hero.style.opacity = '1';
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
