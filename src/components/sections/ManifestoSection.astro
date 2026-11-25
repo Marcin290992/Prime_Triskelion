@@ -31,6 +31,10 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 </section>
 
 <style>
+	/* On touch (the finger covers more of the page, and travels 0.85 of it) the pinned stretch is shorter: 230 screens, not 290. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto { height: calc(var(--app-stable-vh) * 230) !important; }
+	}
 	#manifesto > .sticky {
 		width: 100%;
 		padding-left: var(--site-gutter) !important;

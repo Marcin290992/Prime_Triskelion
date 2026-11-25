@@ -608,7 +608,7 @@ const SCREENS = projects.length + HOLD;
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
 		// the title stands alone for LEAD screens: on touch it was 1.1, far too much finger for one word (desktop 0.72 is fine)
 		const LEAD = coarse ? 0.55 : 0.72;
-		const PER = coarse ? 0.95 : 0.72;   // (touch: 1.25 was a lot of finger for each of only three projects)
+		const PER = coarse ? 0.8 : 0.72;   // (touch: 1.25 was a lot of finger for each of only three projects)
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => {
