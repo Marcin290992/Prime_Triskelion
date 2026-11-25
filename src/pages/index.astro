@@ -18,7 +18,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
 	<div class="relative" style="z-index:30">
-		<div id="ambient" class="pt-ambient pt-ambient--fixed" aria-hidden="true"></div>
+		<canvas id="ambient-rays" aria-hidden="true"></canvas>
 		<ManifestoSection />
 		<ServicesSection />
 		<SelectedWorkSection />
@@ -165,41 +165,42 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</script>
 
 	<script>
-		// Ambient light behind the manifesto and Services (phones and tablets; the layer is
-		// display:none elsewhere). In as the manifesto's line is pinned, out as the Selected
-		// Work stage rises (the stage carries its own copy, .swb__ambient, which takes over).
+		import { createAmbientRays } from '../utils/ambientRays';
+		// The small light (phones and tablets; the canvas is display:none elsewhere). The hero's light has gone out
+		// by the time the manifesto is pinned; here it comes back, smaller, as the words focus, stays through
+		// Services and the dark before the first picture, and goes out where the beam begins (the Selected Work
+		// script publishes that as window.__swAmbOut).
 		let _ambientOff: (() => void) | null = null;
 		function initAmbient() {
 			_ambientOff?.();
-			const el = document.getElementById('ambient');
+			(window as any).__swAmbOut = 1;
+			const el = document.getElementById('ambient-rays') as HTMLCanvasElement | null;
 			const man = document.getElementById('manifesto');
-			const sw = document.getElementById('sw-scroll-section');
-			if (!el || !man || !sw || getComputedStyle(el).display === 'none') return;
+			if (!el || !man || getComputedStyle(el).display === 'none') return;
+			const rays = createAmbientRays(el);
+			if (!rays) return;
 			const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
-			let manStart = 0, swStart = 0, ticking = false;
-			const measure = () => {
-				manStart = man.getBoundingClientRect().top + window.scrollY;
-				swStart = sw.getBoundingClientRect().top + window.scrollY;
-			};
+			let manStart = 0, ticking = false;
+			const measure = () => { manStart = man.getBoundingClientRect().top + window.scrollY; };
 			const update = () => {
 				ticking = false;
-				const y = window.scrollY, vh = window.innerHeight;
-				const ain = smooth((y - manStart + 0.2 * vh) / (0.7 * vh));
-				const aout = 1 - smooth((y - swStart + 0.9 * vh) / (0.6 * vh));
-				const a = Math.min(ain, aout);
-				el.style.opacity = a.toFixed(3);
-				el.style.visibility = a < 0.01 ? 'hidden' : 'visible';
+				const vh = window.innerHeight;
+				const ain = smooth((window.scrollY - manStart - 0.1 * vh) / (0.9 * vh));
+				rays.setLevel(Math.min(ain, (window as any).__swAmbOut ?? 1));
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
-			const onResize = () => { measure(); onScroll(); };
+			const onResize = () => { measure(); rays.resize(); onScroll(); };
 			measure(); update();
 			window.addEventListener('scroll', onScroll, { passive: true });
 			window.addEventListener('resize', onResize, { passive: true });
+			window.addEventListener('pt:amb', onScroll);
 			const late = window.setTimeout(onResize, 500);
 			_ambientOff = () => {
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);
+				window.removeEventListener('pt:amb', onScroll);
+				rays.destroy();
 				_ambientOff = null;
 			};
 		}
