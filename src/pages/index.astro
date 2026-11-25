@@ -46,22 +46,19 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
 		@media (prefers-reduced-motion: no-preference) {
-			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 170); }
+			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
 			#hero-pin > #hero { position: sticky; top: 0; }
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
-			#manifesto > .sticky > .mf-hold { width: 100%; }
 			#manifesto > .sticky { opacity: 0; }
 		}
 	</style>
 
 	<script>
 		import gsap from 'gsap';
-		import ScrollTrigger from 'gsap/ScrollTrigger';
-		// The hero → manifesto transition is a two-step switcher: 0 = hero (light, type), 1 = manifesto (its line).
-		// The scroll only decides WHICH step is active (one threshold, both ways); the clock does all the moving:
-		// goTo(n) lets the previous step go out, a beat of black, then the new one comes in. The last call wins.
-		const THRESHOLD = 0.1;  // of the hero's pinned exit stretch (70vh): a few vh of scroll fire it
-				const BEAT = 0.3;       // the black between the two steps
+		// The hero's exit: scrolling through the pinned screen, the light (the
+		// source) goes out first, then the veil darkens and blurs what is left
+		// (it sits over the hero, under the manifesto); once it is black the
+		// manifesto's stage is pinned and its line comes up out of the dark.
 		let _heroExitOff: (() => void) | null = null;
 		function initHeroExit() {
 			_heroExitOff?.();
@@ -72,163 +69,85 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const rays = document.getElementById('rays-canvas');
 			const man = document.getElementById('manifesto');
 			const stage = man?.querySelector<HTMLElement>(':scope > .sticky');
-			const hold = stage?.querySelector<HTMLElement>(':scope > .mf-hold');
-			if (!pin || !hero || !veil || !blur || !man || !stage || !hold) return;
+			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-			gsap.registerPlugin(ScrollTrigger);
 
+			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+			const smooth = (t: number) => t * t * (3 - 2 * t);
 			let range = 1;
 			let pinStart = 1;
 			const measure = () => {
 				range = Math.max(1, pin.offsetHeight - hero.offsetHeight);
 				pinStart = man.getBoundingClientRect().top + window.scrollY;
 			};
-			measure();
-
-			// the manifesto words (ManifestoSection) follow the scroll only while its line is up: reset / play / freeze / show
-			const mf = () => (window as any).__mf;
-			let playCall: gsap.core.Tween | null = null;
-
-			// ── hero: the light (brightness, 1 = lit), the blur layer (b) and the black layer (a), 0..1
-			const light = { v: 1 };
-			const veilState = { b: 0, a: 0 };
-			let live = true;
+			// The light's own fade (see update): 1 = lit, 0 = out.
+			const lightState = { v: 1 };
+			let lightOff: boolean | null = null;
 			const applyLight = () => {
 				if (!rays) return;
-				const dark = light.v <= 0.001;
+				const dark = lightState.v <= 0.001;
 				if (rays.dataset.dark !== (dark ? '1' : '')) {
 					rays.dataset.dark = dark ? '1' : '';
-					// Fully out: the hero stops drawing the light (HeroSection's initRays listens) and starts again with it.
+					// Fully out: nothing to see, so the hero stops drawing it
+					// (HeroSection's initRays listens) and starts again on the way back.
 					rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
 				}
-				rays.style.filter = light.v < 0.999 ? `brightness(${light.v.toFixed(3)})` : '';
+				rays.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
 			};
-			const applyVeil = () => {
-				const bk = veilState.b, a = veilState.a;
-				blur.style.visibility = bk > 0.001 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0.001 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
-				veil.style.visibility = a > 0.001 && live ? 'visible' : 'hidden';
-				veil.style.opacity = a.toFixed(3);
+			const setLight = (off: boolean) => {
+				if (off === lightOff) return;
+				const first = lightOff === null;
+				lightOff = off;
+				gsap.killTweensOf(lightState);
+				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
+				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
-			const heroSet = (shown: boolean) => {
-				gsap.killTweensOf([light, veilState]);
-				light.v = shown ? 1 : 0;
-				veilState.b = veilState.a = shown ? 0 : 1;
-				applyLight(); applyVeil();
-			};
-
-			// ── manifesto: its stage (the line's frame). gsap owns transform/opacity/filter; the hold-in-place lag
-			// below moves the inner .mf-hold wrapper, so the two never fight.
-			gsap.set(stage, { transformOrigin: '50% 50%' });
-			const stageSet = (shown: boolean) => {
-				gsap.killTweensOf(stage);
-				gsap.set(stage, { opacity: shown ? 1 : 0, filter: shown ? 'none' : 'blur(24px)', scale: 1, y: 0 });
-				if (shown) gsap.set(stage, { clearProps: 'filter' });
-			};
-
-			// ── the ONE exit / enter pair: every step answers to it, in both directions
-			type Step = { exit: (dir: number) => number; enter: (dir: number) => void; set: (shown: boolean) => void };
-			const steps: Step[] = [
-				{ // 0 — hero: the light goes first, then the type goes soft, then it sinks into the black; back: the black and the
-				  // blur lift, and the light comes on LAST, once the type is sharp
-					exit: () => {
-						gsap.killTweensOf([light, veilState]);
-						gsap.to(light, { v: 0, duration: 0.5, ease: 'power2.in', onUpdate: applyLight });
-						gsap.to(veilState, { b: 1, duration: 0.6, delay: 0.15, ease: 'power2.in', onUpdate: applyVeil });
-						gsap.to(veilState, { a: 1, duration: 0.5, delay: 0.5, ease: 'power2.in', onUpdate: applyVeil });
-						return 1.0;
-					},
-					enter: () => {
-						gsap.killTweensOf([light, veilState]);
-						gsap.to(veilState, { a: 0, duration: 1.0, ease: 'expo.out', onUpdate: applyVeil });
-						gsap.to(veilState, { b: 0, duration: 1.3, delay: 0.1, ease: 'expo.out', onUpdate: applyVeil });
-						gsap.to(light, { v: 1, duration: 1.0, delay: 0.8, ease: 'power2.out', onUpdate: applyLight });
-					},
-					set: heroSet,
-				},
-				{ // 1 — manifesto: out into blur and dark, in again out of the dark, where it stands
-					exit: (dir) => {
-						playCall?.kill(); playCall = null;
-						mf()?.freeze();
-						gsap.killTweensOf(stage);
-						gsap.to(stage, { opacity: 0, filter: 'blur(24px)', scale: 0.98, y: dir * -14, duration: 0.7, ease: 'power2.in' });
-						return 0.7;
-					},
-					enter: (dir) => {
-						mf()?.reset(); // the words start from fully blurred, whenever the line comes up
-						gsap.killTweensOf(stage);
-						gsap.fromTo(stage,
-							{ opacity: 0, filter: 'blur(24px)', scale: 1.05, y: dir * 18 },
-							{ opacity: 1, filter: 'blur(0px)', scale: 1, y: 0, duration: 1.3, ease: 'expo.out', clearProps: 'filter' });
-						// the words are let go to follow the scroll once the line is (all but) up
-						playCall?.kill();
-						playCall = gsap.delayedCall(0.5, () => { playCall = null; mf()?.play(); });
-					},
-					set: stageSet,
-				},
-			];
-
-			// ── the switcher: the last call always wins
-			let cur = -1;
-			let pending: gsap.core.Tween | null = null;
-			const goTo = (n: number, instant = false) => {
-				pending?.kill(); pending = null;
-				if (instant || cur < 0) {
-					cur = n;
-					steps.forEach((s, i) => s.set(i === n));
-					playCall?.kill(); playCall = null;
-					(window as any).__mfShown = n === 1;
-					mf()?.show(n === 1);
-					return;
-				}
-				if (n === cur) return;
-				const dir = n > cur ? 1 : -1;
-				const prev = cur;
-				cur = n;
-				const outDur = steps[prev].exit(dir);
-				pending = gsap.delayedCall(outDur + BEAT, () => { pending = null; steps[n].enter(dir); });
-			};
-
-			// ── the step comes from the scroll position only, with ONE threshold both ways: the words follow the scroll between
-			// the threshold and the stage (up and down alike), so the hero returns only once they are fully blurred again.
-			const st = ScrollTrigger.create({
-				trigger: pin,
-				start: 'top top',
-				end: () => `+=${range}`,
-				invalidateOnRefresh: true,
-				onUpdate: (self) => {
-					const s = self.progress > THRESHOLD ? 1 : 0;
-					if (s !== cur) goTo(s);
-				},
-			});
-
-			// ── the line stays where it will stand (the middle of the screen) until the page reaches its stage,
-			// instead of riding up from below; the black and the blur belong to the hero's screen only
 			let ticking = false;
+			let lastY = window.scrollY;
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
-				live = y < pinStart + window.innerHeight;
-				applyVeil();
-				const lag = Math.max(0, pinStart - y);
-				hold.style.transform = lag > 0.5 ? `translate3d(0,${(-lag).toFixed(1)}px,0)` : '';
+				const goingUp = y < lastY - 0.5;
+				lastY = y;
+				const p = y / range;
+				// The light goes first: it is the source of everything on screen.
+				// It goes out (and comes back) on the clock — one slow fade of the
+				// same length however fast you scroll — never scrubbed by the scroll.
+				// Brightness, not opacity (the intro owns the canvas's opacity).
+				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
+				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
+				if (rays) {
+					if (lightOff === null) setLight(p > 0.02);
+					else if (p <= 0.02) setLight(false);
+					else if (goingUp && p <= 0.30) setLight(false);
+					else if (!goingUp && p > 0.02) setLight(true);
+				}
+				// Three beats, one after the other: the light goes out first (0–0.35)
+				// while the type is still sharp; only then does the rest go soft
+				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
+				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.30) / 0.40));
+				const a = smooth(clamp01((p - 0.55) / 0.40));
+				const live = y < pinStart + window.innerHeight;
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+				veil.style.opacity = a.toFixed(3);
+				// The manifesto's line comes up slowly once its stage is pinned
+				// (about 0.4 of a screen), before the words start to focus.
+				const vh = window.innerHeight;
+				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
+			measure();
+			update();
 			window.addEventListener('scroll', onScroll, { passive: true });
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
-
-			// first paint (also a reload at mid-scroll): the right step at once, no animation
-			update();
-			goTo(window.scrollY / range > THRESHOLD ? 1 : 0, true);
-
 			_heroExitOff = () => {
-				pending?.kill(); playCall?.kill();
-				gsap.killTweensOf([light, veilState, stage]);
-				st.kill();
+				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
-				hold.style.transform = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);
