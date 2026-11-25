@@ -978,32 +978,47 @@ const [line1, line2] = d.titleLines;
         if (self.scroll() > self.start + 4) { tl.progress(1); setPhase('done'); }
         else { tl.progress(0); setPhase('start'); }
       },
-      // pushing up from below, back into the pinned view
-      onEnterBack: () => { if (userGesture) playOut(); },
-      // a scroll into the pin that is not a wheel or key (the scrollbar, a drag) starts it too
-      onUpdate: (self) => { if (phase === 'start' && userGesture && self.scroll() > self.start + 24) playIn(); },
+      // Coming back up into the pinned view (a hard flick up from the copy) stops AT its end: the page does not fly on
+      // into the hero and play it back to the title. Going back to the title is a push of its own, made after the page
+      // has come to rest there (see onWheel: a quiet moment first).
+      onEnterBack: () => { if (phase === 'done') { armedAt = performance.now() + 600; jump(st.end); } },
+      onUpdate: (self) => {
+        // a scroll into the pin that is not a wheel or key (the scrollbar, a drag) starts it too
+        if (phase === 'start' && userGesture && self.scroll() > self.start + 24) playIn();
+        // the finished view is held at the end of the pin: the rest of a flick's momentum goes nowhere
+        else if (phase === 'done' && self.scroll() < st.end - 2 && self.scroll() > st.start + 2) jump(st.end);
+      },
     });
     _cinST = st;
 
+    let armedAt = 0;        // going back up into the hero is allowed only after this
+    let lastInputAt = 0;    // the last wheel / key / touch event: a push counts after a quiet moment
+    const QUIET = 350;
+    let quiet = true;       // was there a quiet moment before the event being handled?
+    const stamp = () => { const now = performance.now(); quiet = now - lastInputAt > QUIET && now >= armedAt; lastInputAt = now; };
+    const deliberate = () => quiet;
     const atStart = () => st.scroll() <= st.start + 6;
     const atEnd = () => st.scroll() >= st.end - 6 && st.scroll() <= st.end + 6;
     const onWheel = (e: WheelEvent) => {
+      stamp();
       if (phase === 'playing') return;
       if (e.deltaY > 3 && phase === 'start' && atStart()) playIn();
-      else if (e.deltaY < -3 && phase === 'done' && atEnd()) playOut();
+      else if (e.deltaY < -3 && phase === 'done' && atEnd() && deliberate()) playOut();
     };
     const onKey = (e: KeyboardEvent) => {
+      stamp();
       if (phase === 'playing') return;
       if (['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key) && phase === 'start' && atStart()) playIn();
-      else if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) && phase === 'done' && atEnd()) playOut();
+      else if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) && phase === 'done' && atEnd() && !e.repeat && deliberate()) playOut();
     };
     let ty = 0;
     const onTouchStart = (e: TouchEvent) => { ty = e.touches[0]?.clientY ?? 0; };
     const onTouchMove = (e: TouchEvent) => {
+      stamp();
       if (phase === 'playing') return;
       const dy = ty - (e.touches[0]?.clientY ?? ty);
       if (dy > 12 && phase === 'start' && atStart()) playIn();
-      else if (dy < -12 && phase === 'done' && atEnd()) playOut();
+      else if (dy < -12 && phase === 'done' && atEnd() && deliberate()) playOut();
     };
     const cap = { capture: true, passive: true } as const;
     window.addEventListener('wheel', onWheel, cap);
