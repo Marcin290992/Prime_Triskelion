@@ -17,7 +17,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</div>
 	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
-	<div class="relative" style="z-index:30">
+	<div id="home-content" class="relative" style="z-index:30">
 		<ManifestoSection />
 		<ServicesSection />
 		<SelectedWorkSection />
@@ -44,13 +44,26 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		   softens whatever is behind it) comes up first, the black after. */
 		#hero-blur { z-index: 19; }
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
+		/* The content wrapper is pulled up over the hero's pinned screen (the manifesto's negative margin collapses
+		   through it), so the wrapper itself must be click-through: only the sections take clicks, never the empty
+		   box over the hero (its Start a project button). The manifesto stays click-through as before. */
+		#home-content { pointer-events: none; }
+		#home-content > section:not(#manifesto) { pointer-events: auto; }
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
 		@media (prefers-reduced-motion: no-preference) {
 			/* The exit plays on its own clock (script below), so the pinned screen only has to say WHEN: half a screen
 			   of scroll on every screen, then the manifesto's stage takes over. */
 			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 150); }
 			#hero-pin > #hero { position: sticky; top: 0; }
-			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
+			/* Pulled up 55 of a screen (desktop) into the hero's pinned screen: the manifesto's own scrub starts with an idle
+			   stretch and then its words come into focus one by one, and all that now runs UNDER the exit's black
+			   (its stage is held back until the exit has finished, see the script), so the line is there, sharp, the
+			   moment the black is, with no scrolling on to bring it in. */
+			#manifesto { margin-top: calc(var(--app-stable-vh) * -155); pointer-events: none; }
+			/* (Phones and tablets: their scrub is shorter, 40 of a screen is enough.) */
+			@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+				#manifesto { margin-top: calc(var(--app-stable-vh) * -140); }
+			}
 			#manifesto > .sticky { opacity: 0; }
 		}
 	</style>
@@ -89,6 +102,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			let live = true;
 			let fading = false;    // this script is holding #hero's opacity below 1
 			let stageScroll = 0;   // the manifesto stage's own, scroll-driven fade-in (see update)
+			// 0 until the black is all but complete (0.93), then 1 by full black: the manifesto's line only appears over
+			// a screen with no hero left in it, not over the last 10% of one.
+			const blackDone = () => clamp01((st.black - 0.93) / 0.07);
 			const apply = () => {
 				if (rays) {
 					const dark = st.light <= 0.001;
@@ -106,7 +122,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				veil.style.opacity = st.black.toFixed(3);
 				// The manifesto's (blurred) line must not be seen before the exit has finished: it can only be as visible
 				// as the black is complete, whatever the scroll says.
-				stage.style.opacity = Math.min(stageScroll, st.black).toFixed(3);
+				stage.style.opacity = Math.min(stageScroll, blackDone()).toFixed(3);
 			};
 			const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply });
 			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
@@ -148,7 +164,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// The manifesto's line comes up once its stage is pinned
 				// (0.3 of a screen), before the words start to focus (and only once the black is in: apply).
 				stageScroll = smooth(clamp01((y - pinStart) / (0.3 * window.innerHeight)));
-				stage.style.opacity = Math.min(stageScroll, st.black).toFixed(3);
+				stage.style.opacity = Math.min(stageScroll, blackDone()).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
