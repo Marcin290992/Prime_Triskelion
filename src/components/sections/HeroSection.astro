@@ -1334,9 +1334,8 @@ import { createLightRays } from '../../utils/lightRays';
 	function initRays() {
 		const canvas = document.getElementById('rays-canvas') as HTMLCanvasElement | null;
 		if (!canvas) return;
-		// Phones and tablets get the same light as the desktop (its own phone settings below: DPR 1, ~24fps, no cursor effects);
-		// the older, much dimmer light (initLegacyRays) is kept behind ?rays=legacy in case a phone cannot keep up.
-		if (window.matchMedia('(pointer: coarse)').matches && new URLSearchParams(window.location.search).get('rays') === 'legacy') { initLegacyRays(); return; }
+		// Phones and tablets keep the original light (see initLegacyRays).
+		if (window.matchMedia('(pointer: coarse)').matches) { initLegacyRays(); return; }
 
 		// Phones: lighter — no cursor effects, DPR 1, ~24fps. A per-pixel
 		// fragment shader running continuously is a real, measurable
