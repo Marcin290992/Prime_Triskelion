@@ -55,14 +55,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			   of scroll on every screen, then the manifesto's stage takes over. */
 			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 150); }
 			#hero-pin > #hero { position: sticky; top: 0; }
-			/* Pulled up 55 of a screen (desktop) into the hero's pinned screen: the manifesto's own scrub starts with an idle
-			   stretch and then its words come into focus one by one, and all that now runs UNDER the exit's black
-			   (its stage is held back until the exit has finished, see the script), so the line is there, sharp, the
-			   moment the black is, with no scrolling on to bring it in. */
-			#manifesto { margin-top: calc(var(--app-stable-vh) * -155); pointer-events: none; }
-			/* (Phones and tablets: their scrub is shorter, 40 of a screen is enough.) */
+			/* Pulled up over the hero's pinned screen (and above the top of the page): the manifesto's own scrub opens with an
+			   idle stretch and then its words come into focus one by one, and all of that now happens UNDER the exit's black
+			   (its stage is held back until the exit has finished, see the script). So the moment the black is whole the
+			   line is there, sharp, even after the shortest swipe: nothing to scroll on for. The reading part (hold, red
+			   words, going out) keeps its length. Desktop: scrub 190vh, so 91vh above the top; phones and tablets:
+			   scrub 100vh, so 47vh above it. */
+			#manifesto { margin-top: calc(var(--app-stable-vh) * -241); pointer-events: none; }
 			@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-				#manifesto { margin-top: calc(var(--app-stable-vh) * -140); }
+				#manifesto { margin-top: calc(var(--app-stable-vh) * -197); }
 			}
 			#manifesto > .sticky { opacity: 0; }
 		}
@@ -101,7 +102,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const st = { light: 1, blur: 0, black: 0, stage: 0 };
 			let live = true;
 			let fading = false;    // this script is holding #hero's opacity below 1
-			let stageScroll = 0;   // the manifesto stage's own, scroll-driven fade-in (see update)
 			const apply = () => {
 				if (rays) {
 					const dark = st.light <= 0.001;
@@ -119,7 +119,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				veil.style.opacity = st.black.toFixed(3);
 				// The manifesto's (blurred) line must not be seen before the exit has finished: it can only be as visible
 				// as the black is complete, whatever the scroll says.
-				stage.style.opacity = Math.min(stageScroll, st.stage).toFixed(3);
+				stage.style.opacity = st.stage.toFixed(3);
 			};
 			const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply });
 			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
@@ -166,10 +166,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const leaving = out === true && p > 0.8;
 				if (leaving && !fading) { fading = true; gsap.to(hero, { opacity: 0, duration: 0.3, ease: 'sine.out', overwrite: true }); }
 				else if (!leaving && fading) { fading = false; gsap.to(hero, { opacity: 1, duration: 0.25, ease: 'sine.out', overwrite: true }); }
-				// The manifesto's line comes up once its stage is pinned
-				// (0.3 of a screen), before the words start to focus (and only once the black is in: apply).
-				stageScroll = smooth(clamp01((y - pinStart) / (0.3 * window.innerHeight)));
-				stage.style.opacity = Math.min(stageScroll, st.stage).toFixed(3);
+				// (The manifesto's line comes up on the clock too: st.stage, the last beat of the timeline. It used to be
+				// faded in by the scroll after the stage pinned, so a short swipe left the black with nothing in it.)
+				stage.style.opacity = st.stage.toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
