@@ -266,6 +266,7 @@ const projects = await Promise.all(
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: rgb(var(--c-cream) / 0.7);
+    white-space: nowrap;   /* a category never breaks across two lines */
   }
 
   /* In a row (laptop and mobile layouts below) the tags are told apart by
@@ -315,7 +316,7 @@ const projects = await Promise.all(
     }
     .proj-foot__center {
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;   /* always one row, side by side */
       justify-content: center;
       gap: 0.3rem 1rem;
     }
@@ -380,13 +381,14 @@ const projects = await Promise.all(
       grid-column: 1 / 3;
       grid-row: 2;
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;   /* the three categories are always side by side in ONE row, never broken */
       align-items: center;
       justify-content: flex-start;
-      gap: 0.2rem 0.9rem;
+      gap: 0 clamp(0.45rem, 2.4vw, 0.9rem);
     }
+    .proj-foot__center .proj-foot__tag { font-size: clamp(7.5px, 2.5vw, 12px); letter-spacing: clamp(0.08em, 0.5vw, 0.2em); }
     .proj-foot__right { grid-column: 2; grid-row: 1; align-items: flex-end; }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 0.9rem; opacity: 0.6; }
+    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: clamp(0.45rem, 2.4vw, 0.9rem); opacity: 0.6; }
     @media (min-width: 700px) {
       .proj-img-wrap { width: clamp(420px, 56vw, 680px); }
       .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
@@ -418,6 +420,7 @@ const projects = await Promise.all(
 
 
     // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
+    const reduce_ = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Cache references once — never query DOM inside the render loop
     const panels = Array.from(
       document.querySelectorAll<HTMLElement>('.proj-section')
@@ -446,6 +449,19 @@ const projects = await Promise.all(
     const rise = sink.cloneNode() as HTMLElement;
     rise.style.opacity = '1';
     firstSec?.querySelector('.proj-inner')?.appendChild(rise);
+    // However the page is arrived at already scrolled to the list (a link to #projects-list, or the browser's Back
+    // button, which puts the scroll position back a moment AFTER the page has started), the first project is in its
+    // window at once and the scroll alone would show its photo at full strength: a hard cut. So the first photo always
+    // starts under the dark and comes up out of it on the clock (softly, like everything that arrives on a page). Seen
+    // from the top of the page it changes nothing: the project is far below the fold until the scroll gets there.
+    // It is counted frame by frame in the render loop below, each frame at most 50 ms (not by GSAP's clock: after a
+    // long first frame, which a page restored by the Back button often has, that clock jumps ahead by the whole
+    // stall and the soft entrance was over in a single frame, so it still looked like a cut).
+    const entry = { v: reduce_ ? 0 : 1 };
+    let entryT = 0;
+    let entryGo = false;
+    let entryLast = performance.now();
+    if (!reduce_) afterPageTransition(() => { entryGo = true; });
     let raf = 0;
     // As a card's window opens (and closes again) its title block comes out
     // of a blur and its photo settles from a hair oversized — scroll-driven,
@@ -461,6 +477,16 @@ const projects = await Promise.all(
 
     function render() {
       const vh = window.innerHeight;
+      {
+        const now = performance.now();
+        const dt = Math.min(0.05, (now - entryLast) / 1000);
+        entryLast = now;
+        if (entryGo && entry.v > 0) {
+          entryT += dt;
+          const k = Math.max(0, Math.min(1, (entryT - 0.1) / 1.9));
+          entry.v = 1 - (0.5 - 0.5 * Math.cos(Math.PI * k));   // in-out sine
+        }
+      }
       for (const { sec, bgText, foot, img, speed } of panels) {
         const rect = sec.getBoundingClientRect();
 
@@ -473,7 +499,7 @@ const projects = await Promise.all(
         if (sec === firstSec && !reduce) {
           const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
           const d = rect.top > 0 ? 1 - smooth(0.4, 1.0, shown) : 0;
-          rise.style.opacity = d.toFixed(3);
+          rise.style.opacity = Math.max(d, entry.v).toFixed(3);
         }
 
         if (rect.top > vh || rect.bottom < 0) continue;

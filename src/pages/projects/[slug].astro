@@ -137,14 +137,6 @@ const [line1, line2] = d.titleLines;
                   <span class="h-hero-cta__text">Let's build</span>
                 </a>
               </div>
-              <div class="h-hero-cta-wrap wos-pd__all">
-                <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
-                <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-                <a href="/projects/#projects-list" class="h-hero-cta h-hero-cta--fixed">
-                  <span class="hud-spin-border"></span>
-                  <span class="h-hero-cta__text">&larr;&nbsp; All projects</span>
-                </a>
-              </div>
             </div>
           </div>
         </aside>
@@ -746,14 +738,12 @@ const [line1, line2] = d.titleLines;
     .wos-pd__meta .wos-label { font-size: 11px; letter-spacing: 0.2em; }
     .wos-pd__grid { padding-top: 0; }
 
-    /* The way back: one small, quiet arrow link at the top of the panel. The Back / Live row that used to sit at the
-       bottom (and the same pair at the top) is gone: the visit link was a tiny word, the main thing to do here. */
-    .wos-pd__topbar { display: none; }   /* (a small link at the top of the panel was hard to see and to hit: it is a full button below now) */
+    /* The panel has the two actions the desktop hero has (Live, Let's build); the Back / Live rows are gone. */
+    .wos-pd__topbar { display: none; }
     .wos-pd__nav { display: none; }
 
     /* Two buttons, the desktop hero's: the main one is the live site (the red dot says it is live), then Let's build. */
     .wos-pd__actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2.25rem; }
-    .wos-pd__all .h-hero-cta { color: rgb(var(--c-cream) / 0.7); }
     .wos-pd__actions .h-hero-cta-wrap { width: 100%; max-width: none; }
     .wos-pd__actions .h-hero-cta { width: 100%; }
     .wos-pd__visit .h-hero-cta__text { display: inline-flex; align-items: center; }
@@ -761,7 +751,7 @@ const [line1, line2] = d.titleLines;
   }
   /* A tablet has the room: side by side. */
   @media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
-    .wos-pd__actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .wos-pd__actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
     .wos-pd__actions .h-hero-cta-wrap { width: 100%; }
   }
 </style>
