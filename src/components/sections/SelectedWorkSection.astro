@@ -404,6 +404,12 @@ const SCREENS = projects.length + HOLD;
 	.swb-cover { gap: 2.5rem; padding-top: clamp(6rem, 16vh, 11rem); padding-bottom: clamp(5rem, 14vh, 10rem); }
 	.swb-cover h2 { font-size: clamp(2rem, 3.8vw, 4rem); line-height: 1.05; letter-spacing: -0.02em; }
 	.swb-cover__cta { width: auto !important; margin: 0; }
+	/* Phones and tablets: far less black around the closing panel. After the last picture the page had a stretch of empty black
+	   (the panel's top padding on top of the black the picture fades into) before the first word came up, and the same
+	   again below the button: it looked as if the page had stopped loading. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.swb-cover { padding-top: clamp(1.25rem, 3.5vh, 2.5rem); padding-bottom: clamp(2rem, 5vh, 3.5rem); }
+	}
 
 	@media (min-width: 1025px) and (max-width: 1600px) {
 		.swb__title { font-size: clamp(3rem, 6vw, 8rem); }
