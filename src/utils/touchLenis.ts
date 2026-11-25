@@ -7,7 +7,7 @@
 export const TOUCH_LENIS_OPTIONS = {
 	autoRaf: false,
 	syncTouch: true,
-	syncTouchLerp: 0.06,   // was 0.075: a longer, heavier glide after the finger lifts (cinematic)
+	syncTouchLerp: 0.075,
 	touchInertiaExponent: 1.7,
-	touchMultiplier: 0.8,   // was 1: the finger moves the page a little less, so it feels heavier and more controlled
+	touchMultiplier: 1,
 } as const;

@@ -20,16 +20,18 @@ function destroyAll() {
 	items = [];
 }
 
-// The frame light is for a wide screen with a mouse: there is no hover on a phone or tablet, and a tap on a CTA leaves
-// the page at once, so it would hardly be seen. There the buttons keep their own beam and the touch comets (starBorder.js).
+// The HOVER version is for a wide screen with a mouse: there is no hover on a phone or tablet, and a tap on a CTA leaves
+// the page at once, so it would hardly be seen. There the CTAs keep their own beam and the touch comets (starBorder.js).
+// The STATE version (the MENU button while the menu is open) stays on every screen.
 const SMALL = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
 
 function initAll() {
 	destroyAll();
-	if (window.matchMedia(SMALL).matches) return;
+	const small = window.matchMedia(SMALL).matches;
 	document.querySelectorAll<HTMLElement>(SELECTOR).forEach((btn) => {
 		// The button clips its children (overflow: hidden), so the light lives inside the edge: no bleed.
 		const asState = btn.getAttribute('data-frame-fx') === 'state';
+		if (small && !asState) return;
 		const fb = createFrameBorder(btn, {
 			colors: ['#FFFFFF', '#B9BEC8'],   // the light of the hero's rays (#ffffff, falling off into a cool grey)
 			radius: 0,
