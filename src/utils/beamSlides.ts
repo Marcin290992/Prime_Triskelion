@@ -39,7 +39,6 @@ uniform vec2 uFromFocus;
 uniform vec2 uToFocus;
 uniform float uView;
 uniform float uP;
-uniform float uMove;
 varying vec2 vUv;
 
 const float BEAM_WIDTH = 0.12;
@@ -91,11 +90,8 @@ void main() {
   float head = mix(-reach, 1.0 + reach, p);
 
   // the leaving frame swells and lifts; the arriving one settles up from below
-  // (uMove 0: no swell and no lift, the frames only stand still under the beam: the project list)
-  float zoom = mix(1.0, ZOOM, uMove);
-  float drift = DRIFT * uMove;
-  vec2 outUv = PIVOT + (uv - PIVOT) / mix(1.0, zoom, p) - vec2(0.0, drift * p);
-  vec2 inUv = PIVOT + (uv - PIVOT) / mix(zoom, 1.0, p) + vec2(0.0, drift * (1.0 - p));
+  vec2 outUv = PIVOT + (uv - PIVOT) / mix(1.0, ZOOM, p) - vec2(0.0, DRIFT * p);
+  vec2 inUv = PIVOT + (uv - PIVOT) / mix(ZOOM, 1.0, p) + vec2(0.0, DRIFT * (1.0 - p));
 
   // The Forge light beam: a hot narrow core inside a wide halo, both zero at rest
   // (env), a lens-like warp of the picture along the beam, a colour split inside
@@ -140,8 +136,6 @@ export function createBeamSlides(
 	// where in each step (0..1) the beam starts and ends; the rest is a still
 	// frame. A wider rest gives a finger time to land on the text and the button.
 	range: [number, number] = [0.15, 0.85],
-	// false: the pictures do not swell or lift while the beam passes (the project list)
-	move = true,
 ): BeamSlides | null {
 	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
 	if (!gl) return null;
@@ -169,11 +163,10 @@ export function createBeamSlides(
 	const aPos = gl.getAttribLocation(prog, 'aPos');
 	gl.enableVertexAttribArray(aPos);
 	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uFromFocus', 'uToFocus', 'uView', 'uP', 'uMove']
+	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uFromFocus', 'uToFocus', 'uView', 'uP']
 		.map((n) => [n, gl.getUniformLocation(prog, n)]));
 	gl.uniform1i(U.uFrom, 0);
 	gl.uniform1i(U.uTo, 1);
-	gl.uniform1f(U.uMove, move ? 1 : 0);
 
 	const makeTexture = (source: TexImageSource, w: number, h: number, fx = 0.5, fy = 0.4): Frame => {
 		const tex = gl.createTexture()!;

@@ -31,15 +31,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 </section>
 
 <style>
-	/* On touch (the finger covers more of the page, and travels 0.85 of it) the pinned stretch is shorter: 230 screens, not 290. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto { height: calc(var(--app-stable-vh) * 230) !important; }
-	}
-	/* The stage is as tall as the screen is NOW (dvh), not as it was when the page loaded (--app-stable-vh is locked at load): when
-	   a phone's address bar slides away the visible screen grows, and a stage left at the old height holds its text off centre. */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto > .sticky { height: 100vh !important; height: 100dvh !important; }
-	}
 	#manifesto > .sticky {
 		width: 100%;
 		padding-left: var(--site-gutter) !important;
@@ -83,8 +74,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
 		tl.to({}, { duration: 1.0 });
-		// each word takes longer and overlaps its neighbours more (a wave out of the blur, not a row of switches), eased at both ends
-		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.07, duration: 1.3, ease: 'sine.inOut' });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.06, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the
@@ -101,7 +91,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
 		if (heading) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
-		tl.to({}, { duration: 0.4 }); // a short beat of black before the services (was 0.15)
+		tl.to({}, { duration: 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,

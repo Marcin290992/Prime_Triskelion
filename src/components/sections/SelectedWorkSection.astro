@@ -118,10 +118,12 @@ const SCREENS = projects.length + HOLD;
 	   cannot stretch it. */
 	.swb {
 		position: relative;
-		/* Pulled up 45 of a screen under the end of Services: the view pins while "All services" is still blurring out, so the
-		   title comes in (on the clock, fired just after the pin, see goTitle) almost at once, as that button goes. Services is
-		   above this section (z-index), so its last names and the button stay readable over the stage's black. */
-		margin-top: calc(var(--app-stable-vh, 1svh) * -45);
+		/* Pulled up 20 of a screen under the end of Services (it was 55: the title then came in while See more was still
+		   at half strength, with too little scroll between the two). By the time this view pins, the last option has
+		   blurred out and there is a short stretch of dark before the title. Pulled up under the end of Services, so the pinned view takes over just as the options blur out:
+		   the title comes out of blur where they were, with no long black stretch between (Services is above
+		   it, so it stays readable until it blurs out). */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -20);
 		height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens));
 	}
 	.swb__stage {
@@ -208,10 +210,10 @@ const SCREENS = projects.length + HOLD;
 		text-align: center;
 		pointer-events: none;
 		will-change: opacity, filter;
-		/* Hidden until the script's step switcher brings it in (on the clock, fired by the scroll: see goTitle()). */
-		opacity: 0;
 	}
-	/* The title comes in and goes out as ONE motion (opacity, blur, scale and a small rise on the whole opener). */
+	/* The title comes in and goes out as ONE motion, driven by the scroll (opacity, blur and a small rise on the whole
+	   opener, see render()). It used to blur in twice: the opener's own blur, and a second one from a class toggle on
+	   the title and the link inside. */
 	.swb__title {
 		margin: 0 0 2.5rem;
 		font-family: var(--f-display);
@@ -496,8 +498,7 @@ const SCREENS = projects.length + HOLD;
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
 		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
-		// (A finger covers ground far faster than the wheel, which is slowed on a wide screen: on touch the dark is shorter too.)
-		const DARK = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 0.3 : 0.42;
+		const DARK = 0.42;
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
@@ -513,37 +514,6 @@ const SCREENS = projects.length + HOLD;
 		};
 		let activeText = -1;
 
-		// ── The title: step 0 = nothing, 1 = the title. One exit and one enter, used both ways, the last call wins (the home
-		// hero's mechanism): exit 0.7 s power2.in, enter 1.3 s expo.out, from / to blur, scale and a small rise.
-		let titleStep = 0;
-		let lastScrollY = window.scrollY;
-		let goingUp = false;
-		const titleSet = (on: boolean) => {
-			gsap.killTweensOf(intro);
-			gsap.set(intro, on ? { opacity: 1, filter: 'none', scale: 1, y: 0 } : { opacity: 0, filter: 'blur(24px) brightness(0)', scale: 0.98, y: 0 });
-			intro.style.pointerEvents = on ? 'auto' : 'none';
-		};
-		let titleFirst = true;
-		const goTitle = (n: number) => {
-			if (reduced() || titleFirst) { titleFirst = false; titleStep = n; titleSet(n === 1); return; }
-			if (n === titleStep) return;
-			const dir = n > titleStep ? 1 : -1;
-			titleStep = n;
-			gsap.killTweensOf(intro);
-			if (n === 0) {
-				intro.style.pointerEvents = 'none';
-				// into the dark where it stands: it dims to black as it softens, no travel at all
-				// (the start is set out in full: from `none` gsap cannot blend into a two-part filter and would black it out at once)
-				gsap.set(intro, { filter: 'blur(0px) brightness(1)' });
-				gsap.to(intro, { opacity: 0, filter: 'blur(14px) brightness(0)', scale: 0.98, y: 0, duration: 0.9, ease: 'sine.inOut' });
-			} else {
-				intro.style.pointerEvents = 'auto';
-				gsap.fromTo(intro,
-					{ opacity: 0, filter: 'blur(24px) brightness(0)', scale: 1.05, y: dir * 18 },
-					{ opacity: 1, filter: 'blur(0px) brightness(1)', scale: 1, y: 0, duration: 1.3, ease: 'expo.out', clearProps: 'filter' });
-			}
-		};
-
 		const render = () => {
 			// The light and everything that follows it (picture, name, controls) share one position.
 			const bpos = pos;
@@ -552,22 +522,13 @@ const SCREENS = projects.length + HOLD;
 			// it is one soft motion either way and never in two stages.
 			const vh = window.innerHeight;
 			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
-			// The scroll only FIRES the title (the same step switcher as the home hero, see goTitle): one line, just after the
-			// view pins (the last option of Services has already gone), the same both ways; it goes out as the first beam begins.
-			// Down: in just after the pin starts. Up: out EARLY, while the view is still pinned: it dims to black where it
-			// stands and must be gone before the pinned stage lets go and slides away with the page.
-			const sy = window.scrollY;
-			if (sy > lastScrollY + 0.5) goingUp = false; else if (sy < lastScrollY - 0.5) goingUp = true;
-			lastScrollY = sy;
-			const y = sy - pinStart;
-			// The title never comes in while "All services" is still on screen: it waits until that button has all but blurred out
-			// (its centre above 13% of the screen: it is gone by 10%, see ServicesSection), on every device.
-			const svcBtn = document.querySelector('.svc__btn');
-			const svcGone = !svcBtn || (svcBtn.getBoundingClientRect().top + svcBtn.getBoundingClientRect().height / 2) / vh < 0.13;
-			goTitle(uPos <= 0.02 && y > (goingUp ? 0.3 : 0.04) * vh && svcGone ? 1 : 0);
-			// if the pinned stage has already let go (a violent flick up), the title is still on it and would ride away with the page
-			// while it dims: let the dimming run three times as fast, so it is dark before it has gone anywhere
-			if (titleStep === 0 && y < 0) gsap.getTweensOf(intro).forEach((t) => t.timeScale(3));
+			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
+			const tout = 1 - smooth(uPos / (DARK * 0.6));
+			const t = Math.min(tin, tout);
+			intro.style.opacity = t.toFixed(3);
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
+			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
 			// The name of the picture the light is going TO comes in the moment the beam starts (and
 			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one
@@ -606,9 +567,8 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		// the title stands alone for LEAD screens: on touch it was 1.1, far too much finger for one word (desktop 0.72 is fine)
-		const LEAD = coarse ? 0.55 : 0.72;
-		const PER = coarse ? 0.8 : 0.72;   // (touch: 1.25 was a lot of finger for each of only three projects)
+		const LEAD = coarse ? 1.1 : 0.72;
+		const PER = coarse ? 1.25 : 0.72;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => {
@@ -621,6 +581,7 @@ const SCREENS = projects.length + HOLD;
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
 		// section, global.css html.sw-hscroll).
+		// (The title's own in / out: titleTick below, from the scroll position and its direction.)
 		const sync = (st: ScrollTrigger) => {
 			root.classList.toggle('sw-hscroll', st.isActive);
 		};
@@ -630,7 +591,36 @@ const SCREENS = projects.length + HOLD;
 			onRefresh: (s) => { setFrom(s.progress); sync(s); },
 			onToggle: sync,
 		});
-		// (The title's in / out is goTitle(), from render(): it always goes out through its own exit, never hidden at once.)
+		// The title's in / out, decided from the scroll position and its direction on EVERY scroll event:
+		//  - above the line (the pin start + A of a screen: 11% on a mouse screen, 18% on a phone / tablet, a breath of
+		//    dark after Services has blurred out): out;
+		//  - below the second line (60% of a screen after the pin start): in;
+		//  - between the two: in while the page goes DOWN, out as soon as it goes UP, so on the way back it blurs out
+		//    early, while the view is still pinned for a good stretch, instead of sliding down the screen while it fades.
+		// Above the pin start the stage is moving, so the title is hidden at once (no fade, nothing to slide).
+		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const TITLE_A = touchy ? 0.18 : 0.11;
+		const TITLE_B = 0.6;
+		let titleOn = false;
+		let titleY = window.scrollY;
+		const titleTick = () => {
+			const y = window.scrollY;
+			const vh = window.innerHeight;
+			const s = stPin.start;
+			const moved = y !== titleY;
+			const down = y > titleY;
+			titleY = y;
+			let want = titleOn;
+			if (y < s + TITLE_A * vh) want = false;
+			else if (y >= s + TITLE_B * vh) want = true;
+			else if (moved) want = down;
+			intro.style.visibility = y < s ? 'hidden' : '';
+		};
+		let titleRaf = 0;
+		const onTitleScroll = () => { if (titleRaf) return; titleRaf = requestAnimationFrame(() => { titleRaf = 0; titleTick(); }); };
+		window.addEventListener('scroll', onTitleScroll, { passive: true });
+		ScrollTrigger.addEventListener('refresh', titleTick);
+		titleTick();
 		render();
 
 		// ── The dock-in ────────────────────────────────────────────────────────
@@ -741,7 +731,10 @@ const SCREENS = projects.length + HOLD;
 			window.removeEventListener('keydown', onKey);
 			cancelAnimationFrame(waitRaf);
 			snapOff();
-			gsap.killTweensOf(intro);
+			window.removeEventListener('scroll', onTitleScroll);
+			ScrollTrigger.removeEventListener('refresh', titleTick);
+			cancelAnimationFrame(titleRaf);
+			intro.style.visibility = '';
 			stPin.kill();
 			ro.disconnect();
 			beam?.destroy();

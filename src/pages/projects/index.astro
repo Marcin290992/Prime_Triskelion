@@ -285,9 +285,22 @@ const projects = await Promise.all(
     color: rgb(var(--c-cream) / 0.65);
   }
 
-  /* There is no hover change on a project window (no lean, no glow, no brighter text): a window arrives under a pointer
-     that is already over it, and the painted frame of the beam has the resting look, so any change here showed up as
-     a flash right after the arrival. (The enter/leave focus pull is scroll-driven, in the script below.) */
+  /* Desktop: the frame leans in a touch under the cursor and its edge
+     lights up; the title comes to full strength. (The enter/leave focus
+     pull is scroll-driven, in the script below.) */
+  @media (hover: hover) and (pointer: fine) {
+    .proj-img-wrap {
+      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s ease;
+    }
+    .proj-foot__name { transition: color 0.5s ease; }
+    .proj-foot__tag, .proj-foot__year { transition: color 0.5s ease; }
+    .proj-inner:hover .proj-img-wrap {
+      transform: scale(1.025);
+      box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.16);
+    }
+    .proj-inner:hover .proj-foot__tag,
+    .proj-inner:hover .proj-foot__year { color: rgb(var(--c-cream) / 0.95); }
+  }
 
   /* â•â• MOBILE / TABLET â•â• */
   /* Laptop 1025–1600px */
@@ -387,7 +400,6 @@ const projects = await Promise.all(
 <script>
   import gsap from 'gsap';
   import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
-  import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
 
   function initProjectsPage() {
     if (!document.getElementById('projects-page')) return;
@@ -463,202 +475,6 @@ const projects = await Promise.all(
       return t * t * (3 - 2 * t);
     };
 
-    // The very beam of the home page's Selected Work (utils/beamSlides.ts, the same shader) between two projects. Each
-    // project's window is painted once into a frame (the dark of its page, the big word, the photo, the name and the
-    // categories, laid out exactly as the window shows them); while the next window comes up the screen, one fixed
-    // WebGL canvas plays the beam from the frame of the project that leaves to the frame of the one that arrives,
-    // scrubbed by how far the window has risen (so it follows the wheel or the finger exactly, nothing is pinned
-    // or held). The canvas is shown only for those moments; at rest the page is the plain windows as before.
-    let beam: BeamSlides | null = null;
-    let beamCanvas: HTMLCanvasElement | null = null;
-    let frameUrls: string[] = [];
-    let beamOn = false;
-    let built = 0;
-    const RANGE: [number, number] = [0.08, 0.92];
-
-    const paintFrame = (sec: HTMLElement, W: number, H: number, k: number) => {
-      const c = document.createElement('canvas');
-      c.width = Math.round(W * k); c.height = Math.round(H * k);
-      const g = c.getContext('2d');
-      if (!g) return null;
-      g.scale(k, k);
-      // (the style the colour script wrote, not the computed one: that is still part way through its 0.6s transition)
-      g.fillStyle = sec.style.backgroundColor || getComputedStyle(sec).backgroundColor || '#05050a';
-      g.fillRect(0, 0, W, H);
-      const text = (el: Element | null) => {
-        if (!el) return;
-        const cs = getComputedStyle(el);
-        let t = (el.textContent || '').trim();
-        if (cs.textTransform === 'uppercase') t = t.toUpperCase();
-        const r = el.getBoundingClientRect();
-        g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-        (g as any).letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing;
-        g.textBaseline = 'alphabetic';
-        g.textAlign = 'left';
-        g.fillStyle = cs.color;
-        const m = g.measureText(t);
-        // CSS centres the font's own ascent+descent in the line box
-        const fa = Math.round(m.fontBoundingBoxAscent), fd = Math.round(m.fontBoundingBoxDescent);   // (the browser lays text out on whole-pixel metrics)
-        const y = r.top + (r.height - (fa + fd)) / 2 + fa - 1;   // (measured against the live text: the canvas baseline sits 1px low)
-        // a category after the first has its dot (::before) inside its box: the word itself sits at the right end
-        const dot = el.classList.contains('proj-foot__tag') && el.previousElementSibling;
-        g.fillText(t, dot ? r.right - m.width : r.left, y);
-        if (dot) { g.globalAlpha = 0.6; g.fillText('·', r.left, y); g.globalAlpha = 1; }
-      };
-      // the big word behind the photo (centred: its parallax is only a few pixels)
-      const bg = sec.querySelector('.proj-bg-text');
-      if (bg) {
-        const cs = getComputedStyle(bg);
-        g.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-        (g as any).letterSpacing = cs.letterSpacing;
-        g.textAlign = 'center'; g.textBaseline = 'alphabetic';
-        g.fillStyle = 'rgba(245,240,230,0.06)';
-        const bt = (bg.textContent || '').trim().toUpperCase();
-        const bm = g.measureText(bt);
-        { const fa = Math.round(bm.fontBoundingBoxAscent), fd = Math.round(bm.fontBoundingBoxDescent); g.fillText(bt, W / 2, H / 2 + (fa - fd) / 2 - 1); }
-      }
-      // the shade under the foot
-      const sh = g.createLinearGradient(0, H, 0, H * 0.45);
-      sh.addColorStop(0, 'rgba(0,0,0,0.72)'); sh.addColorStop(0.45, 'rgba(0,0,0,0.25)'); sh.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = sh; g.fillRect(0, H * 0.45, W, H * 0.55);
-      // the photo, cover-fitted into its frame
-      const wrap = sec.querySelector<HTMLElement>('.proj-img-wrap');
-      const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
-      if (wrap && img && img.naturalWidth) {
-        const br = wrap.getBoundingClientRect();
-        // the layout size, whatever transform the frame has at the moment
-        const rw = wrap.offsetWidth, rh = wrap.offsetHeight;
-        const r = { left: br.left + (br.width - rw) / 2, top: br.top + (br.height - rh) / 2, width: rw, height: rh };
-        g.save();
-        g.shadowColor = 'rgba(0,0,0,0.85)'; g.shadowBlur = 90; g.shadowOffsetY = 40;
-        g.fillStyle = '#000'; g.fillRect(r.left, r.top, r.width, r.height);
-        g.restore();
-        const s = Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight);
-        const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
-        g.save();
-        g.beginPath(); g.rect(r.left, r.top, r.width, r.height); g.clip();
-        g.drawImage(img, r.left + (r.width - dw) / 2, r.top + (r.height - dh) / 2, dw, dh);
-        g.restore();
-      }
-      text(sec.querySelector('.proj-foot__name'));
-      sec.querySelectorAll('.proj-foot__tag').forEach((t) => text(t));
-      text(sec.querySelector('.proj-foot__year'));
-      return c;
-    };
-
-    let curW = 0;
-    let curH = 0;
-    const teardownBeam = () => {
-      beam?.destroy(); beam = null;
-      beamCanvas?.remove(); beamCanvas = null;
-      frameUrls.forEach((u) => URL.revokeObjectURL(u)); frameUrls = [];
-      beamOn = false;
-    };
-
-    // A new set of frames is made in the background and takes over only when it is ready AND no transition is playing:
-    // the beam that is there goes on working until then (on a phone the address bar sliding away resizes the page all the
-    // time, and tearing the beam down for every resize left the list without it, or with a frame of the wrong shape).
-    const buildBeam = async () => {
-      if (reduce) return;
-      const mine = ++built;
-      try { await document.fonts.ready; } catch { /* ignore */ }
-      await Promise.all(panels.map(({ sec }) => {
-        const im = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
-        return !im || im.complete ? Promise.resolve() : new Promise((res) => { im.addEventListener('load', res, { once: true }); im.addEventListener('error', res, { once: true }); });
-      }));
-      await new Promise((res) => setTimeout(res, 120));   // (the colour script below has tinted every window by now)
-      if (mine !== built) return;
-      // the size of the panel the windows are drawn on (not innerHeight: on a phone that is not the height of the panel)
-      const inner = panels[0].sec.querySelector<HTMLElement>('.proj-inner');
-      const W = inner?.clientWidth || window.innerWidth, H = inner?.clientHeight || window.innerHeight;
-      const k = Math.min(window.devicePixelRatio || 1, 1.5);
-      const urls: string[] = [];
-      const imgs: HTMLImageElement[] = [];
-      const drop = () => urls.forEach((u) => URL.revokeObjectURL(u));
-      for (const { sec } of panels) {
-        const c = paintFrame(sec, W, H, k);
-        if (!c) { drop(); return; }
-        const blob: Blob | null = await new Promise((res) => c.toBlob(res, 'image/png'));
-        if (!blob) { drop(); return; }
-        const url = URL.createObjectURL(blob);
-        urls.push(url);
-        const im = new Image();
-        im.src = url;
-        imgs.push(im);
-      }
-      await Promise.all(imgs.map((im) => im.decode().catch(() => { /* the beam waits for load */ })));
-      if (mine !== built) { drop(); return; }
-      const cv = document.createElement('canvas');
-      cv.setAttribute('aria-hidden', 'true');
-      // exactly the size of the frames (never stretched to a viewport that has changed since)
-      cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;z-index:45;pointer-events:none;opacity:0;visibility:hidden`;
-      document.body.appendChild(cv);
-      const bs = createBeamSlides(cv, imgs, () => { if (beamCanvas === cv) { beamOn = false; cv.style.visibility = 'hidden'; } }, RANGE, false);
-      if (!bs) { cv.remove(); drop(); return; }
-      const swap = () => {
-        if (mine !== built) { bs.destroy(); cv.remove(); drop(); return; }
-        if (beamOn) { setTimeout(swap, 150); return; }   // not in the middle of a transition
-        teardownBeam();
-        beamCanvas = cv; beam = bs; frameUrls = urls; curW = W; curH = H;
-        (window as any).__beamReadyAt = performance.now();
-      };
-      swap();
-    };
-
-    // enter: the window that is coming in (-1: none), opening: 0 at the foot .. 1 at the top
-    // A finger flicks the page: from one frame to the next the window can jump from a third of the way up to the top (or
-    // the other way), and the beam would be cut off half way, a flash. So when the scroll leaves a transition early, the
-    // beam is carried on by the clock to the end it was heading for (the window is already there under it, and the
-    // painted frame is the same picture), in a quarter of a second, and only then is the canvas let go.
-    let lastEnter = -1;
-    let lastOp = 0;
-    let fin: { from: number; to: number; t0: number; enter: number } | null = null;
-    const hideBeam = () => {
-      fin = null;
-      if (beamOn && beamCanvas) { beamCanvas.style.opacity = '0'; beamCanvas.style.visibility = 'hidden'; }
-      beamOn = false;
-    };
-    // enter: the window that is coming in (-1: none), opening: 0 at the foot .. 1 at the top
-    const seat = (enter: number, opening: number) => {
-      if (!beam || !beamCanvas) return;
-      // (the first project comes up out of the header and the dark, not from another project)
-      const on = enter >= 1 && opening > 0.001 && opening < 0.9995;
-      if (on) {
-        fin = null;
-        lastEnter = enter; lastOp = opening;
-        if (!beamOn) { beamOn = true; beamCanvas.style.visibility = 'visible'; }
-        beam.setPos(enter + opening);
-        // melts in over a few pixels of scroll (the big word of the window that leaves drifts with the scroll, the
-        // painted one does not). It does NOT melt out: the live window is still rising under the canvas until the very
-        // end, so a cross-fade there showed two copies of the photo and of the text. The painted frame equals the live
-        // window at rest, so the switch at the very end is a cut between two identical pictures.
-        beamCanvas.style.opacity = smooth(0.001, 0.004, opening).toFixed(3);
-        return;
-      }
-      if (!beamOn) return;
-      if (!fin) {
-        const to = lastOp >= 0.5 ? 1 : 0;
-        if (Math.abs(to - lastOp) < 0.02) { hideBeam(); return; }
-        fin = { from: lastOp, to, t0: performance.now(), enter: lastEnter };
-      }
-      const t = Math.min(1, (performance.now() - fin.t0) / 260);
-      const e = 1 - Math.pow(1 - t, 3);
-      beam.setPos(fin.enter + fin.from + (fin.to - fin.from) * e);
-      if (t >= 1) hideBeam();
-    };
-    buildBeam();
-    let rzT = 0;
-    const onResize = () => {
-      clearTimeout(rzT);
-      rzT = window.setTimeout(() => {
-        // only a real change of the panel's size makes new frames (a few pixels do not)
-        const inner = panels[0].sec.querySelector<HTMLElement>('.proj-inner');
-        if (inner && Math.abs(inner.clientWidth - curW) < 3 && Math.abs(inner.clientHeight - curH) < 3) return;
-        buildBeam();
-      }, 400);
-    };
-    window.addEventListener('resize', onResize);
-
     function render() {
       const vh = window.innerHeight;
       {
@@ -671,14 +487,8 @@ const projects = await Promise.all(
           entry.v = 1 - (0.5 - 0.5 * Math.cos(Math.PI * k));   // in-out sine
         }
       }
-      let opening = -1;   // how far up the screen the window that is coming in has come (0 at the foot, 1 at the top)
-      let enter = -1;
-      let seamTop = 0;
-      let pi = -1;
       for (const { sec, bgText, foot, img, speed } of panels) {
-        pi++;
         const rect = sec.getBoundingClientRect();
-        if (rect.top > 0 && rect.top < vh) { opening = 1 - rect.top / vh; enter = pi; seamTop = rect.top; }
 
         if (sec === lastSec && !reduce) {
           const left = Math.max(0, Math.min(1, rect.bottom / vh));
@@ -711,7 +521,6 @@ const projects = await Promise.all(
           if (img) img.style.transform = `scale(${(1 + (1 - smooth(0, 1, f)) * IMG_SETTLE).toFixed(4)})`;
         }
       }
-      seat(enter, opening);
       raf = requestAnimationFrame(render);
     }
 
@@ -753,9 +562,6 @@ const projects = await Promise.all(
 
     document.addEventListener('astro:before-swap', () => {
       cancelAnimationFrame(raf);
-      built++;
-      window.removeEventListener('resize', onResize);
-      teardownBeam();
     }, { once: true });
   }
 

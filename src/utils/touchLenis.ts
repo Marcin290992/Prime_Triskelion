@@ -7,10 +7,7 @@
 export const TOUCH_LENIS_OPTIONS = {
 	autoRaf: false,
 	syncTouch: true,
-	// More resistance than white-desert's (0.075 / 1): the page follows the finger a little more heavily (lerp) and travels 0.85 of
-	// the finger's distance, so a swipe covers less of the page and the time-based motion inside it keeps up (cinematic, the
-	// way the wheel is already slowed on a wide screen, see Layout.astro).
-	syncTouchLerp: 0.06,
+	syncTouchLerp: 0.075,
 	touchInertiaExponent: 1.7,
-	touchMultiplier: 0.85,
+	touchMultiplier: 1,
 } as const;
