@@ -102,6 +102,23 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
+			// The blur layer and the black layer show the greater of the scroll's value and the fire's floor.
+			const FIRE_LINE = 0.08;     // of the hero's exit stretch: the first nudge of the scroll
+			const FIRE_BLUR = 0.9;      // how far out of focus the type goes by itself (1 = the full 22px)
+			const FIRE_DARK = 0.35;     // how much of the dark comes down by itself (the scroll takes it to black)
+			const fire = { v: 0 };
+			let fireOn = false;
+			let live = true;
+			let scrollBk = 0;
+			let scrollA = 0;
+			const paint = () => {
+				const bk = Math.max(scrollBk, fire.v * FIRE_BLUR);
+				const a = Math.max(scrollA, fire.v * FIRE_DARK);
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+				veil.style.opacity = a.toFixed(3);
+			};
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
@@ -110,6 +127,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const goingUp = y < lastY - 0.5;
 				lastY = y;
 				const p = y / range;
+				const fireWant = fireOn ? p > FIRE_LINE - 0.03 : p > FIRE_LINE;   // (a hair of play below the line)
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
 				// same length however fast you scroll — never scrubbed by the scroll.
@@ -119,7 +137,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (rays) {
 					if (lightOff === null) setLight(p > 0.02);
 					else if (p <= 0.02) setLight(false);
-					else if (goingUp && p <= 0.30) setLight(false);
+					else if (goingUp && p <= 0.30 && !fireWant) setLight(false);   // (not while the fire still holds the type soft: light on last, when it is sharp)
 					else if (!goingUp && p > 0.02) setLight(true);
 				}
 				// Three beats, one after the other: the light goes out first (0–0.35)
@@ -128,11 +146,17 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// black layer, 0.62–1.0: it ends where the manifesto's stage is pinned, so the black before the line is short) — the same going-out as the manifesto's line.
 				const bk = smooth(clamp01((p - 0.38) / 0.40));
 				const a = smooth(clamp01((p - 0.62) / 0.38));
-				const live = y < pinStart + window.innerHeight;
-				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
-				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
-				veil.style.opacity = a.toFixed(3);
+				live = y < pinStart + window.innerHeight;
+				scrollBk = bk;
+				scrollA = a;
+				// The fire: past a first line the hero is let go by itself (on the clock): the type goes almost out of focus and part
+				// of the dark comes down, whatever the scroll does next. The scroll can only carry it further (see paint()); back above
+				// the line it is taken back, also on the clock.
+				if (fireWant !== fireOn) {
+					fireOn = fireWant;
+					gsap.to(fire, { v: fireOn ? 1 : 0, duration: fireOn ? 1.7 : 1.1, ease: 'power2.inOut', overwrite: true, onUpdate: paint });
+				}
+				paint();
 				// The manifesto's line comes up once its stage is pinned
 				// (0.3 of a screen), before the words start to focus.
 				const vh = window.innerHeight;
@@ -147,6 +171,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
 				gsap.killTweensOf(lightState);
+				gsap.killTweensOf(fire);
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
