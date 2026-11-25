@@ -47,6 +47,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
 		@media (prefers-reduced-motion: no-preference) {
 			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
+			/* Phones and tablets: a finger covers ground fast, so the hero's exit needs
+			   less road (0.65 of a screen instead of one) before the black. */
+			@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+				#hero-pin { height: calc(var(--app-stable-vh) * 165); }
+			}
 			#hero-pin > #hero { position: sticky; top: 0; }
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }

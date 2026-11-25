@@ -567,7 +567,7 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		const LEAD = coarse ? 1.1 : 0.72;
+		const LEAD = coarse ? 0.75 : 0.72;   // touch: the title stood alone for 1.1 screens of bare black
 		const PER = coarse ? 1.25 : 0.72;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
@@ -599,8 +599,8 @@ const SCREENS = projects.length + HOLD;
 		//    early, while the view is still pinned for a good stretch, instead of sliding down the screen while it fades.
 		// Above the pin start the stage is moving, so the title is hidden at once (no fade, nothing to slide).
 		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-		const TITLE_A = touchy ? 0.18 : 0.11;
-		const TITLE_B = 0.6;
+		const TITLE_A = touchy ? 0.08 : 0.11;   // touch: the title comes in sooner after Services blurs out
+		const TITLE_B = touchy ? 0.35 : 0.6;   // touch: in sooner, to match the shorter LEAD (the title still stands ~0.4 of a screen)
 		let titleOn = false;
 		let titleY = window.scrollY;
 		const titleTick = () => {
