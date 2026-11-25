@@ -560,7 +560,11 @@ const SCREENS = projects.length + HOLD;
 			if (sy > lastScrollY + 0.5) goingUp = false; else if (sy < lastScrollY - 0.5) goingUp = true;
 			lastScrollY = sy;
 			const y = sy - pinStart;
-			goTitle(uPos <= 0.02 && y > (goingUp ? 0.3 : 0.04) * vh ? 1 : 0);
+			// The title never comes in while "All services" is still on screen: it waits until that button has all but blurred out
+			// (its centre above 13% of the screen: it is gone by 10%, see ServicesSection), on every device.
+			const svcBtn = document.querySelector('.svc__btn');
+			const svcGone = !svcBtn || (svcBtn.getBoundingClientRect().top + svcBtn.getBoundingClientRect().height / 2) / vh < 0.13;
+			goTitle(uPos <= 0.02 && y > (goingUp ? 0.3 : 0.04) * vh && svcGone ? 1 : 0);
 			// if the pinned stage has already let go (a violent flick up), the title is still on it and would ride away with the page
 			// while it dims: let the dimming run three times as fast, so it is dark before it has gone anywhere
 			if (titleStep === 0 && y < 0) gsap.getTweensOf(intro).forEach((t) => t.timeScale(3));
@@ -604,7 +608,7 @@ const SCREENS = projects.length + HOLD;
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
 		// the title stands alone for LEAD screens: on touch it was 1.1, far too much finger for one word (desktop 0.72 is fine)
 		const LEAD = coarse ? 0.55 : 0.72;
-		const PER = coarse ? 1.25 : 0.72;
+		const PER = coarse ? 0.95 : 0.72;   // (touch: 1.25 was a lot of finger for each of only three projects)
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => {
