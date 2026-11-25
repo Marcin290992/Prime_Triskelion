@@ -511,7 +511,6 @@ import portrait from '../img/portrait-top.webp';
   import ScrollTrigger from 'gsap/ScrollTrigger';
   import { afterPageTransition, revealAfterHero, titleIn } from '../utils/afterPageTransition';
   import { isSafari } from '../utils/isSafari';
-  import { initColorReveal } from '../utils/colorReveal';
   import { initFaceTiles, type FaceTiles } from '../utils/faceTiles';
 
   gsap.registerPlugin(ScrollTrigger);
@@ -622,7 +621,35 @@ import portrait from '../img/portrait-top.webp';
   let _acPin: ScrollTrigger | null = null;
   let _acTiles: ScrollTrigger | null = null;
   let _tiles: FaceTiles | null = null;
+
+  // The portrait is grey while it builds itself from tiles. Once it has come together it takes on its colour by itself:
+  // one long, slow dissolve of the grey into the real colours (no cursor, no click). It waits a breath after the last
+  // tile is in, and if the visitor scrolls back before the portrait is whole it goes grey again, quickly, before the
+  // tiles (which are grey) come back over it.
+  type Colour = { on: (v: boolean) => void; kill: () => void };
+  let _colour: Colour | null = null;
+  function makeColour(img: HTMLImageElement): Colour {
+    const state = { g: 1 };   // 1 = grey, 0 = full colour
+    let want: boolean | null = null;
+    let tween: gsap.core.Tween | null = null;
+    const apply = () => { img.style.filter = `grayscale(${state.g.toFixed(3)}) contrast(1.1) brightness(0.9)`; };
+    return {
+      on(v) {
+        if (v === want) return;
+        want = v;
+        tween?.kill();
+        tween = gsap.to(state, { g: v ? 0 : 1, duration: v ? 2.8 : 0.5, delay: v ? 0.4 : 0, ease: 'sine.inOut', onUpdate: apply });
+      },
+      kill() {
+        tween?.kill();
+        img.style.filter = '';
+      },
+    };
+  }
+
   function initAboutContent() {
+    _colour?.kill();
+    _colour = null;
     _acPin?.kill();
     _acPin = null;
     _acTiles?.kill();
@@ -638,6 +665,8 @@ import portrait from '../img/portrait-top.webp';
     const inner = body.querySelector<HTMLElement>('.ac-scroll');
     const img = photo.querySelector<HTMLImageElement>('.ac-photo__img');
     if (!inner) return;
+    const colour = img ? makeColour(img) : null;
+    _colour = colour;
 
     // The portrait is built from tiles (WebGL) that settle into the photo
     // as the scroll plays; when they are all in place the canvas fades onto
@@ -651,7 +680,7 @@ import portrait from '../img/portrait-top.webp';
       // late — a blink — when the tiles fade off it)
       gsap.set(img, { opacity: 0.001 });
       gsap.set(tiles.canvas, { opacity: 1 });
-      tl.fromTo(proxy, { a: 0 }, { a: 1, duration: dur, ease: 'none', onUpdate: () => tiles.setProgress(proxy.a) }, start)
+      tl.fromTo(proxy, { a: 0 }, { a: 1, duration: dur, ease: 'none', onUpdate: () => { tiles.setProgress(proxy.a); if (proxy.a >= 0.999) colour?.on(true); else if (proxy.a < 0.97) colour?.on(false); } }, start)
         // The real image is put in place UNDER the finished (opaque) tiles at
         // once, and only then are the tiles faded away: cross-fading the two
         // against each other dips in brightness half-way — a visible blink.
@@ -686,6 +715,7 @@ import portrait from '../img/portrait-top.webp';
         pin: true,
         scrub: tiles ? 0.8 : true,
         invalidateOnRefresh: true,
+        onUpdate: tiles ? undefined : (self) => { if (self.progress > 0.7) colour?.on(true); else if (self.progress < 0.5) colour?.on(false); },
       });
       // The copy stays in the flow, plain: no entrance animation.
       document.addEventListener('astro:before-swap', () => {
@@ -693,6 +723,8 @@ import portrait from '../img/portrait-top.webp';
         _acST = null;
         _tiles?.destroy();
         _tiles = null;
+        _colour?.kill();
+        _colour = null;
       }, { once: true });
       return;
     }
@@ -758,6 +790,7 @@ import portrait from '../img/portrait-top.webp';
         pin: true,
         scrub: 1,
         invalidateOnRefresh: true,
+        onUpdate: (self) => { if (self.progress > 0.7) colour?.on(true); else if (self.progress < 0.5) colour?.on(false); },
       });
     }
     document.addEventListener('astro:before-swap', () => {
@@ -769,38 +802,15 @@ import portrait from '../img/portrait-top.webp';
       _acTiles = null;
       _tiles?.destroy();
       _tiles = null;
+      _colour?.kill();
+      _colour = null;
     }, { once: true });
-  }
-
-  // The big portrait: real colour under the cursor, and a ring of colour
-  // from every click or tap. Only once the portrait has developed (its
-  // entrance lights and focuses it out of the dark; the colour must not show before).
-  let _colorOff: (() => void) | null = null;
-  function initPortraitColor() {
-    _colorOff?.();
-    _colorOff = null;
-    const photo = document.querySelector<HTMLElement>('.ac-photo');
-    const img = photo?.querySelector<HTMLImageElement>('.ac-photo__img');
-    if (!photo || !img) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const settled = () => {
-      // Developed: fully lit and in focus, and the photo fully opaque.
-      const f = getComputedStyle(img).filter;
-      const light = parseFloat(/brightness\(([0-9.]+)/.exec(f)?.[1] ?? '1');
-      const blur = parseFloat(/blur\(([0-9.]+)/.exec(f)?.[1] ?? '0');
-      // (and, with the tiles, the real image has taken over from them)
-      return light > 0.895 && blur < 0.3 && parseFloat(getComputedStyle(photo).opacity) > 0.98
-        && parseFloat(getComputedStyle(img).opacity) > 0.98;
-    };
-    _colorOff = initColorReveal(photo, img, { radius: 170, focusX: 0.5, focusY: 0.72, isReady: settled });
-    document.addEventListener('astro:before-swap', () => { _colorOff?.(); _colorOff = null; }, { once: true });
   }
 
   function initAbout() {
     initAboutTitle();
     initAboutMobileReveal();
     initAboutContent();
-    initPortraitColor();
   }
 
   document.addEventListener('astro:page-load', initAbout);

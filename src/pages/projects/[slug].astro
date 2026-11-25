@@ -115,6 +115,29 @@ const [line1, line2] = d.titleLines;
                 <a href={d.url} class="wos-pd__live" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</a>
               )}
             </div>
+
+            <!-- phone / tablet: the two actions the desktop hero has, as real buttons (the Back / Live row above is
+                 desktop-only and the small Back link sits at the top of the panel) -->
+            <div class="wos-pd__actions">
+              {d.url && (
+                <div class="h-hero-cta-wrap">
+                  <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+                  <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+                  <a href={d.url} class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary wos-pd__visit" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website">
+                    <span class="hud-spin-border"></span>
+                    <span class="h-hero-cta__text"><span class="wos-pd__live-dot" aria-hidden="true"></span>Visit website</span>
+                  </a>
+                </div>
+              )}
+              <div class="h-hero-cta-wrap">
+                <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+                <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+                <a href="#contact-cta" class="h-hero-cta h-hero-cta--fixed">
+                  <span class="hud-spin-border"></span>
+                  <span class="h-hero-cta__text">Let's build</span>
+                </a>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -404,7 +427,8 @@ const [line1, line2] = d.titleLines;
   }
   .wos-pd__link:hover { color: rgb(var(--c-red)); }
   .wos-pd__meta { display: none; } /* desktop: the cinematic hero already says it */
-  .wos-pd__topbar { display: none; } /* phone: back link and Live are in the bottom row */
+  .wos-pd__topbar { display: none; } /* (phone / tablet: see the mobile block at the end) */
+  .wos-pd__actions { display: none; } /* desktop: the two buttons are in the cinematic hero */
   .wos-pd__live {
     display: inline-flex; align-items: center; gap: 0.6rem;
     font-family: var(--f-body); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase;
@@ -446,7 +470,15 @@ const [line1, line2] = d.titleLines;
   .wos-pd__cats li::before, .wos-pd__panel li::before { content: '·'; color: rgb(var(--c-red) / 0.85); }
 
   .wos-pd__tabs { margin-top: 3.5rem; }
-  .wos-pd__tabrow { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+  /* The three tabs (Challenge / Approach / Delivered) are always in ONE row: on a narrow phone they used to wrap, the last
+     one dropping under the others. Smaller type and tighter spacing on small screens instead of a second line. */
+  .wos-pd__tabrow { display: flex; flex-wrap: nowrap; gap: 1.5rem; }
+  .wos-pd__tab { white-space: nowrap; }
+  @media (max-width: 480px) {
+    /* the type scales with the width of the screen, so the row fits down to the narrowest phone */
+    .wos-pd__tabrow { gap: clamp(0.45rem, 2.4vw, 0.9rem); justify-content: space-between; }
+    .wos-pd__tabrow .wos-pd__tab { font-size: clamp(7.5px, 3vw, 10.5px); letter-spacing: 0.1em; }
+  }
   .wos-pd__tab {
     position: relative; padding: 0 0 0.5rem; background: none; border: 0; cursor: pointer;
     font-family: var(--f-body); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase;
@@ -696,6 +728,26 @@ const [line1, line2] = d.titleLines;
     .wos-pd__meta { display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; margin-bottom: 1.25rem; }
     .wos-pd__meta .wos-label { font-size: 11px; letter-spacing: 0.2em; }
     .wos-pd__grid { padding-top: 0; }
+
+    /* The way back: one small, quiet arrow link at the top of the panel. The Back / Live row that used to sit at the
+       bottom (and the same pair at the top) is gone: the visit link was a tiny word, the main thing to do here. */
+    .wos-pd__topbar { display: flex; align-items: center; margin-bottom: 1.5rem; }
+    .wos-pd__topbar .wos-pd__live--top { display: none; }
+    .wos-pd__topbar .wos-pd__link { font-size: 11px; letter-spacing: 0.26em; color: rgb(var(--c-cream) / 0.7); }
+    .wos-pd__topbar .wos-pd__link::before { content: '\2190'; margin-right: 0.75rem; letter-spacing: 0; }
+    .wos-pd__nav { display: none; }
+
+    /* Two buttons, the desktop hero's: the main one is the live site (the red dot says it is live), then Let's build. */
+    .wos-pd__actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2.25rem; }
+    .wos-pd__actions .h-hero-cta-wrap { width: 100%; max-width: none; }
+    .wos-pd__actions .h-hero-cta { width: 100%; }
+    .wos-pd__visit .h-hero-cta__text { display: inline-flex; align-items: center; }
+    .wos-pd__visit .wos-pd__live-dot { margin-right: 0.8rem; }
+  }
+  /* A tablet has the room: side by side. */
+  @media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
+    .wos-pd__actions { flex-direction: row; }
+    .wos-pd__actions .h-hero-cta-wrap { flex: 1 1 0; }
   }
 </style>
 
@@ -710,6 +762,7 @@ const [line1, line2] = d.titleLines;
 
   let _cinST: ReturnType<typeof ScrollTrigger.create> | null = null;
   let _beam: BeamReveal | null = null;
+  let _cinOff: (() => void) | null = null;
 
   // While the menu is open, and for a moment after it closes, the hero's snap must
   // not act: the menu stops Lenis and puts the scroll back with an immediate
@@ -748,6 +801,8 @@ const [line1, line2] = d.titleLines;
   }
   document.addEventListener('astro:before-swap', () => {
     unwatchGesture();
+    _cinOff?.();
+    _cinOff = null;
     _beam?.destroy();
     _beam = null;
     _menuObserver?.disconnect();
@@ -774,7 +829,7 @@ const [line1, line2] = d.titleLines;
     }
     if (reducedMotion()) { splash.style.display = 'none'; return; }
 
-    const items = stage.querySelectorAll<HTMLElement>('.wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs');
+    const items = stage.querySelectorAll<HTMLElement>('.wos-pd__topbar, .wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs, .wos-pd__actions');
     gsap.set(items, { opacity: 0, filter: 'blur(12px)' });
 
     // The tab timer may run only once the panel is fully out of blur (pin finished).
@@ -785,13 +840,7 @@ const [line1, line2] = d.titleLines;
     };
     (window as any).__wosTabsGate = false;
 
-    gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: {
-        trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true,
-        onUpdate: (self) => gate(self.progress >= 0.995),
-      },
-    })
+    const tl = gsap.timeline({ defaults: { ease: 'none' } })
       // Explicit start values: the entrance tween above is still running when this
       // is built, so a plain .to() would remember its blurred start and scroll back
       // to that blur instead of to a sharp title.
@@ -799,6 +848,8 @@ const [line1, line2] = d.titleLines;
       .fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: 'sine.inOut', immediateRender: false }, 0.2)
       .to(splash, { opacity: 0, duration: 0.4 }, 0.55)
       .to(items, { opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.5, ease: 'sine.out' }, 0.6);
+    // On the clock, like the desktop hero: the first swipe plays the title out and the panel in, then the scroll goes on.
+    playOnClock(tl, stage, '+=90%', { slow: 0.9, fast: 1.1, onPhase: (p) => gate(p === 'done') });
   }
 
   // ── Project detail: tabs that switch on their own (timer line under the active
@@ -857,6 +908,146 @@ const [line1, line2] = d.titleLines;
   }
 
 
+  // ── One gesture plays a whole sequence on the CLOCK ──
+  // The first push down at the top of `trigger` (wheel, key or finger) starts `tl` and the page waits until it has
+  // played through; then the scroll carries on. A push up while it stands finished, or coming back up into it from
+  // below, plays it back. The trigger is pinned for `end`; the pinned view looks the same wherever the scroll is
+  // inside the pin, so on finishing the scroll is simply carried on to the end of it. Used by the desktop hero and the
+  // phone's title screen, so both feel the same.
+  type ClockPhase = 'start' | 'playing' | 'done';
+  function playOnClock(
+    tl: gsap.core.Timeline,
+    trigger: Element,
+    end: string,
+    opts: { slow: number; fast: number; onPhase?: (phase: ClockPhase) => void },
+  ) {
+    tl.paused(true);
+    const lenisOf = () => (window as any).__lenis as { stop: () => void; start: () => void; scrollTo: (y: number, o?: object) => void; isStopped: boolean } | undefined;
+    const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
+    let phase: ClockPhase = 'start';   // start: the title; done: the picture and the copy
+    const setPhase = (p: ClockPhase) => { phase = p; opts.onPhase?.(p); };
+    let held = false;
+    const hold = () => { const l = lenisOf(); if (l && !l.isStopped) { l.stop(); held = true; } };
+    // (the menu has the page while it is open: it starts Lenis itself when it closes)
+    const release = () => { const l = lenisOf(); if (held) { held = false; if (l && !menuOpen()) l.start(); } };
+    const jump = (y: number) => lenisOf()?.scrollTo(y, { immediate: true, force: true });
+
+    let st: ReturnType<typeof ScrollTrigger.create>;
+    let dir: 'in' | 'out' = 'in';   // which way the sequence in progress is going
+    const finishIn = () => {
+      // the pinned view looks the same wherever the scroll is inside the pin: carry it on to the end of it
+      jump(st.end);
+      setPhase('done');
+      release();
+    };
+    const finishOut = () => {
+      jump(st.start);
+      setPhase('start');
+      release();
+    };
+    // The way out while it plays: the page does not just swallow the hand. A FRESH push (a new flick, not the tail of
+    // the first) the way it is going carries it to the end at once (about half a second); a fresh push the other way
+    // turns it round from wherever it has got to.
+    const pushDuring = (sign: number) => {
+      const same = (dir === 'in' && sign > 0) || (dir === 'out' && sign < 0);
+      if (same) { if (tl.timeScale() < 3) tl.timeScale(5); return; }
+      if (dir === 'in') {
+        dir = 'out';
+        tl.eventCallback('onComplete', null);
+        tl.eventCallback('onReverseComplete', finishOut);
+        tl.timeScale(opts.fast).reverse();
+      } else {
+        dir = 'in';
+        tl.eventCallback('onReverseComplete', null);
+        tl.eventCallback('onComplete', finishIn);
+        tl.timeScale(opts.slow).play();
+      }
+    };
+    const playIn = () => {
+      if (phase !== 'start' || menuHold || menuOpen()) return;
+      dir = 'in';
+      setPhase('playing');
+      hold();
+      tl.eventCallback('onReverseComplete', null);
+      tl.eventCallback('onComplete', finishIn);
+      tl.timeScale(opts.slow).play(0);
+    };
+    const playOut = () => {
+      if (phase !== 'done' || menuHold || menuOpen()) return;
+      dir = 'out';
+      setPhase('playing');
+      hold();
+      jump(st.end);
+      tl.eventCallback('onComplete', null);
+      tl.eventCallback('onReverseComplete', finishOut);
+      tl.timeScale(opts.fast).reverse();
+    };
+
+    st = ScrollTrigger.create({
+      trigger,
+      start: 'top top',
+      end,
+      pin: true,
+      invalidateOnRefresh: true,
+      // arriving (reload, back/forward) already inside the pin: show the finished view at once
+      onRefresh: (self) => {
+        if (phase === 'playing') return;
+        if (self.scroll() > self.start + 4) { tl.progress(1); setPhase('done'); }
+        else { tl.progress(0); setPhase('start'); }
+      },
+      // pushing up from below, back into the pinned view
+      onEnterBack: () => { if (userGesture) playOut(); },
+      // a scroll into the pin that is not a wheel or key (the scrollbar, a drag) starts it too
+      onUpdate: (self) => { if (phase === 'start' && userGesture && self.scroll() > self.start + 24) playIn(); },
+    });
+    _cinST = st;
+
+    const atStart = () => st.scroll() <= st.start + 6;
+    const atEnd = () => st.scroll() >= st.end - 6 && st.scroll() <= st.end + 6;
+    let lastWheelAt = 0;
+    let touchFresh = false;
+    const onWheel = (e: WheelEvent) => {
+      const now = performance.now();
+      const fresh = now - lastWheelAt > 160;   // a new push, not the tail of the last one
+      lastWheelAt = now;
+      if (phase === 'playing') { if (fresh && Math.abs(e.deltaY) > 3) pushDuring(Math.sign(e.deltaY)); return; }
+      if (e.deltaY > 3 && phase === 'start' && atStart()) playIn();
+      else if (e.deltaY < -3 && phase === 'done' && atEnd()) playOut();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (phase === 'playing') {
+        const dn = ['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key);
+        const upk = ['ArrowUp', 'PageUp', 'Home'].includes(e.key);
+        if (!e.repeat && (dn || upk)) pushDuring(dn ? 1 : -1);
+        return;
+      }
+      if (['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key) && phase === 'start' && atStart()) playIn();
+      else if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) && phase === 'done' && atEnd()) playOut();
+    };
+    let ty = 0;
+    const onTouchStart = (e: TouchEvent) => { ty = e.touches[0]?.clientY ?? 0; touchFresh = true; };
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = ty - (e.touches[0]?.clientY ?? ty);
+      if (phase === 'playing') { if (touchFresh && Math.abs(dy) > 12) { touchFresh = false; pushDuring(Math.sign(dy)); } return; }
+      if (dy > 12 && phase === 'start' && atStart()) playIn();
+      else if (dy < -12 && phase === 'done' && atEnd()) playOut();
+    };
+    const cap = { capture: true, passive: true } as const;
+    window.addEventListener('wheel', onWheel, cap);
+    window.addEventListener('keydown', onKey, { capture: true });
+    window.addEventListener('touchstart', onTouchStart, cap);
+    window.addEventListener('touchmove', onTouchMove, cap);
+    _cinOff = () => {
+      window.removeEventListener('wheel', onWheel, cap);
+      window.removeEventListener('keydown', onKey, { capture: true });
+      window.removeEventListener('touchstart', onTouchStart, cap);
+      window.removeEventListener('touchmove', onTouchMove, cap);
+      tl.eventCallback('onComplete', null);
+      tl.eventCallback('onReverseComplete', null);
+      release();
+    };
+  }
+
   // ── Desktop: cinematic pinned animation ──
   function initCinematic() {
     const section = document.getElementById('wos-cin');
@@ -885,8 +1076,10 @@ const [line1, line2] = d.titleLines;
 
     // The title goes out where it stands, the way the home hero does: it goes
     // soft first and then fades into the dark (no sliding apart). Only then does
-    // the page come up out of that dark — the picture, then the title, the line
-    // and the buttons after it. All of it is scrubbed by the scroll.
+    // the page come up out of that dark — the picture (on a band of light), then the title, the line and the buttons
+    // after it. It plays on the CLOCK, like the hero's exit on Projects and Services: the first push down starts it
+    // and the page waits until the picture is in and the copy sharp; then the scroll carries on. Pushing up from
+    // just below plays it back. (With reduced motion it is the plain scrubbed version.)
     const tl = gsap.timeline({ defaults: { ease: 'none' } })
       .to([wordL, wordR], { filter: 'blur(12px)', duration: 0.6, ease: 'sine.in' }, 0)
       .to([wordL, wordR], { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25)
@@ -916,26 +1109,15 @@ const [line1, line2] = d.titleLines;
 
     watchMenu();
     watchGesture();
-    _cinST = ScrollTrigger.create({
-      trigger: section,
-      start: 'top top',
-      end: '+=110%',
-      scrub: 0.8,
-      // One flick of the wheel carries the whole sequence home: when the
-      // scrolling stops it is pushed on to the end (or back to the start).
-      // (the same as snapTo [0, 1] + directional, written out so it can stand
-      // still while the menu is open or has just closed — see menuHold)
-      snap: {
-        snapTo: (value: number, self?: ScrollTrigger) => {
-          if (menuHold || !userGesture || value <= 0 || value >= 1) return value;
-          return (self?.direction ?? 1) >= 0 ? 1 : 0;
-        },
-        duration: { min: 0.4, max: 1.1 }, delay: 0.08, ease: 'power2.inOut',
-      },
-      pin: true,
-      invalidateOnRefresh: true,
-      animation: tl,
-    });
+
+    if (reducedMotion()) {
+      // plain scroll: scrubbed, nothing plays by itself
+      _cinST = ScrollTrigger.create({ trigger: section, start: 'top top', end: '+=110%', scrub: 0.8, pin: true, invalidateOnRefresh: true, animation: tl });
+      return;
+    }
+
+    // The picture and the copy come in on the clock (see playOnClock).
+    playOnClock(tl, section, '+=110%', { slow: 0.85, fast: 1.1 });
   }
 
 
