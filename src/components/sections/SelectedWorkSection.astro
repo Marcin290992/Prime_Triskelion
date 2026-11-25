@@ -496,7 +496,8 @@ const SCREENS = projects.length + HOLD;
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
 		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
-		const DARK = 0.42;
+		// (A finger covers ground far faster than the wheel, which is slowed on a wide screen: on touch the dark is shorter too.)
+		const DARK = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 0.3 : 0.42;
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
@@ -601,7 +602,8 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		const LEAD = coarse ? 1.1 : 0.72;
+		// the title stands alone for LEAD screens: on touch it was 1.1, far too much finger for one word (desktop 0.72 is fine)
+		const LEAD = coarse ? 0.55 : 0.72;
 		const PER = coarse ? 1.25 : 0.72;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
