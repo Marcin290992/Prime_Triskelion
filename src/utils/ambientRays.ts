@@ -5,6 +5,8 @@
 //
 // Cheap by design: the buffer is a fraction of the screen (the light is soft, nobody sees the
 // pixels), ~20 fps, and it draws only while level > 0 (the RAF is stopped otherwise).
+import { createLightRays } from './lightRays';
+
 const VERT = `attribute vec2 a_pos; void main() { gl_Position = vec4(a_pos, 0.0, 1.0); }`;
 
 const FRAG = (highp: boolean) => `
@@ -46,7 +48,42 @@ export interface AmbientRays {
 	destroy(): void;
 }
 
+// Desktop: the home hero's own light (utils/lightRays.ts, the one with the visible ribs), smaller and dimmer,
+// so the pause light looks like the hero's and not like the phone shader.
+function createDesktopAmbient(canvas: HTMLCanvasElement): AmbientRays | null {
+	let level = 0;
+	const rays = createLightRays(canvas, {
+		reveal: () => 0.55 * Math.sqrt(level),   // "smaller": about half the hero's reach, opening as it comes in
+		intensity: 0.8,                          // and dimmer than the hero's 1.0
+		rayLength: 5.25,
+		lightSpread: 1.5,
+		rayDensity: 1,
+		raySharpness: 0.35,
+		glow: 0.4,
+		haze: 0.2,
+		maxDevicePixelRatio: 1,
+		frameMs: 1000 / 30,
+		mouseInfluence: 0,
+		cursorShadow: false,
+		clickPulse: false,
+	});
+	if (!rays) return null;
+	let running = false;
+	return {
+		setLevel(v) {
+			level = Math.max(0, Math.min(1, v));
+			canvas.style.opacity = level.toFixed(3);
+			canvas.style.visibility = level <= 0.002 ? 'hidden' : 'visible';
+			if (level > 0.002 && !running && !document.hidden) { running = true; rays.start(); }
+			else if (level <= 0.002 && running) { running = false; rays.stop(); }
+		},
+		resize: () => rays.resize(),
+		destroy: () => rays.destroy(),
+	};
+}
+
 export function createAmbientRays(canvas: HTMLCanvasElement): AmbientRays | null {
+	if (!window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return createDesktopAmbient(canvas);
 	const gl = (canvas.getContext('webgl', { alpha: true, antialias: false, depth: false, premultipliedAlpha: true }) ||
 		canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
 	if (!gl) return null;

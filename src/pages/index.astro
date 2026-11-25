@@ -166,7 +166,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
 	<script>
 		import { createAmbientRays } from '../utils/ambientRays';
-		// The small light (phones and tablets; the canvas is display:none elsewhere). The hero's light has gone out
+		// The small light (every screen: the phone shader on touch, the hero's own on desktop). The hero's light has gone out
 		// by the time the manifesto is pinned; here it comes back, smaller, as the words focus, stays through
 		// Services and the dark before the first picture, and goes out where the beam begins (the Selected Work
 		// script publishes that as window.__swAmbOut).
@@ -176,7 +176,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			(window as any).__swAmbOut = 1;
 			const el = document.getElementById('ambient-rays') as HTMLCanvasElement | null;
 			const man = document.getElementById('manifesto');
-			if (!el || !man || getComputedStyle(el).display === 'none') return;
+			if (!el || !man) return;
 			const rays = createAmbientRays(el);
 			if (!rays) return;
 			const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };

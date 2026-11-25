@@ -638,12 +638,9 @@ html.sw-hscroll .gradual-blur__layer {
 #hud-menu-btn.frame-fx-on .specular-button__fx { opacity: 0; }
 #hud-menu-btn .hud-ico { position: relative; z-index: 1; }
 
-/* ── The small light in the dark pauses (phones and tablets only) ─────────────────────────
+/* ── The small light in the dark pauses (every screen) ─────────────────────────
    One fixed canvas (utils/ambientRays.ts, driven from index.astro): the hero's light, smaller.
    Above the Selected Work stage (44) and under Services (46), inside the home content's
    stacking context, so it lights the black of the manifesto, of Services and of the stretch
    before the first picture without ever sitting over a name or a picture's text. */
-#ambient-rays { display: none; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 45; pointer-events: none; opacity: 0; visibility: hidden; }
-@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-	#ambient-rays { display: block; }
-}
+#ambient-rays { display: block; position: fixed; inset: 0; width: 100%; height: 100%; z-index: 45; pointer-events: none; opacity: 0; visibility: hidden; }
