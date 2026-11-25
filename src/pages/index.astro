@@ -147,7 +147,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const goingDown = y > lastY + 0.5;
 				lastY = y;
 				const p = y / range;
-				live = y < pinStart + window.innerHeight;
+				// The veil and the blur stay on for as long as the hero can still be seen: until its pinned screen is over
+				// (range) and it has scrolled off. (This was measured from the manifesto's top, which now lies above the
+				// page: it switched them off at y = 80 and the hero shone through under the manifesto.)
+				live = y < range + window.innerHeight;
 				if (out === null) {
 					// First look (a reload, or coming back mid-page): the state it should be in, no animation.
 					out = p > ON;
