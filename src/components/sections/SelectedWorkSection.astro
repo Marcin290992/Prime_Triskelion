@@ -48,6 +48,9 @@ const SCREENS = projects.length + HOLD;
 
 			</div>
 
+			<!-- Ambient light over the black canvas, under the title; opacity from the scroll (render) -->
+			<div class="swb__ambient pt-ambient" aria-hidden="true"></div>
+
 			<div class="swb__intro">
 				<h2 class="swb__title">Selected<br><em>work.</em></h2>
 				<a href="/projects" class="link-btn sw-link">View All Projects</a>
@@ -465,6 +468,7 @@ const SCREENS = projects.length + HOLD;
 		const slides = Array.from(wrap.querySelectorAll<HTMLElement>('.swb__slide'));
 		const hits = Array.from(wrap.querySelectorAll<HTMLElement>('.swb__hit'));
 		const intro = wrap.querySelector<HTMLElement>('.swb__intro')!;
+		const ambient = wrap.querySelector<HTMLElement>('.swb__ambient');
 		// the top line and the bottom block (rule, text, controls) arrive with the first picture
 		const chrome = Array.from(wrap.querySelectorAll<HTMLElement>('.swb__top, .swb__bottom'));
 		const count = wrap.querySelector<HTMLElement>('.swb__count')!;
@@ -525,6 +529,14 @@ const SCREENS = projects.length + HOLD;
 			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
 			const t = Math.min(tin, tout);
+			// Ambient light fills the dark before the first picture: in as the stage pins, out where the beam begins.
+			if (ambient) {
+				const ain = smooth((window.scrollY - pinStart + 0.3 * vh) / (0.7 * vh));
+				const aout = 1 - smooth((uPos - DARK * 0.5) / (DARK * 0.5 + 0.25));
+				const a = Math.min(ain, aout);
+				ambient.style.opacity = a.toFixed(3);
+				ambient.style.visibility = a < 0.01 ? 'hidden' : 'visible';
+			}
 			intro.style.opacity = t.toFixed(3);
 			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
 			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;

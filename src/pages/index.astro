@@ -18,6 +18,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
 	<div class="relative" style="z-index:30">
+		<div id="ambient" class="pt-ambient pt-ambient--fixed" aria-hidden="true"></div>
 		<ManifestoSection />
 		<ServicesSection />
 		<SelectedWorkSection />
@@ -161,6 +162,49 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		}
 		document.addEventListener('astro:page-load', initHeroExit);
 		document.addEventListener('astro:before-swap', () => _heroExitOff?.());
+	</script>
+
+	<script>
+		// Ambient light behind the manifesto and Services (phones and tablets; the layer is
+		// display:none elsewhere). In as the manifesto's line is pinned, out as the Selected
+		// Work stage rises (the stage carries its own copy, .swb__ambient, which takes over).
+		let _ambientOff: (() => void) | null = null;
+		function initAmbient() {
+			_ambientOff?.();
+			const el = document.getElementById('ambient');
+			const man = document.getElementById('manifesto');
+			const sw = document.getElementById('sw-scroll-section');
+			if (!el || !man || !sw || getComputedStyle(el).display === 'none') return;
+			const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+			let manStart = 0, swStart = 0, ticking = false;
+			const measure = () => {
+				manStart = man.getBoundingClientRect().top + window.scrollY;
+				swStart = sw.getBoundingClientRect().top + window.scrollY;
+			};
+			const update = () => {
+				ticking = false;
+				const y = window.scrollY, vh = window.innerHeight;
+				const ain = smooth((y - manStart + 0.2 * vh) / (0.7 * vh));
+				const aout = 1 - smooth((y - swStart + 0.9 * vh) / (0.6 * vh));
+				const a = Math.min(ain, aout);
+				el.style.opacity = a.toFixed(3);
+				el.style.visibility = a < 0.01 ? 'hidden' : 'visible';
+			};
+			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			const onResize = () => { measure(); onScroll(); };
+			measure(); update();
+			window.addEventListener('scroll', onScroll, { passive: true });
+			window.addEventListener('resize', onResize, { passive: true });
+			const late = window.setTimeout(onResize, 500);
+			_ambientOff = () => {
+				window.clearTimeout(late);
+				window.removeEventListener('scroll', onScroll);
+				window.removeEventListener('resize', onResize);
+				_ambientOff = null;
+			};
+		}
+		document.addEventListener('astro:page-load', initAmbient);
+		document.addEventListener('astro:before-swap', () => _ambientOff?.());
 	</script>
 
 	<script>
