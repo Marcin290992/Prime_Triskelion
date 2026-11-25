@@ -28,7 +28,7 @@ const MOUSE_BUTTONS = [CTA, '.cp-chip > span', '.cp-back', '.cp-next'].join(', '
 // Bordered buttons a finger can set a comet off on (everything but the MENU
 // button, which has its own light).
 const TOUCH_BUTTONS = [
-  CTA,
+  '.h-hero-cta--fixed',   // (also the buttons with the frame light: that is desktop only, a finger keeps the comet)
   '.tst__btn',
   '.footer-social__link',
   '.ox-social',

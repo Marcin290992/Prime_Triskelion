@@ -20,8 +20,13 @@ function destroyAll() {
 	items = [];
 }
 
+// The frame light is for a wide screen with a mouse: there is no hover on a phone or tablet, and a tap on a CTA leaves
+// the page at once, so it would hardly be seen. There the buttons keep their own beam and the touch comets (starBorder.js).
+const SMALL = '(max-width: 1024px), (hover: none) and (pointer: coarse)';
+
 function initAll() {
 	destroyAll();
+	if (window.matchMedia(SMALL).matches) return;
 	document.querySelectorAll<HTMLElement>(SELECTOR).forEach((btn) => {
 		// The button clips its children (overflow: hidden), so the light lives inside the edge: no bleed.
 		const asState = btn.getAttribute('data-frame-fx') === 'state';
