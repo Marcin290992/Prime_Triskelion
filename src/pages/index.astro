@@ -98,13 +98,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			};
 
 			// The three beats, one clock: light (1 = lit), blur (0..1), black (0..1).
-			const st = { light: 1, blur: 0, black: 0 };
+			const st = { light: 1, blur: 0, black: 0, stage: 0 };
 			let live = true;
 			let fading = false;    // this script is holding #hero's opacity below 1
 			let stageScroll = 0;   // the manifesto stage's own, scroll-driven fade-in (see update)
-			// 0 until the black is all but complete (0.93), then 1 by full black: the manifesto's line only appears over
-			// a screen with no hero left in it, not over the last 10% of one.
-			const blackDone = () => clamp01((st.black - 0.93) / 0.07);
 			const apply = () => {
 				if (rays) {
 					const dark = st.light <= 0.001;
@@ -122,12 +119,19 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				veil.style.opacity = st.black.toFixed(3);
 				// The manifesto's (blurred) line must not be seen before the exit has finished: it can only be as visible
 				// as the black is complete, whatever the scroll says.
-				stage.style.opacity = Math.min(stageScroll, blackDone()).toFixed(3);
+				stage.style.opacity = Math.min(stageScroll, st.stage).toFixed(3);
 			};
 			const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply });
 			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
 			tl.to(st, { blur: 1, duration: 0.7, ease: 'sine.inOut' }, 0.25);
 			tl.to(st, { black: 1, duration: 0.7, ease: 'sine.inOut' }, 0.55);
+			// Then, only once the black is whole, the manifesto's line floats up out of it: slow, never a cut.
+			tl.to(st, { stage: 1, duration: 1.4, ease: 'sine.inOut' }, 1.2);
+			// The exit itself may be sped up (a fast scroll, see update); the float-in after it never is: back to the
+			// normal pace at the line between them, whichever way the timeline is running.
+			// Going back up the float-in is undone quickly (x3), then the exit itself at its own pace.
+			// (In GSAP the direction IS the sign of timeScale: a positive value here while going back would turn it round.)
+			tl.call(() => { tl.timeScale(tl.reversed() ? -1.15 : 1); }, undefined, 1.25);
 
 			// Going DOWN past ON of the pinned screen = play; going UP back to BACK of it = reverse. Decided by the
 			// direction, so it never flutters, and the hero is back (sharp, lit) while you are still on its pinned screen,
@@ -150,12 +154,13 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					tl.progress(out ? 1 : 0).pause();
 					apply();
 				} else if (!out && goingDown && p > ON) { out = true; tl.timeScale(1).play(); }
-				else if (out && goingUp && p <= BACK) { out = false; tl.timeScale(1.15).reverse(); }
-				else if (out && p <= 0.001) { out = false; tl.timeScale(1.15).reverse(); }
+				else if (out && goingUp && p <= BACK) { out = false; tl.timeScale(3).reverse(); }
+				else if (out && p <= 0.001) { out = false; tl.timeScale(3).reverse(); }
 				else apply();
 				// Scrolled on faster than the exit plays: let it finish quickly, and take the hero itself out
 				// over the last of its pinned screen, so it is never seen scrolling away half-lit.
-				if (out && tl.isActive() && p > 0.45) tl.timeScale(2.5);
+				// (Only the exit itself, up to 1.25 s: the manifesto's slow float-in after it keeps its own pace.)
+				if (out && tl.isActive() && p > 0.45) tl.timeScale(tl.time() < 1.25 ? 2.5 : 1);
 				// (#hero's opacity is the intro's: it starts at 0 and the intro sets it to 1. Only touched here when the
 				// hero is about to leave the screen, and put back to 1 when it is on its pinned screen again.)
 				const leaving = out === true && p > 0.8;
@@ -164,7 +169,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// The manifesto's line comes up once its stage is pinned
 				// (0.3 of a screen), before the words start to focus (and only once the black is in: apply).
 				stageScroll = smooth(clamp01((y - pinStart) / (0.3 * window.innerHeight)));
-				stage.style.opacity = Math.min(stageScroll, blackDone()).toFixed(3);
+				stage.style.opacity = Math.min(stageScroll, st.stage).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
