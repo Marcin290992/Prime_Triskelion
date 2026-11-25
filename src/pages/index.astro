@@ -108,6 +108,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
+			const LIGHT_OFF_P = 0.5;   // the hero's own light goes out here (the small light is in by then)
+			const LIGHT_BACK_P = 0.45;
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
@@ -122,11 +124,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Brightness, not opacity (the intro owns the canvas's opacity).
 				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
 				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
+				// The light does NOT go out at the first scroll any more: it stays whole until the small light (the ambient
+				// canvas, see initAmbient) has come in at the same source, and only then lets go (LIGHT_OFF_P), so the
+				// light is one continuous thing from the hero to the first picture. On the way back it is lit again as
+				// soon as the type is coming into focus (LIGHT_BACK_P).
 				if (rays) {
-					if (lightOff === null) setLight(p > 0.02);
+					if (lightOff === null) setLight(p > LIGHT_OFF_P);
 					else if (p <= 0.02) setLight(false);
-					else if (goingUp && p <= 0.30) setLight(false);
-					else if (!goingUp && p > 0.02) setLight(true);
+					else if (goingUp && p <= LIGHT_BACK_P) setLight(false);
+					else if (!goingUp && p > LIGHT_OFF_P) setLight(true);
 				}
 				// Three beats, one after the other: the light goes out first (0–0.35)
 				// while the type is still sharp; only then does the rest go soft
@@ -180,12 +186,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const rays = createAmbientRays(el);
 			if (!rays) return;
 			const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
-			let manStart = 0, ticking = false;
-			const measure = () => { manStart = man.getBoundingClientRect().top + window.scrollY; };
+			// It starts with the hero's exit (not with the manifesto): the small light comes in at the hero's own
+			// source while the hero's light is still whole, and takes over as that lets go (index script above).
+			const pin = document.getElementById('hero-pin');
+			const hero = document.getElementById('hero');
+			let range = 1, ticking = false;
+			const measure = () => { range = Math.max(1, (pin?.offsetHeight ?? 0) - (hero?.offsetHeight ?? 0)); };
 			const update = () => {
 				ticking = false;
-				const vh = window.innerHeight;
-				const ain = smooth((window.scrollY - manStart - 0.1 * vh) / (0.9 * vh));
+				const ain = smooth((window.scrollY / range - 0.12) / 0.6);
 				rays.setLevel(Math.min(ain, (window as any).__swAmbOut ?? 1));
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
