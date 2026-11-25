@@ -546,16 +546,21 @@ const projects = await Promise.all(
       return c;
     };
 
+    let curW = 0;
+    let curH = 0;
     const teardownBeam = () => {
       beam?.destroy(); beam = null;
       beamCanvas?.remove(); beamCanvas = null;
       frameUrls.forEach((u) => URL.revokeObjectURL(u)); frameUrls = [];
+      beamOn = false;
     };
 
+    // A new set of frames is made in the background and takes over only when it is ready AND no transition is playing:
+    // the beam that is there goes on working until then (on a phone the address bar sliding away resizes the page all the
+    // time, and tearing the beam down for every resize left the list without it, or with a frame of the wrong shape).
     const buildBeam = async () => {
       if (reduce) return;
       const mine = ++built;
-      teardownBeam();
       try { await document.fonts.ready; } catch { /* ignore */ }
       await Promise.all(panels.map(({ sec }) => {
         const im = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
@@ -563,29 +568,40 @@ const projects = await Promise.all(
       }));
       await new Promise((res) => setTimeout(res, 120));   // (the colour script below has tinted every window by now)
       if (mine !== built) return;
-      const W = window.innerWidth, H = window.innerHeight;
+      // the size of the panel the windows are drawn on (not innerHeight: on a phone that is not the height of the panel)
+      const inner = panels[0].sec.querySelector<HTMLElement>('.proj-inner');
+      const W = inner?.clientWidth || window.innerWidth, H = inner?.clientHeight || window.innerHeight;
       const k = Math.min(window.devicePixelRatio || 1, 1.5);
+      const urls: string[] = [];
       const imgs: HTMLImageElement[] = [];
+      const drop = () => urls.forEach((u) => URL.revokeObjectURL(u));
       for (const { sec } of panels) {
         const c = paintFrame(sec, W, H, k);
-        if (!c) return;
+        if (!c) { drop(); return; }
         const blob: Blob | null = await new Promise((res) => c.toBlob(res, 'image/png'));
-        if (!blob) return;
+        if (!blob) { drop(); return; }
         const url = URL.createObjectURL(blob);
-        frameUrls.push(url);
+        urls.push(url);
         const im = new Image();
         im.src = url;
         imgs.push(im);
       }
-      if (mine !== built) return;
+      if (mine !== built) { drop(); return; }
       const cv = document.createElement('canvas');
       cv.setAttribute('aria-hidden', 'true');
-      cv.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100vh;height:100dvh;z-index:45;pointer-events:none;opacity:0;visibility:hidden';
+      // exactly the size of the frames (never stretched to a viewport that has changed since)
+      cv.style.cssText = `position:fixed;left:0;top:0;width:${W}px;height:${H}px;z-index:45;pointer-events:none;opacity:0;visibility:hidden`;
       document.body.appendChild(cv);
-      const bs = createBeamSlides(cv, imgs, () => { beamOn = false; cv.style.visibility = 'hidden'; }, RANGE, false);
-      if (!bs) { cv.remove(); return; }
-      beamCanvas = cv; beam = bs;
-      (window as any).__beamReadyAt = performance.now();
+      const bs = createBeamSlides(cv, imgs, () => { if (beamCanvas === cv) { beamOn = false; cv.style.visibility = 'hidden'; } }, RANGE, false);
+      if (!bs) { cv.remove(); drop(); return; }
+      const swap = () => {
+        if (mine !== built) { bs.destroy(); cv.remove(); drop(); return; }
+        if (beamOn) { setTimeout(swap, 150); return; }   // not in the middle of a transition
+        teardownBeam();
+        beamCanvas = cv; beam = bs; frameUrls = urls; curW = W; curH = H;
+        (window as any).__beamReadyAt = performance.now();
+      };
+      swap();
     };
 
     // enter: the window that is coming in (-1: none), opening: 0 at the foot .. 1 at the top
@@ -609,7 +625,15 @@ const projects = await Promise.all(
     };
     buildBeam();
     let rzT = 0;
-    const onResize = () => { clearTimeout(rzT); rzT = window.setTimeout(buildBeam, 300); };
+    const onResize = () => {
+      clearTimeout(rzT);
+      rzT = window.setTimeout(() => {
+        // only a real change of the panel's size makes new frames (a few pixels do not)
+        const inner = panels[0].sec.querySelector<HTMLElement>('.proj-inner');
+        if (inner && Math.abs(inner.clientWidth - curW) < 3 && Math.abs(inner.clientHeight - curH) < 3) return;
+        buildBeam();
+      }, 400);
+    };
     window.addEventListener('resize', onResize);
 
     function render() {
