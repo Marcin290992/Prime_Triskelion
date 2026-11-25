@@ -103,15 +103,25 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			let ticking = false;
+			let lastY = window.scrollY;
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
+				const goingUp = y < lastY - 0.5;
+				lastY = y;
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
 				// same length however fast you scroll — never scrubbed by the scroll.
 				// Brightness, not opacity (the intro owns the canvas's opacity).
-				if (rays) setLight(p > 0.02);
+				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
+				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
+				if (rays) {
+					if (lightOff === null) setLight(p > 0.02);
+					else if (p <= 0.02) setLight(false);
+					else if (goingUp && p <= 0.30) setLight(false);
+					else if (!goingUp && p > 0.02) setLight(true);
+				}
 				// Three beats, one after the other: the light goes out first (0–0.35)
 				// while the type is still sharp; only then does the rest go soft
 				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the

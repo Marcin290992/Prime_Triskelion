@@ -44,9 +44,9 @@ const [line1, line2] = d.titleLines;
             <div class="h-hero-cta-wrap">
               <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
               <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-              <a href={d.url} class="h-hero-cta h-hero-cta--fixed" target="_blank" rel="noopener noreferrer">
+              <a href={d.url} class="h-hero-cta h-hero-cta--fixed wos-visit" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website">
                 <span class="hud-spin-border"></span>
-                <span class="h-hero-cta__text">Visit Website</span>
+                <span class="h-hero-cta__text"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</span>
               </a>
             </div>
           )}
@@ -75,7 +75,7 @@ const [line1, line2] = d.titleLines;
             </div>
             <div class="wos-pd__top">
               <div class="wos-pd__topbar">
-                <a href="/projects/" class="wos-pd__link">Back to projects</a>
+                <a href="/projects/#projects-list" class="wos-pd__link">Back to projects</a>
                 {d.url && (
                   <a href={d.url} class="wos-pd__live wos-pd__live--top" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</a>
                 )}
@@ -110,7 +110,7 @@ const [line1, line2] = d.titleLines;
             </div>
 
             <div class="wos-pd__nav">
-              <a href="/projects/" class="wos-pd__link wos-pd__link--back">Back to projects</a>
+              <a href="/projects/#projects-list" class="wos-pd__link wos-pd__link--back">Back to projects</a>
               {d.url && (
                 <a href={d.url} class="wos-pd__live" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</a>
               )}
@@ -123,9 +123,9 @@ const [line1, line2] = d.titleLines;
                 <div class="h-hero-cta-wrap">
                   <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
                   <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
-                  <a href={d.url} class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary wos-pd__visit" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website">
+                  <a href={d.url} class="h-hero-cta h-hero-cta--fixed h-hero-cta--primary wos-pd__visit wos-visit" target="_blank" rel="noopener noreferrer" aria-label="Visit the live website">
                     <span class="hud-spin-border"></span>
-                    <span class="h-hero-cta__text"><span class="wos-pd__live-dot" aria-hidden="true"></span>Visit website</span>
+                    <span class="h-hero-cta__text"><span class="wos-pd__live-dot" aria-hidden="true"></span>Live</span>
                   </a>
                 </div>
               )}
@@ -135,6 +135,14 @@ const [line1, line2] = d.titleLines;
                 <a href="#contact-cta" class="h-hero-cta h-hero-cta--fixed">
                   <span class="hud-spin-border"></span>
                   <span class="h-hero-cta__text">Let's build</span>
+                </a>
+              </div>
+              <div class="h-hero-cta-wrap wos-pd__all">
+                <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+                <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+                <a href="/projects/#projects-list" class="h-hero-cta h-hero-cta--fixed">
+                  <span class="hud-spin-border"></span>
+                  <span class="h-hero-cta__text">&larr;&nbsp; All projects</span>
                 </a>
               </div>
             </div>
@@ -363,12 +371,18 @@ const [line1, line2] = d.titleLines;
     max-width: 44ch;
     margin: 0;
   }
+  /* The two hero buttons are always the SAME width, whatever their labels say: both columns are as wide as the wider. */
   .wos-cin__btns {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    width: max-content;
+    max-width: 100%;
     gap: 1rem;
-    flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: start;
   }
+  .wos-cin__btns .h-hero-cta-wrap { width: 100%; }
+  .wos-cin__btns .h-hero-cta { width: 100%; }
 
   @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
     .wos-cin { display: none; }
@@ -441,6 +455,9 @@ const [line1, line2] = d.titleLines;
     animation: wosLive 1.6s ease-in-out infinite;
   }
   @keyframes wosLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+  /* The "Visit website" button, desktop hero and phone / tablet alike: the red live dot in front of the label. */
+  .wos-visit .h-hero-cta__text { display: inline-flex; align-items: center; }
+  .wos-visit .wos-pd__live-dot { margin-right: 0.8rem; }
   .wos-pd__title {
     margin: 0;
     font-family: var(--f-display);
@@ -731,14 +748,12 @@ const [line1, line2] = d.titleLines;
 
     /* The way back: one small, quiet arrow link at the top of the panel. The Back / Live row that used to sit at the
        bottom (and the same pair at the top) is gone: the visit link was a tiny word, the main thing to do here. */
-    .wos-pd__topbar { display: flex; align-items: center; margin-bottom: 1.5rem; }
-    .wos-pd__topbar .wos-pd__live--top { display: none; }
-    .wos-pd__topbar .wos-pd__link { font-size: 11px; letter-spacing: 0.26em; color: rgb(var(--c-cream) / 0.7); }
-    .wos-pd__topbar .wos-pd__link::before { content: '\2190'; margin-right: 0.75rem; letter-spacing: 0; }
+    .wos-pd__topbar { display: none; }   /* (a small link at the top of the panel was hard to see and to hit: it is a full button below now) */
     .wos-pd__nav { display: none; }
 
     /* Two buttons, the desktop hero's: the main one is the live site (the red dot says it is live), then Let's build. */
     .wos-pd__actions { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2.25rem; }
+    .wos-pd__all .h-hero-cta { color: rgb(var(--c-cream) / 0.7); }
     .wos-pd__actions .h-hero-cta-wrap { width: 100%; max-width: none; }
     .wos-pd__actions .h-hero-cta { width: 100%; }
     .wos-pd__visit .h-hero-cta__text { display: inline-flex; align-items: center; }
@@ -746,8 +761,8 @@ const [line1, line2] = d.titleLines;
   }
   /* A tablet has the room: side by side. */
   @media (min-width: 700px) and (max-width: 1024px), (min-width: 700px) and (hover: none) and (pointer: coarse) {
-    .wos-pd__actions { flex-direction: row; }
-    .wos-pd__actions .h-hero-cta-wrap { flex: 1 1 0; }
+    .wos-pd__actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+    .wos-pd__actions .h-hero-cta-wrap { width: 100%; }
   }
 </style>
 
