@@ -937,7 +937,6 @@ const [line1, line2] = d.titleLines;
     const jump = (y: number) => lenisOf()?.scrollTo(y, { immediate: true, force: true });
 
     let st: ReturnType<typeof ScrollTrigger.create>;
-    let dir: 'in' | 'out' = 'in';   // which way the sequence in progress is going
     const finishIn = () => {
       // the pinned view looks the same wherever the scroll is inside the pin: carry it on to the end of it
       jump(st.end);
@@ -949,27 +948,8 @@ const [line1, line2] = d.titleLines;
       setPhase('start');
       release();
     };
-    // The way out while it plays: the page does not just swallow the hand. A FRESH push (a new flick, not the tail of
-    // the first) the way it is going carries it to the end at once (about half a second); a fresh push the other way
-    // turns it round from wherever it has got to.
-    const pushDuring = (sign: number) => {
-      const same = (dir === 'in' && sign > 0) || (dir === 'out' && sign < 0);
-      if (same) { if (tl.timeScale() < 3) tl.timeScale(5); return; }
-      if (dir === 'in') {
-        dir = 'out';
-        tl.eventCallback('onComplete', null);
-        tl.eventCallback('onReverseComplete', finishOut);
-        tl.timeScale(opts.fast).reverse();
-      } else {
-        dir = 'in';
-        tl.eventCallback('onReverseComplete', null);
-        tl.eventCallback('onComplete', finishIn);
-        tl.timeScale(opts.slow).play();
-      }
-    };
     const playIn = () => {
       if (phase !== 'start' || menuHold || menuOpen()) return;
-      dir = 'in';
       setPhase('playing');
       hold();
       tl.eventCallback('onReverseComplete', null);
@@ -978,7 +958,6 @@ const [line1, line2] = d.titleLines;
     };
     const playOut = () => {
       if (phase !== 'done' || menuHold || menuOpen()) return;
-      dir = 'out';
       setPhase('playing');
       hold();
       jump(st.end);
@@ -1008,31 +987,21 @@ const [line1, line2] = d.titleLines;
 
     const atStart = () => st.scroll() <= st.start + 6;
     const atEnd = () => st.scroll() >= st.end - 6 && st.scroll() <= st.end + 6;
-    let lastWheelAt = 0;
-    let touchFresh = false;
     const onWheel = (e: WheelEvent) => {
-      const now = performance.now();
-      const fresh = now - lastWheelAt > 160;   // a new push, not the tail of the last one
-      lastWheelAt = now;
-      if (phase === 'playing') { if (fresh && Math.abs(e.deltaY) > 3) pushDuring(Math.sign(e.deltaY)); return; }
+      if (phase === 'playing') return;
       if (e.deltaY > 3 && phase === 'start' && atStart()) playIn();
       else if (e.deltaY < -3 && phase === 'done' && atEnd()) playOut();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (phase === 'playing') {
-        const dn = ['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key);
-        const upk = ['ArrowUp', 'PageUp', 'Home'].includes(e.key);
-        if (!e.repeat && (dn || upk)) pushDuring(dn ? 1 : -1);
-        return;
-      }
+      if (phase === 'playing') return;
       if (['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key) && phase === 'start' && atStart()) playIn();
       else if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) && phase === 'done' && atEnd()) playOut();
     };
     let ty = 0;
-    const onTouchStart = (e: TouchEvent) => { ty = e.touches[0]?.clientY ?? 0; touchFresh = true; };
+    const onTouchStart = (e: TouchEvent) => { ty = e.touches[0]?.clientY ?? 0; };
     const onTouchMove = (e: TouchEvent) => {
+      if (phase === 'playing') return;
       const dy = ty - (e.touches[0]?.clientY ?? ty);
-      if (phase === 'playing') { if (touchFresh && Math.abs(dy) > 12) { touchFresh = false; pushDuring(Math.sign(dy)); } return; }
       if (dy > 12 && phase === 'start' && atStart()) playIn();
       else if (dy < -12 && phase === 'done' && atEnd()) playOut();
     };
