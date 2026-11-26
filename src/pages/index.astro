@@ -46,7 +46,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
 		@media (prefers-reduced-motion: no-preference) {
-			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 130); }
+			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
 			#hero-pin > #hero { position: sticky; top: 0; }
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }
@@ -73,6 +73,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
 			let range = 1;
@@ -104,9 +105,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			// The exit's two layers, tweened on the clock: blur (backdrop-filter) first, the dark sinking in after it.
-			const ex = { bk: 0, a: 0 }; // bk: the blur, a: the dark; both played on the clock by exitTl
+			const ex = { bk: 0, a: 0 }; // bk: the blur, on the clock; a: the dark, set from the scroll (the user's)
 			const BLUR_MAX = blurPx(22);
-			const ENTER_ON = 0.15, ENTER_OFF = 0.85; // fires down at 15% of the exit, and back up (un-blur, light on) as soon as you leave the end of it
+			const ENTER_ON = 0.12, ENTER_OFF = 0.06;
 			let exitOn = false;
 			const applyExit = () => {
 				const live = window.scrollY < pinStart + window.innerHeight;
@@ -116,13 +117,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				veil.style.opacity = ex.a.toFixed(3);
 				// On the way back the light returns as soon as the type is sharp enough, not at the very top.
 				if (!exitOn && rays && exitTl.progress() < 0.5) setLight(false);
-				// The manifesto's line comes up only out of the black: scroll sets how far it may show, the dark caps it.
-				const vh = window.innerHeight;
-				stage.style.opacity = (smooth(clamp01((window.scrollY - pinStart + 0.3 * vh) / (0.7 * vh))) * smooth(ex.a)).toFixed(3);
 			};
 			const exitTl = gsap.timeline({ paused: true, onUpdate: applyExit });
 			exitTl.to(ex, { bk: 1, duration: 0.9, ease: 'sine.inOut' }, 0);
-			exitTl.to(ex, { a: 1, duration: 0.9, ease: 'sine.inOut' }, 0.6);
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
@@ -152,9 +149,41 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					exitTl.timeScale(want && p > 0.5 ? 2.5 : 1);
 					want ? exitTl.play() : exitTl.reverse();
 				} else if (exitOn && p > 0.5 && exitTl.timeScale() < 2) exitTl.timeScale(2.5);
+				// The dark stays under the finger: it follows the scroll (0.55-0.95 of the pin), so the user decides how
+				// fast it comes down. Only the blur is on the clock: it never stops half-way, it flows on to the end.
+				ex.a = smooth(clamp01((p - 0.55) / 0.40));
 				applyExit();
+				// The manifesto's line comes up slowly once its stage is pinned (about 0.4 of a screen), before the
+				// words start to focus.
+				const vh = window.innerHeight;
+				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
 			};
-			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// Touch: scroll stays free (a fast fling still passes straight through), but if the finger is lifted and
+			// the scroll comes to rest part-way through the exit, the exit finishes (or winds back) by itself, so
+			// the screen is never left half-blurred or half-dark.
+			let settleT = 0;
+			let fingerDown = false;
+			let dir = 1;
+			const settle = () => {
+				if (!touchy || fingerDown) return;
+				const y = window.scrollY;
+				const p = y / range;
+				if (p < 0.03 || y >= pinStart) return;
+				const lenis = (window as any).__lenis;
+				if (!lenis?.scrollTo) return;
+				const forward = dir > 0 ? p > 0.08 : p > 0.9;
+				lenis.scrollTo(forward ? pinStart + 0.4 * window.innerHeight : 0, { duration: 1.0, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+			};
+			const queueSettle = () => { if (!touchy) return; window.clearTimeout(settleT); settleT = window.setTimeout(settle, 140); };
+			const onDown = () => { fingerDown = true; window.clearTimeout(settleT); };
+			const onUp = () => { fingerDown = false; queueSettle(); };
+			if (touchy) {
+				window.addEventListener('touchstart', onDown, { passive: true });
+				window.addEventListener('touchend', onUp, { passive: true });
+				window.addEventListener('touchcancel', onUp, { passive: true });
+			}
+			const onScroll = () => { dir = window.scrollY >= lastScrollY ? 1 : -1; lastScrollY = window.scrollY; queueSettle(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			let lastScrollY = window.scrollY;
 			const onResize = () => { measure(); onScroll(); };
 			measure();
 			update();
@@ -167,6 +196,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				exitTl.kill();
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
+				window.clearTimeout(settleT);
+				window.removeEventListener('touchstart', onDown);
+				window.removeEventListener('touchend', onUp);
+				window.removeEventListener('touchcancel', onUp);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);
 				_heroExitOff = null;
