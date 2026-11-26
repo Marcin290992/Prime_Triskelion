@@ -157,6 +157,9 @@ const steps = [
 		transform: translateY(14px);
 		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
 	}
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.showcase__intro { filter: blur(3px); transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease; }
+	}
 	.showcase__title {
 		font-family: var(--f-display);
 		font-weight: 600;

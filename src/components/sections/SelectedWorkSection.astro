@@ -253,6 +253,10 @@ const SCREENS = projects.length + HOLD;
 		filter: blur(14px);
 		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
 	}
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.swb__slide { filter: blur(5px); transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s; }
+		.swb__slide.in { transition: opacity 0.45s ease, filter 0.45s ease, transform 0.45s ease, visibility 0s; }
+	}
 	.swb__slide.in {
 		opacity: 1;
 		visibility: visible;
@@ -514,6 +518,7 @@ const SCREENS = projects.length + HOLD;
 		};
 		let activeText = -1;
 
+		const introBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 5 : 14;
 		const render = () => {
 			// The light and everything that follows it (picture, name, controls) share one position.
 			const bpos = pos;
@@ -526,7 +531,7 @@ const SCREENS = projects.length + HOLD;
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * introBlur).toFixed(1)}px)`;
 			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;

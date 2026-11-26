@@ -117,6 +117,11 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		transition: opacity 0.58s ease, transform 0.58s cubic-bezier(0.16,1,0.3,1), filter 0.72s cubic-bezier(0.16,1,0.3,1);
 	}
 	.faq__sidebar.visible { opacity: 1; filter: blur(0); transform: translateY(0); }
+	/* Touch: a light, quick blur-in (3px, 0.4s) instead of the desktop 8px / 0.72s. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.faq__sidebar, .faq__photo, .disc-header { filter: blur(3px); transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease; }
+		.faq__sidebar.visible, .faq__photo.visible, .disc-header.visible { filter: blur(0); }
+	}
 	.faq__photo {
 		width: 240px;
 		aspect-ratio: 1 / 1.2;
@@ -321,7 +326,8 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 		});
 
 		section.querySelectorAll<HTMLElement>('.disc-item').forEach((item, i) => {
-			gsap.set(item, { opacity: 0, filter: 'blur(8px)', y: 14 });
+			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+			gsap.set(item, { opacity: 0, filter: `blur(${touchy ? 3 : 8}px)`, y: 14 });
 			ScrollTrigger.create({
 				trigger: item,
 				start: 'top 90%',
@@ -330,8 +336,8 @@ import marcinPhoto from '../../img/contact section/Marcin_contact_section.webp';
 						opacity: 1,
 						filter: 'blur(0px)',
 						y: 0,
-						duration: 0.58,
-						delay: i * 0.09,
+						duration: touchy ? 0.4 : 0.58,
+						delay: touchy ? 0 : i * 0.09,
 						ease: 'power3.out',
 					});
 				},

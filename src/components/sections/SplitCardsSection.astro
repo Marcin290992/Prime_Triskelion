@@ -578,6 +578,7 @@
     // titleIn: rises out of the black soft, then sharpens, settling from a
     // hair oversized). Scrolling back above that point sends it back out.
     const title = document.getElementById('sc-title');
+    const isTouch = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
     const TITLE_AT = 0.27;
     let titleShown = false;
     let titleTl: gsap.core.Timeline | null = null;
@@ -587,11 +588,11 @@
       titleTl?.kill();
       titleTl = show
         ? gsap.timeline()
-            .to(title, { opacity: 1, duration: 0.9, ease: 'sine.inOut' }, 0)
-            .to(title, { filter: 'blur(0px)', duration: 1.5, ease: 'power2.inOut' }, 0)
-            .fromTo(title, { scale: 1.04 }, { scale: 1, duration: 1.7, ease: 'power2.out' }, 0)
+            .to(title, { opacity: 1, duration: isTouch ? 0.5 : 0.9, ease: 'sine.inOut' }, 0)
+            .to(title, { filter: 'blur(0px)', duration: isTouch ? 0.6 : 1.5, ease: 'power2.inOut' }, 0)
+            .fromTo(title, { scale: 1.04 }, { scale: 1, duration: isTouch ? 0.7 : 1.7, ease: 'power2.out' }, 0)
         : gsap.timeline()
-            .to(title, { opacity: 0, filter: 'blur(18px)', duration: 0.5, ease: 'power2.in' }, 0);
+            .to(title, { opacity: 0, filter: `blur(${isTouch ? 6 : 18}px)`, duration: 0.5, ease: 'power2.in' }, 0);
     };
     if (title) gsap.set(title, { xPercent: -50, x: 0, transformOrigin: '50% 50%' });
 
