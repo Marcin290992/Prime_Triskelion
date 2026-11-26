@@ -533,7 +533,16 @@ const SCREENS = projects.length + HOLD;
 			const pinStart = wrap.getBoundingClientRect().top + y;
 			const from = noIntroBlur ? -0.4 : 0.15;
 			const span = noIntroBlur ? 0.5 : 0.45;
-			const tin = smooth((y - pinStart - from * vh) / (span * vh));
+			let tin = smooth((y - pinStart - from * vh) / (span * vh));
+			// Touch: no two texts on screen at once. The title starts only when "All services" (the last thing of the
+			// options) has gone out at the top (its centre above 20% of the screen, it is already faint there), so one takes over from the other.
+			if (noIntroBlur) {
+				const btn = document.querySelector<HTMLElement>('#services .svc__btn');
+				if (btn) {
+					const r = btn.getBoundingClientRect();
+					tin = smooth((0.20 - (r.top + r.height / 2) / vh) / 0.25);
+				}
+			}
 			const tout = 1 - smooth(uPos / TITLE_SPAN);
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
