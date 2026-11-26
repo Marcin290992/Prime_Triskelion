@@ -72,7 +72,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
 			let range = 1;
@@ -81,100 +80,98 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				range = Math.max(1, pin.offsetHeight - hero.offsetHeight);
 				pinStart = man.getBoundingClientRect().top + window.scrollY;
 			};
-			// The exit runs on the CLOCK; the scroll only fires it. `exit.v` is its progress: 0 = the hero as it is,
-			// 1 = black, with the manifesto coming up next. Three beats, one after the other, whatever the scroll does:
-			// the light goes out first (0–0.35) while the type is still sharp, then the rest goes soft (the blur layer,
-			// 0.30–0.70), last it sinks into the dark (the black layer, 0.55–0.95), and only then does the manifesto's
-			// line come up. A slow drag, a wheel tick and a fling all play the same exit; a fast fling only plays it
-			// faster (nothing is skipped), and any scroll back plays it in reverse.
-			const exit = { v: 0 };
-			let target: 0 | 1 | null = null;
-			let tween: gsap.core.Tween | null = null;
-			const DUR = 1.3;           // seconds for the whole exit
-			const FAST = 2.5;          // a fling plays it this much faster
-			const FIRE_AT = 0.12;      // of the pin: past this the exit goes
-			const BACK_AT = 0.06;      // of the pin: back below this it winds back
-			const applyLight = (light: number) => {
+			// The light's own fade (see update): 1 = lit, 0 = out.
+			const lightState = { v: 1 };
+			let lightOff: boolean | null = null;
+			const applyLight = () => {
 				if (!rays) return;
-				const dark = light <= 0.001;
+				const dark = lightState.v <= 0.001;
 				if (rays.dataset.dark !== (dark ? '1' : '')) {
 					rays.dataset.dark = dark ? '1' : '';
 					// Fully out: nothing to see, so the hero stops drawing it
 					// (HeroSection's initRays listens) and starts again on the way back.
 					rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
 				}
-				// Brightness, not opacity (the intro owns the canvas's opacity).
-				rays.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+				rays.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
 			};
-			const render = () => {
-				const y = window.scrollY;
-				const vh = window.innerHeight;
-				const P = exit.v;
-				applyLight(1 - smooth(clamp01(P / 0.35)));
-				const bk = smooth(clamp01((P - 0.30) / 0.40));
-				const a = smooth(clamp01((P - 0.55) / 0.40));
-				const live = y < pinStart + vh;
-				// A fast scroll runs past the end of the hero's pin before the clock has finished: the hero would then be
-				// carried up with the page, blurred but still moving. Hold it on the spot until the exit has reached the
-				// black (then it is covered anyway and can go).
-				// (Fixed, not a per-frame transform, which would trail the scroll by a frame and shake.)
-				const hold = P < 0.999 && live && y > range;
-				hero.style.position = hold ? 'fixed' : '';
-				hero.style.top = hold ? '0' : '';
-				hero.style.left = hold ? '0' : '';
-				hero.style.width = hold ? '100%' : '';
-				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * (touchy ? 9 : 22)).toFixed(1)}px)` : '';
-				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
-				veil.style.opacity = a.toFixed(3);
-				// Before its own pin the stage would ride up from the bottom of the screen: hold it on the spot, so it only
-				// ever comes out of the dark, never scrolls in. Its line comes up only once the exit has reached the black
-				// (P above 0.88), and slowly once the stage is pinned.
-				// Fixed, not a transform worked out per frame: a transform follows the scroll a frame late and the line
-				// shakes against the page. Fixed has no lag; at the pin start it hands over to its own sticky at the very
-				// same place (the section's height is set, so nothing moves in the flow).
-				if (y < pinStart) {
-					stage.style.position = 'fixed';
-					stage.style.top = '0';
-					stage.style.left = '0';
-				} else {
-					stage.style.position = '';
-					stage.style.top = '';
-					stage.style.left = '';
-				}
-				// The line comes up on the clock too, out of the black, and stands there faint and blurred (its start state,
-				// ManifestoSection): from there the scroll is the user's alone, it brings the words into focus.
-				stage.style.opacity = smooth(clamp01((P - 0.88) / 0.12)).toFixed(3);
-			};
-			const go = (to: 0 | 1, fast: boolean) => {
-				if (to === target) { if (fast && tween && tween.isActive()) tween.timeScale(FAST); return; }
-				target = to;
-				tween?.kill();
-				const left = Math.abs(to - exit.v);
-				if (left < 0.001) { exit.v = to; render(); return; }
-				tween = gsap.to(exit, { v: to, duration: DUR * left, ease: 'none', onUpdate: render, onComplete: () => { tween = null; } });
-				if (fast) tween.timeScale(FAST);
+			const setLight = (off: boolean) => {
+				if (off === lightOff) return;
+				const first = lightOff === null;
+				lightOff = off;
+				gsap.killTweensOf(lightState);
+				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
+				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			let ticking = false;
 			let lastY = window.scrollY;
-			let lastT = performance.now();
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
-				const now = performance.now();
-				const speed = Math.abs(y - lastY) / Math.max(1, now - lastT);   // px per ms
+				const goingUp = y < lastY - 0.5;
 				lastY = y;
-				lastT = now;
 				const p = y / range;
-				const want: 0 | 1 = y >= pinStart || p > FIRE_AT ? 1 : p < BACK_AT ? 0 : target ?? (p > (FIRE_AT + BACK_AT) / 2 ? 1 : 0);
-				if (target === null) {
-					// First look (a reload part-way down, or back from another page): no animation, just the state.
-					target = want;
-					exit.v = want;
-				} else go(want, speed > 2);
-				render();
+				// The light goes first: it is the source of everything on screen.
+				// It goes out (and comes back) on the clock — one slow fade of the
+				// same length however fast you scroll — never scrubbed by the scroll.
+				// Brightness, not opacity (the intro owns the canvas's opacity).
+				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
+				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
+				if (rays) {
+					if (lightOff === null) setLight(p > 0.02);
+					else if (p <= 0.02) setLight(false);
+					else if (goingUp && p <= 0.30) setLight(false);
+					else if (!goingUp && p > 0.02) setLight(true);
+				}
+				// Three beats, one after the other: the light goes out first (0–0.35)
+				// while the type is still sharp; only then does the rest go soft
+				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
+				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.30) / 0.40));
+				const a = smooth(clamp01((p - 0.55) / 0.40));
+				const live = y < pinStart + window.innerHeight;
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 9).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+				veil.style.opacity = a.toFixed(3);
+				// The manifesto's line comes up slowly once its stage is pinned
+				// (about 0.4 of a screen), before the words start to focus.
+				const vh = window.innerHeight;
+				// Touch: it starts before the exit is over (overlapping the last of the
+				// blur and the dark), so there is no empty black beat in between.
+				const lead = 0.15 * vh;
+				const span = 0.45 * vh;
+				// Before its own pin the stage would ride up from the bottom of the
+				// screen: hold it on the spot instead, so it only ever comes out of
+				// the dark, never scrolls in.
+				stage.style.transform = y < pinStart ? `translate3d(0, ${(y - pinStart).toFixed(1)}px, 0)` : '';
+				stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
 			};
-			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// Touch: scroll stays free (a fast fling still passes straight through), but if the finger is lifted and
+			// the scroll comes to rest part-way through the exit, the exit finishes (or winds back) by itself, so
+			// the screen is never left half-blurred or half-dark.
+			let settleT = 0;
+			let fingerDown = false;
+			let dir = 1;
+			const settle = () => {
+				if (fingerDown) return;
+				const y = window.scrollY;
+				const p = y / range;
+				if (p < 0.03 || y >= pinStart) return;
+				const lenis = (window as any).__lenis;
+				if (!lenis?.scrollTo) return;
+				const forward = dir > 0 ? p > 0.08 : p > 0.9;
+				lenis.scrollTo(forward ? pinStart + 0.1 * window.innerHeight : 0, { duration: 1.0, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+			};
+			const queueSettle = () => { window.clearTimeout(settleT); settleT = window.setTimeout(settle, 140); };
+			const onDown = () => { fingerDown = true; window.clearTimeout(settleT); };
+			const onUp = () => { fingerDown = false; queueSettle(); };
+			{
+				window.addEventListener('touchstart', onDown, { passive: true });
+				window.addEventListener('touchend', onUp, { passive: true });
+				window.addEventListener('touchcancel', onUp, { passive: true });
+			}
+			const onScroll = () => { dir = window.scrollY >= lastScrollY ? 1 : -1; lastScrollY = window.scrollY; queueSettle(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			let lastScrollY = window.scrollY;
 			const onResize = () => { measure(); onScroll(); };
 			measure();
 			update();
@@ -182,11 +179,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
-				tween?.kill();
+				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
-				stage.style.position = stage.style.top = stage.style.left = '';
-				hero.style.position = hero.style.top = hero.style.left = hero.style.width = '';
+					stage.style.transform = '';
 				window.clearTimeout(late);
+				window.clearTimeout(settleT);
+				window.removeEventListener('touchstart', onDown);
+				window.removeEventListener('touchend', onUp);
+				window.removeEventListener('touchcancel', onUp);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);
 				_heroExitOff = null;
