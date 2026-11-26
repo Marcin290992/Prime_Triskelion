@@ -502,7 +502,11 @@ const SCREENS = projects.length + HOLD;
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
 		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
-		const DARK = 0.42;
+		// Touch: almost no dark, and the title takes longer to go out (TITLE_SPAN) than the dark lasts, so the first picture's
+		// light is already coming in while the title is still blurring away: an overlap, not a gap.
+		const touchDark = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const DARK = touchDark ? 0.06 : 0.42;
+		const TITLE_SPAN = touchDark ? 0.4 : DARK * 0.6;   // the title is gone after this much scroll (in steps)
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
@@ -519,21 +523,31 @@ const SCREENS = projects.length + HOLD;
 		let activeText = -1;
 
 		const noIntroBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
+		// it is one soft motion either way and never in two stages.
+		// Touch: it starts BEFORE the view pins (while the options are still blurring out above it), held on the spot
+		// against the stage that is still rising, so it only comes out of the dark and no black stretch is left between.
+		const updateIntro = () => {
+			const vh = window.innerHeight;
+			const y = window.scrollY;
+			const pinStart = wrap.getBoundingClientRect().top + y;
+			const from = noIntroBlur ? -0.4 : 0.15;
+			const span = noIntroBlur ? 0.5 : 0.45;
+			const tin = smooth((y - pinStart - from * vh) / (span * vh));
+			const tout = 1 - smooth(uPos / TITLE_SPAN);
+			const t = Math.min(tin, tout);
+			intro.style.opacity = t.toFixed(3);
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * (noIntroBlur ? 9 : 14)).toFixed(1)}px)`;
+			const hold = noIntroBlur && y < pinStart ? y - pinStart : 0;
+			const rise = tin >= 0.999 ? 0 : (1 - tin) * 14;
+			intro.style.transform = hold || rise ? `translateY(${(hold + rise).toFixed(1)}px)` : '';
+			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
+		};
 		const render = () => {
 			// The light and everything that follows it (picture, name, controls) share one position.
 			const bpos = pos;
 			beam?.setPos(bpos);
-			// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
-			// it is one soft motion either way and never in two stages.
-			const vh = window.innerHeight;
-			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
-			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
-			const tout = 1 - smooth(uPos / (DARK * 0.6));
-			const t = Math.min(tin, tout);
-			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * (noIntroBlur ? 9 : 14)).toFixed(1)}px)`;
-			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
-			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
+			updateIntro();
 			let nowText = -1;
 			// The name of the picture the light is going TO comes in the moment the beam starts (and
 			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one
@@ -619,7 +633,8 @@ const SCREENS = projects.length + HOLD;
 			if (y < s + TITLE_A * vh) want = false;
 			else if (y >= s + TITLE_B * vh) want = true;
 			else if (moved) want = down;
-			intro.style.visibility = y < s ? 'hidden' : '';
+			intro.style.visibility = y < s - (touchy ? 0.45 * vh : 0) ? 'hidden' : '';
+			if (touchy && y < s + vh) updateIntro();   // before the pin, ScrollTrigger's onUpdate is not running
 		};
 		let titleRaf = 0;
 		const onTitleScroll = () => { if (titleRaf) return; titleRaf = requestAnimationFrame(() => { titleRaf = 0; titleTick(); }); };

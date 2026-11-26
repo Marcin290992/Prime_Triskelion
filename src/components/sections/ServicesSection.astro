@@ -43,6 +43,12 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 		padding-top: clamp(1.5rem, 5vh, 3.5rem);
 		padding-bottom: var(--section-space-bottom);
 	}
+	/* Touch: the manifesto's line goes out over a shorter stretch of scroll (about the last third of a screen), so
+	   the services are pulled further up: the first name is already coming up from below while the line is still
+	   going into blur, with no empty dark between the two. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#services { margin-top: calc(var(--app-stable-vh, 1svh) * -33); }
+	}
 
 	/* ── The list: big names, centred like a menu of options (no numbers, no rules) ─────── */
 	.svc__body {

@@ -137,7 +137,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// The manifesto's line comes up slowly once its stage is pinned
 				// (about 0.4 of a screen), before the words start to focus.
 				const vh = window.innerHeight;
-				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
+				// Touch: it starts before the exit is over (overlapping the last of the
+				// blur and the dark), so there is no empty black beat in between.
+				const lead = touchy ? 0.35 * vh : 0;
+				const span = touchy ? 0.45 * vh : 0.4 * vh;
+				// Before its own pin the stage would ride up from the bottom of the
+				// screen: hold it on the spot instead, so it only ever comes out of
+				// the dark, never scrolls in.
+				stage.style.transform = y < pinStart ? `translate3d(0, ${(y - pinStart).toFixed(1)}px, 0)` : '';
+				stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
 			};
 			// Touch: scroll stays free (a fast fling still passes straight through), but if the finger is lifted and
 			// the scroll comes to rest part-way through the exit, the exit finishes (or winds back) by itself, so
@@ -153,7 +161,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const lenis = (window as any).__lenis;
 				if (!lenis?.scrollTo) return;
 				const forward = dir > 0 ? p > 0.08 : p > 0.9;
-				lenis.scrollTo(forward ? pinStart + 0.4 * window.innerHeight : 0, { duration: 1.0, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+				lenis.scrollTo(forward ? pinStart + 0.1 * window.innerHeight : 0, { duration: 1.0, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
 			};
 			const queueSettle = () => { if (!touchy) return; window.clearTimeout(settleT); settleT = window.setTimeout(settle, 140); };
 			const onDown = () => { fingerDown = true; window.clearTimeout(settleT); };
@@ -174,6 +182,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			_heroExitOff = () => {
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
+					stage.style.transform = '';
 				window.clearTimeout(late);
 				window.clearTimeout(settleT);
 				window.removeEventListener('touchstart', onDown);
