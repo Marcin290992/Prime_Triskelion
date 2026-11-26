@@ -16,7 +16,7 @@ let n = 0;
 const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
-<section id="manifesto" class="relative" style="height:290vh;height:290lvh;height:calc(var(--app-stable-vh) * 290);z-index:10">
+<section id="manifesto" class="relative" style="height:200vh;height:200lvh;height:calc(var(--app-stable-vh) * 200);z-index:10">
 	<div class="sticky top-0 h-lvh flex flex-col items-start justify-center px-8 sm:px-16 md:px-24 desk:px-32" style="height:calc(var(--app-stable-vh) * 100)">
 		<h2
 			class="font-bold leading-[1.15] tracking-[-0.03em] m-0"
@@ -69,21 +69,21 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		_manifestoST = null;
 		gsap.registerPlugin(ScrollTrigger);
 		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
-		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-		gsap.set(words, { filter: touchy ? 'blur(3px)' : 'blur(8px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
+		const touchy = true; // same short pacing on every device
+		gsap.set(words, { filter: 'blur(5.5px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
 
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
-		tl.to({}, { duration: touchy ? 0.25 : 1.0 });
-		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: touchy ? 0.04 : 0.06, ease: 'none' });
+		tl.to({}, { duration: 0.05 });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, duration: 0.4, stagger: 0.02, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the
 		// sentence take the red, one after another.
 		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
 		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
-		const HOLD = touchy ? 1.0 : 1.5;
+		const HOLD = 0.8;
 		if (heading) {
 			gsap.set(heading, { transformOrigin: '0% 50%' });
 			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
@@ -92,13 +92,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		if (heading) tl.to(heading, { filter: touchy ? 'blur(3px)' : 'blur(7px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		if (heading) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
 		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
 			trigger: section,
-			start: 'top top',
+			start: () => 'top top+=' + Math.round(window.innerHeight * 0.2),   // the words start to focus while the line is still coming up out of the dark
 			end: 'bottom bottom',
 			scrub: true,
 		});

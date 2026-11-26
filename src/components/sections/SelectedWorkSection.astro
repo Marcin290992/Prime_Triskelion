@@ -250,7 +250,7 @@ const SCREENS = projects.length + HOLD;
 		opacity: 0;
 		visibility: hidden;
 		transform: translateY(14px);
-		filter: blur(14px);
+		filter: blur(5.5px);
 		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
 	}
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
@@ -504,7 +504,7 @@ const SCREENS = projects.length + HOLD;
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
 		// Touch: almost no dark, and the title takes longer to go out (TITLE_SPAN) than the dark lasts, so the first picture's
 		// light is already coming in while the title is still blurring away: an overlap, not a gap.
-		const touchDark = true;   // every device: desktop, tablet and phone
+		const touchDark = true;
 		const DARK = touchDark ? 0.06 : 0.42;
 		const TITLE_SPAN = touchDark ? 0.4 : DARK * 0.6;   // the title is gone after this much scroll (in steps)
 
@@ -522,7 +522,7 @@ const SCREENS = projects.length + HOLD;
 		};
 		let activeText = -1;
 
-		const noIntroBlur = true;   // every device
+		const noIntroBlur = true;
 		// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
 		// it is one soft motion either way and never in two stages.
 		// Touch: it starts BEFORE the view pins (while the options are still blurring out above it), held on the spot
@@ -546,7 +546,7 @@ const SCREENS = projects.length + HOLD;
 			const tout = 1 - smooth(uPos / TITLE_SPAN);
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * (noIntroBlur ? 9 : 14)).toFixed(1)}px)`;
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 5.5).toFixed(1)}px)`;
 			const hold = noIntroBlur && y < pinStart ? y - pinStart : 0;
 			const rise = tin >= 0.999 ? 0 : (1 - tin) * 14;
 			intro.style.transform = hold || rise ? `translateY(${(hold + rise).toFixed(1)}px)` : '';
@@ -595,12 +595,16 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		// The scroll no longer drags the pictures (see "The clock" below): a step only needs a short push to fire, so the
-		// scroll length of a step is short, and the same on every device.
-		const LEAD = 0.35;
-		const PER = 0.17;
+		const LEAD = 0.12;
+		const PER = coarse ? 0.36 : 0.32;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
+		const setFrom = (progress: number) => {
+			const u = (progress * length - LEAD) / PER;
+			uPos = Math.max(0, u);
+			pos = clamp(u - DARK, 0, n);
+			render();
+		};
 
 		// The edge blur bands stay on over the pictures; while the view is pinned
 		// they run light and, on phones, off (the original behaviour of this
@@ -611,8 +615,8 @@ const SCREENS = projects.length + HOLD;
 		};
 		const stPin = ScrollTrigger.create({
 			trigger: wrap, start: 'top top', end: 'bottom bottom', invalidateOnRefresh: true,
-			onUpdate: sync,
-			onRefresh: sync,
+			onUpdate: (s) => { setFrom(s.progress); sync(s); },
+			onRefresh: (s) => { setFrom(s.progress); sync(s); },
 			onToggle: sync,
 		});
 		// The title's in / out, decided from the scroll position and its direction on EVERY scroll event:
@@ -622,7 +626,7 @@ const SCREENS = projects.length + HOLD;
 		//  - between the two: in while the page goes DOWN, out as soon as it goes UP, so on the way back it blurs out
 		//    early, while the view is still pinned for a good stretch, instead of sliding down the screen while it fades.
 		// Above the pin start the stage is moving, so the title is hidden at once (no fade, nothing to slide).
-		const touchy = true;   // every device
+		const touchy = true;
 		const TITLE_A = touchy ? 0.18 : 0.11;
 		const TITLE_B = 0.6;
 		let titleOn = false;
@@ -648,132 +652,99 @@ const SCREENS = projects.length + HOLD;
 		titleTick();
 		render();
 
-		// ── The clock (the home hero's way) ─────────────────────────────────────────────────────────────
-		// The scroll does not drag the pictures along. It only CHOOSES the stop the view should be at: the title, picture 1..n,
-		// (after the last one the page just scrolls on). One animation on the clock, `m`, goes there by itself, whatever the scroll does:
-		//   m = 0                the title
-		//   m = DARK + k         picture k (the light has landed on it)
-		// A first push past a short threshold fires the move to the next stop (and back below a lower one winds it back);
-		// a fast scroll only plays it faster (x2.5), and since `m` always runs through the stops one after another, a fling
-		// over several of them shows every picture in turn: nothing is skipped. A scroll the other way turns it round.
+		// ── The dock-in ────────────────────────────────────────────────────────
+		// The idea of the Forge stock page (its Listing.jsx): the light simply follows
+		// the page's own (Lenis-smoothed) scroll position, and when the scroll has been
+		// quiet for a moment the page glides on to a picture. Lenis stays in charge
+		// everywhere, wheel and finger alike. Here:
+		//  - a short quiet (IDLE) after the last move, and not while a finger is down;
+		//  - it goes on to the next picture once the scroll got DEPART of the way there
+		//    in the direction it was going, else it falls back to the one it left;
+		//  - the glide takes 0.9 s plus up to 0.6 s for a longer way, on a slow ease in
+		//    and out (Forge's is a quick 0.45 s: this is the slower, softer version);
+		//  - before the first picture and after the last the page scrolls freely.
 		const unit = () => (stPin.end - stPin.start) / length;   // one screen of scroll
-		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();   // where the arrows take the page
-		const EXIT_AT = n + DARK;        // m of the last picture
-		const M_MAX = EXIT_AT;           // the last stop: after it the page scrolls on as ever
-		const STEP_DUR = 1.1;            // seconds for one step of m
-		const FAST = 2.5;                // a fling plays it this much faster
-		const FIRE = 0.12 / PER;         // steps of scroll past a stop's rest: the next one goes (12% of a screen)
-		const BACK = 0.06 / PER;         // back below this it winds back
-		const stepM = (k: number) => (k <= 0 ? 0 : k > n ? M_MAX : DARK + k);
+		// where the page rests on picture k (0 = the title); the dark stretch sits between the title and the first picture
+		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();
+		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
+		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
+		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
+		let lenis: any = null;
+		let snapOff = () => {};
+		let goTo = (k: number, _duration: number) => {
+			window.scrollTo({ top: stop(k), behavior: reduced() ? 'auto' : 'smooth' });
+		};
+		const setupSnap = () => {
+			const IDLE = coarse ? 240 : 180;       // ms of quiet before it decides (momentum has to die away first)
+			const DEPART = coarse ? 0.35 : 0.28;     // share of the gap to have travelled before it goes on
+			let snapping = false;
+			let timer = 0, fail = 0;
+			// the picture the page stood on when this gesture began: one gesture moves at most one
+			// picture on from it (a hard flick, with the finger's momentum, would skip several)
+			let anchor = -1;
+			const nearest = (y: number) => {
+				let b = 0;
+				for (let k = 1; k <= n; k++) if (Math.abs(stop(k) - y) < Math.abs(stop(b) - y)) b = k;
+				return b;
+			};
+			const move = (k: number, duration: number) => {
+				snapping = true;
+				clearTimeout(fail);
+				fail = window.setTimeout(() => { snapping = false; }, 4000);   // never stay stuck
+				lenis.scrollTo(stop(k), {
+					duration,
+					easing: settle,
+					force: true,
+					onComplete: () => { clearTimeout(fail); snapping = false; },
+				});
+			};
+			goTo = move;
+			const decide = () => {
+				timer = 0;
+				if (snapping || reduced() || root.classList.contains('pt-restoring')) return;
+				if (lenis.isStopped) { anchor = -1; return; }   // the menu has the page: this gesture is over
+				if (lenis.isTouching) { timer = window.setTimeout(decide, 80); return; }
+				const y = lenis.scroll;
+				if (y < stop(0) - 0.6 * unit() || y > stop(n) + 0.45 * unit()) return;   // free scroll outside
+				let lo = 0;
+				for (let i = 1; i < n; i++) if (y >= stop(i)) lo = i;   // the step the page is in (steps are not all the same length)
+				const f = clamp((y - stop(lo)) / (stop(lo + 1) - stop(lo)), 0, 1);
+				const forward = lenis.direction >= 0;
+				let k = f < 0.002 ? lo : f > 0.998 ? lo + 1 : forward ? (f >= DEPART ? lo + 1 : lo) : (f <= 1 - DEPART ? lo : lo + 1);
+				if (anchor >= 0) k = clamp(k, Math.max(anchor - 1, 0), Math.min(anchor + 1, n));
+				anchor = -1;
+				const dist = Math.abs(stop(k) - y);
+				if (dist < 1) return;
+				move(k, (coarse ? 1.7 : 1.5) + Math.min(0.8, dist / window.innerHeight));   // a long, soft glide
+			};
+			const onScroll = () => {
+				if (snapping) return;
+				if (anchor < 0) anchor = nearest(lenis.scroll);
+				window.clearTimeout(timer);
+				timer = window.setTimeout(decide, IDLE);
+			};
+			lenis.on('scroll', onScroll);
 
-		const mObj = { v: 0 };
-		let mTarget: number | null = null;
-		let mTween: gsap.core.Tween | null = null;
-		const applyM = () => {
-			const m = mObj.v;
-			uPos = Math.max(0, m);
-			pos = clamp(m - DARK, 0, n);
-			render();
-			// A fast scroll runs past the end of the pin before the clock is done: the stage stays on the spot (fixed, not a
-			// transform worked out per frame, which would trail the scroll) until the light has landed on the last picture, then it may go.
-			const y = window.scrollY;
-			const held = m < M_MAX - 0.001 && y > stPin.end && y < stPin.end + window.innerHeight;
-			stage.style.position = held ? 'fixed' : '';
-			stage.style.top = held ? '0' : '';
-			stage.style.left = held ? '0' : '';
-			stage.style.width = held ? '100%' : '';
+			snapOff = () => {
+				lenis.off('scroll', onScroll);
+				window.clearTimeout(timer);
+				window.clearTimeout(fail);
+			};
 		};
-		// the stop the scroll position asks for (0 = title .. n = last picture), with a hysteresis
-		const stopFor = (y: number) => {
-			const u = ((y - stPin.start) / unit() - LEAD) / PER;   // the scroll in steps, 0 at the title's rest
-			let k = 0;
-			for (let j = 1; j <= n; j++) {
-				const from = j === 1 ? 0 : DARK + (j - 1);   // the rest of the stop before
-				const wound = mTarget !== null && mTarget >= stepM(j) - 1e-6;   // already on (or past) j: it winds back later
-				if (u >= from + (wound ? BACK : FIRE)) k = j; else break;
-			}
-			return k;
+		let waitRaf = 0;
+		let tries = 0;
+		const attach = () => {
+			lenis = (window as any).__lenis;
+			if (lenis) { setupSnap(); return; }
+			if (++tries < 180) waitRaf = requestAnimationFrame(attach);   // ~3 s, then plain scroll
 		};
-		// One gesture moves ONE step at most. A flick has momentum: the page keeps travelling for a few hundred pixels after the
-		// finger (or the wheel) has stopped, far more than a step's stretch of scroll, and read straight from the position
-		// that would be several pictures for one touch. So a gesture (a run of scroll with no quiet gap of GAP ms, nor a finger
-		// down) can only choose between the stop it began on and the one on either side of it; when it ends, if the page has
-		// run further than that, it is brought back to the stop that was chosen.
-		const GAP = 200;
-		const MOVING = 2;   // px a frame: below this the page is only settling
-		let kTarget = 0;
-		let gBase = -1;
-		let gTimer = 0;
-		let resyncing = false;
-		let fingerDown = false;
-		const restY = (k: number) => stPin.start + (LEAD + PER * stepM(k)) * unit();
-		const endGesture = () => {
-			gTimer = 0;
-			if (fingerDown) { gTimer = window.setTimeout(endGesture, 120); return; }
-			gBase = -1;
-			if (stopFor(window.scrollY) === kTarget) return;
-			resyncing = true;
-			const done = () => { resyncing = false; };
-			const lenis = (window as any).__lenis;
-			if (lenis?.scrollTo && !reduced()) { lenis.scrollTo(restY(kTarget), { duration: 0.5, force: true, onComplete: done }); window.setTimeout(done, 900); }
-			else { window.scrollTo(0, restY(kTarget)); done(); }
-		};
-		const onTouchDown = () => { fingerDown = true; };
-		const onTouchUp = () => { fingerDown = false; };
-		window.addEventListener('touchstart', onTouchDown, { passive: true });
-		window.addEventListener('touchend', onTouchUp, { passive: true });
-		window.addEventListener('touchcancel', onTouchUp, { passive: true });
-		let lastY = window.scrollY;
-		let lastT = performance.now();
-		const tick = () => {
-			const y = window.scrollY;
-			const now = performance.now();
-			const dy = Math.abs(y - lastY);
-			const speed = dy / Math.max(1, now - lastT);   // px per ms
-			lastY = y;
-			lastT = now;
-			if (resyncing) { applyM(); return; }   // the page is being brought back to its stop: it chooses nothing meanwhile
-			let k = stopFor(y);
-			if (mTarget !== null) {
-				if (gBase < 0) gBase = kTarget;
-				// only real movement keeps the gesture going: the smoothed scroll creeps on by a pixel or less a frame for a
-				// second or more after the push, and that tail must not hold the gesture open
-				if (dy >= MOVING || !gTimer) { window.clearTimeout(gTimer); gTimer = window.setTimeout(endGesture, GAP); }
-				k = clamp(k, Math.max(0, gBase - 1), Math.min(n, gBase + 1));
-			}
-			kTarget = k;
-			const to = stepM(k);
-			if (mTarget === null) { mTarget = to; mObj.v = to; applyM(); return; }   // first look: the state, no animation
-			if (Math.abs(to - mTarget) > 1e-6) {
-				mTarget = to;
-				mTween?.kill();
-				const left = Math.abs(to - mObj.v);
-				if (left < 1e-3) { mObj.v = to; mTween = null; }
-				else {
-					mTween = gsap.to(mObj, { v: to, duration: STEP_DUR * left, ease: 'sine.inOut', onUpdate: applyM, onComplete: () => { mTween = null; } });
-					if (speed > 2) mTween.timeScale(FAST);
-				}
-			} else if (speed > 2 && mTween && mTween.isActive()) mTween.timeScale(FAST);
-			applyM();
-		};
-		let tickRaf = 0;
-		const onClockScroll = () => { if (!tickRaf) tickRaf = requestAnimationFrame(() => { tickRaf = 0; tick(); }); };
-		window.addEventListener('scroll', onClockScroll, { passive: true });
-		window.addEventListener('resize', onClockScroll, { passive: true });
-		ScrollTrigger.addEventListener('refresh', tick);
-		tick();
+		if (!reduced()) attach();
 
-		// previous / next buttons and the arrow keys (only while the view is pinned): they scroll the page to the stop, and
-		// the scroll then asks the clock for it like any other
-		const goTo = (k: number, duration: number) => {
-			const lenis = (window as any).__lenis;
-			if (lenis?.scrollTo && !reduced()) lenis.scrollTo(stop(k), { duration, force: true });
-			else window.scrollTo({ top: stop(k), behavior: reduced() ? 'auto' : 'smooth' });
-		};
+		// previous / next buttons and the arrow keys (only while the view is pinned)
 		const step = (dir: number) => {
 			const k = Math.round(pos) + dir;
 			if (k < 1 || k > n) return;
-			goTo(k, 1.2);
+			goTo(k, 1.6);
 		};
 		const onKey = (e: KeyboardEvent) => {
 			if (!stPin.isActive || pos < 0.5) return;
@@ -787,16 +758,8 @@ const SCREENS = projects.length + HOLD;
 
 		cleanup = () => {
 			window.removeEventListener('keydown', onKey);
-			window.removeEventListener('scroll', onClockScroll);
-			window.removeEventListener('resize', onClockScroll);
-			ScrollTrigger.removeEventListener('refresh', tick);
-			cancelAnimationFrame(tickRaf);
-			window.clearTimeout(gTimer);
-			window.removeEventListener('touchstart', onTouchDown);
-			window.removeEventListener('touchend', onTouchUp);
-			window.removeEventListener('touchcancel', onTouchUp);
-			mTween?.kill();
-			stage.style.position = stage.style.top = stage.style.left = stage.style.width = '';
+			cancelAnimationFrame(waitRaf);
+			snapOff();
 			window.removeEventListener('scroll', onTitleScroll);
 			ScrollTrigger.removeEventListener('refresh', titleTick);
 			cancelAnimationFrame(titleRaf);
