@@ -70,7 +70,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		gsap.registerPlugin(ScrollTrigger);
 		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
 		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-		gsap.set(words, { filter: touchy ? 'blur(0px)' : 'blur(8px)', opacity: touchy ? 0.2 : 0.15, y: 0 });
+		gsap.set(words, { filter: touchy ? 'blur(3px)' : 'blur(8px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
 
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
 		// see index.astro) before the words start to focus.

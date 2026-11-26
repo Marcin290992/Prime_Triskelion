@@ -527,7 +527,7 @@ const SCREENS = projects.length + HOLD;
 			// it is one soft motion either way and never in two stages.
 			const vh = window.innerHeight;
 			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
-			const tin = noIntroBlur ? 1 : smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
+			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
