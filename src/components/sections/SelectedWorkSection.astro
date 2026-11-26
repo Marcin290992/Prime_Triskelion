@@ -531,7 +531,7 @@ const SCREENS = projects.length + HOLD;
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 || noIntroBlur ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * (noIntroBlur ? 9 : 14)).toFixed(1)}px)`;
 			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
@@ -572,8 +572,8 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		const LEAD = coarse ? 1.1 : 0.72;
-		const PER = coarse ? 1.25 : 0.72;
+		const LEAD = coarse ? 0.6 : 0.72;
+		const PER = coarse ? 0.85 : 0.72;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
 		const setFrom = (progress: number) => {

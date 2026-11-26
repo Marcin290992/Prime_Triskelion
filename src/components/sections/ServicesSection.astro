@@ -141,6 +141,7 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 		//   below 95%: gone; 95% -> 70%: out of blur, rising;  70% -> 35%: sharp;  35% -> 10%: into blur;  above 10%: gone.
 		// Both ends are the same kind of ramp, so the way back is the exact reverse, name by name. Always set (never
 		// cleared), so a name low on the screen is invisible from the first frame the script runs.
+		const touchBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		const scrubEls = Array.from(section.querySelectorAll<HTMLElement>('.svc__row, .svc__btn'));
 		const IN_FROM = 0.95, IN_TO = 0.70, OUT_FROM = 0.35, OUT_TO = 0.10;
 		const place = () => {
@@ -153,7 +154,7 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 				const p = Math.min(pin, pout);
 				el.dataset.scrub = '1';
 				el.style.opacity = p.toFixed(3);
-				el.style.filter = p > 0.995 || window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'none' : `blur(${((1 - p) * 9).toFixed(1)}px)`;
+				el.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * (touchBlur ? 6 : 9)).toFixed(1)}px)`;
 				const lift = (1 - pin) * 12 - (1 - pout) * 8; // rising in from below, lifting out at the top
 				el.style.transform = Math.abs(lift) < 0.05 ? 'none' : `translateY(${lift.toFixed(1)}px)`;
 				el.style.pointerEvents = p < 0.3 ? 'none' : '';
