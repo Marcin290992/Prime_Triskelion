@@ -53,7 +53,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 <script>
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
-	import { blurPx, isTouchLayout } from '../../utils/device';
 
 	let _manifestoST: ReturnType<typeof ScrollTrigger.create> | null = null;
 
@@ -69,61 +68,39 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		_manifestoST?.kill();
 		_manifestoST = null;
 		gsap.registerPlugin(ScrollTrigger);
-		// Touch: smaller blur (never none), the same clocked in and out as on desktop.
-		const touchy = isTouchLayout();
-		const B = blurPx(8);
-		gsap.set(words, { filter: `blur(${B}px)`, opacity: touchy ? 0.35 : 0.15, y: 0 });
-		if (heading) gsap.set(heading, { filter: 'blur(0px)', opacity: 1, scale: 1, transformOrigin: '0% 50%' });
+		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
+		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		gsap.set(words, { filter: touchy ? 'blur(3px)' : 'blur(8px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
 
-		// The scroll only FIRES three states (dark -> shown -> gone); each change plays on the clock, in and out,
-		// so the page never rests half-way in a mush of blur. The line is held while it is shown: the camera pushes
-		// in very slowly and the words that carry the sentence take the red, one after another.
-		const inTl = gsap.timeline({ paused: true });
-		inTl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: touchy ? 0.05 : 0.07, duration: 0.9, ease: 'power2.out' });
+		// Lead-in: the faint line comes up out of the dark (the stage fades in,
+		// see index.astro) before the words start to focus.
+		const tl = gsap.timeline();
+		tl.to({}, { duration: touchy ? 0.25 : 1.0 });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: touchy ? 0.04 : 0.06, ease: 'none' });
+
+		// Once the line is whole it is held, and two things happen in the hold:
+		// the camera pushes in on it very slowly, and the words that carry the
+		// sentence take the red, one after another.
 		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
 		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
-		if (heading) inTl.to(heading, { scale: 1.04, duration: 4, ease: 'none' }, 0.4);
-		if (picked.length && red) inTl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, 0.9);
+		const HOLD = touchy ? 1.0 : 1.5;
+		if (heading) {
+			gsap.set(heading, { transformOrigin: '0% 50%' });
+			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
+		}
+		if (picked.length && red) tl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, `-=${HOLD}`);
 
-		// Out: the whole line goes into blur and the dark where it stands; the services come up out of that dark on
-		// their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		const outTw = heading
-			? gsap.to(heading, { filter: `blur(${blurPx(7)}px)`, opacity: 0, duration: touchy ? 0.9 : 1.2, ease: 'sine.inOut', paused: true })
-			: gsap.timeline({ paused: true });
-
-		// Where on the pin each change fires (shares of the pin; same layout as before: lead-in, line, exit).
-		const P_IN = touchy ? 0.1 : 0.2, P_OUT = touchy ? 0.8 : 0.78;
-		type St = 'dark' | 'shown' | 'gone';
-		let st: St | null = null;
-		const go = (next: St, instant: boolean) => {
-			if (next === st) return;
-			const jump = (st === 'dark' && next === 'gone') || (st === 'gone' && next === 'dark');
-			const prev = st;
-			st = next;
-			const fast = jump ? 2.4 : 1;
-			if (next === 'dark') {
-				outTw.pause(0);
-				inTl.timeScale(fast * 1.4);
-				instant ? inTl.pause(0) : inTl.reverse();
-			} else if (next === 'shown') {
-				outTw.timeScale(1.4);
-				instant ? outTw.pause(0) : outTw.reverse();
-				inTl.timeScale(1);
-				instant ? inTl.progress(1) : inTl.play();
-			} else {
-				if (prev === 'dark' || prev === null) inTl.progress(1);
-				outTw.timeScale(fast);
-				instant ? outTw.progress(1) : outTw.play();
-			}
-		};
-		const stateAt = (p: number): St => (p < P_IN ? 'dark' : p < P_OUT ? 'shown' : 'gone');
+		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
+		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
+		if (heading) tl.to(heading, { filter: touchy ? 'blur(3px)' : 'blur(7px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
+			animation: tl,
 			trigger: section,
 			start: 'top top',
 			end: 'bottom bottom',
-			onUpdate: (self) => go(stateAt(self.progress), false),
-			onRefresh: (self) => { if (st === null) go(stateAt(self.progress), true); },
+			scrub: true,
 		});
 	}
 
