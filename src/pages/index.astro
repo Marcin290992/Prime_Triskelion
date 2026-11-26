@@ -105,7 +105,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			// The exit's two layers, tweened on the clock: blur (backdrop-filter) first, the dark sinking in after it.
-			const ex = { bk: 0, a: 0 }; // bk: the blur, on the clock; a: the dark, set from the scroll (the user's)
+			const ex = { bk: 0, a: 0 };
 			const BLUR_MAX = blurPx(22);
 			const ENTER_ON = 0.12, ENTER_OFF = 0.06;
 			let exitOn = false;
@@ -119,7 +119,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (!exitOn && rays && exitTl.progress() < 0.5) setLight(false);
 			};
 			const exitTl = gsap.timeline({ paused: true, onUpdate: applyExit });
-			exitTl.to(ex, { bk: 1, duration: 0.9, ease: 'sine.inOut' }, 0);
+			exitTl.to(ex, { bk: 1, duration: 0.75, ease: 'sine.inOut' }, 0).to(ex, { a: 1, duration: 0.7, ease: 'sine.inOut' }, 0.5);
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
@@ -139,7 +139,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					else if (p > 0.02 && !goingUp) setLight(true);
 					else if (p <= 0.02) setLight(false);
 				}
-				// The blur layer is played on the clock, never scrubbed: the scroll only FIRES
+				// The going-out (blur layer, then the dark) is played on the clock, never scrubbed: the scroll only FIRES
 				// it once it has moved off the top (and fires the way back once it is home again). The same ~1.2 s however
 				// fast you scroll, so the screen is never left half-blurred. A fling that is already past half of the
 				// pinned screen plays it 2.5x faster, so the manifesto never waits on it for long.
@@ -149,14 +149,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					exitTl.timeScale(want && p > 0.5 ? 2.5 : 1);
 					want ? exitTl.play() : exitTl.reverse();
 				} else if (exitOn && p > 0.5 && exitTl.timeScale() < 2) exitTl.timeScale(2.5);
-				// The dark stays under the finger: it follows the scroll (0.55-0.95 of the pin), so the user decides how
-				// fast it comes down. Only the blur is on the clock: it never stops half-way, it flows on to the end.
-				ex.a = smooth(clamp01((p - 0.55) / 0.40));
 				applyExit();
 				// The manifesto's line comes up slowly once its stage is pinned (about 0.4 of a screen), before the
-				// words start to focus.
+				// words start to focus, and only once the exit's black is whole (no hero showing through).
 				const vh = window.innerHeight;
-				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
+				const gate = smooth(clamp01((ex.a - 0.85) / 0.15));
+				stage.style.opacity = (smooth(clamp01((y - pinStart) / (0.4 * vh))) * gate).toFixed(3);
 			};
 			// Touch: scroll stays free (a fast fling still passes straight through), but if the finger is lifted and
 			// the scroll comes to rest part-way through the exit, the exit finishes (or winds back) by itself, so
