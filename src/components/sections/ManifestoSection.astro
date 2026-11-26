@@ -68,20 +68,22 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		_manifestoST?.kill();
 		_manifestoST = null;
 		gsap.registerPlugin(ScrollTrigger);
-		gsap.set(words, { filter: 'blur(8px)', opacity: 0.15, y: 0 });
+		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
+		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		gsap.set(words, { filter: touchy ? 'blur(3px)' : 'blur(8px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
 
 		// Lead-in: the faint line comes up out of the dark (the stage fades in,
 		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
-		tl.to({}, { duration: 1.0 });
-		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: 0.06, ease: 'none' });
+		tl.to({}, { duration: touchy ? 0.25 : 1.0 });
+		tl.to(words, { filter: 'blur(0px)', opacity: 1, stagger: touchy ? 0.04 : 0.06, ease: 'none' });
 
 		// Once the line is whole it is held, and two things happen in the hold:
 		// the camera pushes in on it very slowly, and the words that carry the
 		// sentence take the red, one after another.
 		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
 		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
-		const HOLD = 1.5;
+		const HOLD = touchy ? 1.0 : 1.5;
 		if (heading) {
 			gsap.set(heading, { transformOrigin: '0% 50%' });
 			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
@@ -90,8 +92,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		if (heading) tl.to(heading, { filter: 'blur(7px)', opacity: 0, duration: 1.6, ease: 'sine.inOut' }, tl.duration());
-		tl.to({}, { duration: 0.15 }); // a breath of black
+		if (heading) tl.to(heading, { filter: touchy ? 'blur(3px)' : 'blur(7px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
