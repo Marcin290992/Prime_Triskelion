@@ -123,6 +123,8 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 
 <script>
 	import { onReady } from '../../utils/onReady';
+	import { clockScrollItems } from '../../utils/clockReveal';
+	import { blurPx } from '../../utils/device';
 
 	// Everything this section starts, undone on leaving the page.
 	let _svcOff: (() => void) | null = null;
@@ -137,40 +139,10 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 		// ── The ghost train ─────────────────────────────────────────────────────────────────────────
-		// By the centre of each name (and of See more) on the screen, as a share of its height:
-		//   below 95%: gone; 95% -> 70%: out of blur, rising;  70% -> 35%: sharp;  35% -> 10%: into blur;  above 10%: gone.
-		// Both ends are the same kind of ramp, so the way back is the exact reverse, name by name. Always set (never
-		// cleared), so a name low on the screen is invisible from the first frame the script runs.
+		// Each name (and See more) is sharp while its centre is between ~18% and ~82% of the screen height, in blur
+		// outside that. Scroll only fires the change; it plays on the clock, in and out (see utils/clockReveal.ts).
 		const scrubEls = Array.from(section.querySelectorAll<HTMLElement>('.svc__row, .svc__btn'));
-		const IN_FROM = 0.95, IN_TO = 0.70, OUT_FROM = 0.35, OUT_TO = 0.10;
-		const place = () => {
-			const vh = window.innerHeight;
-			scrubEls.forEach((el) => {
-				const r = el.getBoundingClientRect();
-				const c = (r.top + r.height / 2) / vh;
-				const pin = Math.min(1, Math.max(0, (IN_FROM - c) / (IN_FROM - IN_TO)));
-				const pout = Math.min(1, Math.max(0, (c - OUT_TO) / (OUT_FROM - OUT_TO)));
-				const p = Math.min(pin, pout);
-				el.dataset.scrub = '1';
-				el.style.opacity = p.toFixed(3);
-				el.style.filter = p > 0.995 || window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'none' : `blur(${((1 - p) * 9).toFixed(1)}px)`;
-				const lift = (1 - pin) * 12 - (1 - pout) * 8; // rising in from below, lifting out at the top
-				el.style.transform = Math.abs(lift) < 0.05 ? 'none' : `translateY(${lift.toFixed(1)}px)`;
-				el.style.pointerEvents = p < 0.3 ? 'none' : '';
-			});
-		};
-		if (!reduce) {
-			let ticking = false;
-			const onScrollTrain = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
-			window.addEventListener('scroll', onScrollTrain, { passive: true });
-			window.addEventListener('resize', onScrollTrain, { passive: true });
-			place();
-			offs.push(() => {
-				window.removeEventListener('scroll', onScrollTrain);
-				window.removeEventListener('resize', onScrollTrain);
-				scrubEls.forEach((el) => { delete el.dataset.scrub; ['opacity', 'filter', 'transform', 'pointer-events'].forEach((k) => el.style.removeProperty(k)); });
-			});
-		}
+		if (!reduce) offs.push(clockScrollItems(scrubEls, { inAt: 0.82, outAt: 0.18, blur: blurPx(9), rise: 14, dur: 0.8 }));
 
 		const rows = Array.from(section.querySelectorAll<HTMLElement>('.svc__row'));
 		const list = section.querySelector<HTMLElement>('.svc__list');

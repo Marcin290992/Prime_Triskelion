@@ -91,11 +91,10 @@
 	.cta-btn-wrap.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
 
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.cta-title, .cta-btn-wrap {
-			opacity: 1;
-			filter: blur(0);
-			transform: none;
-		}
+		/* Touch: same reveal, smaller blur (the script adds .visible on every device). */
+		.cta-title { filter: blur(8px); }
+		.cta-btn-wrap { filter: blur(5px); }
+		.cta-title.visible, .cta-btn-wrap.visible { filter: blur(0); }
 	}
 
 	/* Short-viewport laptops (1080p/900p with browser chrome, e.g. 15" laptops):
@@ -120,7 +119,7 @@
 		const section = document.getElementById('contact-cta');
 		if (!section) return;
 
-		if (!window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
+		{
 			gsap.registerPlugin(ScrollTrigger);
 			ScrollTrigger.create({
 				trigger: section,
