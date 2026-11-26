@@ -31,7 +31,7 @@ export const TOUCH_LENIS_OPTIONS = {
   syncTouch: true,           // Lenis steruje też dotykiem
   syncTouchLerp: 0.075,
   touchInertiaExponent: 1.7,
-  touchMultiplier: 0.5,       // was 1: more resistance on touch (half the travel per swipe)
+  touchMultiplier: 0.7,       // was 1: more resistance on touch (30% less travel per swipe)
 } as const;
 ```
 
