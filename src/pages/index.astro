@@ -121,7 +121,21 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// as the black is complete, whatever the scroll says.
 				stage.style.opacity = st.stage.toFixed(3);
 			};
-			const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply });
+			// While the exit plays forward the scroll is held (a fast fling used to carry the page straight through the
+				// manifesto before it had even appeared); it is let go when the line has floated up, and a fling that already
+				// went past the pinned screen is put back onto it (the hero is pinned there, so nothing visible moves).
+				const lenisOf = () => (window as any).__lenis as { stop: () => void; start: () => void; scrollTo: (y: number, o?: object) => void } | undefined;
+				let held = false;
+				const hold = () => {
+					const l = lenisOf();
+					if (!l || held) return;
+					held = true;
+					const y = window.scrollY;
+					if (y > range * 0.3) { lastY = range * 0.3; l.scrollTo(range * 0.3, { immediate: true, force: true }); }
+					l.stop();
+				};
+				const release = () => { if (!held) return; held = false; lenisOf()?.start(); };
+				const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply, onComplete: release });
 			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
 			tl.to(st, { blur: 1, duration: 0.7, ease: 'sine.inOut' }, 0.25);
 			tl.to(st, { black: 1, duration: 0.7, ease: 'sine.inOut' }, 0.55);
@@ -156,9 +170,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					out = p > ON;
 					tl.progress(out ? 1 : 0).pause();
 					apply();
-				} else if (!out && goingDown && p > ON) { out = true; tl.timeScale(1).play(); }
-				else if (out && goingUp && p <= BACK) { out = false; tl.timeScale(3).reverse(); }
-				else if (out && p <= 0.001) { out = false; tl.timeScale(3).reverse(); }
+				} else if (!out && goingDown && p > ON) { out = true; hold(); tl.timeScale(1).play(); }
+				else if (out && goingUp && p <= BACK) { out = false; release(); tl.timeScale(3).reverse(); }
+				else if (out && p <= 0.001) { out = false; release(); tl.timeScale(3).reverse(); }
 				else apply();
 				// Scrolled on faster than the exit plays: let it finish quickly, and take the hero itself out
 				// over the last of its pinned screen, so it is never seen scrolling away half-lit.
@@ -181,6 +195,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
+				release();
 				tl.kill();
 				gsap.killTweensOf(hero);
 				if (fading) hero.style.opacity = '1';
