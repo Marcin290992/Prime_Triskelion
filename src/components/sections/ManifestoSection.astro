@@ -92,7 +92,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		if (heading) tl.to(heading, { filter: touchy ? 'blur(3px)' : 'blur(7px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		if (heading) tl.to(heading, { filter: touchy ? 'blur(0px)' : 'blur(7px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
 		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({

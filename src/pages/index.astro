@@ -72,6 +72,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
 			let range = 1;
@@ -126,7 +127,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// while the type is still sharp; only then does the rest go soft
 				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
 				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
-				const bk = smooth(clamp01((p - 0.30) / 0.40));
+				// Touch: no blur layer at all (the light still goes out on the way down and comes back on the way up);
+				// the type just sinks into the black.
+				const bk = touchy ? 0 : smooth(clamp01((p - 0.30) / 0.40));
 				const a = smooth(clamp01((p - 0.55) / 0.40));
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
