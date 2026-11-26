@@ -34,47 +34,39 @@ const projects = await Promise.all(
       <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
     </header>
 
-    <!-- Mask reveal sections -->
+    <!-- The projects: big names up out of blur one after another, the pictures behind them melt into each other along a
+         band of light (the home page's Selected work beam). -->
     <div data-after-hero id="projects-list">
-    {projects.map((p) => (
-      <section
-        class="proj-section"
-        style={`--bg: ${p.bg}`}
-        aria-label={p.title}
-      >
-        <a class="proj-inner" href={p.slug} data-case data-case-src={p.full}>
-
-          <!-- Giant bg text -->
-          <span class="proj-bg-text" data-speed={p.speed} aria-hidden="true">
-            {p.title}
-          </span>
-
-          <!-- Project image -->
-          <div class="proj-img-wrap" data-case-media>
-            {p.img
-              ? <img src={p.img} alt={p.title} crossorigin="anonymous" />
-              : (
-                <div class="proj-img-ph"></div>
-              )
-            }
-          </div>
-
-          <!-- Bottom info bar -->
-          <div class="proj-foot">
-            <div class="proj-foot__left">
-              <span class="proj-foot__name">{p.title}</span>
-            </div>
-            <div class="proj-foot__center">
-              {p.categories.map((c) => <span class="proj-foot__tag">{c}</span>)}
-            </div>
-            <div class="proj-foot__right">
-              <span class="proj-foot__year">{p.year}</span>
-            </div>
-          </div>
-
-        </a>
+      <section class="pt-train" aria-label="Projects">
+        <div class="pt-stage" aria-hidden="true">
+          <canvas class="pt-canvas"></canvas>
+          {projects.map((p) => <img class="pt-pic" src={p.full ?? p.img} alt="" crossorigin="anonymous" loading="eager" />)}
+          <div class="pt-shade"></div>
+          <div class="pt-count"><span class="pt-count__n">01</span> / {String(projects.length).padStart(2, '0')}</div>
+        </div>
+        <ul class="pt-list">
+          {projects.map((p) => (
+            <li class="pt-row">
+              <div class="pt-link">
+                <a class="pt-name" href={p.slug}>{p.title}</a>
+                <span class="pt-meta">
+                  <span>{p.categories.join(' · ')}</span>
+                  <span class="pt-meta__dot"></span>
+                  <span>{p.year}</span>
+                </span>
+                <div class="h-hero-cta-wrap pt-cta">
+                  <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+                  <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+                  <a href={p.slug} class="h-hero-cta h-hero-cta--fixed">
+                    <span class="hud-spin-border"></span>
+                    <span class="h-hero-cta__text">View project</span>
+                  </a>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
-    ))}
     </div>
 
   </main>
@@ -395,6 +387,83 @@ const projects = await Promise.all(
     }
 
   }
+
+  /* ══ THE LIST: names up out of blur, pictures along a band of light ══ */
+  .pt-train { position: relative; background: #000; }
+  .pt-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100dvh;
+    margin-bottom: -100vh;
+    margin-bottom: -100dvh;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .pt-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pt-stage--fallback .pt-canvas { display: none; }
+  .pt-pic {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    visibility: hidden;
+    opacity: 0;
+  }
+  .pt-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.6) 100%); }
+  .pt-count {
+    position: absolute;
+    left: var(--site-gutter);
+    bottom: clamp(1.5rem, 5vh, 3rem);
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
+    letter-spacing: 0.38em;
+    color: rgb(var(--c-cream) / 0.7);
+  }
+  .pt-count__n { color: rgb(var(--c-cream)); }
+  .pt-list { position: relative; z-index: 2; list-style: none; margin: 0; padding: 12vh 0 18vh; }
+  .pt-row { min-height: 78vh; display: flex; align-items: center; justify-content: center; }
+  .pt-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(0.8rem, 2vh, 1.4rem);
+    padding: 0 var(--site-gutter);
+    color: rgb(var(--c-cream));
+    text-decoration: none;
+    text-align: center;
+  }
+  .pt-name {
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3rem, min(11vw, 17vh), 13rem);
+    line-height: 1.02;
+    text-transform: uppercase;
+    letter-spacing: 0.005em;
+  }
+  .pt-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.8);
+  }
+  .pt-meta__dot { width: 3px; height: 3px; border-radius: 50%; background: rgb(var(--c-red)); }
+  /* the site's own button (as Explore in Selected work), over dark glass so it reads over any picture */
+  .pt-cta { width: auto !important; max-width: none !important; margin: 0.6rem 0 0; }
+  .pt-cta .h-hero-cta { --cta-bg: rgb(0 0 0 / 0.72); min-height: 46px; min-width: 11rem; padding: 0.7rem 1.8rem; }
+  .pt-name { color: inherit; text-decoration: none; }
+  @media (max-width: 720px) {
+    .pt-row { min-height: 70vh; }
+    .pt-meta { flex-wrap: wrap; justify-content: center; gap: 0.4rem 0.9rem; letter-spacing: 0.22em; }
+  }
 </style>
 
 <script>
@@ -568,3 +637,72 @@ const projects = await Promise.all(
   document.addEventListener('astro:page-load', initProjectsPage);
 </script>
 
+<script>
+  import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
+  const smoothstep = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+  let _trainOff: (() => void) | null = null;
+  document.addEventListener('astro:before-swap', () => { _trainOff?.(); _trainOff = null; });
+
+  // The names are a ghost train (by where each is on the screen, nothing timed, the same on the way back). The pictures
+  // are the home page's own beam (utils/beamSlides.ts, WebGL): one number, pos, 0 = the dark, a whole number = that
+  // picture standing still, between two = the band of light sweeping one into the next.
+  function initTrain() {
+    _trainOff?.();
+    const root = document.getElementById('projects-list');
+    if (!root) return;
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('.pt-row'));
+    const pics = Array.from(root.querySelectorAll<HTMLImageElement>('.pt-pic'));
+    const stage = root.querySelector<HTMLElement>('.pt-stage');
+    const canvas = root.querySelector<HTMLCanvasElement>('.pt-canvas');
+    const num = root.querySelector<HTMLElement>('.pt-count__n');
+    if (!rows.length) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const BLUR = 5.5; // the same as every other going-out on the site
+
+    let beam: BeamSlides | null = null;
+    const fallback = () => { stage?.classList.add('pt-stage--fallback'); pics.forEach((p) => { p.style.visibility = 'visible'; }); };
+    if (reduce || !canvas) fallback();
+    else { beam = createBeamSlides(canvas, pics, fallback, [0, 1]); if (!beam) fallback(); }
+
+    const place = () => {
+      const vh = window.innerHeight;
+      const cs = rows.map((row) => { const r = row.getBoundingClientRect(); return (r.top + r.height / 2) / vh; });
+      let best = 0, bestP = -1;
+      rows.forEach((row, i) => {
+        const p = reduce ? 1 : smoothstep(1 - Math.abs(cs[i] - 0.5) / 0.38);
+        const link = row.firstElementChild as HTMLElement;
+        link.style.opacity = p.toFixed(3);
+        link.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * BLUR).toFixed(1)}px)`;
+        link.style.transform = `translateY(${((1 - p) * (cs[i] > 0.5 ? 14 : -10)).toFixed(1)}px)`;
+        link.style.pointerEvents = p < 0.4 ? 'none' : '';
+        if (p > bestP) { bestP = p; best = i; }
+        if (!beam) { const pic = pics[i]; if (pic) pic.style.opacity = (p * 0.9).toFixed(3); }
+      });
+      let pos: number;
+      if (cs[0] > 0.5) pos = Math.max(0, Math.min(1, 1 - (cs[0] - 0.5) / 0.6));
+      else {
+        let i = 0;
+        while (i < rows.length - 1 && cs[i + 1] <= 0.5) i++;
+        if (i >= rows.length - 1) pos = rows.length;
+        else {
+          const t = (0.5 - cs[i]) / (cs[i + 1] - cs[i]);
+          pos = i + 1 + Math.max(0, Math.min(1, (t - 0.12) / 0.76)); // a name stands still on a picture at rest
+        }
+      }
+      beam?.setPos(pos);
+      // After the last name has gone the whole stage sinks into the dark, so the footer arrives on a clean black screen
+      // (as on the home page), with no picture or counter left above it.
+      const last = cs[cs.length - 1];
+      if (stage) stage.style.opacity = (1 - smoothstep((0.5 - last) / 0.4)).toFixed(3);
+      if (num) num.textContent = String(Math.min(rows.length, Math.max(1, Math.round(pos)))).padStart(2, '0');
+    };
+    let ticking = false;
+    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
+    const onResize = () => { beam?.resize(); onScroll(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    place();
+    _trainOff = () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; };
+  }
+  document.addEventListener('astro:page-load', initTrain);
+</script>
