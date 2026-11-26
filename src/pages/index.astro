@@ -131,7 +131,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const a = smooth(clamp01((p - 0.55) / 0.40));
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * (touchy ? 9 : 22)).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
 				veil.style.opacity = a.toFixed(3);
 				// The manifesto's line comes up slowly once its stage is pinned
@@ -139,7 +139,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const vh = window.innerHeight;
 				// Touch: it starts before the exit is over (overlapping the last of the
 				// blur and the dark), so there is no empty black beat in between.
-				const lead = touchy ? 0.35 * vh : 0;
+				const lead = touchy ? 0.15 * vh : 0;
 				const span = touchy ? 0.45 * vh : 0.4 * vh;
 				// Before its own pin the stage would ride up from the bottom of the
 				// screen: hold it on the spot instead, so it only ever comes out of
