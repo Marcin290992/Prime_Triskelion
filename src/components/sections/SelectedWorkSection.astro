@@ -443,7 +443,6 @@ const SCREENS = projects.length + HOLD;
 <script>
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
-	import { blurPx } from '../../utils/device';
 	import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
 
 	gsap.registerPlugin(ScrollTrigger);
@@ -519,27 +518,22 @@ const SCREENS = projects.length + HOLD;
 		};
 		let activeText = -1;
 
-		const introBlur = blurPx(14);
-		let introOn = false;
-		gsap.set(intro, { opacity: 0, y: 14, filter: `blur(${introBlur}px)` });
-		intro.style.pointerEvents = 'none';
+		const noIntroBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		const render = () => {
 			// The light and everything that follows it (picture, name, controls) share one position.
 			const bpos = pos;
 			beam?.setPos(bpos);
-			// The opener: scroll only fires it. In from blur as the scroll reaches it, out into blur before the first
-			// picture begins; both play on the clock (the same however fast you scroll), so it never rests half-way.
+			// The opener: in from blur as the scroll reaches it, out before the first picture begins, both scrubbed, so
+			// it is one soft motion either way and never in two stages.
 			const vh = window.innerHeight;
 			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
 			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
-			const wantIntro = introOn ? Math.min(tin, tout) > 0.35 : Math.min(tin, tout) > 0.65;
-			if (wantIntro !== introOn) {
-				introOn = wantIntro;
-				intro.style.pointerEvents = wantIntro ? 'auto' : 'none';
-				if (wantIntro) gsap.to(intro, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.0, ease: 'power3.out', overwrite: 'auto', onComplete: () => { intro.style.filter = ''; intro.style.transform = ''; } });
-				else gsap.to(intro, { opacity: 0, y: tin < 0.5 ? 14 : -10, filter: `blur(${introBlur}px)`, duration: 0.8, ease: 'power2.inOut', overwrite: 'auto' });
-			}
+			const t = Math.min(tin, tout);
+			intro.style.opacity = t.toFixed(3);
+			intro.style.filter = t >= 0.999 || noIntroBlur ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
+			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
+			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
 			// The name of the picture the light is going TO comes in the moment the beam starts (and
 			// the one it leaves goes out): at rest it is the picture on screen, on the move the next one

@@ -1,10 +1,11 @@
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import { blurPx } from './device';
 
 gsap.registerPlugin(ScrollTrigger);
 
 export function initBlurReveal(emEl: HTMLElement, triggerEl?: HTMLElement, start = 'top 82%') {
+	if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return;
+
 	const text = emEl.textContent ?? '';
 	emEl.innerHTML = '';
 	emEl.style.whiteSpace = 'nowrap';
@@ -17,7 +18,7 @@ export function initBlurReveal(emEl: HTMLElement, triggerEl?: HTMLElement, start
 		return s;
 	});
 
-	gsap.set(spans, { opacity: 0, filter: `blur(${blurPx(18)}px)`, y: () => gsap.utils.random(-14, 14) });
+	gsap.set(spans, { opacity: 0, filter: 'blur(18px)', y: () => gsap.utils.random(-14, 14) });
 
 	ScrollTrigger.create({
 		trigger: triggerEl ?? emEl,
