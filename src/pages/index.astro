@@ -17,7 +17,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</div>
 	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
-	<div id="home-content" class="relative" style="z-index:30">
+	<div class="relative" style="z-index:30">
 		<ManifestoSection />
 		<ServicesSection />
 		<SelectedWorkSection />
@@ -44,38 +44,21 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		   softens whatever is behind it) comes up first, the black after. */
 		#hero-blur { z-index: 19; }
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
-		/* The content wrapper is pulled up over the hero's pinned screen (the manifesto's negative margin collapses
-		   through it), so the wrapper itself must be click-through: only the sections take clicks, never the empty
-		   box over the hero (its Start a project button). The manifesto stays click-through as before. */
-		#home-content { pointer-events: none; }
-		#home-content > section:not(#manifesto) { pointer-events: auto; }
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
 		@media (prefers-reduced-motion: no-preference) {
-			/* The exit plays on its own clock (script below), so the pinned screen only has to say WHEN: half a screen
-			   of scroll on every screen, then the manifesto's stage takes over. */
-			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 150); }
+			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
 			#hero-pin > #hero { position: sticky; top: 0; }
-			/* Pulled up over the hero's pinned screen (and above the top of the page): the manifesto's own scrub opens with an
-			   idle stretch and then its words come into focus one by one, and all of that now happens UNDER the exit's black
-			   (its stage is held back until the exit has finished, see the script). So the moment the black is whole the
-			   line is there, sharp, even after the shortest swipe: nothing to scroll on for. The reading part (hold, red
-			   words, going out) keeps its length. Desktop: scrub 190vh, so 91vh above the top; phones and tablets:
-			   scrub 100vh, so 47vh above it. */
-			#manifesto { margin-top: calc(var(--app-stable-vh) * -176); pointer-events: none; }
-			@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-				#manifesto { margin-top: calc(var(--app-stable-vh) * -156); }
-			}
+			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }
 		}
 	</style>
 
 	<script>
 		import gsap from 'gsap';
-		// The hero's exit PLAYS: the first scroll down sets it off and it runs on its own clock, the same
-		// length however fast or slowly you scroll (the light goes out, then the type goes soft, then the whole
-		// thing sinks into black); scrolling back up to the top plays it in reverse. The scroll only decides
-		// WHEN (the pinned screen is short), it no longer scrubs the exit. The manifesto is untouched: its stage
-		// is pinned where this pin ends and its own scrubbed line comes up out of the black, as before.
+		// The hero's exit: scrolling through the pinned screen, the light (the
+		// source) goes out first, then the veil darkens and blurs what is left
+		// (it sits over the hero, under the manifesto); once it is black the
+		// manifesto's stage is pinned and its line comes up out of the dark.
 		let _heroExitOff: (() => void) | null = null;
 		function initHeroExit() {
 			_heroExitOff?.();
@@ -97,95 +80,63 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				range = Math.max(1, pin.offsetHeight - hero.offsetHeight);
 				pinStart = man.getBoundingClientRect().top + window.scrollY;
 			};
-
-			// The three beats, one clock: light (1 = lit), blur (0..1), black (0..1).
-			const st = { light: 1, blur: 0, black: 0, stage: 0 };
-			let live = true;
-			let fading = false;    // this script is holding #hero's opacity below 1
-			const apply = () => {
-				if (rays) {
-					const dark = st.light <= 0.001;
-					if (rays.dataset.dark !== (dark ? '1' : '')) {
-						rays.dataset.dark = dark ? '1' : '';
-						// Fully out: nothing to see, so the hero stops drawing it
-						// (HeroSection's initRays listens) and starts again on the way back.
-						rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
-					}
-					rays.style.filter = st.light < 0.999 ? `brightness(${st.light.toFixed(3)})` : '';
+			// The light's own fade (see update): 1 = lit, 0 = out.
+			const lightState = { v: 1 };
+			let lightOff: boolean | null = null;
+			const applyLight = () => {
+				if (!rays) return;
+				const dark = lightState.v <= 0.001;
+				if (rays.dataset.dark !== (dark ? '1' : '')) {
+					rays.dataset.dark = dark ? '1' : '';
+					// Fully out: nothing to see, so the hero stops drawing it
+					// (HeroSection's initRays listens) and starts again on the way back.
+					rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
 				}
-				blur.style.visibility = st.blur > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = st.blur > 0 ? `blur(${(st.blur * 22).toFixed(1)}px)` : '';
-				veil.style.visibility = st.black > 0 && live ? 'visible' : 'hidden';
-				veil.style.opacity = st.black.toFixed(3);
-				// The manifesto's (blurred) line must not be seen before the exit has finished: it can only be as visible
-				// as the black is complete, whatever the scroll says.
-				stage.style.opacity = st.stage.toFixed(3);
+				rays.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
 			};
-			// While the exit plays forward the scroll is held (a fast fling used to carry the page straight through the
-				// manifesto before it had even appeared); it is let go when the line has floated up, and a fling that already
-				// went past the pinned screen is put back onto it (the hero is pinned there, so nothing visible moves).
-				const lenisOf = () => (window as any).__lenis as { stop: () => void; start: () => void; scrollTo: (y: number, o?: object) => void } | undefined;
-				let held = false;
-				const hold = () => {
-					const l = lenisOf();
-					if (!l || held) return;
-					held = true;
-					const y = window.scrollY;
-					if (y > range * 0.3) { lastY = range * 0.3; l.scrollTo(range * 0.3, { immediate: true, force: true }); }
-					l.stop();
-				};
-				const release = () => { if (!held) return; held = false; lenisOf()?.start(); };
-				const tl = gsap.timeline({ paused: true, onUpdate: apply, onReverseComplete: apply, onComplete: release });
-			tl.to(st, { light: 0, duration: 0.5, ease: 'power2.out' }, 0);
-			tl.to(st, { blur: 1, duration: 0.7, ease: 'sine.inOut' }, 0.25);
-			tl.to(st, { black: 1, duration: 0.7, ease: 'sine.inOut' }, 0.55);
-			// Then, only once the black is whole, the manifesto's line floats up out of it: slow, never a cut.
-			tl.to(st, { stage: 1, duration: 1.4, ease: 'sine.inOut' }, 1.2);
-			// The exit itself may be sped up (a fast scroll, see update); the float-in after it never is: back to the
-			// normal pace at the line between them, whichever way the timeline is running.
-			// Going back up the float-in is undone quickly (x3), then the exit itself at its own pace.
-			// (In GSAP the direction IS the sign of timeScale: a positive value here while going back would turn it round.)
-			tl.call(() => { tl.timeScale(tl.reversed() ? -1.15 : 1); }, undefined, 1.25);
-
-			// Going DOWN past ON of the pinned screen = play; going UP back to BACK of it = reverse. Decided by the
-			// direction, so it never flutters, and the hero is back (sharp, lit) while you are still on its pinned screen,
-			// never a black one until the very top.
-			const ON = 0.06, BACK = 0.5;
-			let out: boolean | null = null;
+			const setLight = (off: boolean) => {
+				if (off === lightOff) return;
+				const first = lightOff === null;
+				lightOff = off;
+				gsap.killTweensOf(lightState);
+				if (first) { lightState.v = off ? 0 : 1; applyLight(); return; }
+				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
+			};
 			let ticking = false;
 			let lastY = window.scrollY;
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
 				const goingUp = y < lastY - 0.5;
-				const goingDown = y > lastY + 0.5;
 				lastY = y;
 				const p = y / range;
-				// The veil and the blur stay on for as long as the hero can still be seen: until its pinned screen is over
-				// (range) and it has scrolled off. (This was measured from the manifesto's top, which now lies above the
-				// page: it switched them off at y = 80 and the hero shone through under the manifesto.)
-				live = y < range + window.innerHeight;
-				if (out === null) {
-					// First look (a reload, or coming back mid-page): the state it should be in, no animation.
-					out = p > ON;
-					tl.progress(out ? 1 : 0).pause();
-					apply();
-				} else if (!out && goingDown && p > ON) { out = true; hold(); tl.timeScale(1).play(); }
-				else if (out && goingUp && p <= BACK) { out = false; release(); tl.timeScale(3).reverse(); }
-				else if (out && p <= 0.001) { out = false; release(); tl.timeScale(3).reverse(); }
-				else apply();
-				// Scrolled on faster than the exit plays: let it finish quickly, and take the hero itself out
-				// over the last of its pinned screen, so it is never seen scrolling away half-lit.
-				// (Only the exit itself, up to 1.25 s: the manifesto's slow float-in after it keeps its own pace.)
-				if (out && tl.isActive() && p > 0.45) tl.timeScale(tl.time() < 1.25 ? 2.5 : 1);
-				// (#hero's opacity is the intro's: it starts at 0 and the intro sets it to 1. Only touched here when the
-				// hero is about to leave the screen, and put back to 1 when it is on its pinned screen again.)
-				const leaving = out === true && p > 0.8;
-				if (leaving && !fading) { fading = true; gsap.to(hero, { opacity: 0, duration: 0.3, ease: 'sine.out', overwrite: true }); }
-				else if (!leaving && fading) { fading = false; gsap.to(hero, { opacity: 1, duration: 0.25, ease: 'sine.out', overwrite: true }); }
-				// (The manifesto's line comes up on the clock too: st.stage, the last beat of the timeline. It used to be
-				// faded in by the scroll after the stage pinned, so a short swipe left the black with nothing in it.)
-				stage.style.opacity = st.stage.toFixed(3);
+				// The light goes first: it is the source of everything on screen.
+				// It goes out (and comes back) on the clock — one slow fade of the
+				// same length however fast you scroll — never scrubbed by the scroll.
+				// Brightness, not opacity (the intro owns the canvas's opacity).
+				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
+				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
+				if (rays) {
+					if (lightOff === null) setLight(p > 0.02);
+					else if (p <= 0.02) setLight(false);
+					else if (goingUp && p <= 0.30) setLight(false);
+					else if (!goingUp && p > 0.02) setLight(true);
+				}
+				// Three beats, one after the other: the light goes out first (0–0.35)
+				// while the type is still sharp; only then does the rest go soft
+				// (the blur layer, 0.30–0.70), and last it sinks into the dark (the
+				// black layer, 0.55–0.95) — the same going-out as the manifesto's line.
+				const bk = smooth(clamp01((p - 0.30) / 0.40));
+				const a = smooth(clamp01((p - 0.55) / 0.40));
+				const live = y < pinStart + window.innerHeight;
+				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 22).toFixed(1)}px)` : '';
+				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+				veil.style.opacity = a.toFixed(3);
+				// The manifesto's line comes up slowly once its stage is pinned
+				// (about 0.4 of a screen), before the words start to focus.
+				const vh = window.innerHeight;
+				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
 			};
 			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			const onResize = () => { measure(); onScroll(); };
@@ -195,10 +146,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
-				release();
-				tl.kill();
-				gsap.killTweensOf(hero);
-				if (fading) hero.style.opacity = '1';
+				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);

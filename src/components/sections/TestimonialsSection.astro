@@ -219,8 +219,9 @@
 
 		// Same focus-in on every device; only reduced motion skips the blur.
 		const calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		const hidden = calm ? { opacity: 0, y: 14 } : { opacity: 0, y: 14, filter: 'blur(10px)' };
-		const shown = calm ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, filter: 'blur(0px)' };
+		const noBlur = calm || window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const hidden = noBlur ? { opacity: 0, y: calm ? 14 : 24 } : { opacity: 0, y: 14, filter: 'blur(10px)' };
+		const shown = noBlur ? { opacity: 1, y: 0 } : { opacity: 1, y: 0, filter: 'blur(0px)' };
 
 		const words = (text: string) => {
 			textEl.textContent = '';

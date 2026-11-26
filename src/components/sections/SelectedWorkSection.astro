@@ -123,7 +123,7 @@ const SCREENS = projects.length + HOLD;
 		   blurred out and there is a short stretch of dark before the title. Pulled up under the end of Services, so the pinned view takes over just as the options blur out:
 		   the title comes out of blur where they were, with no long black stretch between (Services is above
 		   it, so it stays readable until it blurs out). */
-		margin-top: calc(var(--app-stable-vh, 1svh) * -45);   /* was -20: the title was a third of a screen of bare black behind the last Services button */
+		margin-top: calc(var(--app-stable-vh, 1svh) * -20);
 		height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens));
 	}
 	.swb__stage {
@@ -254,8 +254,8 @@ const SCREENS = projects.length + HOLD;
 		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
 	}
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.swb__slide { filter: blur(5px); transition: opacity 0.3s ease, filter 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s; }
-		.swb__slide.in { transition: opacity 0.45s ease, filter 0.45s ease, transform 0.45s ease, visibility 0s; }
+		.swb__slide { filter: none; transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s; }
+		.swb__slide.in { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s; }
 	}
 	.swb__slide.in {
 		opacity: 1;
@@ -502,7 +502,7 @@ const SCREENS = projects.length + HOLD;
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
 		// scroll in front of the first picture (not a share of the first picture's step), so the light has to be pushed
 		// through exactly as far for the first picture as for the next two: the same resistance on all three.
-		const DARK = window.matchMedia("(max-width: 1024px), (hover: none) and (pointer: coarse)").matches ? 0.3 : 0.42;   // touch: a shorter moment of dark before the light
+		const DARK = 0.42;
 
 		// The text does not follow the scroll: it comes in by itself (time-based) while the beam
 		// is still crossing, out of blur, so by the time the light has landed it is already there.
@@ -518,7 +518,7 @@ const SCREENS = projects.length + HOLD;
 		};
 		let activeText = -1;
 
-		const introBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 5 : 14;
+		const noIntroBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		const render = () => {
 			// The light and everything that follows it (picture, name, controls) share one position.
 			const bpos = pos;
@@ -527,11 +527,11 @@ const SCREENS = projects.length + HOLD;
 			// it is one soft motion either way and never in two stages.
 			const vh = window.innerHeight;
 			const pinStart = wrap.getBoundingClientRect().top + window.scrollY;
-			const tin = smooth((window.scrollY - pinStart - 0.05 * vh) / (0.4 * vh));
+			const tin = smooth((window.scrollY - pinStart - 0.15 * vh) / (0.45 * vh));
 			const tout = 1 - smooth(uPos / (DARK * 0.6));
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * introBlur).toFixed(1)}px)`;
+			intro.style.filter = t >= 0.999 || noIntroBlur ? '' : `blur(${((1 - t) * 14).toFixed(1)}px)`;
 			intro.style.transform = tin >= 0.999 ? '' : `translateY(${((1 - tin) * 14).toFixed(1)}px)`;
 			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 			let nowText = -1;
@@ -572,7 +572,7 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		const LEAD = coarse ? 0.75 : 0.72;   // touch: the title stood alone for 1.1 screens of bare black
+		const LEAD = coarse ? 1.1 : 0.72;
 		const PER = coarse ? 1.25 : 0.72;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
@@ -604,8 +604,8 @@ const SCREENS = projects.length + HOLD;
 		//    early, while the view is still pinned for a good stretch, instead of sliding down the screen while it fades.
 		// Above the pin start the stage is moving, so the title is hidden at once (no fade, nothing to slide).
 		const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-		const TITLE_A = touchy ? 0.08 : 0.11;   // touch: the title comes in sooner after Services blurs out
-		const TITLE_B = touchy ? 0.35 : 0.6;   // touch: in sooner, to match the shorter LEAD (the title still stands ~0.4 of a screen)
+		const TITLE_A = touchy ? 0.18 : 0.11;
+		const TITLE_B = 0.6;
 		let titleOn = false;
 		let titleY = window.scrollY;
 		const titleTick = () => {

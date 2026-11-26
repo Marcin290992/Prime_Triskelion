@@ -588,11 +588,11 @@
       titleTl?.kill();
       titleTl = show
         ? gsap.timeline()
-            .to(title, { opacity: 1, duration: isTouch ? 0.5 : 0.9, ease: 'sine.inOut' }, 0)
-            .to(title, { filter: 'blur(0px)', duration: isTouch ? 0.6 : 1.5, ease: 'power2.inOut' }, 0)
-            .fromTo(title, { scale: 1.04 }, { scale: 1, duration: isTouch ? 0.7 : 1.7, ease: 'power2.out' }, 0)
+            .to(title, { opacity: 1, duration: isTouch ? 0.6 : 0.9, ease: 'sine.inOut' }, 0)
+            .to(title, { filter: 'blur(0px)', duration: isTouch ? 0.01 : 1.5, ease: 'power2.inOut' }, 0)
+            .fromTo(title, { scale: 1.04 }, { scale: 1, duration: isTouch ? 0.9 : 1.7, ease: 'power2.out' }, 0)
         : gsap.timeline()
-            .to(title, { opacity: 0, filter: `blur(${isTouch ? 6 : 18}px)`, duration: 0.5, ease: 'power2.in' }, 0);
+            .to(title, { opacity: 0, filter: isTouch ? 'blur(0px)' : 'blur(18px)', duration: 0.5, ease: 'power2.in' }, 0);
     };
     if (title) gsap.set(title, { xPercent: -50, x: 0, transformOrigin: '50% 50%' });
 

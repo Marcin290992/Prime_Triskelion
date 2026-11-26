@@ -9,6 +9,5 @@ export const TOUCH_LENIS_OPTIONS = {
 	syncTouch: true,
 	syncTouchLerp: 0.075,
 	touchInertiaExponent: 1.7,
-	// 0.7: a swipe carries the page 30% less far (some resistance, a deliberate feel without fighting the finger).
-	touchMultiplier: 0.7,
+	touchMultiplier: 1,
 } as const;
