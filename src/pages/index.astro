@@ -72,6 +72,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
 			let range = 1;
@@ -138,7 +139,32 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const vh = window.innerHeight;
 				stage.style.opacity = smooth(clamp01((y - pinStart) / (0.4 * vh))).toFixed(3);
 			};
-			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// Touch: scroll stays free (a fast fling still passes straight through), but if the finger is lifted and
+			// the scroll comes to rest part-way through the exit, the exit finishes (or winds back) by itself, so
+			// the screen is never left half-blurred or half-dark.
+			let settleT = 0;
+			let fingerDown = false;
+			let dir = 1;
+			const settle = () => {
+				if (!touchy || fingerDown) return;
+				const y = window.scrollY;
+				const p = y / range;
+				if (p < 0.03 || y >= pinStart) return;
+				const lenis = (window as any).__lenis;
+				if (!lenis?.scrollTo) return;
+				const forward = dir > 0 ? p > 0.08 : p > 0.9;
+				lenis.scrollTo(forward ? pinStart + 0.4 * window.innerHeight : 0, { duration: 1.0, easing: (t: number) => 1 - Math.pow(1 - t, 3) });
+			};
+			const queueSettle = () => { if (!touchy) return; window.clearTimeout(settleT); settleT = window.setTimeout(settle, 140); };
+			const onDown = () => { fingerDown = true; window.clearTimeout(settleT); };
+			const onUp = () => { fingerDown = false; queueSettle(); };
+			if (touchy) {
+				window.addEventListener('touchstart', onDown, { passive: true });
+				window.addEventListener('touchend', onUp, { passive: true });
+				window.addEventListener('touchcancel', onUp, { passive: true });
+			}
+			const onScroll = () => { dir = window.scrollY >= lastScrollY ? 1 : -1; lastScrollY = window.scrollY; queueSettle(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			let lastScrollY = window.scrollY;
 			const onResize = () => { measure(); onScroll(); };
 			measure();
 			update();
@@ -149,6 +175,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 				window.clearTimeout(late);
+				window.clearTimeout(settleT);
+				window.removeEventListener('touchstart', onDown);
+				window.removeEventListener('touchend', onUp);
+				window.removeEventListener('touchcancel', onUp);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);
 				_heroExitOff = null;
