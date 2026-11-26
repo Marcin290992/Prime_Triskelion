@@ -117,7 +117,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// A fast scroll runs past the end of the hero's pin before the clock has finished: the hero would then be
 				// carried up with the page, blurred but still moving. Hold it on the spot until the exit has reached the
 				// black (then it is covered anyway and can go).
-				hero.style.transform = P < 0.999 && live && y > range ? `translate3d(0, ${(y - range).toFixed(1)}px, 0)` : '';
+				// (Fixed, not a per-frame transform, which would trail the scroll by a frame and shake.)
+				const hold = P < 0.999 && live && y > range;
+				hero.style.position = hold ? 'fixed' : '';
+				hero.style.top = hold ? '0' : '';
+				hero.style.left = hold ? '0' : '';
+				hero.style.width = hold ? '100%' : '';
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * (touchy ? 9 : 22)).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
@@ -125,7 +130,18 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Before its own pin the stage would ride up from the bottom of the screen: hold it on the spot, so it only
 				// ever comes out of the dark, never scrolls in. Its line comes up only once the exit has reached the black
 				// (P above 0.88), and slowly once the stage is pinned.
-				stage.style.transform = y < pinStart ? `translate3d(0, ${(y - pinStart).toFixed(1)}px, 0)` : '';
+				// Fixed, not a transform worked out per frame: a transform follows the scroll a frame late and the line
+				// shakes against the page. Fixed has no lag; at the pin start it hands over to its own sticky at the very
+				// same place (the section's height is set, so nothing moves in the flow).
+				if (y < pinStart) {
+					stage.style.position = 'fixed';
+					stage.style.top = '0';
+					stage.style.left = '0';
+				} else {
+					stage.style.position = '';
+					stage.style.top = '';
+					stage.style.left = '';
+				}
 				// The line comes up on the clock too, out of the black, and stands there faint and blurred (its start state,
 				// ManifestoSection): from there the scroll is the user's alone, it brings the words into focus.
 				stage.style.opacity = smooth(clamp01((P - 0.88) / 0.12)).toFixed(3);
@@ -168,8 +184,8 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			_heroExitOff = () => {
 				tween?.kill();
 				if (rays) rays.style.filter = '';
-				stage.style.transform = '';
-				hero.style.transform = '';
+				stage.style.position = stage.style.top = stage.style.left = '';
+				hero.style.position = hero.style.top = hero.style.left = hero.style.width = '';
 				window.clearTimeout(late);
 				window.removeEventListener('scroll', onScroll);
 				window.removeEventListener('resize', onResize);

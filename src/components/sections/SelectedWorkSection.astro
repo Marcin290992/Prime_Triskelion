@@ -87,6 +87,11 @@ const SCREENS = projects.length + HOLD;
 				</div>
 			</div>
 			)}
+
+			<!-- The exit (script): after the last picture the scroll fires a blur and then a black over the whole stage, on
+			     the clock, the same going-out as the hero's. -->
+			<div class="swb__outblur" aria-hidden="true"></div>
+			<div class="swb__outveil" aria-hidden="true"></div>
 		</div>
 	</div>
 
@@ -136,6 +141,10 @@ const SCREENS = projects.length + HOLD;
 	/* --band is the edge blur bands' height (utils/gradualBlur.js): the copy
 	   stands clear of it, so the bands never blur the text. */
 	.swb__stage { --band: clamp(5.5rem, 6vw, 7rem); }
+	/* The exit layers, over everything in the stage: the blur first (it softens what is under it), the black after. */
+	.swb__outblur,
+	.swb__outveil { position: absolute; inset: 0; z-index: 40; pointer-events: none; visibility: hidden; }
+	.swb__outveil { background: #000; opacity: 0; }
 	.swb__frame {
 		position: absolute;
 		inset: 0;
@@ -667,6 +676,71 @@ const SCREENS = projects.length + HOLD;
 		// where the page rests on picture k (0 = the title); the dark stretch sits between the title and the first picture
 		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();
 		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
+
+		// ── The exit, on the clock (the same idea as the home hero's) ───────────────────────────────────
+		// Once the last picture has been passed, the scroll only FIRES the going-out: the stage blurs, then sinks into black,
+		// one fixed-length animation however fast or slow you scroll (a fling only plays it faster, nothing is skipped),
+		// and scrolling back plays it in reverse. The closing panel then comes up out of the same black.
+		const outBlur = stage.querySelector<HTMLElement>('.swb__outblur');
+		const outVeil = stage.querySelector<HTMLElement>('.swb__outveil');
+		const OUT_DUR = 1.2;       // seconds for the whole exit
+		const OUT_FAST = 2.5;      // a fling plays it this much faster
+		const OUT_FIRE = 0.03;     // screens past the last picture's rest: the exit goes (one nudge is enough)
+		const OUT_BACK = 0.012;    // back below this it winds back
+		const out = { v: 0 };
+		let outTarget: 0 | 1 | null = null;
+		let outTween: gsap.core.Tween | null = null;
+		const renderOut = () => {
+			if (!outBlur || !outVeil) return;
+			const P = out.v;
+			const bk = smooth(clamp(P / 0.55, 0, 1));
+			const a = smooth(clamp((P - 0.4) / 0.55, 0, 1));
+			outBlur.style.visibility = bk > 0 ? 'visible' : 'hidden';
+			const bf = bk > 0 ? `blur(${(bk * (touchy ? 9 : 22)).toFixed(1)}px)` : '';
+			outBlur.style.backdropFilter = bf;
+			(outBlur.style as any).webkitBackdropFilter = bf;
+			outVeil.style.visibility = a > 0 ? 'visible' : 'hidden';
+			outVeil.style.opacity = a.toFixed(3);
+			// A fast scroll runs past the end of the pin before the clock has finished: hold the stage on the spot (fixed,
+			// not a per-frame transform, which would trail the scroll and shake) until it is black, then let it go.
+			const y = window.scrollY;
+			const held = P < 0.999 && y > stPin.end && y < stPin.end + window.innerHeight;
+			stage.style.position = held ? 'fixed' : '';
+			stage.style.top = held ? '0' : '';
+			stage.style.left = held ? '0' : '';
+			stage.style.width = held ? '100%' : '';
+		};
+		const outGo = (to: 0 | 1, fast: boolean) => {
+			if (to === outTarget) { if (fast && outTween && outTween.isActive()) outTween.timeScale(OUT_FAST); return; }
+			outTarget = to;
+			outTween?.kill();
+			const left = Math.abs(to - out.v);
+			if (left < 0.001) { out.v = to; renderOut(); return; }
+			outTween = gsap.to(out, { v: to, duration: OUT_DUR * left, ease: 'none', onUpdate: renderOut, onComplete: () => { outTween = null; } });
+			if (fast) outTween.timeScale(OUT_FAST);
+		};
+		let outY = window.scrollY;
+		let outT = performance.now();
+		let outRaf = 0;
+		const outTick = () => {
+			outRaf = 0;
+			const y = window.scrollY;
+			const now = performance.now();
+			const speed = Math.abs(y - outY) / Math.max(1, now - outT);   // px per ms
+			outY = y;
+			outT = now;
+			const rest = stop(n);
+			const over = (y - rest) / unit();
+			const want: 0 | 1 = over > OUT_FIRE ? 1 : over < OUT_BACK ? 0 : outTarget ?? (over > (OUT_FIRE + OUT_BACK) / 2 ? 1 : 0);
+			if (outTarget === null) { outTarget = want; out.v = want; }   // first look: the state, no animation
+			else outGo(want, speed > 2);
+			renderOut();
+		};
+		const onOutScroll = () => { if (!outRaf) outRaf = requestAnimationFrame(outTick); };
+		window.addEventListener('scroll', onOutScroll, { passive: true });
+		window.addEventListener('resize', onOutScroll, { passive: true });
+		ScrollTrigger.addEventListener('refresh', outTick);
+		outTick();
 		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
 		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
 		let lenis: any = null;
@@ -705,7 +779,7 @@ const SCREENS = projects.length + HOLD;
 				if (lenis.isStopped) { anchor = -1; return; }   // the menu has the page: this gesture is over
 				if (lenis.isTouching) { timer = window.setTimeout(decide, 80); return; }
 				const y = lenis.scroll;
-				if (y < stop(0) - 0.6 * unit() || y > stop(n) + 0.45 * unit()) return;   // free scroll outside
+				if (y < stop(0) - 0.6 * unit() || y > stop(n) + OUT_BACK * unit()) return;   // free scroll outside (past the last picture the exit is on the clock)
 				let lo = 0;
 				for (let i = 1; i < n; i++) if (y >= stop(i)) lo = i;   // the step the page is in (steps are not all the same length)
 				const f = clamp((y - stop(lo)) / (stop(lo + 1) - stop(lo)), 0, 1);
@@ -761,6 +835,12 @@ const SCREENS = projects.length + HOLD;
 			cancelAnimationFrame(waitRaf);
 			snapOff();
 			window.removeEventListener('scroll', onTitleScroll);
+			window.removeEventListener('scroll', onOutScroll);
+			window.removeEventListener('resize', onOutScroll);
+			ScrollTrigger.removeEventListener('refresh', outTick);
+			cancelAnimationFrame(outRaf);
+			outTween?.kill();
+			stage.style.position = stage.style.top = stage.style.left = stage.style.width = '';
 			ScrollTrigger.removeEventListener('refresh', titleTick);
 			cancelAnimationFrame(titleRaf);
 			intro.style.visibility = '';
