@@ -45,7 +45,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		#hero-blur { z-index: 19; }
 		#hero-veil { z-index: 20; background: #000; opacity: 0; }
 		/* Same on desktop, tablets and phones (a finger scroll drives it). */
-		@media (prefers-reduced-motion: no-preference) {
+		@media (prefers-reduced-motion: no-preference) and (min-width: 1025px) and (hover: hover), (prefers-reduced-motion: no-preference) and (min-width: 1025px) and (pointer: fine) {
 			#hero-pin { position: relative; height: calc(var(--app-stable-vh) * 200); }
 			#hero-pin > #hero { position: sticky; top: 0; }
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
@@ -59,6 +59,40 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		// source) goes out first, then the veil darkens and blurs what is left
 		// (it sits over the hero, under the manifesto); once it is black the
 		// manifesto's stage is pinned and its line comes up out of the dark.
+		// Phones/tablets: plain scroll, nothing is hidden. Only the hero's light reacts: it goes out as soon as the
+		// page is scrolled down a little and comes back up on the way back.
+		let _lightOffTouch: (() => void) | null = null;
+		function initTouchLight(rays: HTMLElement | null) {
+			_lightOffTouch?.();
+			if (!rays) return;
+			const lightState = { v: 1 };
+			let off: boolean | null = null;
+			const apply = () => {
+				const dark = lightState.v <= 0.001;
+				if (rays.dataset.dark !== (dark ? '1' : '')) {
+					rays.dataset.dark = dark ? '1' : '';
+					rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
+				}
+				rays.style.filter = lightState.v < 0.999 ? `brightness(${lightState.v.toFixed(3)})` : '';
+			};
+			const set = (o: boolean) => {
+				if (o === off) return;
+				const first = off === null;
+				off = o;
+				gsap.killTweensOf(lightState);
+				if (first) { lightState.v = o ? 0 : 1; apply(); return; }
+				gsap.to(lightState, { v: o ? 0 : 1, duration: o ? 0.9 : 0.8, ease: 'power2.out', onUpdate: apply });
+			};
+			const onScroll = () => set(window.scrollY > window.innerHeight * 0.12);
+			onScroll();
+			window.addEventListener('scroll', onScroll, { passive: true });
+			_lightOffTouch = () => {
+				gsap.killTweensOf(lightState);
+				rays.style.filter = '';
+				window.removeEventListener('scroll', onScroll);
+				_lightOffTouch = null;
+			};
+		}
 		let _heroExitOff: (() => void) | null = null;
 		function initHeroExit() {
 			_heroExitOff?.();
@@ -71,6 +105,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const stage = man?.querySelector<HTMLElement>(':scope > .sticky');
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) { initTouchLight(rays); return; }
 
 			const touchy = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
@@ -185,7 +220,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			};
 		}
 		document.addEventListener('astro:page-load', initHeroExit);
-		document.addEventListener('astro:before-swap', () => _heroExitOff?.());
+		document.addEventListener('astro:before-swap', () => { _heroExitOff?.(); _lightOffTouch?.(); });
 	</script>
 
 	<script>
