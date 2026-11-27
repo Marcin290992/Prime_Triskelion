@@ -956,7 +956,19 @@ const SCREENS = projects.length + HOLD;
 				const y = window.scrollY, u = unit();
 				const top = stop(0) - 0.12 * u, bottom = stPin.end - 0.02 * u;
 				if (on) {
-					if (Math.abs(y - lockY) > 1) jumpTo(lockY);   // the menu closing started Lenis again, a restored scroll ...
+					if (Math.abs(y - lockY) > 1) {
+						// A jump well OUTSIDE the zone is deliberate (an anchor, a link, the status bar's tap): the stage lets go and
+						// the page goes where it was sent. Inside the zone it is the menu closing (it started Lenis again) or a
+						// restored scroll: the page is put back.
+						if (y > stPin.end + 0.3 * vh() || y < stPin.start - 0.3 * vh()) {
+							cancelAnimationFrame(tweenRaf); tweenRaf = 0;
+							letGo();
+							lastY = y;
+							setFrom(stPin.progress, true);
+							return;
+						}
+						jumpTo(lockY);
+					}
 					lastY = y;
 					return;
 				}

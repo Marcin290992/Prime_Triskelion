@@ -44,7 +44,8 @@ export const CFG = {
 	captureAfter: 6,     // px  before a drag on a button / link captures the pointer
 	clickBlock: 8,       // px  a drag longer than this blocks the click ...
 	clickBlockMs: 350,   // ms  ... for this long
-	introGateMs: 4000,   // ms  input waits for the hero's intro, at most this long
+	introGateMs: 2500,   // ms  input waits for the hero's text to land, at most this long
+	introGraceMs: 600,   // ms  ... and at least this long after the stage started (the text's own fade-in must not be fought)
 	wheelMin: 8,         // wheel / trackpad (iPad with a mouse): smallest delta that counts as a gesture
 	wheelCooldownMs: 700, // ms  one wheel gesture = one step; the inertia tail of a trackpad is ignored for this long
 };
@@ -407,7 +408,14 @@ export function initIntroStage(): (() => void) | null {
 	if (!ready) {
 		const open = () => { ready = true; clearTimeout(gateTimer); };
 		gateTimer = window.setTimeout(open, CFG.introGateMs);
-		const iv = window.setInterval(() => { if (dead) clearInterval(iv); else if (hero.classList.contains('pt-intro-done')) { open(); clearInterval(iv); } }, 150);
+		// Open when the hero's TEXT has landed (HeroSection sets __ptHeroTextReady), not when its light has finished: on a page
+		// reached by going back the light takes ~4 s (1.1 s delay + 3 s sweep), and for all that time the swipes were ignored.
+		const t0 = performance.now();
+		const textOk = () => (window as any).__ptHeroTextReady === true;
+		const iv = window.setInterval(() => {
+			if (dead) clearInterval(iv);
+			else if (hero.classList.contains('pt-intro-done') || (textOk() && performance.now() - t0 > CFG.introGraceMs)) { open(); clearInterval(iv); }
+		}, 100);
 	}
 	late = window.setTimeout(() => { measure(); if (on && window.scrollY >= handoffY - 12 && window.scrollY > 0) releaseNow(); }, 400);   // after fonts / layout settle
 
