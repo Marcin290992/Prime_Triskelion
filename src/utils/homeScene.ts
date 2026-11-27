@@ -45,8 +45,11 @@ function createScene(cfg: Cfg): (() => void) | null {
 	let weStopped = false;
 	let dead = false;
 	let moving = false;      // a timed step is running
+	let target: number | null = null;   // ... and where it is going: the next gesture counts on from there, not from where the page is now
+	let lastStep = 0;
 	let moveTimer = 0;
-	let lastWheel = 0;
+	let lastWheel = 0;      // when the last wheel event came ...
+	let lastAbs = 0;        // ... and how strong it was
 	let lastKey = 0;
 	let raf = 0;
 	let tries = 0;
@@ -67,21 +70,28 @@ function createScene(cfg: Cfg): (() => void) | null {
 		if (lenis && weStopped) { lenis.start(); weStopped = false; }
 	};
 
-	// a timed movement of the page to y
+	// a timed movement of the page to y. A step that takes over a running one starts quickly (out-cubic, no stand-still at its
+	// start), so a fast succession of gestures runs on without a stall between the steps.
+	const outCubic = (t: number) => 1 - (1 - t) ** 3;
 	const moveTo = (y: number, seconds: number) => {
 		if (!lenis) return;
+		const quick = moving;
 		moving = true;
+		target = y;
+		lastStep = performance.now();
 		window.clearTimeout(moveTimer);
 		lenis.scrollTo(y, {
-			duration: seconds,
-			easing: inOutSine,
+			duration: quick ? Math.min(seconds, 1.0) : seconds,
+			easing: quick ? outCubic : inOutSine,
 			force: true,
 			lock: false,
-			onComplete: () => { moving = false; },
+			onComplete: () => { moving = false; target = null; },
 		});
 		// never stay marked as moving (an interrupted movement does not report its end)
-		moveTimer = window.setTimeout(() => { moving = false; }, seconds * 1000 + 300);
+		moveTimer = window.setTimeout(() => { moving = false; target = null; }, seconds * 1000 + 300);
 	};
+	// where the next gesture counts on from: the end of the running step, or where the page stands
+	const base = () => (moving && target != null ? target : window.scrollY);
 	const step = (z: Zone, y: number, to: number) => moveTo(to, cfg.seconds(z, nearestIdx(z, y), z.stops.indexOf(to)));
 
 	// what a gesture in this direction does here: a step to a stop, or the end of the zone (the plain scroll takes over)
@@ -95,26 +105,39 @@ function createScene(cfg: Cfg): (() => void) | null {
 	};
 
 	// ── wheel ──
+	// A gesture is never made to wait for the step before it: a new one while a step runs takes the next stop on from the
+	// step's end, and the page runs on to it. What is held back is only the tail of a flick (a trackpad keeps sending small
+	// deltas for a second after the finger has gone) and a second step within a moment of the first.
 	const onWheel = (e: WheelEvent) => {
 		if (dead || !lenis || e.ctrlKey) return;
 		const zs = cfg.zones();
 		if (!zs) return;
 		if (lenis.isStopped && !weStopped) return;   // the menu has the page
 		const now = performance.now();
-		const fresh = now - lastWheel > 140;       // a new flick, not the tail of the last one (a trackpad keeps sending)
+		// a NEW push, not the fading tail of the last one: after a pause, or clearly stronger than the event before it (the
+		// deltas of a trackpad's tail only get smaller)
+		const abs = Math.abs(e.deltaY);
+		const push = now - lastWheel > 90 || abs > lastAbs * 1.3;
 		lastWheel = now;
-		// the tail of a flick must not touch a step that is running: Lenis would take the wheel as the user's own scroll
-		// and cut the timed movement short
-		if (moving && !fresh) { e.preventDefault(); e.stopImmediatePropagation(); return; }
-		const y = window.scrollY;
+		lastAbs = abs;
+		const y = base();
 		const z = zoneAt(zs, y);
-		if (!z) { if (holding()) letGo(); return; }
+		if (!z) { if (holding() && !moving) letGo(); return; }
 		const v = verdict(z, e.deltaY > 0 ? 1 : -1, y);
-		if (v.kind === 'release') { if (holding()) letGo(); return; }
+		if (v.kind === 'release') {
+			if (moving) { e.preventDefault(); e.stopImmediatePropagation(); return; }   // the step is still on its way to the end
+			if (holding()) letGo();
+			return;
+		}
 		grab();
 		e.preventDefault();
 		e.stopImmediatePropagation();
-		if (v.kind === 'step' && fresh && Math.abs(e.deltaY) >= 8) step(z, y, v.to);
+		if (v.kind !== 'step') return;
+		// a step is taken on a clear flick: (a) at rest any real delta; (b) while one runs, a strong one at least 260 ms after
+		// the last step began (so a spin of the wheel runs through the stops, and a trackpad's fading tail does not)
+		const strong = abs >= (moving ? 40 : 8);
+		if (!push || !strong || now - lastStep < (moving ? 260 : 120)) return;
+		step(z, window.scrollY, v.to);
 	};
 
 	// ── keys ──
@@ -128,16 +151,16 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const zs = cfg.zones();
 		if (!zs) return;
 		if (lenis.isStopped && !weStopped) return;
-		const y = window.scrollY;
+		const y = base();
 		const z = zoneAt(zs, y);
 		if (!z) return;
 		const v = verdict(z, down ? 1 : -1, y);
-		if (v.kind === 'release') { if (holding()) letGo(); return; }
+		if (v.kind === 'release') { if (moving) { e.preventDefault(); e.stopImmediatePropagation(); return; } if (holding()) letGo(); return; }
 		grab();
 		e.preventDefault();
 		e.stopImmediatePropagation();
 		const now = performance.now();
-		if (v.kind === 'step' && now - lastKey >= 250) { lastKey = now; step(z, y, v.to); }
+		if (v.kind === 'step' && now - lastKey >= 200) { lastKey = now; step(z, window.scrollY, v.to); }
 	};
 
 	// ── touch: the page follows the finger a little (a peek at the next stop), and a swipe or a short flick takes the step ──
@@ -147,13 +170,12 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const zs = cfg.zones();
 		if (!zs) { drag = null; return; }
 		if (lenis.isStopped && !weStopped) { drag = null; return; }
-		const z = zoneAt(zs, window.scrollY);
-		if (!z) { if (holding()) letGo(); drag = null; return; }
+		const z = zoneAt(zs, base());
+		if (!z) { if (holding() && !moving) letGo(); drag = null; return; }
 		grab();
-		// a finger on the page takes over a movement still running
-		if (moving) { lenis.scrollTo(window.scrollY, { immediate: true, force: true }); moving = false; }
+		// a finger on the page while a step runs does not stop it: the swipe counts on from where that step is going
 		const t = e.touches[0];
-		drag = { y0: t.clientY, t0: performance.now(), y: t.clientY, moved: 0, z, base: window.scrollY };
+		drag = { y0: t.clientY, t0: performance.now(), y: t.clientY, moved: 0, z, base: base() };
 	};
 	const onTouchMove = (e: TouchEvent) => {
 		if (!drag) return;
@@ -165,6 +187,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const dir = d < 0 ? 1 : -1;                  // a finger moving up takes the next step
 		const v = verdict(drag.z, dir, drag.base);
 		if (v.kind !== 'step') return;               // the end of the zone: only a release, on touchend
+		if (moving) return;                          // a step is running: no peek, the swipe is only counted on touchend
 		const p = clamp(Math.abs(d) / (vh() * 0.9), 0, 1);
 		lenis.scrollTo(drag.base + (v.to - drag.base) * p, { immediate: true, force: true });
 	};
@@ -181,12 +204,13 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const ver = verdict(g.z, dir, g.base);
 		if (ver.kind === 'wall') return;
 		if (ver.kind === 'release') {
+			if (moving) return;   // the step is still on its way to the end
 			// the end of the zone: the page is let go, with a nudge in the direction of the swipe to start it
 			if (commit) { letGo(); moveTo(window.scrollY + dir * vh() * 0.5, 0.9); }
 			return;
 		}
-		if (!commit) { moveTo(g.base, 0.6); return; }
-		step(g.z, g.base, ver.to);
+		if (!commit) { if (!moving) moveTo(g.base, 0.6); return; }
+		step(g.z, window.scrollY, ver.to);
 	};
 
 	// ── the first moments: the lenis appears a frame after the page, the sections after it ──
