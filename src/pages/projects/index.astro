@@ -284,8 +284,10 @@ const total = String(projects.length).padStart(2, '0');
       const reach = Math.abs(tilt) * 0.5 + 0.3;
       const headX = -reach + Math.max(0, Math.min(1, pos)) * (1 + 2 * reach);
       const tHead = (headX - 0.5) / g + len / 2;          // where the front is along the gradient line, px
-      const soft = 0.12 / g;                              // the front's soft edge (the shader's smoothstep +-0.12)
-      const img = `linear-gradient(${theta.toFixed(4)}rad, transparent ${(tHead - soft).toFixed(1)}px, #000 ${(tHead + soft).toFixed(1)}px)`;
+      // The beam's glow reaches about 0.13 ahead of its core: the type must be gone by the time the core is on it, so it is
+      // fully cut a little before the core (at the front itself) and only comes in fully ahead of the glow.
+      const cutFrom = 0.02 / g, cutTo = 0.17 / g;
+      const img = `linear-gradient(${theta.toFixed(4)}rad, transparent ${(tHead - cutFrom).toFixed(1)}px, #000 ${(tHead + cutTo).toFixed(1)}px)`;
       // the header moves up once its pin is over: keep the cut on the screen, not on the header
       const top = head.getBoundingClientRect().top;
       head.style.maskImage = head.style.webkitMaskImage = img;
