@@ -158,7 +158,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Before its own pin the stage would ride up from the bottom of the
 				// screen: hold it on the spot instead, so it only ever comes out of
 				// the dark, never scrolls in.
-								stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
+								const arrive = smooth(clamp01((y - (pinStart - lead)) / span));
+					// Touch: the line carries its own step blur-in (ManifestoSection), so the stage itself does not fade (no double fade)
+					stage.style.opacity = gentle ? (arrive > 0 ? '1' : '0') : arrive.toFixed(3);
 			};
 			// The hold (the stage standing on the spot before its own pin) is set in the SAME frame the scroll moves, not a
 			// frame later in a requestAnimationFrame: a frame late, the text slipped up and snapped back while scrolling.
