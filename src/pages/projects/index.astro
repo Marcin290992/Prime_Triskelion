@@ -287,6 +287,102 @@ const total = String(projects.length).padStart(2, '0');
     };
     document.addEventListener('click', onPick, true);
 
+    // ── Phones and tablets: the scroll mechanism of the home page's Selected work ──
+    //  1. the light has a top speed (about one picture in 0.8 s, up to 2x when it is far behind), so a hard fling cannot
+    //     rush through the pictures; a slow drag is followed exactly;
+    //  2. one gesture moves the page at most one name on from where it began, its momentum cut at that stop; every new
+    //     touch is a new gesture;
+    //  3. when the scroll goes quiet, the page glides on to the nearest name (a long, soft glide), a third of the way is
+    //     enough to commit to the next one.
+    const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+    const SPEED = 1.2;
+    let posTarget = 0, posShown = 0, limRaf = 0, limT = 0;
+    const limTick = (now: number) => {
+      limRaf = 0;
+      const dt = Math.min(0.1, (now - limT) / 1000);
+      limT = now;
+      const d = posTarget - posShown;
+      const m = SPEED * (1 + Math.max(0, Math.min(1, (Math.abs(d) - 0.7) / 1.5))) * dt;
+      posShown = Math.abs(d) <= m ? posTarget : posShown + Math.sign(d) * m;
+      beam?.setPos(posShown);
+      if (posShown !== posTarget) limRaf = requestAnimationFrame(limTick);
+    };
+    const setBeam = (v: number) => {
+      posTarget = v;
+      if (!coarse) { beam?.setPos(v); return; }
+      if (!limRaf && posShown !== posTarget) { limT = performance.now(); limRaf = requestAnimationFrame(limTick); }
+    };
+    let snapOff = () => {};
+    let lenisWait = 0, lenisTries = 0;
+    const setupSnap = (lenis: any) => {
+      const vh = () => window.innerHeight;
+      const stop = (k: number) => { const r = rows[k]; return r.getBoundingClientRect().top + window.scrollY + r.offsetHeight / 2 - vh() / 2; };
+      const last = rows.length - 1;
+      const IDLE = 240, DEPART = 0.35;
+      let snapping = false, timer = 0, fail = 0, anchor = -1;
+      const nearest = (y: number) => { let b = 0; for (let k = 1; k <= last; k++) if (Math.abs(stop(k) - y) < Math.abs(stop(b) - y)) b = k; return b; };
+      const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
+      const move = (k: number, y: number) => {
+        snapping = true;
+        clearTimeout(fail);
+        fail = window.setTimeout(() => { snapping = false; }, 4000);   // never stay stuck
+        lenis.scrollTo(stop(k), { duration: 1.7 + Math.min(0.8, Math.abs(stop(k) - y) / vh()), easing: settle, force: true, onComplete: () => { clearTimeout(fail); snapping = false; } });
+      };
+      const decide = () => {
+        timer = 0;
+        if (snapping || document.documentElement.classList.contains('pt-restoring')) return;
+        if (lenis.isStopped) { anchor = -1; return; }
+        if (lenis.isTouching) { timer = window.setTimeout(decide, 80); return; }
+        const y = lenis.scroll;
+        if (y < stop(0) - 0.6 * vh() || y > stop(last) + 0.45 * vh()) return;   // free scroll outside the list
+        let lo = 0;
+        for (let i = 1; i < last; i++) if (y >= stop(i)) lo = i;
+        let k: number;
+        if (y <= stop(0)) k = 0;
+        else if (y >= stop(last)) k = last;
+        else {
+          const f = Math.max(0, Math.min(1, (y - stop(lo)) / (stop(lo + 1) - stop(lo))));
+          const forward = lenis.direction >= 0;
+          k = f < 0.002 ? lo : f > 0.998 ? lo + 1 : forward ? (f >= DEPART ? lo + 1 : lo) : (f <= 1 - DEPART ? lo : lo + 1);
+        }
+        if (anchor >= 0) k = Math.max(Math.max(anchor - 1, 0), Math.min(Math.min(anchor + 1, last), k));
+        anchor = -1;
+        if (Math.abs(stop(k) - y) < 1) return;
+        move(k, y);
+      };
+      const onLenisScroll = () => {
+        if (snapping) return;
+        if (anchor < 0) anchor = nearest(lenis.scroll);
+        if (!lenis.isStopped) {
+          // one gesture moves the page at most one name on: the finger's momentum is cut at that stop
+          const y = lenis.scroll;
+          const hi = anchor + 1 <= last ? stop(anchor + 1) : Infinity;
+          const lo = anchor - 1 >= 0 ? stop(anchor - 1) : -Infinity;
+          const edge = y > hi + 1 ? hi : y < lo - 1 ? lo : null;
+          if (edge !== null) lenis.scrollTo(edge, { immediate: true, force: true });
+        }
+        window.clearTimeout(timer);
+        timer = window.setTimeout(decide, IDLE);
+      };
+      // every new touch is a new gesture, and takes over a glide still running
+      const onTouchStart = () => {
+        if (lenis.isStopped) return;
+        // the name the page stands on where the finger lands (not where the first scroll event happens to be)
+        anchor = nearest(lenis.scroll);
+        if (snapping) { snapping = false; clearTimeout(fail); }
+        window.clearTimeout(timer);
+      };
+      lenis.on('scroll', onLenisScroll);
+      window.addEventListener('touchstart', onTouchStart, { passive: true });
+      snapOff = () => { lenis.off?.('scroll', onLenisScroll); window.removeEventListener('touchstart', onTouchStart); window.clearTimeout(timer); window.clearTimeout(fail); };
+    };
+    const attachLenis = () => {
+      const l = (window as any).__lenis;
+      if (l) { setupSnap(l); return; }
+      if (++lenisTries < 180) lenisWait = requestAnimationFrame(attachLenis);
+    };
+    if (coarse && !reduce) attachLenis();
+
     const place = () => {
       const vh = window.innerHeight;
       const cs = rows.map((row) => { const r = row.getBoundingClientRect(); return (r.top + r.height / 2) / vh; });
@@ -313,7 +409,7 @@ const total = String(projects.length).padStart(2, '0');
           pos = i + 1 + Math.max(0, Math.min(1, (t - 0.12) / 0.76)); // a name stands still on a picture at rest
         }
       }
-      beam?.setPos(pos);
+      setBeam(pos);
       headExit();
       // The stage is black at pos 0, so it must not ride up over the hero as a dark band (the scroll would show). It
       // stays invisible while the header goes out in place (light, blur, dim: see sideRays.js) and comes up out of that
@@ -351,7 +447,7 @@ const total = String(projects.length).padStart(2, '0');
     const title = page.querySelector('.pp-title');
     // the site's own title entrance, after the page transition (the same as the other pages)
     if (title) afterPageTransition(() => { titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), [title]); });
-    off = () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; veil?.remove(); blurL?.remove(); document.removeEventListener('click', onPick, true); };
+    off = () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; veil?.remove(); blurL?.remove(); document.removeEventListener('click', onPick, true); snapOff(); cancelAnimationFrame(lenisWait); cancelAnimationFrame(limRaf); };
   }
   document.addEventListener('astro:page-load', initPreview);
 </script>
