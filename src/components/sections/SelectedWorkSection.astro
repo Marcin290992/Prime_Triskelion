@@ -793,7 +793,7 @@ const SCREENS = projects.length + HOLD;
 				// there: the page starts moving the moment the swipe ends, instead of after ~1 s of invisible scroll.
 				jumpTo(dir > 0 ? stPin.end - 1 : stPin.start + 1);
 				// not far: the way back in (one flick) has to reach the zone again
-				const target = dir > 0 ? stPin.end + 0.4 * vh() : Math.max(0, stPin.start - 0.25 * vh());
+				const target = dir > 0 ? stPin.end + 0.4 * vh() : Math.max(0, stPin.start - 0.7 * vh());
 				lenis.scrollTo(target, { duration: 1.1, easing: settle, force: true, lock: false, onComplete: done });
 			};
 			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
@@ -802,13 +802,30 @@ const SCREENS = projects.length + HOLD;
 			// does not have to touch again). From above it is not: the title stands for a moment first.
 			let touch: any = null;
 			const trackDown = (e: PointerEvent) => {
-				touch = e.pointerType === 'mouse' ? null : { id: e.pointerId, y: e.clientY };
+				touch = e.pointerType === 'mouse' ? null : { id: e.pointerId, y: e.clientY, y0: e.clientY };
 				// a finger down during the hand-off glide takes the page over at once: the stage must be able to catch it
 				// again (turning back at once used to run straight through the pictures as a plain scroll)
 				if (gliding && touch) { gliding = false; clearTimeout(glideTimer); lastY = window.scrollY; setFrom(stPin.progress, true); }
 			};
 			const trackMove = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch.y = e.clientY; };
-			const trackUp = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch = null; };
+			// Coming back from the closing panel: ONE flick down is enough. The page itself would only move a part of the way
+			// (the panel is long), so the flick is turned into a glide to the stage's last picture (the stage takes the
+			// page when the glide crosses its edge, see onScroll).
+			const assistUp = () => {
+				const edge = stPin.end, y = window.scrollY;
+				if (on || y <= edge - 0.02 * unit() || y > edge + 0.9 * vh()) return;
+				requestAnimationFrame(() => {
+					if (on) return;
+					gliding = false;
+					// a little PAST the line the stage takes the page on (edge - 0.02 of a screen), or it never crosses it
+					lenis.scrollTo(edge - 0.06 * unit(), { duration: 0.9, easing: settle, force: true, lock: false });
+				});
+			};
+			const trackUp = (e: PointerEvent) => {
+				if (!touch || e.pointerId !== touch.id) return;
+				const t = touch; touch = null;
+				if (!on && e.type === 'pointerup' && e.clientY - t.y0 > 40) assistUp();   // a flick down (the page goes up)
+			};
 			const engage = (k: number, jumpY?: number, carry = false) => {
 				if (on) return;
 				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
@@ -892,7 +909,7 @@ const SCREENS = projects.length + HOLD;
 				}
 				if (gliding || reduced() || root.classList.contains('pt-restoring')) { lastY = y; return; }
 				if (lastY < top && y >= top) engage(0, stop(0));                                  // coming down: the title's rest
-				else if (lastY >= bottom && y < bottom) engage(n, y < stop(n) ? stop(n) : undefined, true);   // coming back up: the last picture
+				else if (lastY >= bottom && y < bottom) engage(n, y < stop(n) ? stop(n) : undefined);   // coming back up: the last picture (the flick that brought it in does not go on to step)
 				lastY = y;
 			};
 			const onRefresh = () => { if (on) lockY = clamp(lockY, stop(0), stPin.end - 1); };
