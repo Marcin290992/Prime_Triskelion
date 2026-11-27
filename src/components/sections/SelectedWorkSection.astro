@@ -599,11 +599,31 @@ const SCREENS = projects.length + HOLD;
 		const PER = coarse ? 0.36 : 0.32;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
-		const setFrom = (progress: number) => {
-			const u = (progress * length - LEAD) / PER;
+		// Touch: the light has a top speed (SPEED steps a second, about one picture in half a second). The scroll may
+		// run ahead (a fling), the light catches up at its own calm pace, so a hard flick cannot skip pictures or
+		// rush through the section. A slow drag is slower than the limit and is followed exactly.
+		const SPEED = 1.9;
+		let curU = 0, targetU = 0, limRaf = 0, limT = 0;
+		const apply = (u: number) => {
 			uPos = Math.max(0, u);
 			pos = clamp(u - DARK, 0, n);
 			render();
+		};
+		const limTick = (now: number) => {
+			limRaf = 0;
+			const dt = Math.min(0.1, (now - limT) / 1000);
+			limT = now;
+			const d = targetU - curU;
+			const m = SPEED * dt;
+			curU = Math.abs(d) <= m ? targetU : curU + Math.sign(d) * m;
+			apply(curU);
+			if (curU !== targetU) limRaf = requestAnimationFrame(limTick);
+		};
+		const setFrom = (progress: number, instant = false) => {
+			const u = Math.max(0, (progress * length - LEAD) / PER);
+			if (!coarse || reduced() || instant) { targetU = curU = u; apply(u); return; }
+			targetU = u;
+			if (!limRaf && curU !== targetU) { limT = performance.now(); limRaf = requestAnimationFrame(limTick); }
 		};
 
 		// The edge blur bands stay on over the pictures; while the view is pinned
@@ -616,7 +636,7 @@ const SCREENS = projects.length + HOLD;
 		const stPin = ScrollTrigger.create({
 			trigger: wrap, start: 'top top', end: 'bottom bottom', invalidateOnRefresh: true,
 			onUpdate: (s) => { setFrom(s.progress); sync(s); },
-			onRefresh: (s) => { setFrom(s.progress); sync(s); },
+			onRefresh: (s) => { setFrom(s.progress, true); sync(s); },
 			onToggle: sync,
 		});
 		// The title's in / out, decided from the scroll position and its direction on EVERY scroll event:
@@ -720,6 +740,15 @@ const SCREENS = projects.length + HOLD;
 			const onScroll = () => {
 				if (snapping) return;
 				if (anchor < 0) anchor = nearest(lenis.scroll);
+				// Touch: one gesture moves the page at most one picture on from where it began. The finger's momentum is
+				// cut at that stop (also when it arrives from outside the view), not left to run through the section.
+				if (coarse && !lenis.isStopped) {
+					const y = lenis.scroll;
+					const hi = anchor + 1 <= n ? stop(anchor + 1) : Infinity;
+					const lo = anchor - 1 >= 0 ? stop(anchor - 1) : -Infinity;
+					const edge = y > hi + 1 ? hi : y < lo - 1 ? lo : null;
+					if (edge !== null) { lenis.scrollTo(edge, { immediate: true, force: true }); }
+				}
 				window.clearTimeout(timer);
 				timer = window.setTimeout(decide, IDLE);
 			};
@@ -759,6 +788,7 @@ const SCREENS = projects.length + HOLD;
 		cleanup = () => {
 			window.removeEventListener('keydown', onKey);
 			cancelAnimationFrame(waitRaf);
+			cancelAnimationFrame(limRaf);
 			snapOff();
 			window.removeEventListener('scroll', onTitleScroll);
 			ScrollTrigger.removeEventListener('refresh', titleTick);
