@@ -7,7 +7,7 @@
 // last stop of a zone one more gesture hands the page back to the plain scroll (and a gesture the other way from the
 // first stop of a zone with room above it does the same), and in the other direction a gesture takes the zone back.
 //
-//   home page, phones and tablets: one zone: hero, manifesto, services, the Selected work title, the pictures
+//   home page, phones and tablets: two zones: the hero and the manifesto; the Selected work (the services between are the plain scroll)
 //   home page, desktop: two zones: the hero (the manifesto and the services are then the user's own scroll), and the
 //                       Selected work (its title and the pictures)
 //   /projects, everywhere: one zone: the hero and every project
@@ -289,12 +289,15 @@ export function initHomeScene(): (() => void) | null {
 		const pics: number[] = sw.stops();
 		if (!pics.length || !ascending(pics)) return null;
 		if (isCoarse()) {
-			// phones and tablets: hero, manifesto (whole and red), services, then the title and the pictures: one zone
+			// phones and tablets: two zones: the hero and the manifesto (whole and red: it fills itself there), and the Selected work
+			// (its title and the pictures). The services between are the user's own, normal scroll.
 			const y1 = st.start + hold * (st.end - st.start);
-			const r = svc.getBoundingClientRect();
-			const y2 = r.top + window.scrollY + r.height / 2 - vh() / 2;
-			const list = [0, y1, y2, ...pics];
-			return ascending(list) ? [{ stops: list, start: 0, end: list[list.length - 1] }] : null;
+			const a = [0, y1];
+			if (!ascending(a) || !(pics[0] > y1 + 8)) return null;
+			return [
+				{ stops: a, start: 0, end: y1 },
+				{ stops: pics, start: pics[0] - 0.6 * vh(), end: pics[pics.length - 1] },
+			];
 		}
 		// desktop: the hero (up to where the manifesto begins to fill), and the pictures; the manifesto and the services between
 		// are the user's own scroll
