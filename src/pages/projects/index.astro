@@ -130,9 +130,12 @@ const total = String(projects.length).padStart(2, '0');
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.6) 100%);
+      radial-gradient(ellipse 80% 75% at 50% 46%, transparent 45%, rgba(0,0,0,0.5) 100%);
   }
-  .pp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  /* the canvas over the plain images (which are only the cross-fade when WebGL is missing or lost) */
+  .pp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; }
+  .pp-shade { z-index: 2; }
+  .pp-count { z-index: 3; }
   .pp-stage--fallback .pp-canvas { display: none; }
   .pp-count {
     position: absolute;
@@ -160,6 +163,7 @@ const total = String(projects.length).padStart(2, '0');
     text-align: center;
   }
   .pp-name {
+    text-shadow: 0 2px 30px rgba(0,0,0,0.55);
     color: inherit;
     text-decoration: none;
     font-family: var(--f-display);
@@ -256,7 +260,8 @@ const total = String(projects.length).padStart(2, '0');
     };
 
     let beam: BeamSlides | null = null;
-    const fallback = () => { stage?.classList.add('pp-stage--fallback'); pics.forEach((p) => { p.style.visibility = 'visible'; }); };
+    let plain = false;   // the plain images carry the pictures (no WebGL, or the context was lost)
+    const fallback = () => { plain = true; stage?.classList.add('pp-stage--fallback'); pics.forEach((p) => { p.style.visibility = 'visible'; }); };
     if (reduce || !canvas) fallback();
     else { beam = createBeamSlides(canvas, pics, fallback, [0, 1]); if (!beam) fallback(); }
 
@@ -294,7 +299,7 @@ const total = String(projects.length).padStart(2, '0');
         link.style.transform = `translateY(${((1 - p) * (cs[i] > 0.5 ? 14 : -10)).toFixed(1)}px)`;
         link.style.pointerEvents = p < 0.4 ? 'none' : '';
         if (p > bestP) { bestP = p; best = i; }
-        if (!beam) { const pic = pics[i]; if (pic) pic.style.opacity = (p * 0.9).toFixed(3); }
+        if (!beam || plain) { const pic = pics[i]; if (pic) pic.style.opacity = (p * 0.9).toFixed(3); }
       });
       // pos: the first picture comes up out of the dark as the first name rises; then between two names the light sweeps
       let pos: number;
@@ -320,7 +325,7 @@ const total = String(projects.length).padStart(2, '0');
         // screen's type comes up), whatever the way the page is scrolled
         const lastC = cs[cs.length - 1];
         const out = 1 - smooth((0.5 - lastC) / 0.4);
-        stage.style.opacity = (smooth((q - 0.1) / 0.34) * out).toFixed(3);
+        stage.style.opacity = (smooth((q - 0.06) / 0.2) * out).toFixed(3);
         // Until the section has reached the top, the stage would ride up with it (its picture rising from below): hold it
         // on the spot instead (fixed; it takes no room in the flow either way), the sticky takes over at the very same place.
         const held = (page.querySelector('.pp-train') as HTMLElement).getBoundingClientRect().top > 0;
