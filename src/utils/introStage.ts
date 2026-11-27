@@ -19,6 +19,7 @@ export const CFG = {
 	seamFocus: 0.5,      // where on the screen (share of its height) the first service name comes to rest
 	stepBlur: 16,        // px  blur of a step's elements while out of focus
 	stepBlurLow: 10,     // px  ... on weaker phones
+	overlap: 0.2,        // hero <-> manifesto: a step starts showing this much earlier (share of a step), so at the midpoint both are partly visible and the screen is never empty (0 = the old, empty midpoint)
 	stagger: 0.035,      // per element index, entering steps only
 	fillDelay: 0,        // s   before the fill starts
 	fillTime: 2.6,       // s   how long the text takes to fill (inOutSine)
@@ -161,7 +162,9 @@ export function initIntroStage(): (() => void) | null {
 
 		for (let i = 0; i < 2; i++) {
 			const d = i - v, ad = Math.abs(d), box = containers[i];
-			if (ad >= 0.5) {   // c is 0 from here on: the step is gone (not drawn, not clickable)
+			// the manifesto going out to the page (d < 0) keeps the plain timing; every other change overlaps
+			const ov = i === 1 && d < 0 ? 0 : CFG.overlap, reach = 0.5 + ov;
+			if (ad >= reach) {   // c is 0 from here on: the step is gone (not drawn, not clickable)
 				if (shown[i]) { box.style.visibility = 'hidden'; shown[i] = false; }
 				continue;
 			}
@@ -172,7 +175,7 @@ export function initIntroStage(): (() => void) | null {
 			if (i === 0) heroTouched = true;
 			const u = 1 - ad, dir = d > 0 ? 1 : -1;
 			items[i].forEach((el, k) => {
-				const c = smooth((u - 0.5 - (d > 0 ? k * CFG.stagger : 0)) / 0.42), st = el.style;
+				const c = smooth((u - (1 - reach) - (d > 0 ? k * CFG.stagger : 0)) / 0.42), st = el.style;
 				const g = i === 1 ? 1 + CFG.grow * S.grow : 1;
 				if (c >= 0.999) {
 					st.opacity = '1'; st.filter = 'none';
