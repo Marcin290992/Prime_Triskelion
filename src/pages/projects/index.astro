@@ -1,570 +1,352 @@
 ---
+// The projects page, in the language of the home page: the light, big names that come up out of
+// blur one after another (the "ghost train" of the services), and behind each name its picture, out of the same blur.
+// Same data as the case-study pages. (The earlier window-by-window list is in git history.)
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
 import { getImage } from 'astro:assets';
 import { projects as data, hrefOf } from '../../data/projects';
 
-// Titles, tags, years and card pictures come from src/data/projects.ts (the same
-// file the /projects/[slug] case-study pages read). A local card picture can be
-// a 7360px-wide source, so getImage() pre-generates a downscaled one for the card
-// and a 2400px one for the full-screen case-study entrance (data-case-src).
-// Placeholders keep their remote URL (no `full`).
 const projects = await Promise.all(
   data.map(async (p) => {
     const local = typeof p.card !== 'string';
-    const img = local ? (await getImage({ src: p.card, width: 900, height: 1200 })).src : (p.card as string);
-    const full = local ? (await getImage({ src: p.card, width: 2400 })).src : undefined;
-    return { slug: hrefOf(p), title: p.title, categories: p.categories, year: p.year, img, full, bg: p.bg, speed: p.speed };
+    const img = local ? (await getImage({ src: p.card, width: 2000 })).src : (p.card as string);
+    return { slug: hrefOf(p), title: p.title, categories: p.categories, year: p.year, img };
   })
 );
+const total = String(projects.length).padStart(2, '0');
 ---
-
-<Layout
-  title="Projects — Prime Triskelion"
-  description="Selected work by Prime Triskelion — brand identity, web design, motion and digital strategy."
->
-  <main id="projects-page">
-
-    <!-- Brief header -->
-    <header class="proj-header" data-side-rays data-rays-pin>
-      <h1 class="proj-title">
-        <span class="proj-title__line"><span class="proj-title__word">My</span></span>
-        <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
-      </h1>
-      <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
+<Layout title="Projects — Prime Triskelion" description="Selected work by Prime Triskelion — brand identity, web design, motion and digital strategy.">
+  <main id="pp-page">
+    <!-- The header goes out the way the home page's hero does (scrubbed by the scroll, on every device): the light goes out,
+         the type goes into the 5.5px blur, the screen darkens, and the names and pictures come up out of that dark. -->
+    <div id="pp-pin">
+    <header class="pp-hero" data-side-rays="0.22,0.55" data-side-rays-desktop="1.45">
+      <h1 class="pp-title">My <em>Projects.</em></h1>
     </header>
-
-    <!-- Mask reveal sections -->
-    <div data-after-hero id="projects-list">
-    {projects.map((p) => (
-      <section
-        class="proj-section"
-        style={`--bg: ${p.bg}`}
-        aria-label={p.title}
-      >
-        <a class="proj-inner" href={p.slug} data-case data-case-src={p.full}>
-
-          <!-- Giant bg text -->
-          <span class="proj-bg-text" data-speed={p.speed} aria-hidden="true">
-            {p.title}
-          </span>
-
-          <!-- Project image -->
-          <div class="proj-img-wrap" data-case-media>
-            {p.img
-              ? <img src={p.img} alt={p.title} crossorigin="anonymous" />
-              : (
-                <div class="proj-img-ph"></div>
-              )
-            }
-          </div>
-
-          <!-- Bottom info bar -->
-          <div class="proj-foot">
-            <div class="proj-foot__left">
-              <span class="proj-foot__name">{p.title}</span>
-            </div>
-            <div class="proj-foot__center">
-              {p.categories.map((c) => <span class="proj-foot__tag">{c}</span>)}
-            </div>
-            <div class="proj-foot__right">
-              <span class="proj-foot__year">{p.year}</span>
-            </div>
-          </div>
-
-        </a>
-      </section>
-    ))}
     </div>
 
+    <section class="pp-train" id="projects-list" aria-label="Projects">
+      <!-- The pictures: pinned behind the names, each comes up out of blur when its name is in the middle. -->
+      <div class="pp-stage" aria-hidden="true">
+        <canvas class="pp-canvas"></canvas>
+        <!-- the same pictures as ordinary images: they are the textures of the canvas (the home page's beam, utils/beamSlides.ts) and the cross-fade without WebGL -->
+        {projects.map((p) => <img class="pp-pic" src={p.img} alt="" crossorigin="anonymous" loading="eager" />)}
+        <div class="pp-shade"></div>
+        <div class="pp-count"><span class="pp-count__n">01</span> / {total}</div>
+      </div>
+
+      <ul class="pp-list">
+        {projects.map((p) => (
+          <li class="pp-row">
+            <div class="pp-link">
+              <a class="pp-name" href={p.slug}>{p.title}</a>
+              <span class="pp-meta">
+                <span>{p.categories.join(' · ')}</span>
+                <span class="pp-meta__dot"></span>
+                <span>{p.year}</span>
+              </span>
+              <!-- the site's own button (as START A PROJECT and Explore) -->
+              <div class="h-hero-cta-wrap pp-cta">
+                <div class="h-hero-cta-grad-top" aria-hidden="true"></div>
+                <div class="h-hero-cta-grad-bottom" aria-hidden="true"></div>
+                <a href={p.slug} class="h-hero-cta h-hero-cta--fixed">
+                  <span class="hud-spin-border"></span>
+                  <span class="h-hero-cta__text">View project</span>
+                </a>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   </main>
   <CtaSection />
 </Layout>
 
 <style>
-  #projects-page {
-    background: rgb(var(--c-bg));
-    color: rgb(var(--c-cream));
-  }
+  #pp-page { background: rgb(var(--c-bg)); color: rgb(var(--c-cream)); }
 
-  /* â•â• HEADER â•â• */
-  .proj-header {
+  /* The title sits in the light, low on the left; the names begin right under it. */
+  @media (prefers-reduced-motion: no-preference) {
+    #pp-pin { position: relative; height: calc(var(--app-stable-vh, 1svh) * 138); }
+    #pp-pin > .pp-hero { position: sticky; top: 0; }
+  }
+  .pp-hero {
     position: relative;
     height: 100vh;
-    height: 100dvh;
+    height: calc(var(--app-stable-vh, 1svh) * 100);
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: clamp(8rem, 16vh, 14rem) var(--site-gutter) clamp(8rem, 18vh, 13rem);
+    /* the title stands in the middle of the screen, in the light (low on the left it was out of the falling rays) */
+    align-items: center;
+    padding: clamp(5rem, 10vh, 8rem) var(--site-gutter) clamp(5rem, 10vh, 8rem);
     box-sizing: border-box;
   }
-
-  .proj-title {
-    font-family: var(--f-display);
-    font-weight: 600;
-    font-size: clamp(3.5rem, 8vw, 8.5rem);
-    letter-spacing: -0.01em;
-    text-transform: uppercase;
-    line-height: 0.9;
-    color: rgb(var(--c-cream));
-  }
-  .proj-title__line { display: block; padding-bottom: 0.08em; }
-  .proj-title__word { display: block; opacity: 0; filter: blur(18px); }
-  .proj-title em { font-style: normal; color: rgb(var(--c-red)); }
-  /* Mobile only for now (placeholder copy) — same style as Services'
-     .svc-hero__lead. */
-  .proj-header__lead {
-    display: none;
-    font-family: var(--f-body);
-    font-weight: 300;
-    font-size: clamp(0.95rem, 1.1vw, 1.15rem);
-    line-height: 1.55;
-    letter-spacing: 0.01em;
-    color: rgb(var(--c-cream) / 0.82);
-    max-width: 34ch;
-    margin: clamp(1.2rem, 2vw, 1.8rem) 0 0;
+  /* Hidden from the first paint (the entrance brings it in once the page transition is over): it used to show, blink
+     out when the script took over, and only then come in. */
+  .pp-title {
     opacity: 0;
-    transform: translateY(10px);
-  }
-
-
-  /* â•â• MASK SECTION â•â• */
-  .proj-section {
+    filter: blur(18px);
     position: relative;
-    height: 100vh;
-    height: 100dvh;
-    width: 100%;
-    overflow: hidden;
-    background: var(--bg, rgb(var(--c-bg)));
-    transition: background-color 0.6s ease;
-    /* Mask for the fixed .proj-inner below — clip-path (unlike overflow)
-       also clips position:fixed descendants, so each section is a window
-       onto its own viewport-pinned panel. No transform here: it would
-       turn the section into the containing block and un-fix the inner. */
-    clip-path: inset(0);
-  }
-
-  /* â•â• INNER (fixed, masked by section) â•â• */
-  /* Pinned to the viewport, masked by the section. Used to be
-     position:absolute + a rAF loop writing translateY(-rect.top) every
-     frame to fake this — unsynchronised with Lenis's scroll write, so on
-     desktop Safari the panel lagged the section by a frame and visibly
-     jumped while scrolling. Real position:fixed moves with the scroll in
-     the same composited frame. */
-  .proj-inner {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-  }
-
-  /* â•â• BG TEXT â•â• */
-  .proj-bg-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    z-index: 2;
+    margin: 0;
     font-family: var(--f-display);
     font-weight: 600;
-    font-size: clamp(6rem, 17vw, 21rem);
+    font-size: clamp(3.2rem, 8vw, 8.5rem);
+    letter-spacing: -0.01em;
+    line-height: 0.92;
     text-transform: uppercase;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    color: rgb(var(--c-cream) / 0.055);
-    white-space: nowrap;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-    z-index: 1;
-    user-select: none;
   }
+  .pp-title em { font-style: normal; color: rgb(var(--c-red)); }
 
-  /* â•â• IMAGE â•â• */
-  .proj-img-wrap {
-    position: relative;
-    width: clamp(260px, 42vw, 680px);
-    height: clamp(180px, 52vh, 480px);
-    z-index: 2;
+  /* pulled up under the end of the pin: the first picture and name are already coming up out of the dark while the
+     header is still going out, with no empty black stretch between the two */
+  .pp-train { position: relative; margin-top: calc(var(--app-stable-vh, 1svh) * -34); }
+
+  /* ── the pictures, pinned for the whole list ── */
+  .pp-stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    margin-bottom: -100vh;
+    margin-bottom: -100svh;
     overflow: hidden;
-    box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.05);
+    z-index: 1;
+    pointer-events: none;
   }
-  .proj-img-wrap img {
+  .pp-pic {
+    position: absolute;
+    visibility: hidden;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
+    opacity: 0;
+    will-change: opacity, filter, transform;
   }
-
-  /* Image placeholder */
-  .proj-img-ph {
-    width: 100%;
-    height: 100%;
+  /* the picture is only ever a dim light behind the type: dark at the edges, readable in the middle */
+  .pp-shade {
+    position: absolute;
+    inset: 0;
     background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
-      linear-gradient(160deg, #141418 0%, #0e0e12 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+      radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.6) 100%);
   }
-
-  /* Gradient pod stopkÄ… — kontrast na desktopie */
-  .proj-inner::before {
-    content: '';
+  .pp-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .pp-stage--fallback .pp-canvas { display: none; }
+  .pp-count {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 55%;
-    background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.25) 45%, transparent 100%);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  /* â•â• FOOTER INFO â•â• */
-  .proj-foot {
-    position: absolute;
-    bottom: clamp(7rem, 13vh, 10rem);
     left: var(--site-gutter);
-    right: var(--site-gutter);
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: flex-end;
-    gap: 1rem;
-    z-index: 3;
+    bottom: clamp(1.5rem, 5vh, 3rem);
+    font-family: var(--f-body);
+    font-weight: 300;
+    font-size: clamp(0.75rem, 1vw, 0.9rem);
+    letter-spacing: 0.38em;
+    color: rgb(var(--c-cream) / 0.7);
   }
+  .pp-count__n { color: rgb(var(--c-cream)); }
 
-  .proj-foot__left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-  .proj-foot__name {
-    font-family: var(--f-display);
-    font-weight: 600;
-    font-size: clamp(2.4rem, 4.5vw, 6rem);
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    line-height: 0.95;
-    color: rgb(var(--c-cream));
-  }
-
-  .proj-foot__center {
+  /* ── the names: one per screen-ish, up out of blur, sharp in the middle, out at the top ── */
+  .pp-list { position: relative; z-index: 2; list-style: none; margin: 0; padding: 4vh 0 18vh; }
+  .pp-row { min-height: 78vh; display: flex; align-items: center; justify-content: center; }
+  .pp-link {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    gap: clamp(0.8rem, 2vh, 1.4rem);
+    padding: 0 var(--site-gutter);
+    color: rgb(var(--c-cream));
+    text-decoration: none;
+    text-align: center;
   }
-  .proj-foot__tag {
-    font-family: var(--f-body);
-    font-size: clamp(0.75rem, 1vw, 1rem);
-    font-weight: 300;
-    letter-spacing: 0.2em;
+  .pp-name {
+    color: inherit;
+    text-decoration: none;
+    font-family: var(--f-display);
+    font-weight: 700;
+    font-size: clamp(3rem, min(11vw, 17vh), 13rem);
+    line-height: 1.02;
     text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.7);
-    white-space: nowrap;   /* a category never breaks across two lines */
+    letter-spacing: 0.005em;
   }
-
-  /* In a row (laptop and mobile layouts below) the tags are told apart by
-     a dot; stacked in a column (big screens) they don't need one. */
-  .proj-foot__right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.6rem;
-  }
-  .proj-foot__year {
+  .pp-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
     font-family: var(--f-body);
-    font-size: clamp(0.75rem, 1vw, 1rem);
     font-weight: 300;
-    letter-spacing: 0.2em;
-    color: rgb(var(--c-cream) / 0.65);
+    font-size: clamp(0.75rem, 1.1vw, 0.9rem);
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: rgb(var(--c-cream) / 0.8);
   }
-
-  /* Desktop: the frame leans in a touch under the cursor and its edge
-     lights up; the title comes to full strength. (The enter/leave focus
-     pull is scroll-driven, in the script below.) */
-  @media (hover: hover) and (pointer: fine) {
-    .proj-img-wrap {
-      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s ease;
-    }
-    .proj-foot__name { transition: color 0.5s ease; }
-    .proj-foot__tag, .proj-foot__year { transition: color 0.5s ease; }
-    .proj-inner:hover .proj-img-wrap {
-      transform: scale(1.025);
-      box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.16);
-    }
-    .proj-inner:hover .proj-foot__tag,
-    .proj-inner:hover .proj-foot__year { color: rgb(var(--c-cream) / 0.95); }
+  .pp-meta__dot { width: 3px; height: 3px; border-radius: 50%; background: rgb(var(--c-red)); }
+  /* The button: the site's (.h-hero-cta), small, on dark glass so it reads over any picture. */
+  .pp-cta { width: auto !important; max-width: none !important; margin: 0.4rem 0 0; }
+  .pp-cta .h-hero-cta {
+    --cta-bg: rgb(0 0 0 / 0.72);
+    min-height: 46px;
+    min-width: 11rem;
+    padding: 0.7rem 1.8rem;
   }
+  @media (prefers-reduced-motion: reduce) { .pp-title { opacity: 1; filter: none; } }
 
-  /* â•â• MOBILE / TABLET â•â• */
-  /* Laptop 1025–1600px */
-  @media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
-    .proj-foot {
-      bottom: clamp(5.5rem, 11vh, 8rem);
-      grid-template-columns: 1fr auto 1fr;
-      gap: 1rem 2vw;
-      align-items: center;
-    }
-    .proj-foot__name {
-      font-size: clamp(1.8rem, 3.2vw, 4rem);
-    }
-    .proj-foot__center {
-      flex-direction: row;
-      flex-wrap: nowrap;   /* always one row, side by side */
-      justify-content: center;
-      gap: 0.3rem 1rem;
-    }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 1rem; opacity: 0.6; }
-    .proj-foot__right {
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 1.2rem;
-    }
-  }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
-    /* Cinematic first screen: the title alone, vertically centred, the
-       cards only on scroll. Sized off the stable --app-stable-vh (set once
-       in Layout.astro) so the URL bar can't resize it mid-scroll. */
-    .proj-header {
-      /* A whole screen: the title has it to itself, no card peeks in below. */
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      min-height: unset;
-      justify-content: center;
-      padding-top: 5rem;
-      padding-bottom: 1.5rem;
-    }
-    .proj-header__lead { display: block; }
-
-    /* Same scene as desktop: each project a full screen, its photo and title
-       pinned to the viewport and revealed through the section's window as
-       the page scrolls (the blur-in and parallax run in the script below).
-       Sized off the stable --app-stable-vh so the browser bar can't resize
-       it mid-scroll. */
-    .proj-section {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-    }
-    .proj-inner {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      box-sizing: border-box;
-      /* The photo is centred in the free space between the logo (top) and
-         the name / tags / MENU block (bottom), not in the whole screen. */
-      padding: clamp(4.5rem, calc(var(--app-stable-vh, 1svh) * 10), 6rem) 0 clamp(11rem, calc(var(--app-stable-vh, 1svh) * 26), 13rem);
-    }
-    .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
-    .proj-img-wrap {
-      width: clamp(240px, 72vw, 680px);
-      height: clamp(180px, 50svh, 520px);
-      height: clamp(180px, calc(var(--app-stable-vh, 1svh) * 50), 520px);
-    }
-    /* Name and year on one line, the tags under — above the bottom MENU button. */
-    .proj-foot {
-      bottom: 6.5rem;
-      grid-template-columns: 1fr auto;
-      align-items: end;
-      gap: 0.6rem 1rem;
-    }
-    .proj-foot__left { grid-column: 1; grid-row: 1; }
-    .proj-foot__name { font-size: clamp(1.9rem, 8.5vw, 3.6rem); }
-    .proj-foot__center {
-      grid-column: 1 / 3;
-      grid-row: 2;
-      flex-direction: row;
-      flex-wrap: nowrap;   /* the three categories are always side by side in ONE row, never broken */
-      align-items: center;
-      justify-content: flex-start;
-      gap: 0 clamp(0.45rem, 2.4vw, 0.9rem);
-    }
-    .proj-foot__center .proj-foot__tag { font-size: clamp(7.5px, 2.5vw, 12px); letter-spacing: clamp(0.08em, 0.5vw, 0.2em); }
-    .proj-foot__right { grid-column: 2; grid-row: 1; align-items: flex-end; }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: clamp(0.45rem, 2.4vw, 0.9rem); opacity: 0.6; }
-    @media (min-width: 700px) {
-      .proj-img-wrap { width: clamp(420px, 56vw, 680px); }
-      .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
-    }
-
+  @media (max-width: 720px) {
+    .pp-row { min-height: 70vh; }
+    .pp-meta { flex-wrap: wrap; justify-content: center; gap: 0.4rem 0.9rem; letter-spacing: 0.22em; }
   }
 </style>
 
 <script>
   import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
+  import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
+  import { afterPageTransition, titleIn } from '../../utils/afterPageTransition';
+  const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
+  let off: (() => void) | null = null;
+  document.addEventListener('astro:before-swap', () => { off?.(); off = null; });
 
-  function initProjectsPage() {
-    if (!document.getElementById('projects-page')) return;
-
-    // â”€â”€ Header entrance â”€â”€
-    const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
-    const lead = document.querySelector<HTMLElement>('.proj-header__lead');
-    const mode = subpageMode();
-    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
-
-    afterPageTransition(() => {
-      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      titleIn(tl, titleWords);
-      if (isMob || mode !== 'full') supportIn(tl, lead, 1.3);
-      else if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      revealAfterHero();
-    });
-
-
-    // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
-    const reduce_ = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Cache references once — never query DOM inside the render loop
-    const panels = Array.from(
-      document.querySelectorAll<HTMLElement>('.proj-section')
-    ).map(sec => ({
-      sec,
-      bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
-      foot:    sec.querySelector<HTMLElement>('.proj-foot'),
-      img:     sec.querySelector<HTMLElement>('.proj-img-wrap img'),
-      speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
-    }));
-
-    // Phones/tablets: the last card, once it fills the screen, stops being
-    // pinned and scrolls on with the page.
-    const lastSec = document.querySelector<HTMLElement>('.proj-section:last-child');
-    // The last project sinks into black as its window closes (an overlay in the
-    // page colour on that section), so the CTA arrives on a dark screen.
-    const sink = document.createElement('div');
-    sink.setAttribute('aria-hidden', 'true');
-    sink.style.cssText = 'position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
-    // (in the pinned panel, the same layer as the photo — in the section they
-    // rounded differently and a 1px sliver of the photo showed at the edge)
-    lastSec?.querySelector('.proj-inner')?.appendChild(sink);
-    // The first project is the mirror of that: it comes up out of the dark as
-    // its window opens under the header.
-    const firstSec = document.querySelector<HTMLElement>('.proj-section');
-    const rise = sink.cloneNode() as HTMLElement;
-    rise.style.opacity = '1';
-    firstSec?.querySelector('.proj-inner')?.appendChild(rise);
-    // However the page is arrived at already scrolled to the list (a link to #projects-list, or the browser's Back
-    // button, which puts the scroll position back a moment AFTER the page has started), the first project is in its
-    // window at once and the scroll alone would show its photo at full strength: a hard cut. So the first photo always
-    // starts under the dark and comes up out of it on the clock (softly, like everything that arrives on a page). Seen
-    // from the top of the page it changes nothing: the project is far below the fold until the scroll gets there.
-    // It is counted frame by frame in the render loop below, each frame at most 50 ms (not by GSAP's clock: after a
-    // long first frame, which a page restored by the Back button often has, that clock jumps ahead by the whole
-    // stall and the soft entrance was over in a single frame, so it still looked like a cut).
-    const entry = { v: reduce_ ? 0 : 1 };
-    let entryT = 0;
-    let entryGo = false;
-    let entryLast = performance.now();
-    if (!reduce_) afterPageTransition(() => { entryGo = true; });
-    let raf = 0;
-    // As a card's window opens (and closes again) its title block comes out
-    // of a blur and its photo settles from a hair oversized — scroll-driven,
-    // so it follows the wheel exactly. Only the small text block is filtered
-    // (never the big photo), the photo gets a transform.
+  // The names are the same ghost train as the services (by where each is on the screen, nothing timed, the same on the
+  // way back). The pictures are the home page's own beam (utils/beamSlides.ts, WebGL): one number, pos, 0 = the dark,
+  // a whole number = that picture standing still, between two = the band of light sweeping one into the next.
+  function initPreview() {
+    off?.();
+    const page = document.getElementById('pp-page');
+    if (!page) return;
+    const rows = Array.from(page.querySelectorAll<HTMLElement>('.pp-row'));
+    const pics = Array.from(page.querySelectorAll<HTMLImageElement>('.pp-pic'));
+    const stage = page.querySelector<HTMLElement>('.pp-stage');
+    const canvas = page.querySelector<HTMLCanvasElement>('.pp-canvas');
+    const num = page.querySelector<HTMLElement>('.pp-count__n');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const FOOT_BLUR = 8;      // px, at fully hidden
-    const IMG_SETTLE = 0.08;  // scale above 1, at fully hidden
-    const smooth = (a: number, b: number, x: number) => {
-      const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
-      return t * t * (3 - 2 * t);
+    const BLUR = 5.5; // the same as every other going-out on the site
+
+    // ── The header's exit: the home page's hero method (scrubbed by the scroll, on every device) ──
+    const pin = page.querySelector<HTMLElement>('#pp-pin');
+    const head = pin?.querySelector<HTMLElement>('.pp-hero') ?? null;
+    let veil: HTMLElement | null = null, blurL: HTMLElement | null = null;
+    if (pin && head && !reduce) {
+      // two layers right after the pin: over the header, under the train (which comes later in the page): the blur first
+      // (it softens what is behind it), the black after
+      const mk = (css: string) => {
+        const el = document.createElement('div');
+        el.setAttribute('aria-hidden', 'true');
+        el.style.cssText = 'position:fixed;inset:0;pointer-events:none;visibility:hidden;' + css;
+        return el;
+      };
+      blurL = mk('');
+      veil = mk('background:#000;opacity:0;');
+      pin.after(blurL, veil);
+    }
+    const headExit = () => {
+      if (!pin || !head || !veil || !blurL) return;
+      const range = Math.max(1, pin.offsetHeight - head.offsetHeight);
+      const y = window.scrollY;
+      const p = y / range;
+      const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+      const light = 1 - smooth(clamp01((p - 0.0) / 0.34));
+      const bk = smooth(clamp01((p - 0.0) / 0.38));
+      const a = smooth(clamp01((p - 0.2) / 0.5));
+      const live = y < pin.offsetTop + pin.offsetHeight;
+      const cv = head.querySelector<HTMLElement>('canvas');
+      if (cv) cv.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+      blurL.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
+      blurL.style.backdropFilter = blurL.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 5.5).toFixed(1)}px)` : '';
+      veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
+      veil.style.opacity = a.toFixed(3);
     };
 
-    function render() {
+    let beam: BeamSlides | null = null;
+    const fallback = () => { stage?.classList.add('pp-stage--fallback'); pics.forEach((p) => { p.style.visibility = 'visible'; }); };
+    if (reduce || !canvas) fallback();
+    else { beam = createBeamSlides(canvas, pics, fallback, [0, 1]); if (!beam) fallback(); }
+
+    // ── Choosing a project: the type goes out first, one piece after another (the name, the tags, the button, the
+    // counter), each into a light blur, so the picture stands alone for a moment; only then the page transition starts
+    // (the click is let through again once the cascade is over, so the site's own transition handles it as usual).
+    let leaving = false;
+    let letThrough = false;
+    const onPick = (e: MouseEvent) => {
+      if (letThrough || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest<HTMLAnchorElement>('.pp-name, .pp-cta a');
+      if (!a || !page.contains(a)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if (leaving) return;
+      leaving = true;
+      const link = a.closest<HTMLElement>('.pp-link');
+      const parts = link ? [link.querySelector('.pp-name'), link.querySelector('.pp-meta'), link.querySelector('.pp-cta')].filter(Boolean) as HTMLElement[] : [];
+      const tl = gsap.timeline({ onComplete: () => { letThrough = true; a.click(); } });
+      tl.to(parts, { opacity: 0, filter: `blur(${BLUR}px)`, y: -10, duration: 0.55, ease: 'power2.inOut', stagger: 0.13 });
+      if (num) tl.to(num.parentElement, { opacity: 0, filter: `blur(${BLUR}px)`, duration: 0.5, ease: 'power2.inOut' }, 0.1);
+      if (reduce) { tl.progress(1); }
+    };
+    document.addEventListener('click', onPick, true);
+
+    const place = () => {
       const vh = window.innerHeight;
-      {
-        const now = performance.now();
-        const dt = Math.min(0.05, (now - entryLast) / 1000);
-        entryLast = now;
-        if (entryGo && entry.v > 0) {
-          entryT += dt;
-          const k = Math.max(0, Math.min(1, (entryT - 0.1) / 1.9));
-          entry.v = 1 - (0.5 - 0.5 * Math.cos(Math.PI * k));   // in-out sine
-        }
-      }
-      for (const { sec, bgText, foot, img, speed } of panels) {
-        const rect = sec.getBoundingClientRect();
-
-        if (sec === lastSec && !reduce) {
-          const left = Math.max(0, Math.min(1, rect.bottom / vh));
-          const d = rect.top <= 0 ? 1 - smooth(0.3, 1.0, left) : 0;
-          sink.style.opacity = d.toFixed(3);
-        }
-
-        if (sec === firstSec && !reduce) {
-          const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
-          const d = rect.top > 0 ? 1 - smooth(0.4, 1.0, shown) : 0;
-          rise.style.opacity = Math.max(d, entry.v).toFixed(3);
-        }
-
-        if (rect.top > vh || rect.bottom < 0) continue;
-
-        if (bgText) {
-          bgText.style.transform =
-            `translate(calc(-50% + ${rect.top * speed * 0.12}px), -50%)`;
-        }
-
-        if (!reduce) {
-          // How much of the screen this card's window covers: 0 → 1 as it
-          // opens, 1 → 0 as the next one closes it.
-          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
-          if (foot) {
-            const t = smooth(0.4, 0.92, f);
-            foot.style.opacity = t.toFixed(3);
-            foot.style.filter = `blur(${((1 - t) * FOOT_BLUR).toFixed(2)}px)`;
-          }
-          if (img) img.style.transform = `scale(${(1 + (1 - smooth(0, 1, f)) * IMG_SETTLE).toFixed(4)})`;
-        }
-      }
-      raf = requestAnimationFrame(render);
-    }
-
-    raf = requestAnimationFrame(render);
-
-    // â”€â”€ Dominant colour extraction â”€â”€
-    const canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 40;
-    const ctx = canvas.getContext('2d');
-
-    if (ctx) {
-      document.querySelectorAll<HTMLElement>('.proj-section').forEach(sec => {
-        const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
-        if (!img) return;
-
-        const extract = () => {
-          try {
-            ctx.clearRect(0, 0, 40, 40);
-            ctx.drawImage(img, 0, 0, 40, 40);
-            const px = ctx.getImageData(0, 0, 40, 40).data;
-            let r = 0, g = 0, b = 0;
-            const n = px.length / 4;
-            for (let i = 0; i < px.length; i += 4) {
-              r += px[i]; g += px[i + 1]; b += px[i + 2];
-            }
-            // Darken to ~10% — rich but very dark tinted bg
-            const d = 0.1;
-            sec.style.backgroundColor =
-              `rgb(${Math.round(r/n*d)},${Math.round(g/n*d)},${Math.round(b/n*d)})`;
-          } catch {
-            // CORS blocked — keep existing --bg
-          }
-        };
-
-        img.complete ? extract() : img.addEventListener('load', extract, { once: true });
+      const cs = rows.map((row) => { const r = row.getBoundingClientRect(); return (r.top + r.height / 2) / vh; });
+      let best = 0, bestP = -1;
+      rows.forEach((row, i) => {
+        const p = smooth(1 - Math.abs(cs[i] - 0.5) / 0.38);
+        const link = row.firstElementChild as HTMLElement;
+        link.style.opacity = p.toFixed(3);
+        link.style.filter = p > 0.995 ? 'none' : `blur(${((1 - p) * BLUR).toFixed(1)}px)`;
+        link.style.transform = `translateY(${((1 - p) * (cs[i] > 0.5 ? 14 : -10)).toFixed(1)}px)`;
+        link.style.pointerEvents = p < 0.4 ? 'none' : '';
+        if (p > bestP) { bestP = p; best = i; }
+        if (!beam) { const pic = pics[i]; if (pic) pic.style.opacity = (p * 0.9).toFixed(3); }
       });
+      // pos: the first picture comes up out of the dark as the first name rises; then between two names the light sweeps
+      let pos: number;
+      if (cs[0] > 0.5) pos = Math.max(0, Math.min(1, 1 - (cs[0] - 0.5) / 0.95));
+      else {
+        let i = 0;
+        while (i < rows.length - 1 && cs[i + 1] <= 0.5) i++;
+        if (i >= rows.length - 1) pos = rows.length;
+        else {
+          const t = (0.5 - cs[i]) / (cs[i + 1] - cs[i]);
+          pos = i + 1 + Math.max(0, Math.min(1, (t - 0.12) / 0.76)); // a name stands still on a picture at rest
+        }
+      }
+      beam?.setPos(pos);
+      headExit();
+      // The stage is black at pos 0, so it must not ride up over the hero as a dark band (the scroll would show). It
+      // stays invisible while the header goes out in place (light, blur, dim: see sideRays.js) and comes up out of that
+      // dark, in place, just before the first name is due.
+      if (stage) {
+        const hero = page.querySelector<HTMLElement>('.pp-hero');
+        const q = hero ? window.scrollY / Math.max(1, hero.offsetHeight) : 1;
+        // after the last name the picture goes out into the dark on its own (the last project is out before the closing
+        // screen's type comes up), whatever the way the page is scrolled
+        const lastC = cs[cs.length - 1];
+        const out = 1 - smooth((0.5 - lastC) / 0.4);
+        stage.style.opacity = (smooth((q - 0.1) / 0.34) * out).toFixed(3);
+        // Until the section has reached the top, the stage would ride up with it (its picture rising from below): hold it
+        // on the spot instead (fixed; it takes no room in the flow either way), the sticky takes over at the very same place.
+        const held = (page.querySelector('.pp-train') as HTMLElement).getBoundingClientRect().top > 0;
+        stage.style.position = held ? 'fixed' : '';
+        stage.style.top = held ? '0' : '';
+        stage.style.left = held ? '0' : '';
+        stage.style.width = held ? '100%' : '';
+      }
+      if (num) num.textContent = String(best + 1).padStart(2, '0');
+    };
+
+    if (reduce) {
+      rows.forEach((row) => { const l = row.firstElementChild as HTMLElement; l.style.opacity = '1'; });
+      if (pics[0]) pics[0].style.opacity = '0.9';
+      return;
     }
-
-    document.addEventListener('astro:before-swap', () => {
-      cancelAnimationFrame(raf);
-    }, { once: true });
+    let ticking = false;
+    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; place(); }); };
+    const onResize = () => { beam?.resize(); onScroll(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
+    place();
+    const title = page.querySelector('.pp-title');
+    // the site's own title entrance, after the page transition (the same as the other pages)
+    if (title) afterPageTransition(() => { titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), [title]); });
+    off = () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; veil?.remove(); blurL?.remove(); document.removeEventListener('click', onPick, true); };
   }
-
-  document.addEventListener('astro:page-load', initProjectsPage);
+  document.addEventListener('astro:page-load', initPreview);
 </script>
-
