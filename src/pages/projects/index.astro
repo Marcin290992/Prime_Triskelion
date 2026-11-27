@@ -108,7 +108,7 @@ const total = String(projects.length).padStart(2, '0');
 
   /* pulled up under the end of the pin: the first picture and name are already coming up out of the dark while the
      header is still going out, with no empty black stretch between the two */
-  .pp-train { position: relative; margin-top: calc(var(--app-stable-vh, 1svh) * -68); }
+  .pp-train { position: relative; margin-top: calc(var(--app-stable-vh, 1svh) * -48); }
 
   /* ── the pictures, pinned for the whole list ── */
   /* The wrapper is the sticky part and keeps the stage's room in the flow (the list is pulled up over it): the picture
@@ -257,21 +257,20 @@ const total = String(projects.length).padStart(2, '0');
     const BLUR = 5.5; // the same as every other going-out on the site
 
     // ── The header's exit ──
-    // 1. the light goes out (first, over the first half of the pinned stretch);
-    // 2. the picture stage comes up (black: the screen is already dark) and the home page's beam runs across it from the
-    //    corner, from the light's going out to the first name; the word "Projects." stays on screen, over the beam, until
-    //    the beam has crossed the middle of the screen, and only then goes into the blur and out (see place()).
+    // The light stays. The picture stage comes up (black, under the header) and the home page's beam runs across it from the
+    // corner, slowly (over most of the way to the first name); the word "Projects." and the light stay on screen, over the
+    // beam, until it has crossed the middle of the screen, and only then go (see place()).
     const pin = page.querySelector<HTMLElement>('#pp-pin');
     const head = pin?.querySelector<HTMLElement>('.pp-hero') ?? null;
     const titleWrap = head?.querySelector<HTMLElement>('.pp-title-wrap') ?? null;
     const pinRange = () => (pin && head ? Math.max(1, pin.offsetHeight - head.offsetHeight) : 1);
-    const headExit = () => {
+    const headExit = (pos: number) => {
       if (!pin || !head) return;
-      const p = window.scrollY / pinRange();
-      const light = 1 - smooth(Math.max(0, Math.min(1, p / 0.5)));
+      // the light stays as it is while the beam runs over the screen; it goes with the word, once the beam has crossed the middle
+      const light = 1 - smooth((pos - 0.38) / 0.3);
       const cv = head.querySelector<HTMLElement>('canvas');
       if (cv) {
-        cv.style.filter = light < 0.999 ? `brightness(${light.toFixed(3)})` : '';
+        cv.style.filter = light < 0.999 ? `opacity(${light.toFixed(3)})` : '';
         cv.style.visibility = light < 0.01 ? 'hidden' : '';
       }
     };
@@ -415,7 +414,7 @@ const total = String(projects.length).padStart(2, '0');
       if (cs[0] > 0.5) {
         // The first picture: pos is 0 (all dark, the beam not yet begun) until the stage is fully up, and only then runs 0 -> 1
         // to the first name, so the beam always starts from the corner, never part-way across.
-        const y0 = pinRange() * 0.5;   // the light is out
+        const y0 = pinRange() * 0.1;   // the beam starts almost at once, but slowly
         const r0 = rows[0].getBoundingClientRect();
         const y1 = r0.top + window.scrollY + r0.height / 2 - vh / 2;   // the scroll where the first name is in the middle
         pos = Math.max(0, Math.min(1, (window.scrollY - y0) / Math.max(1, y1 - y0)));
@@ -430,7 +429,7 @@ const total = String(projects.length).padStart(2, '0');
         }
       }
       setBeam(pos);
-      headExit();
+      headExit(pos);
       // the word stays until the beam has crossed the middle of the screen, then goes into the blur and out
       if (titleWrap) {
         const t = smooth((pos - 0.38) / 0.24);
@@ -456,7 +455,7 @@ const total = String(projects.length).padStart(2, '0');
         // last name nothing is faded: the stage is only sticky inside the list, so it scrolls on with the page, a plain scroll
         // to the closing screen and the footer.
         const rg = pinRange();
-        stage.style.opacity = smooth((window.scrollY - 0.3 * rg) / (0.2 * rg)).toFixed(3);
+        stage.style.opacity = smooth(window.scrollY / (0.1 * rg)).toFixed(3);
         // Until the section has reached the top, the stage would ride up with it (its picture rising from below): hold it
         // on the spot instead (fixed; it takes no room in the flow either way), the sticky takes over at the very same place.
         const held = (page.querySelector('.pp-train') as HTMLElement).getBoundingClientRect().top > 0;
