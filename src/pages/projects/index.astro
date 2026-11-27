@@ -237,6 +237,7 @@ const total = String(projects.length).padStart(2, '0');
   import gsap from 'gsap';
   import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
   import { afterPageTransition, titleIn } from '../../utils/afterPageTransition';
+  import { initProjectsScene, sceneEnabled } from '../../utils/homeScene';
   const smooth = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
   let off: (() => void) | null = null;
   document.addEventListener('astro:before-swap', () => { off?.(); off = null; });
@@ -332,6 +333,9 @@ const total = String(projects.length).padStart(2, '0');
     //  3. when the scroll goes quiet, the page glides on to the nearest name (a long, soft glide), a third of the way is
     //     enough to commit to the next one.
     const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+    // With the steps on (utils/homeScene.ts: the hero and every project, one gesture each, on the clock, on every device) the
+    // speed limit, the momentum cut and the dock-in below are not needed (and would only fight the steps).
+    const sceneOn = sceneEnabled() && !reduce;
     const SPEED = 1.2;
     let posTarget = 0, posShown = 0, limRaf = 0, limT = 0;
     const limTick = (now: number) => {
@@ -346,7 +350,7 @@ const total = String(projects.length).padStart(2, '0');
     };
     const setBeam = (v: number) => {
       posTarget = v;
-      if (!coarse) { beam?.setPos(v); return; }
+      if (!coarse || sceneOn) { beam?.setPos(v); return; }
       // coming up out of the dark (the first picture) follows the scroll directly: a speed limit there only made the dark
       // after the header last longer; the limit is for moving between pictures
       if (v <= 1 && posShown <= 1) { posShown = v; beam?.setPos(v); return; }
@@ -423,7 +427,7 @@ const total = String(projects.length).padStart(2, '0');
       if (l) { setupSnap(l); return; }
       if (++lenisTries < 180) lenisWait = requestAnimationFrame(attachLenis);
     };
-    if (coarse && !reduce) attachLenis();
+    if (coarse && !reduce && !sceneOn) attachLenis();
 
     const slides = Array.from(page.querySelectorAll<HTMLElement>('.pp-slide'));
     let activeText = -1;
@@ -493,7 +497,9 @@ const total = String(projects.length).padStart(2, '0');
     const title = page.querySelector('.pp-title');
     // the site's own title entrance, after the page transition (the same as the other pages)
     if (title) afterPageTransition(() => { titleIn(gsap.timeline({ defaults: { ease: 'power4.out' } }), [title]); });
-    off = () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; document.removeEventListener('click', onPick, true); snapOff(); cancelAnimationFrame(lenisWait); cancelAnimationFrame(limRaf); };
+    // the steps: the hero, then every project (the scroll position of each name in the middle of the screen)
+    const sceneStop = initProjectsScene(() => rows.map((r) => r.getBoundingClientRect().top + window.scrollY + r.offsetHeight / 2 - window.innerHeight / 2));
+    off = () => { sceneStop?.(); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize); beam?.destroy(); beam = null; document.removeEventListener('click', onPick, true); snapOff(); cancelAnimationFrame(lenisWait); cancelAnimationFrame(limRaf); };
   }
   document.addEventListener('astro:page-load', initPreview);
 </script>

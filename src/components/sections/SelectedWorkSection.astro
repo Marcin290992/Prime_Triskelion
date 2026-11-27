@@ -415,6 +415,7 @@ const SCREENS = projects.length + HOLD;
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 	import { createBeamSlides, type BeamSlides } from '../../utils/beamSlides';
+	import { sceneEnabled } from '../../utils/homeScene';
 
 	gsap.registerPlugin(ScrollTrigger);
 
@@ -564,6 +565,9 @@ const SCREENS = projects.length + HOLD;
 		// back), and a long, soft glide. A finger covers ground far faster than a wheel, so on touch everything is
 		// longer still.
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		// With the steps on (utils/homeScene.ts) the pictures are moved one gesture at a time on the clock: the speed limit and
+		// the dock-in are not needed (and would only fight the steps).
+		const sceneOn = sceneEnabled();
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
 		// Touch: the title stands a good while before the first picture (it was too easy to scroll past)
@@ -595,7 +599,7 @@ const SCREENS = projects.length + HOLD;
 		};
 		const setFrom = (progress: number, instant = false) => {
 			const u = Math.max(0, (progress * length - LEAD) / PER);
-			if (!coarse || reduced() || instant) { targetU = curU = u; apply(u); return; }
+			if (!coarse || sceneOn || reduced() || instant) { targetU = curU = u; apply(u); return; }
 			targetU = u;
 			if (!limRaf && curU !== targetU) { limT = performance.now(); limRaf = requestAnimationFrame(limTick); }
 		};
@@ -661,8 +665,8 @@ const SCREENS = projects.length + HOLD;
 		// where the page rests on picture k (0 = the title); the dark stretch sits between the title and the first picture
 		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();
 		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
-		// the home scene (utils/homeScene.ts) rests the page on the title (stop 0) and hands it to the first picture (stop 1)
-		(window as any).__swStops = { s0: () => stop(0), s1: () => stop(1) };
+		// the home scene (utils/homeScene.ts) rests the page on the title (stop 0) and on every picture: one gesture, one step
+		(window as any).__swStops = { stops: () => Array.from({ length: n + 1 }, (_, k) => stop(k)) };
 		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
 		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
 		let lenis: any = null;
@@ -754,7 +758,7 @@ const SCREENS = projects.length + HOLD;
 			if (lenis) { setupSnap(); return; }
 			if (++tries < 180) waitRaf = requestAnimationFrame(attach);   // ~3 s, then plain scroll
 		};
-		if (!reduced()) attach();
+		if (!reduced() && !sceneOn) attach();
 
 		// previous / next buttons and the arrow keys (only while the view is pinned)
 		const step = (dir: number) => {

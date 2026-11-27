@@ -637,3 +637,6 @@ html.sw-hscroll .gradual-blur__layer {
 #hud-menu-btn .specular-button__fx { transition: opacity 0.3s ease; }
 #hud-menu-btn.frame-fx-on .specular-button__fx { opacity: 0; }
 #hud-menu-btn .hud-ico { position: relative; z-index: 1; }
+
+/* While a scene of steps is on (utils/homeScene.ts) the finger does not scroll the page by itself (the swipe is turned into a step). */
+html.scene-on, html.scene-on body { touch-action: none; overscroll-behavior: none; }

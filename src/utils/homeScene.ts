@@ -1,26 +1,43 @@
-// The home page's opening as a scene of steps, the same on phones, tablets and desktops:
+// Steps: one gesture (a wheel flick, a swipe, a key) is one step, and every step is a movement on the CLOCK, not something
+// the finger scrubs. The page is carried from one resting place (a "stop") to the next by a timed scroll (Lenis scrollTo);
+// the sections' own scroll-driven animations (the hero's exit, the manifesto's fill, the pictures' beam, ...) play along it.
 //
-//   0 hero  ->  1 the manifesto (comes up out of the dark and fills itself, the two words turn red)  ->  2 the services
-//   ->  3 the "Selected work" title
+// A scene is made of ZONES. In a zone the user's own scrolling is taken over (wheel, touch and keys are turned into
+// steps), so a hard fling can never skip anything or rush through it; outside a zone the page scrolls as usual. Past the
+// last stop of a zone one more gesture hands the page back to the plain scroll (and a gesture the other way from the
+// first stop of a zone with room above it does the same), and in the other direction a gesture takes the zone back.
 //
-// One gesture (a wheel flick, a swipe, a key) is one step, and every step is a movement on the CLOCK, not something the
-// finger scrubs: the page is carried from one resting place to the next by a timed scroll (Lenis scrollTo), and the
-// sections' own scroll-driven animations (the hero's exit, the manifesto's fill, the services, the title) play along it.
-// While the scene is on, the user's own scrolling is taken over (wheel, touch and keys are turned into steps), so a
-// hard fling can never skip anything or rush through it. After the last step one more gesture down hands the page to
-// the pictures (the Selected work's own mechanism); one up, from the first picture's title, takes the scene back.
+//   home page, phones and tablets: one zone: hero, manifesto, services, the Selected work title, the pictures
+//   home page, desktop: two zones: the hero (the manifesto and the services are then the user's own scroll), and the
+//                       Selected work (its title and the pictures)
+//   /projects, everywhere: one zone: the hero and every project
 //
 // The resting places are asked of the sections themselves (window.__manifestoST / __manifestoHold from the manifesto,
 // window.__swStops from Selected work), so they follow the layout.
 //
-// ?scene=off in the address turns the scene off (the plain scroll), for comparing.
+// ?scene=off in the address turns the steps off (the plain scroll), for comparing.
 
 const clamp = (x: number, a: number, b: number) => (x < a ? a : x > b ? b : x);
 const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 
-export function initHomeScene(): (() => void) | null {
-	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
-	if (new URLSearchParams(window.location.search).get('scene') === 'off') return null;
+export interface Zone {
+	stops: number[];   // the resting places, px of scroll, ascending
+	start: number;     // the zone takes the scrolling over from here ...
+	end: number;       // ... to here
+}
+interface Cfg {
+	zones: () => Zone[] | null;
+	seconds: (zone: Zone, from: number, to: number) => number;   // the time of a step (indexes into zone.stops)
+}
+
+export function sceneEnabled(): boolean {
+	if (typeof window === 'undefined') return false;
+	if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+	return new URLSearchParams(window.location.search).get('scene') !== 'off';
+}
+
+function createScene(cfg: Cfg): (() => void) | null {
+	if (!sceneEnabled()) return null;
 
 	const root = document.documentElement;
 	const vh = () => window.innerHeight;
@@ -29,48 +46,29 @@ export function initHomeScene(): (() => void) | null {
 	let dead = false;
 	let moving = false;      // a timed step is running
 	let moveTimer = 0;
-	let idx = 0;
 	let lastWheel = 0;
 	let lastKey = 0;
+	let raf = 0;
+	let tries = 0;
 
-	// the resting places (px of scroll), or null while the sections are not ready
-	const stops = (): number[] | null => {
-		const man = document.getElementById('manifesto');
-		const svc = document.querySelector<HTMLElement>('#services .svc__list');
-		const st = (window as any).__manifestoST;
-		const hold = (window as any).__manifestoHold;
-		const sw = (window as any).__swStops;
-		if (!man || !svc || !st || typeof hold !== 'number' || !sw) return null;
-		const y1 = st.start + hold * (st.end - st.start);
-		const r = svc.getBoundingClientRect();
-		const y2 = r.top + window.scrollY + r.height / 2 - vh() / 2;
-		const y3 = sw.s0();
-		const list = [0, y1, y2, y3];
-		for (let i = 1; i < list.length; i++) if (!(list[i] > list[i - 1] + 8)) return null;
-		return list;
-	};
-	const firstPicture = (): number | null => {
-		const sw = (window as any).__swStops;
-		return sw ? sw.s1() : null;
-	};
-	const nearest = (list: number[], y: number) => {
-		let b = 0;
-		for (let k = 1; k < list.length; k++) if (Math.abs(list[k] - y) < Math.abs(list[b] - y)) b = k;
-		return b;
-	};
+	const zoneAt = (zs: Zone[], y: number) => zs.find((z) => y >= z.start - 3 && y <= z.end + 3) ?? null;
+	const nextStop = (z: Zone, y: number) => z.stops.find((s) => s > y + 3) ?? null;
+	const prevStop = (z: Zone, y: number) => { let r: number | null = null; for (const s of z.stops) if (s < y - 3) r = s; return r; };
+	const nearestIdx = (z: Zone, y: number) => { let b = 0; for (let k = 1; k < z.stops.length; k++) if (Math.abs(z.stops[k] - y) < Math.abs(z.stops[b] - y)) b = k; return b; };
 
+	const holding = () => weStopped || root.classList.contains('scene-on');
 	const grab = () => {
 		if (!lenis) return;
 		if (!lenis.isStopped) { lenis.stop(); weStopped = true; }
 		root.classList.add('scene-on');
 	};
-	const let_go = () => {
+	const letGo = () => {
 		root.classList.remove('scene-on');
 		if (lenis && weStopped) { lenis.start(); weStopped = false; }
 	};
 
 	// a timed movement of the page to y
-	const moveTo = (y: number, seconds: number, after?: () => void) => {
+	const moveTo = (y: number, seconds: number) => {
 		if (!lenis) return;
 		moving = true;
 		window.clearTimeout(moveTimer);
@@ -79,76 +77,44 @@ export function initHomeScene(): (() => void) | null {
 			easing: inOutSine,
 			force: true,
 			lock: false,
-			onComplete: () => { moving = false; after?.(); },
+			onComplete: () => { moving = false; },
 		});
 		// never stay marked as moving (an interrupted movement does not report its end)
 		moveTimer = window.setTimeout(() => { moving = false; }, seconds * 1000 + 300);
 	};
+	const step = (z: Zone, y: number, to: number) => moveTo(to, cfg.seconds(z, nearestIdx(z, y), z.stops.indexOf(to)));
 
-	// the time of a step: the first one is long (the manifesto comes up and fills on it), the others are one soft movement
-	const seconds = (from: number, to: number, list: number[]) => {
-		if (from === 0 && to === 1) return 3.2;
-		if (from === 1 && to === 0) return 1.9;
-		return 1.15 + Math.min(1.1, (Math.abs(list[to] - list[from]) / vh()) * 0.7);
+	// what a gesture in this direction does here: a step to a stop, or the end of the zone (the plain scroll takes over)
+	type Verdict = { kind: 'step'; to: number } | { kind: 'release' } | { kind: 'wall' };
+	const verdict = (z: Zone, dir: number, y: number): Verdict => {
+		const to = dir > 0 ? nextStop(z, y) : prevStop(z, y);
+		if (to != null) return { kind: 'step', to };
+		// the top of the page is a wall; any other end of a zone lets the page go
+		if (dir < 0 && z.start <= 3 && y <= z.stops[0] + 3) return { kind: 'wall' };
+		return { kind: 'release' };
 	};
-
-	const stepTo = (n: number, list: number[]) => {
-		n = clamp(n, 0, list.length - 1);
-		const from = idx;
-		idx = n;
-		moveTo(list[n], seconds(from, n, list));
-	};
-
-	// the page is handed to the pictures: one timed step to the first one, then the pictures' own mechanism
-	const release = () => {
-		const y = firstPicture();
-		let_go();
-		if (y != null && lenis) moveTo(y, 1.7);
-	};
-
-	const inScene = (list: number[], y: number) => y < list[list.length - 1] - 3;
-	const atEnd = (list: number[], y: number) => Math.abs(y - list[list.length - 1]) <= 3;
 
 	// ── wheel ──
 	const onWheel = (e: WheelEvent) => {
 		if (dead || !lenis || e.ctrlKey) return;
-		const list = stops();
-		if (!list) return;
+		const zs = cfg.zones();
+		if (!zs) return;
 		if (lenis.isStopped && !weStopped) return;   // the menu has the page
 		const now = performance.now();
 		const fresh = now - lastWheel > 140;       // a new flick, not the tail of the last one (a trackpad keeps sending)
 		lastWheel = now;
-		// the tail of a flick (a trackpad keeps sending for a second) must not touch a step that is running: Lenis would take
-		// the wheel as the user's own scroll and cut the timed movement short
+		// the tail of a flick must not touch a step that is running: Lenis would take the wheel as the user's own scroll
+		// and cut the timed movement short
 		if (moving && !fresh) { e.preventDefault(); e.stopImmediatePropagation(); return; }
 		const y = window.scrollY;
-		const dir = e.deltaY > 0 ? 1 : -1;
-		if (inScene(list, y)) {
-			grab();
-			e.preventDefault();
-			e.stopImmediatePropagation();
-			if (!fresh || Math.abs(e.deltaY) < 8) return;
-			if (!moving) idx = nearest(list, y);
-			stepTo(idx + dir, list);
-			return;
-		}
-		if (atEnd(list, y)) {
-			if (dir < 0) {          // back into the scene
-				grab();
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				if (!fresh) return;
-				idx = list.length - 1;
-				stepTo(idx - 1, list);
-			} else {                // on to the pictures (one step to the first one)
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				if (fresh && !moving) release();
-			}
-			return;
-		}
-		// below: the pictures and the rest of the page, as they are
-		if (weStopped || root.classList.contains('scene-on')) let_go();
+		const z = zoneAt(zs, y);
+		if (!z) { if (holding()) letGo(); return; }
+		const v = verdict(z, e.deltaY > 0 ? 1 : -1, y);
+		if (v.kind === 'release') { if (holding()) letGo(); return; }
+		grab();
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		if (v.kind === 'step' && fresh && Math.abs(e.deltaY) >= 8) step(z, y, v.to);
 	};
 
 	// ── keys ──
@@ -159,45 +125,35 @@ export function initHomeScene(): (() => void) | null {
 		const down = ['ArrowDown', 'PageDown', ' '].includes(e.key);
 		const up = ['ArrowUp', 'PageUp'].includes(e.key);
 		if (!down && !up) return;
-		const list = stops();
-		if (!list) return;
+		const zs = cfg.zones();
+		if (!zs) return;
+		if (lenis.isStopped && !weStopped) return;
 		const y = window.scrollY;
-		const dir = down ? 1 : -1;
+		const z = zoneAt(zs, y);
+		if (!z) return;
+		const v = verdict(z, down ? 1 : -1, y);
+		if (v.kind === 'release') { if (holding()) letGo(); return; }
+		grab();
+		e.preventDefault();
+		e.stopImmediatePropagation();
 		const now = performance.now();
-		if (inScene(list, y) || (atEnd(list, y) && dir < 0)) {
-			grab();
-			e.preventDefault();
-			e.stopImmediatePropagation();
-			if (now - lastKey < 250) return;
-			lastKey = now;
-			if (!moving) idx = nearest(list, y);
-			if (atEnd(list, y)) idx = list.length - 1;
-			stepTo(idx + dir, list);
-		} else if (atEnd(list, y) && dir > 0) {
-			e.preventDefault();
-			if (!moving) release();
-		}
+		if (v.kind === 'step' && now - lastKey >= 250) { lastKey = now; step(z, y, v.to); }
 	};
 
-	// ── touch: the page follows the finger a little (a peek), and a swipe or a short flick takes the step ──
-	let drag: { y0: number; t0: number; y: number; moved: number; from: number; list: number[]; base: number; mode: 'scene' | 'end' | 'free' } | null = null;
+	// ── touch: the page follows the finger a little (a peek at the next stop), and a swipe or a short flick takes the step ──
+	let drag: { y0: number; t0: number; y: number; moved: number; z: Zone; base: number } | null = null;
 	const onTouchStart = (e: TouchEvent) => {
 		if (dead || !lenis || e.touches.length !== 1) { drag = null; return; }
-		const list = stops();
-		if (!list) { drag = null; return; }
+		const zs = cfg.zones();
+		if (!zs) { drag = null; return; }
 		if (lenis.isStopped && !weStopped) { drag = null; return; }
-		const y = window.scrollY;
-		let mode: 'scene' | 'end' | 'free' = 'free';
-		if (inScene(list, y)) mode = 'scene';
-		else if (atEnd(list, y)) mode = 'end';
-		if (mode === 'free') { if (weStopped || root.classList.contains('scene-on')) let_go(); drag = null; return; }
+		const z = zoneAt(zs, window.scrollY);
+		if (!z) { if (holding()) letGo(); drag = null; return; }
 		grab();
-		if (!moving) idx = nearest(list, y);
-		if (mode === 'end') idx = list.length - 1;
-		const t = e.touches[0];
-		drag = { y0: t.clientY, t0: performance.now(), y: t.clientY, moved: 0, from: idx, list, base: y, mode };
 		// a finger on the page takes over a movement still running
-		if (moving) { lenis.scrollTo(window.scrollY, { immediate: true, force: true }); moving = false; drag.base = window.scrollY; }
+		if (moving) { lenis.scrollTo(window.scrollY, { immediate: true, force: true }); moving = false; }
+		const t = e.touches[0];
+		drag = { y0: t.clientY, t0: performance.now(), y: t.clientY, moved: 0, z, base: window.scrollY };
 	};
 	const onTouchMove = (e: TouchEvent) => {
 		if (!drag) return;
@@ -206,46 +162,40 @@ export function initHomeScene(): (() => void) | null {
 		const d = t.clientY - drag.y0;
 		drag.moved = Math.max(drag.moved, Math.abs(d));
 		if (drag.moved > 6) { if (e.cancelable) e.preventDefault(); e.stopImmediatePropagation(); }
-		const { list, from } = drag;
-		const dir = d < 0 ? 1 : -1;                 // a finger moving up takes the next step
-		const to = from + dir;
-		if (drag.mode === 'end' && dir > 0) return; // at the end the downward drag is only a release (on touchend)
-		if (to < 0 || to > list.length - 1) {
-			// beyond the ends: a small resistance
-			const y = list[from] + (-d) * 0.12;
-			lenis.scrollTo(Math.max(0, y), { immediate: true, force: true });
-			return;
-		}
+		const dir = d < 0 ? 1 : -1;                  // a finger moving up takes the next step
+		const v = verdict(drag.z, dir, drag.base);
+		if (v.kind !== 'step') return;               // the end of the zone: only a release, on touchend
 		const p = clamp(Math.abs(d) / (vh() * 0.9), 0, 1);
-		const y = list[from] + (list[to] - list[from]) * p;
-		lenis.scrollTo(y, { immediate: true, force: true });
+		lenis.scrollTo(drag.base + (v.to - drag.base) * p, { immediate: true, force: true });
 	};
 	const onTouchEnd = () => {
 		if (!drag) return;
 		const g = drag;
 		drag = null;
+		if (g.moved < 6) return;   // a tap: nothing to do
 		const d = g.y - g.y0;
 		const dt = Math.max(1, performance.now() - g.t0);
 		const v = d / dt;
 		const commit = Math.abs(d) > vh() * 0.1 || Math.abs(v) > 0.4;
 		const dir = d < 0 ? 1 : -1;
-		const list = g.list;
-		if (g.mode === 'end' && dir > 0) { if (commit) release(); return; }
-		if (g.moved < 6) return;   // a tap: nothing to do
-		if (!commit) { idx = g.from; moveTo(list[g.from], 0.6); return; }
-		stepTo(g.from + dir, list);
+		const ver = verdict(g.z, dir, g.base);
+		if (ver.kind === 'wall') return;
+		if (ver.kind === 'release') {
+			// the end of the zone: the page is let go, with a nudge in the direction of the swipe to start it
+			if (commit) { letGo(); moveTo(window.scrollY + dir * vh() * 0.5, 0.9); }
+			return;
+		}
+		if (!commit) { moveTo(g.base, 0.6); return; }
+		step(g.z, g.base, ver.to);
 	};
 
 	// ── the first moments: the lenis appears a frame after the page, the sections after it ──
-	let tries = 0;
-	let raf = 0;
 	const attach = () => {
 		if (dead) return;
 		lenis = (window as any).__lenis;
-		const list = lenis ? stops() : null;
-		if (lenis && list) {
-			const y = window.scrollY;
-			if (inScene(list, y)) { grab(); idx = nearest(list, y); }
+		const zs = lenis ? cfg.zones() : null;
+		if (lenis && zs) {
+			if (zoneAt(zs, window.scrollY)) grab();
 			return;
 		}
 		if (++tries < 400) raf = requestAnimationFrame(attach);
@@ -272,4 +222,66 @@ export function initHomeScene(): (() => void) | null {
 		root.classList.remove('scene-on');
 		if (lenis && weStopped) lenis.start();
 	};
+}
+
+const isCoarse = () => window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+const ascending = (list: number[]) => list.every((v, i) => i === 0 || v > list[i - 1] + 8);
+
+// ── the home page ──
+export function initHomeScene(): (() => void) | null {
+	const vh = () => window.innerHeight;
+	const zones = (): Zone[] | null => {
+		const man = document.getElementById('manifesto');
+		const svc = document.querySelector<HTMLElement>('#services .svc__list');
+		const st = (window as any).__manifestoST;
+		const hold = (window as any).__manifestoHold;
+		const sw = (window as any).__swStops;
+		if (!man || !svc || !st || typeof hold !== 'number' || !sw) return null;
+		const pics: number[] = sw.stops();
+		if (!pics.length || !ascending(pics)) return null;
+		if (isCoarse()) {
+			// phones and tablets: hero, manifesto (whole and red), services, then the title and the pictures: one zone
+			const y1 = st.start + hold * (st.end - st.start);
+			const r = svc.getBoundingClientRect();
+			const y2 = r.top + window.scrollY + r.height / 2 - vh() / 2;
+			const list = [0, y1, y2, ...pics];
+			return ascending(list) ? [{ stops: list, start: 0, end: list[list.length - 1] }] : null;
+		}
+		// desktop: the hero (up to where the manifesto begins to fill), and the pictures; the manifesto and the services between
+		// are the user's own scroll
+		const a = [0, st.start];
+		if (!ascending(a) || !(pics[0] > st.start + 8)) return null;
+		return [
+			{ stops: a, start: 0, end: st.start },
+			{ stops: pics, start: pics[0] - 0.6 * vh(), end: pics[pics.length - 1] },
+		];
+	};
+	return createScene({
+		zones,
+		seconds: (z, i, j) => {
+			const to = z.stops[j], from = z.stops[i];
+			if (from === 0 && j === 1) return isCoarse() ? 3.2 : 2.2;      // the hero goes out (and the manifesto fills)
+			if (to === 0 && i === 1) return isCoarse() ? 1.9 : 1.5;
+			return 1.15 + Math.min(1.1, (Math.abs(to - from) / vh()) * 0.7);
+		},
+	});
+}
+
+// ── /projects: the hero and every project (getStops gives the scroll position of each project's name in the middle) ──
+export function initProjectsScene(getStops: () => number[]): (() => void) | null {
+	const vh = () => window.innerHeight;
+	return createScene({
+		zones: () => {
+			const rows = getStops();
+			const list = [0, ...rows];
+			if (!rows.length || !ascending(list)) return null;
+			return [{ stops: list, start: 0, end: list[list.length - 1] }];
+		},
+		seconds: (z, i, j) => {
+			const to = z.stops[j], from = z.stops[i];
+			if (from === 0 && j === 1) return 2.8;                      // the header goes out, the first beam crosses
+			if (to === 0 && i === 1) return 1.8;
+			return 1.3 + Math.min(0.9, (Math.abs(to - from) / vh()) * 0.6);
+		},
+	});
 }

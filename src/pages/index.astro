@@ -107,6 +107,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			};
 			let ticking = false;
 			let lastY = window.scrollY;
+			const gentle = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const update = () => {
 				ticking = false;
 				const y = window.scrollY;
@@ -120,10 +121,12 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// On the way back it is the other way round: the light comes back as soon as the type is sharp (the blur
 				// starts at 0.30 of the exit), not only at the very top. The hero must never stand sharp and dark.
 				// The light goes out WITH the blur of the type: both start at once, scrubbed by the scroll (it all took too long).
-				lightState.v = 1 - smooth(clamp01((p - 0.02) / 0.28));
+				// Phones and tablets: a gentler going-out (it was too abrupt there: the light dropped, the blur came and the black
+				// closed within a third of the stretch). The light, the blur and the dark each take longer and overlap more.
+				lightState.v = 1 - smooth(clamp01((p - 0.02) / (gentle ? 0.7 : 0.28)));
 				applyLight();
-				const bk = smooth(clamp01((p - 0.02) / 0.30));
-				const a = smooth(clamp01((p - 0.22) / 0.34));
+				const bk = smooth(clamp01((p - (gentle ? 0.12 : 0.02)) / (gentle ? 0.7 : 0.30)));
+				const a = smooth(clamp01((p - (gentle ? 0.4 : 0.22)) / (gentle ? 0.62 : 0.34))) * (gentle ? 0.96 : 1);
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 5.5).toFixed(1)}px)` : '';
