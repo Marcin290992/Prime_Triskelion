@@ -782,6 +782,7 @@ const SCREENS = projects.length + HOLD;
 				glideStopped = false;
 				if (restart) lenis.start(); else weStopped = true;   // (not restart: the stage has the page, it will start Lenis)
 			};
+			const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 			const glideScroll = (target: number, ms: number, done?: () => void) => {
 				cancelAnimationFrame(glideRaf);
 				const from = window.scrollY, t0 = performance.now();
@@ -789,7 +790,7 @@ const SCREENS = projects.length + HOLD;
 				const tick = (now: number) => {
 					if (on) { glideRaf = 0; return; }   // the stage took the page (grab)
 					const t = Math.min(1, (now - t0) / ms);
-					jumpTo(from + (target - from) * settle(t));
+					jumpTo(from + (target - from) * easeOut(t));   // out-cubic: sets off at full speed like a flick, then brakes
 					if (t < 1) { glideRaf = requestAnimationFrame(tick); return; }
 					glideRaf = 0; stopGlide(true); done?.();
 				};
@@ -813,7 +814,10 @@ const SCREENS = projects.length + HOLD;
 			// hand the page back to Lenis: 1 = on past the last picture to the closing panel, -1 = back up past the title
 			const leave = (dir: 1 | -1) => {
 				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
-				letGo();
+				// the hand-off: the stage lets go, but Lenis stays stopped and the glide owns it until the end (starting it
+				// here and stopping it again at once cost a frame)
+				on = false; lock(false);
+				if (weStopped) { weStopped = false; glideStopped = true; }
 				gliding = true;
 				const done = () => { clearTimeout(glideTimer); gliding = false; lastY = window.scrollY; setFrom(stPin.progress, true); };
 				glideTimer = window.setTimeout(done, 1800);   // never stay stuck (the glide itself takes 1.1 s)
@@ -822,8 +826,8 @@ const SCREENS = projects.length + HOLD;
 				// there: the page starts moving the moment the swipe ends, instead of after ~1 s of invisible scroll.
 				jumpTo(dir > 0 ? stPin.end - 1 : stPin.start + 1);
 				// not far: the way back in (one flick) has to reach the zone again
-				const target = dir > 0 ? stPin.end + 0.4 * vh() : Math.max(0, stPin.start - 0.7 * vh());
-				glideScroll(target, 1100, done);
+				const target = dir > 0 ? stPin.end + 0.7 * vh() : Math.max(0, stPin.start - 0.8 * vh());
+				glideScroll(target, 950, done);
 			};
 			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
 			// the finger that is down right now (tracked all the time): a gesture that brings the page INTO the view from
