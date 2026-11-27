@@ -108,27 +108,23 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			// catches up at its own calm pace (a slow drag is followed exactly). Same idea as Selected work.
 			const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 			const SPEED = 1.0;
+			const LIMIT = false;   // (the paced catch-up is replaced by the fire below)
 			let ye = window.scrollY;
 			let limT = 0;
 			const update = (now?: number) => {
 				ticking = false;
 				const yReal = window.scrollY;
 				let y = yReal;
-				if (coarse) {
+				if (coarse && LIMIT) {
 					const dt = now && limT ? Math.min(0.1, (now - limT) / 1000) : 0;
 					limT = now ?? 0;
-					// quicker once the exit is over (the manifesto's own fill follows this too): only the exit itself is paced
-					const m = SPEED * range * dt * (ye > 1.2 * range ? 3 : 1);
+					const m = SPEED * range * dt;
 					const d = yReal - ye;
 					ye = Math.abs(d) <= m || Math.abs(d) < 1 ? yReal : ye + Math.sign(d) * m;
 					y = ye;
 					if (ye !== yReal) { ticking = true; requestAnimationFrame(update); }
 					else limT = 0;
 				}
-				// the manifesto's fill follows this too (touch): it must not start before the exit has played
-				(window as any).__heroY = coarse ? y : undefined;
-				(window as any).__heroYCb?.();
-				hold();
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
@@ -165,21 +161,46 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const yy = window.scrollY;
 				const t = yy < pinStart ? `translate3d(0, ${(yy - pinStart).toFixed(1)}px, 0)` : '';
 				if (stage.style.transform !== t) stage.style.transform = t;
-				// Touch: the page may run ahead of the exit (a fling). Past the end of the hero's pin the hero would then
-				// scroll away with the page while it is still half lit and blurring. So it is held on the spot until the exit
-				// has played as far as the page has gone: the scroll fires the animation, the animation keeps its own pace.
-				if (coarse) {
-					const shift = Math.max(0, yy - range) - Math.max(0, ye - range);
-					const v = shift > 0.5 ? `0 ${shift.toFixed(1)}px` : '';
-					if (hero.style.translate !== v) hero.style.translate = v;
-				}
 			};
 			const onScroll = () => { hold(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// Touch: ONE push of the finger fires the whole exit on the clock (the light goes out, the blur, the dark, the
+			// line comes up), the scroll locked while it plays so a fling cannot rush it or run ahead; then it is free
+			// again and the words fill only as the user scrolls. The way back is the same. A slow nudge does the same
+			// (it is a gesture, not a scrub): the exit never stands half done.
+			let userScroll = false;
+			let idleT = 0;
+			let playing = false;
+			const END = () => pinStart + 0.58 * range;   // the line is up, the words not yet begun
+			const onTouchMove = () => { userScroll = true; window.clearTimeout(idleT); };
+			const onTouchEnd = () => { window.clearTimeout(idleT); idleT = window.setTimeout(() => { userScroll = false; }, 400); };
+			const fire = () => {
+				const l = (window as any).__lenis;
+				if (!coarse || !l || playing || !userScroll || l.isStopped) return;
+				const y = l.scroll;
+				const end = END();
+				let to = -1;
+				if (l.direction > 0 && y > 2 && y < end - 4) to = end;
+				else if (l.direction < 0 && y > 2 && y < end - 4) to = 0;
+				if (to < 0) return;
+				playing = true;
+				l.scrollTo(to, {
+					duration: to === 0 ? 1.1 : 1.5,
+					easing: (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t),
+					force: true,
+					lock: true,
+					onComplete: () => { playing = false; userScroll = false; },
+				});
+			};
+			if (coarse) {
+				window.addEventListener('touchmove', onTouchMove, { passive: true });
+				window.addEventListener('touchend', onTouchEnd, { passive: true });
+				window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+			}
 			let lenisOff: (() => void) | null = null;
 			let lenisRaf = 0, lenisTries = 0;
 			const attachLenis = () => {
 				const l = (window as any).__lenis;
-				if (l) { l.on('scroll', hold); lenisOff = () => l.off?.('scroll', hold); return; }
+				if (l) { const h = () => { hold(); fire(); }; l.on('scroll', h); lenisOff = () => l.off?.('scroll', h); return; }
 				if (++lenisTries < 120) lenisRaf = requestAnimationFrame(attachLenis);
 			};
 			attachLenis();
@@ -194,7 +215,10 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			_heroExitOff = () => {
 				cancelAnimationFrame(lenisRaf);
 				lenisOff?.();
-				hero.style.translate = '';
+				window.removeEventListener('touchmove', onTouchMove);
+				window.removeEventListener('touchend', onTouchEnd);
+				window.removeEventListener('touchcancel', onTouchEnd);
+				window.clearTimeout(idleT);
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 					stage.style.transform = '';
