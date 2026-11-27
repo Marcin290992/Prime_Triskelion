@@ -242,30 +242,27 @@ const SCREENS = projects.length + HOLD;
 		--ink-shadow:
 			0 1px 2px rgb(0 0 0 / 0.9),
 			0 0 16px rgb(0 0 0 / 0.75);
-		/* The step of the home scene (the reference's): every line of the text comes in from below, a little larger, out of a
-		   16px blur (26px, scale 1.05), one after another (name, text, button), and goes out upward, a little smaller (26px,
-		   scale 0.95), into the same blur. CSS transitions: they run on the compositor, over the live canvas. */
-		visibility: hidden;
-		transition: visibility 0s linear 0.9s;
-	}
-	.swb__slide > * {
+		/* The site's blur-in (as the title and the other headings: opacity .8s, blur 1s, rise .8s on the
+		   same soft ease), as CSS transitions: Chrome runs opacity, transform and filter on the
+		   compositor, so the entrance does not repaint text over the live canvas on every frame (what
+		   stuttered on Android with the scripted blur, BUGS.md). It goes out quicker, like the title. */
 		opacity: 0;
-		transform: translate3d(0, 26px, 0) scale(1.05);
-		transform-origin: 0% 50%;
-		filter: blur(16px);
-		transition: opacity 0.9s cubic-bezier(0.42, 0, 0.58, 1), transform 0.9s cubic-bezier(0.42, 0, 0.58, 1), filter 0.9s cubic-bezier(0.42, 0, 0.58, 1);
+		visibility: hidden;
+		transform: translateY(14px);
+		filter: blur(5.5px);
+		transition: opacity 0.45s ease, filter 0.5s ease, transform 0.5s ease, visibility 0s linear 0.5s;
 	}
-	.swb__slide.gone > * { transform: translate3d(0, -26px, 0) scale(0.95); }
-	.swb__slide.in { visibility: visible; transition: visibility 0s; }
-	.swb__slide.in > * {
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.swb__slide { filter: none; transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s; }
+		.swb__slide.in { transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s; }
+	}
+	.swb__slide.in {
 		opacity: 1;
+		visibility: visible;
 		transform: none;
-		filter: blur(0px);
-		/* the one going out is mostly gone before this comes in, then each line a beat after the one before */
-		transition-delay: calc(0.35s + var(--k, 0) * 0.08s);
+		filter: none;
+		transition: opacity 0.8s ease, filter 1s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
 	}
-	.swb__slide > :nth-child(2) { --k: 1; }
-	.swb__slide > :nth-child(3) { --k: 2; }
 	/* The picture as a link: one per project, only the one on screen answers,
 	   and only to a mouse. */
 	.swb__hit {
@@ -488,13 +485,10 @@ const SCREENS = projects.length + HOLD;
 		// It leaves quickly the moment the next beam begins. All of it is the .in class and the CSS
 		// transitions above (nothing is animated from the script).
 		const revealText = (el: HTMLElement) => {
-			el.classList.remove('gone');
 			el.classList.add('in');
 			el.style.pointerEvents = 'auto';
 		};
-		// a text that is not on screen waits below (it comes in from there) or has gone out above (the pictures before the current one)
-		const hideText = (el: HTMLElement, above: boolean) => {
-			el.classList.toggle('gone', above);
+		const hideText = (el: HTMLElement) => {
 			el.classList.remove('in');
 			el.style.pointerEvents = 'none';
 		};
@@ -524,13 +518,10 @@ const SCREENS = projects.length + HOLD;
 			const tout = 1 - smooth(uPos / TITLE_SPAN);
 			const t = Math.min(tin, tout);
 			intro.style.opacity = t.toFixed(3);
-			// the reference's step: 16px blur, 26px, 5 %: in from below, a little larger; out upward, a little smaller
-			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 16).toFixed(1)}px)`;
+			intro.style.filter = t >= 0.999 ? '' : `blur(${((1 - t) * 5.5).toFixed(1)}px)`;
 			const hold = noIntroBlur && y < pinStart ? y - pinStart : 0;
-			const leaving = tout < tin;
-			const rise = t >= 0.999 ? 0 : (leaving ? -1 : 1) * (1 - t) * 26;
-			const sc = t >= 0.999 ? 1 : 1 + (leaving ? -0.05 : 0.05) * (1 - t);
-			intro.style.transform = hold || rise ? `translateY(${(hold + rise).toFixed(1)}px) scale(${sc.toFixed(4)})` : '';
+			const rise = tin >= 0.999 ? 0 : (1 - tin) * 14;
+			intro.style.transform = hold || rise ? `translateY(${(hold + rise).toFixed(1)}px)` : '';
 			intro.style.pointerEvents = t > 0.7 ? 'auto' : 'none';
 		};
 		const render = () => {
@@ -548,8 +539,7 @@ const SCREENS = projects.length + HOLD;
 			if (dest >= 1 && dest <= n) nowText = dest - 1;
 			if (nowText !== activeText) {
 				activeText = nowText;
-				const cur = nowText >= 0 ? nowText : bpos > n / 2 ? n : -1;
-				slides.forEach((el, i) => (i === nowText ? revealText(el) : hideText(el, i < cur)));
+				slides.forEach((el, i) => (i === nowText ? revealText(el) : hideText(el)));
 			}
 			hits.forEach((h, i) => h.classList.toggle('is-active', i === nowText));
 			// previous / next arrive with the first picture; the ends are disabled
@@ -581,7 +571,7 @@ const SCREENS = projects.length + HOLD;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
 		// Touch: the title stands a good while before the first picture (it was too easy to scroll past)
-		const LEAD = coarse ? 0.2 : 0.12;
+		const LEAD = coarse ? 0.5 : 0.12;
 		const PER = coarse ? 0.36 : 0.32;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));

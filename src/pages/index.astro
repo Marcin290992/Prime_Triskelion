@@ -77,8 +77,6 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
-			const fxEls = Array.from(hero.querySelectorAll<HTMLElement>('.hero-kicker, .h-hero-claim__line, .h-hero-sub, .hero-cta-row')).map((e) => e.style);
-			let fxTouched = false;
 			let range = 1;
 			let pinStart = 1;
 			const measure = () => {
@@ -129,23 +127,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				applyLight();
 				const bk = smooth(clamp01((p - (gentle ? 0.12 : 0.02)) / (gentle ? 0.7 : 0.30)));
 				const a = smooth(clamp01((p - (gentle ? 0.4 : 0.22)) / (gentle ? 0.62 : 0.34))) * (gentle ? 0.96 : 1);
-				// The hero's own going-out, as the reference: every element blurs, drifts up and shrinks a little as it fades
-				// (c: 1 -> 0 after the light has begun to go out), then the dark.
-				if (p > 0.001 || fxTouched) {
-					fxTouched = p > 0.001;
-					// the light goes out FIRST (see above); the type holds, sharp, until it is mostly out, and only then blurs away
-					const t0 = gentle ? 0.38 : 0.2, t1 = gentle ? 0.86 : 0.56;
-					const c = smooth(clamp01((t1 - p) / (t1 - t0)));
-					fxEls.forEach((st) => {
-						if (c >= 0.999) { st.opacity = '1'; st.transform = ''; st.filter = 'blur(0px)'; return; }
-						st.opacity = c.toFixed(3);
-						st.transform = `translate3d(0,${(-(1 - c) * 26).toFixed(1)}px,0) scale(${(1 - 0.05 * (1 - c)).toFixed(4)})`;
-						st.filter = `blur(${((1 - c) * 16).toFixed(1)}px)`;
-					});
-				}
 				const live = y < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
-				blur.style.backdropFilter = blur.style.webkitBackdropFilter = '';  // the type blurs itself (below), no second blur over it
+				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 5.5).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
 				veil.style.opacity = a.toFixed(3);
 				// The manifesto's line comes up slowly once its stage is pinned
@@ -158,9 +142,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Before its own pin the stage would ride up from the bottom of the
 				// screen: hold it on the spot instead, so it only ever comes out of
 				// the dark, never scrolls in.
-								const arrive = smooth(clamp01((y - (pinStart - lead)) / span));
-					// Touch: the line carries its own step blur-in (ManifestoSection), so the stage itself does not fade (no double fade)
-					stage.style.opacity = gentle ? (arrive > 0 ? '1' : '0') : arrive.toFixed(3);
+								stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
 			};
 			// The hold (the stage standing on the spot before its own pin) is set in the SAME frame the scroll moves, not a
 			// frame later in a requestAnimationFrame: a frame late, the text slipped up and snapped back while scrolling.

@@ -7,7 +7,7 @@
 // last stop of a zone one more gesture hands the page back to the plain scroll (and a gesture the other way from the
 // first stop of a zone with room above it does the same), and in the other direction a gesture takes the zone back.
 //
-//   home page, phones and tablets: two zones: the hero and the manifesto; the Selected work (the services between are the plain scroll)
+//   home page, phones and tablets: one zone: hero, manifesto, services, the Selected work title, the pictures
 //   home page, desktop: two zones: the hero (the manifesto and the services are then the user's own scroll), and the
 //                       Selected work (its title and the pictures)
 //   /projects, everywhere: one zone: the hero and every project
@@ -76,13 +76,14 @@ function createScene(cfg: Cfg): (() => void) | null {
 	const outCubic = (t: number) => 1 - (1 - t) ** 3;
 	const moveTo = (y: number, seconds: number) => {
 		if (!lenis) return;
+		const quick = moving || !!lenis.isScrolling;   // taking over a running step or a glide: no stand-still at the start
 		moving = true;
 		target = y;
 		lastStep = performance.now();
 		window.clearTimeout(moveTimer);
 		lenis.scrollTo(y, {
-			duration: seconds,
-			easing: outCubic,   // the reference's tweenTo: out-cubic, always
+			duration: quick ? Math.min(seconds, 1.0) : seconds,
+			easing: quick ? outCubic : inOutSine,
 			force: true,
 			lock: false,
 			onComplete: () => { moving = false; target = null; },
@@ -230,7 +231,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const z = zoneAt(zs, y);
 		if (!z) return;
 		const to = dir > 0 ? nextStop(z, y) : prevStop(z, y);
-		if (to == null || Math.abs(to - y) > vh() * 0.5) return;   // a free scroll is only carried the last short way: never pulled across the page
+		if (to == null) return;
 		grab();
 		step(z, y, to);
 	};
@@ -288,15 +289,12 @@ export function initHomeScene(): (() => void) | null {
 		const pics: number[] = sw.stops();
 		if (!pics.length || !ascending(pics)) return null;
 		if (isCoarse()) {
-			// phones and tablets: two zones: the hero and the manifesto (whole and red: it fills itself there), and the Selected work
-			// (its title and the pictures). The services between are the user's own, normal scroll.
+			// phones and tablets: hero, manifesto (whole and red), services, then the title and the pictures: one zone
 			const y1 = st.start + hold * (st.end - st.start);
-			const a = [0, y1];
-			if (!ascending(a) || !(pics[0] > y1 + 8)) return null;
-			return [
-				{ stops: a, start: 0, end: y1 },
-				{ stops: pics, start: pics[0] - 0.08 * vh(), end: pics[pics.length - 1] },
-			];
+			const r = svc.getBoundingClientRect();
+			const y2 = r.top + window.scrollY + r.height / 2 - vh() / 2;
+			const list = [0, y1, y2, ...pics];
+			return ascending(list) ? [{ stops: list, start: 0, end: list[list.length - 1] }] : null;
 		}
 		// desktop: the hero (up to where the manifesto begins to fill), and the pictures; the manifesto and the services between
 		// are the user's own scroll
@@ -304,14 +302,16 @@ export function initHomeScene(): (() => void) | null {
 		if (!ascending(a) || !(pics[0] > st.start + 8)) return null;
 		return [
 			{ stops: a, start: 0, end: st.start },
-			{ stops: pics, start: pics[0] - 0.08 * vh(), end: pics[pics.length - 1] },
+			{ stops: pics, start: pics[0] - 0.6 * vh(), end: pics[pics.length - 1] },
 		];
 	};
 	return createScene({
 		zones,
 		seconds: (z, i, j) => {
-			// the reference's time of a step: stepTime 0.95 s + 110 ms for every further stop it crosses (up to 3)
-			return 0.95 + 0.11 * Math.min(3, Math.abs(j - i));
+			const to = z.stops[j], from = z.stops[i];
+			if (from === 0 && j === 1) return isCoarse() ? 3.2 : 2.2;      // the hero goes out (and the manifesto fills)
+			if (to === 0 && i === 1) return isCoarse() ? 1.9 : 1.5;
+			return 1.15 + Math.min(1.1, (Math.abs(to - from) / vh()) * 0.7);
 		},
 	});
 }
@@ -327,7 +327,10 @@ export function initProjectsScene(getStops: () => number[]): (() => void) | null
 			return [{ stops: list, start: 0, end: list[list.length - 1] }];
 		},
 		seconds: (z, i, j) => {
-			return 0.95 + 0.11 * Math.min(3, Math.abs(j - i));          // the reference's time of a step
+			const to = z.stops[j], from = z.stops[i];
+			if (from === 0 && j === 1) return 2.8;                      // the header goes out, the first beam crosses
+			if (to === 0 && i === 1) return 1.8;
+			return 1.3 + Math.min(0.9, (Math.abs(to - from) / vh()) * 0.6);
 		},
 	});
 }
