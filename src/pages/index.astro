@@ -51,6 +51,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }
 		}
+		/* Phones and tablets: no pinned choreography at all. The hero is an ordinary screen that scrolls away, the
+		   manifesto an ordinary block; the type goes out of the top (and comes in from the bottom) through blur by its
+		   own position on the screen, and the light dims as the hero leaves (script below, the static branch). */
+		@media (prefers-reduced-motion: no-preference) and (max-width: 1024px), (prefers-reduced-motion: no-preference) and (hover: none) and (pointer: coarse) {
+			#hero-pin { height: auto; }
+			#hero-pin > #hero { position: relative; }
+			#manifesto { margin-top: 0; pointer-events: auto; }
+			#manifesto > .sticky { opacity: 1; }
+		}
 	</style>
 
 	<script>
@@ -74,6 +83,42 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
+			// Phones and tablets: a plain scroll. The light dims and the hero's type goes into blur as the hero leaves
+			// the top (all from the scroll position, nothing timed, nothing pinned or locked).
+			if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
+				const centre = hero.querySelector<HTMLElement>('.hero-stage');
+				let raf = 0;
+				const frame = () => {
+					raf = 0;
+					const vh = window.innerHeight;
+					const y = window.scrollY;
+					const v = 1 - smooth(clamp01(y / (0.8 * vh)));
+					if (rays) {
+						const dark = v <= 0.001;
+						if (rays.dataset.dark !== (dark ? '1' : '')) {
+							rays.dataset.dark = dark ? '1' : '';
+							rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
+						}
+						rays.style.filter = v < 0.999 ? `brightness(${v.toFixed(3)})` : '';
+					}
+					if (centre) {
+						const t = smooth(clamp01(y / (0.5 * vh)));
+						centre.style.opacity = t > 0 ? (1 - t).toFixed(3) : '';
+						centre.style.filter = t > 0 ? `blur(${(t * 5.5).toFixed(1)}px)` : '';
+					}
+				};
+				const onS = () => { if (!raf) raf = requestAnimationFrame(frame); };
+				window.addEventListener('scroll', onS, { passive: true });
+				frame();
+				_heroExitOff = () => {
+					window.removeEventListener('scroll', onS);
+					cancelAnimationFrame(raf);
+					if (rays) rays.style.filter = '';
+					if (centre) { centre.style.opacity = ''; centre.style.filter = ''; }
+					_heroExitOff = null;
+				};
+				return;
+			}
 			let range = 1;
 			let pinStart = 1;
 			const measure = () => {
