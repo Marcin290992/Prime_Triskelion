@@ -37,6 +37,10 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
+	/* Phones and tablets: a little more scroll for the whole line, so the slower going-out has room (the fill keeps its pace) */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		#manifesto { height: calc(var(--app-stable-vh) * 225) !important; }
+	}
 	.mw {
 		display: inline-block;
 		margin-right: 0.3em;
@@ -92,7 +96,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		if (heading) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		// Phones and tablets: a slower, more cinematic going-out: the line eases into the 5.5px blur and fades while it drifts a little
+		// upward and pushes on (the camera keeps moving in), instead of being switched off where it stands.
+		const coarseM = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		if (heading) {
+			if (coarseM) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, scale: 1.09, y: -26, duration: 1.15, ease: 'power2.inOut' }, tl.duration());
+			else tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+		}
 		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
 
 		_manifestoST = ScrollTrigger.create({
