@@ -86,17 +86,13 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		tl.to({}, { duration: 0.05 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, duration: 0.4, stagger: 0.02, ease: 'none' });
 
-		// Once the line is whole it is held, and two things happen in the hold:
-		// the camera pushes in on it very slowly, and the words that carry the
-		// sentence take the red, one after another.
-		const picked = Array.from(section.querySelectorAll<HTMLElement>('.mw--accent'));
-		const red = getComputedStyle(document.documentElement).getPropertyValue('--c-red').trim().split(/\s+/).join(',');
+		// Once the line is whole it is held, and in the hold the camera pushes in on it very slowly.
+		// (No red on any device: the sentence stays white.)
 		const HOLD = 0.8;
 		if (heading) {
 			gsap.set(heading, { transformOrigin: '0% 50%' });
 			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
 		}
-		if (picked.length && red) tl.to(picked, { color: `rgb(${red})`, duration: 0.5, stagger: 0.3, ease: 'none' }, `-=${HOLD}`);
 
 		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).

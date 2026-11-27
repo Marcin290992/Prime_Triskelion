@@ -279,12 +279,20 @@ export function initIntroStage(): (() => void) | null {
 		if (n === idx && Math.abs(S.pos - n) < 0.001) return;
 		settle(n);
 	}
-	function settle(n: number) {
+	// back = the stage takes the page again from the page side (scrolling UP from Services): the manifesto returns as it left,
+	// whole (the reverse of its going-out, as on desktop where the scroll simply runs the timeline backwards), not empty and
+	// filling itself again like the first time.
+	function settle(n: number, back = false) {
 		if (n !== idx) lastStep = performance.now();
 		idx = n;
 		follow(n, n === LAST ? handOff : undefined, n === LAST ? CFG.handoffAt : undefined);
-		if (n === 1) { redTo(0, 1, 0); growTo(0, 1); fillTo(1, CFG.fillTime * 1000, CFG.fillDelay); }   // arrived at the text: it fills itself
-		else { redTo(0, CFG.resetTime * 1000, 0); growTo(0, 600); fillTo(0, CFG.emptyTime * 1000, 0.25); } // left it: empties, ready for the next time
+		if (n === 1) {
+			redTo(0, 1, 0); growTo(0, 1);
+			if (back) { clearTimeout(fillTimer); cancelAnimationFrame(fillRaf); S.fill = 1; render(); }
+			else fillTo(1, CFG.fillTime * 1000, CFG.fillDelay);   // arrived at the text: it fills itself
+		}
+		else if (n === LAST) { /* going out to the page: it leaves as it stands (filled), it does not empty while it blurs away */ }
+		else { redTo(0, CFG.resetTime * 1000, 0); growTo(0, 600); fillTo(0, CFG.emptyTime * 1000, 0.25); } // left it for the hero: empties, ready for the next time
 	}
 
 	// ── hand-off: past the manifesto the page is the plain scroll (Services on); the stage's own layout stays as it was ──
@@ -320,9 +328,10 @@ export function initIntroStage(): (() => void) | null {
 		jump(0);
 		// start where the manifesto is already (faintly) showing, not at the far end where nothing is drawn
 		S.pos = LAST - CFG.reentry; goal = to; idx = LAST; heroTouched = true;
+		clearTimeout(fillTimer); cancelAnimationFrame(fillRaf); S.fill = 1;   // the manifesto comes back whole
 		render();
 		lastStep = performance.now();
-		settle(to);
+		settle(to, true);
 	}
 	function releaseNow() {   // the page came up already past the stage (restored scroll, an anchor): no step, just let go
 		stopFollow();
