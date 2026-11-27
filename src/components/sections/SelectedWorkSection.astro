@@ -786,8 +786,12 @@ const SCREENS = projects.length + HOLD;
 				gliding = true;
 				const done = () => { clearTimeout(glideTimer); gliding = false; lastY = window.scrollY; setFrom(stPin.progress, true); };
 				glideTimer = window.setTimeout(done, 3000);   // never stay stuck
-				const target = dir > 0 ? stPin.end + 0.45 * vh() : Math.max(0, stPin.start - 0.5 * vh());
-				lenis.scrollTo(target, { duration: 1.2, easing: settle, force: true, lock: false, onComplete: done });
+				// The page was held at the title's rest while the pictures changed. The stage stands still over the whole
+				// zone, so move the scroll to the very edge of it at once (nothing on screen changes) and glide on from
+				// there: the page starts moving the moment the swipe ends, instead of after ~1 s of invisible scroll.
+				jumpTo(dir > 0 ? stPin.end - 1 : stPin.start + 1);
+				const target = dir > 0 ? stPin.end + 0.55 * vh() : Math.max(0, stPin.start - 0.5 * vh());
+				lenis.scrollTo(target, { duration: 1.1, easing: settle, force: true, lock: false, onComplete: done });
 			};
 			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
 			// the finger that is down right now (tracked all the time): a gesture that brings the page INTO the view from
