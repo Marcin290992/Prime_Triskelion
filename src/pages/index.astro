@@ -117,13 +117,17 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				if (coarse) {
 					const dt = now && limT ? Math.min(0.1, (now - limT) / 1000) : 0;
 					limT = now ?? 0;
-					const m = SPEED * range * dt;
+					// quicker once the exit is over (the manifesto's own fill follows this too): only the exit itself is paced
+					const m = SPEED * range * dt * (ye > 1.2 * range ? 3 : 1);
 					const d = yReal - ye;
 					ye = Math.abs(d) <= m || Math.abs(d) < 1 ? yReal : ye + Math.sign(d) * m;
 					y = ye;
 					if (ye !== yReal) { ticking = true; requestAnimationFrame(update); }
 					else limT = 0;
 				}
+				// the manifesto's fill follows this too (touch): it must not start before the exit has played
+				(window as any).__heroY = coarse ? y : undefined;
+				(window as any).__heroYCb?.();
 				hold();
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
