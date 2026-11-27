@@ -572,7 +572,9 @@ const SCREENS = projects.length + HOLD;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
 		// Touch: the title stands a good while before the first picture (it was too easy to scroll past)
-		const LEAD = coarse ? 0.5 : 0.12;
+		// Touch with the stage (one gesture = one picture): the title stands by itself (the stage holds it until the next
+		// gesture), so it needs hardly any scroll of its own: the stage takes the page as soon as the title has pinned.
+		const LEAD = touchStep ? 0.14 : coarse ? 0.5 : 0.12;
 		const PER = coarse ? 0.36 : 0.32;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));
@@ -790,7 +792,8 @@ const SCREENS = projects.length + HOLD;
 				// zone, so move the scroll to the very edge of it at once (nothing on screen changes) and glide on from
 				// there: the page starts moving the moment the swipe ends, instead of after ~1 s of invisible scroll.
 				jumpTo(dir > 0 ? stPin.end - 1 : stPin.start + 1);
-				const target = dir > 0 ? stPin.end + 0.55 * vh() : Math.max(0, stPin.start - 0.5 * vh());
+				// not far: the way back in (one flick) has to reach the zone again
+				const target = dir > 0 ? stPin.end + 0.4 * vh() : Math.max(0, stPin.start - 0.25 * vh());
 				lenis.scrollTo(target, { duration: 1.1, easing: settle, force: true, lock: false, onComplete: done });
 			};
 			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
