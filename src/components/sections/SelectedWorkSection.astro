@@ -503,6 +503,16 @@ const SCREENS = projects.length + HOLD;
 		// it is one soft motion either way and never in two stages.
 		// Touch: it starts BEFORE the view pins (while the options are still blurring out above it), held on the spot
 		// against the stage that is still rising, so it only comes out of the dark and no black stretch is left between.
+		// Touch: the title comes in on the CLOCK, not with the scroll. Scrubbed, a slow scroll that stops on the way (a thumb
+		// resting) leaves it half blurred. Here the scroll only decides WHEN (the last option has gone out at the top), then
+		// it blurs in by itself in 0.95 s, and out in 0.45 s when the page goes back up. (hysteresis: in above 0.12, out below 0.02)
+		let tinC = 0, tinTarget = 0, tinFrom = 0, tinT0 = 0, tinMs = 1, tinRaf = 0;
+		const tinStep = (now: number) => {
+			const t = clamp((now - tinT0) / tinMs);
+			tinC = tinFrom + (tinTarget - tinFrom) * (tinTarget ? 1 - Math.pow(1 - t, 3) : t * (2 - t));
+			updateIntro();
+			tinRaf = t < 1 ? requestAnimationFrame(tinStep) : 0;
+		};
 		const updateIntro = () => {
 			const vh = window.innerHeight;
 			const y = window.scrollY;
@@ -518,6 +528,14 @@ const SCREENS = projects.length + HOLD;
 					const r = btn.getBoundingClientRect();
 					tin = smooth((0.20 - (r.top + r.height / 2) / vh) / 0.25);
 				}
+			}
+			if (touchStep) {
+				const want = tin > 0.12 ? 1 : tin < 0.02 ? 0 : tinTarget;
+				if (want !== tinTarget) {
+					tinTarget = want; tinFrom = tinC; tinT0 = performance.now(); tinMs = want ? 950 : 450;
+					if (!tinRaf) tinRaf = requestAnimationFrame(tinStep);
+				}
+				tin = tinC;
 			}
 			const tout = 1 - smooth(uPos / TITLE_SPAN);
 			const t = Math.min(tin, tout);
@@ -1026,6 +1044,7 @@ const SCREENS = projects.length + HOLD;
 			window.removeEventListener('scroll', onTitleScroll);
 			ScrollTrigger.removeEventListener('refresh', titleTick);
 			cancelAnimationFrame(titleRaf);
+			cancelAnimationFrame(tinRaf);
 			intro.style.visibility = '';
 			stPin.kill();
 			ro.disconnect();
