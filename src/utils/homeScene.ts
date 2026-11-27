@@ -76,14 +76,13 @@ function createScene(cfg: Cfg): (() => void) | null {
 	const outCubic = (t: number) => 1 - (1 - t) ** 3;
 	const moveTo = (y: number, seconds: number) => {
 		if (!lenis) return;
-		const quick = moving || !!lenis.isScrolling;   // taking over a running step or a glide: no stand-still at the start
 		moving = true;
 		target = y;
 		lastStep = performance.now();
 		window.clearTimeout(moveTimer);
 		lenis.scrollTo(y, {
-			duration: quick ? Math.min(seconds, 1.3) : seconds,
-			easing: quick ? outCubic : inOutSine,
+			duration: seconds,
+			easing: outCubic,   // the reference's tweenTo: out-cubic, always
 			force: true,
 			lock: false,
 			onComplete: () => { moving = false; target = null; },
@@ -311,10 +310,8 @@ export function initHomeScene(): (() => void) | null {
 	return createScene({
 		zones,
 		seconds: (z, i, j) => {
-			const to = z.stops[j], from = z.stops[i];
-			if (from === 0 && j === 1) return isCoarse() ? 4.4 : 3.6;      // the hero goes out (and the manifesto fills)
-			if (to === 0 && i === 1) return isCoarse() ? 2.8 : 2.4;
-			return 2.0 + Math.min(1.2, (Math.abs(to - from) / vh()) * 0.8);
+			// the reference's time of a step: stepTime 0.95 s + 110 ms for every further stop it crosses (up to 3)
+			return 0.95 + 0.11 * Math.min(3, Math.abs(j - i));
 		},
 	});
 }
@@ -330,10 +327,7 @@ export function initProjectsScene(getStops: () => number[]): (() => void) | null
 			return [{ stops: list, start: 0, end: list[list.length - 1] }];
 		},
 		seconds: (z, i, j) => {
-			const to = z.stops[j], from = z.stops[i];
-			if (from === 0 && j === 1) return 3.8;                      // the header goes out, the first beam crosses
-			if (to === 0 && i === 1) return 2.6;
-			return 2.1 + Math.min(1.1, (Math.abs(to - from) / vh()) * 0.7);
+			return 0.95 + 0.11 * Math.min(3, Math.abs(j - i));          // the reference's time of a step
 		},
 	});
 }
