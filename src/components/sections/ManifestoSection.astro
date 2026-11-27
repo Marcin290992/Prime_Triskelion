@@ -98,6 +98,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
 		// Phones and tablets: a slower, more cinematic going-out: the line eases into the 5.5px blur and fades while it drifts a little
 		// upward and pushes on (the camera keeps moving in), instead of being switched off where it stands.
+		const holdEnd = tl.duration();   // the line whole, held, the two words red: where the home scene lets the manifesto rest
 		const coarseM = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		if (heading) {
 			if (coarseM) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, scale: 1.09, y: -26, duration: 1.15, ease: 'power2.inOut' }, tl.duration());
@@ -112,6 +113,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			end: 'bottom bottom',
 			scrub: true,
 		});
+		// the home scene (utils/homeScene.ts) rests the page here, with the manifesto whole and red
+		(window as any).__manifestoST = _manifestoST;
+		(window as any).__manifestoHold = holdEnd / tl.duration();
 	}
 
 	document.addEventListener('astro:page-load', () => {
@@ -121,5 +125,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	document.addEventListener('astro:before-swap', () => {
 		_manifestoST?.kill();
 		_manifestoST = null;
+		(window as any).__manifestoST = null;
+		(window as any).__manifestoHold = null;
 	});
 </script>

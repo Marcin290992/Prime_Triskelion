@@ -661,6 +661,8 @@ const SCREENS = projects.length + HOLD;
 		// where the page rests on picture k (0 = the title); the dark stretch sits between the title and the first picture
 		const stop = (k: number) => stPin.start + (k === 0 ? LEAD : LEAD + PER * (k + DARK)) * unit();
 		const settle = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);   // in-out sine: sets off gently, settles gently
+		// the home scene (utils/homeScene.ts) rests the page on the title (stop 0) and hands it to the first picture (stop 1)
+		(window as any).__swStops = { s0: () => stop(0), s1: () => stop(1) };
 		// The site's Lenis is created one frame AFTER astro:page-load (Layout.astro), so it
 		// is picked up when it appears (`attach`); until then (or without it) the browser scrolls.
 		let lenis: any = null;
@@ -772,6 +774,7 @@ const SCREENS = projects.length + HOLD;
 
 		cleanup = () => {
 			window.removeEventListener('keydown', onKey);
+			(window as any).__swStops = null;
 			cancelAnimationFrame(waitRaf);
 			cancelAnimationFrame(limRaf);
 			snapOff();

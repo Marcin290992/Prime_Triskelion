@@ -33,6 +33,9 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		   into the black (#hero-veil, driven by the script below), and the
 		   manifesto is pulled up to start exactly where that ends — its words
 		   come into focus on the spot instead of riding up from the bottom. */
+		/* The opening is a scene of steps (utils/homeScene.ts): while it is on, the finger does not scroll the page by itself
+		   (the swipe is turned into a step), and the page does not bounce. */
+		html.scene-on, html.scene-on body { touch-action: none; overscroll-behavior: none; }
 		#hero-veil,
 		#hero-blur {
 			position: fixed;
@@ -176,6 +179,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		}
 		document.addEventListener('astro:page-load', initHeroExit);
 		document.addEventListener('astro:before-swap', () => _heroExitOff?.());
+	</script>
+
+	<script>
+		import { initHomeScene } from '../utils/homeScene';
+		// The opening as a scene of steps (hero, manifesto, services, the Selected work title): one gesture, one step, on the clock.
+		let _sceneOff: (() => void) | null = null;
+		document.addEventListener('astro:page-load', () => { _sceneOff?.(); _sceneOff = initHomeScene(); });
+		document.addEventListener('astro:before-swap', () => { _sceneOff?.(); _sceneOff = null; });
 	</script>
 
 	<script>
