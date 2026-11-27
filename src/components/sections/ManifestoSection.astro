@@ -11,9 +11,8 @@ const slice = (i: number) => {
 	const end = ((i * 0.1 + 1) / total) * 100;
 	return `--s:${start.toFixed(2)}%;--e:${end.toFixed(2)}%`;
 };
-const accent = new Set(['silence', 'chosen,']);
 let n = 0;
-const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accent: accent.has(w) })));
+const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 ---
 <!-- ═══════ MANIFESTO ═══════ -->
 <section id="manifesto" class="relative" style="height:200vh;height:200lvh;height:calc(var(--app-stable-vh) * 200);z-index:10">
@@ -23,9 +22,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			style="font-size:clamp(1.55rem,2.5vw,2.5rem);max-width:68rem;font-family:var(--f-body);color:rgb(var(--c-cream))"
 			aria-label={paragraphs.join(" ")}
 		>
-			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style} aria-hidden="true">{w}</span>)}
+			{words[0].map(({ w, style }) => <span class="mw" style={style} aria-hidden="true">{w}</span>)}
 			<span class="mw br gap" aria-hidden="true"></span>
-			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style} aria-hidden="true">{w}</span>)}
+			{words[1].map(({ w, style }) => <span class="mw" style={style} aria-hidden="true">{w}</span>)}
 		</h2>
 	</div>
 </section>
@@ -60,52 +59,45 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	import gsap from 'gsap';
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 
-	let _manifestoST: ReturnType<typeof ScrollTrigger.create> | null = null;
+	let manifestoST: ReturnType<typeof ScrollTrigger.create> | null = null;
 
+	// Desktop: one scrubbed timeline. The line comes up out of the dark (its stage fades in, see index.astro), the words
+	// come into focus, the camera pushes in slowly while it is held, then the line goes out into blur and the dark.
+	// Phones and tablets with a touch screen do not run this: the stage (utils/introStage.ts) drives the line there.
 	function initManifesto() {
 		const section = document.getElementById('manifesto');
 		if (!section) return;
-		// Phones and tablets: the stage (utils/introStage.ts) drives the line, not a scrubbed timeline
 		if (window.matchMedia('(hover: none) and (pointer: coarse)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const content = section.querySelector<HTMLElement>(':scope > div');
-		if (!content) return;
-
 		const words = section.querySelectorAll<HTMLElement>('.mw:not(.br)');
 		const heading = section.querySelector<HTMLElement>('h2');
+		if (!section.querySelector(':scope > div')) return;
 
-		_manifestoST?.kill();
-		_manifestoST = null;
+		manifestoST?.kill();
+		manifestoST = null;
 		gsap.registerPlugin(ScrollTrigger);
-		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
-		const touchy = true; // same short pacing on every device
-		gsap.set(words, { filter: 'blur(5.5px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
+		gsap.set(words, { filter: 'blur(5.5px)', opacity: 0.35, y: 0 });
 
-		// Lead-in: the faint line comes up out of the dark (the stage fades in,
-		// see index.astro) before the words start to focus.
 		const tl = gsap.timeline();
 		tl.to({}, { duration: 0.05 });
 		tl.to(words, { filter: 'blur(0px)', opacity: 1, duration: 0.4, stagger: 0.02, ease: 'none' });
 
-		// Once the line is whole it is held, and in the hold the camera pushes in on it very slowly.
-		// (No red on any device: the sentence stays white.)
+		// held whole, the camera pushes in very slowly
 		const HOLD = 0.8;
 		if (heading) {
 			gsap.set(heading, { transformOrigin: '0% 50%' });
 			tl.to(heading, { scale: 1.04, duration: HOLD, ease: 'none' }, '>');
 		}
 
-		// Then the whole line goes out where it stands, into blur and the dark; the services come up out of that
-		// dark on their own pinned screen (it takes over exactly where this pin ends, see ServicesSection).
-		// Phones and tablets: a slower, more cinematic going-out: the line eases into the 5.5px blur and fades while it drifts a little
-		// upward and pushes on (the camera keeps moving in), instead of being switched off where it stands.
-		const coarseM = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		// then the whole line goes out where it stands, into blur and the dark; the services come up out of that dark on
+		// their own pinned screen. On narrow screens the going-out is slower: it also drifts up a little and pushes on.
 		if (heading) {
-			if (coarseM) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, scale: 1.09, y: -26, duration: 1.15, ease: 'power2.inOut' }, tl.duration());
-			else tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
+			const narrow = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+			if (narrow) tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, scale: 1.09, y: -26, duration: 1.15, ease: 'power2.inOut' }, tl.duration());
+			else tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: 0.7, ease: 'sine.inOut' }, tl.duration());
 		}
-		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black
+		tl.to({}, { duration: 0.05 }); // a breath of black
 
-		_manifestoST = ScrollTrigger.create({
+		manifestoST = ScrollTrigger.create({
 			animation: tl,
 			trigger: section,
 			start: () => 'top top+=' + Math.round(window.innerHeight * 0.2),   // the words start to focus while the line is still coming up out of the dark
@@ -119,7 +111,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	});
 
 	document.addEventListener('astro:before-swap', () => {
-		_manifestoST?.kill();
-		_manifestoST = null;
+		manifestoST?.kill();
+		manifestoST = null;
 	});
 </script>
