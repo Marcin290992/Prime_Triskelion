@@ -124,6 +124,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 					if (ye !== yReal) { ticking = true; requestAnimationFrame(update); }
 					else limT = 0;
 				}
+				hold();
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
@@ -160,6 +161,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				const yy = window.scrollY;
 				const t = yy < pinStart ? `translate3d(0, ${(yy - pinStart).toFixed(1)}px, 0)` : '';
 				if (stage.style.transform !== t) stage.style.transform = t;
+				// Touch: the page may run ahead of the exit (a fling). Past the end of the hero's pin the hero would then
+				// scroll away with the page while it is still half lit and blurring. So it is held on the spot until the exit
+				// has played as far as the page has gone: the scroll fires the animation, the animation keeps its own pace.
+				if (coarse) {
+					const shift = Math.max(0, yy - range) - Math.max(0, ye - range);
+					const v = shift > 0.5 ? `0 ${shift.toFixed(1)}px` : '';
+					if (hero.style.translate !== v) hero.style.translate = v;
+				}
 			};
 			const onScroll = () => { hold(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
 			let lenisOff: (() => void) | null = null;
@@ -181,6 +190,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			_heroExitOff = () => {
 				cancelAnimationFrame(lenisRaf);
 				lenisOff?.();
+				hero.style.translate = '';
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 					stage.style.transform = '';
