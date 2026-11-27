@@ -41,7 +41,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	}
 	/* Phones and tablets: a little more scroll for the whole line, so the slower going-out has room (the fill keeps its pace) */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto { height: calc(var(--app-stable-vh) * 225) !important; }
+		#manifesto { height: calc(var(--app-stable-vh) * 200) !important; }
 	}
 	.mw {
 		display: inline-block;
@@ -189,7 +189,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		// upward and pushes on (the camera keeps moving in), instead of being switched off where it stands.
 		const holdEnd = tl.duration();   // the line whole, held, the two words red: where the home scene lets the manifesto rest
 		if (heading) {
-			if (coarseM) tl.to(heading, { filter: 'blur(16px)', opacity: 0, scale: 0.95, y: -26, duration: 1.15, ease: (t: number) => t * t * (3 - 2 * t) }, tl.duration());   // the reference's step out: 16px, 26px, 5 %
+			if (coarseM) tl.to(heading, { filter: 'blur(16px)', opacity: 0, scale: 0.95, y: -26, duration: 0.6, ease: (t: number) => t * t * (3 - 2 * t) }, tl.duration());   // the reference's step out: 16px, 26px, 5 %
 			else tl.to(heading, { filter: 'blur(5.5px)', opacity: 0, duration: touchy ? 0.7 : 1.6, ease: 'sine.inOut' }, tl.duration());
 		}
 		tl.to({}, { duration: touchy ? 0.05 : 0.15 }); // a breath of black

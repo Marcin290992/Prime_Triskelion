@@ -82,7 +82,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		lastStep = performance.now();
 		window.clearTimeout(moveTimer);
 		lenis.scrollTo(y, {
-			duration: quick ? Math.min(seconds, 1.0) : seconds,
+			duration: quick ? Math.min(seconds, 1.3) : seconds,
 			easing: quick ? outCubic : inOutSine,
 			force: true,
 			lock: false,
@@ -231,7 +231,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const z = zoneAt(zs, y);
 		if (!z) return;
 		const to = dir > 0 ? nextStop(z, y) : prevStop(z, y);
-		if (to == null) return;
+		if (to == null || Math.abs(to - y) > vh() * 0.5) return;   // a free scroll is only carried the last short way: never pulled across the page
 		grab();
 		step(z, y, to);
 	};
@@ -296,7 +296,7 @@ export function initHomeScene(): (() => void) | null {
 			if (!ascending(a) || !(pics[0] > y1 + 8)) return null;
 			return [
 				{ stops: a, start: 0, end: y1 },
-				{ stops: pics, start: pics[0] - 0.6 * vh(), end: pics[pics.length - 1] },
+				{ stops: pics, start: pics[0] - 0.08 * vh(), end: pics[pics.length - 1] },
 			];
 		}
 		// desktop: the hero (up to where the manifesto begins to fill), and the pictures; the manifesto and the services between
@@ -305,16 +305,16 @@ export function initHomeScene(): (() => void) | null {
 		if (!ascending(a) || !(pics[0] > st.start + 8)) return null;
 		return [
 			{ stops: a, start: 0, end: st.start },
-			{ stops: pics, start: pics[0] - 0.6 * vh(), end: pics[pics.length - 1] },
+			{ stops: pics, start: pics[0] - 0.08 * vh(), end: pics[pics.length - 1] },
 		];
 	};
 	return createScene({
 		zones,
 		seconds: (z, i, j) => {
 			const to = z.stops[j], from = z.stops[i];
-			if (from === 0 && j === 1) return isCoarse() ? 3.2 : 2.2;      // the hero goes out (and the manifesto fills)
-			if (to === 0 && i === 1) return isCoarse() ? 1.9 : 1.5;
-			return 1.15 + Math.min(1.1, (Math.abs(to - from) / vh()) * 0.7);
+			if (from === 0 && j === 1) return isCoarse() ? 4.4 : 3.6;      // the hero goes out (and the manifesto fills)
+			if (to === 0 && i === 1) return isCoarse() ? 2.8 : 2.4;
+			return 2.0 + Math.min(1.2, (Math.abs(to - from) / vh()) * 0.8);
 		},
 	});
 }
@@ -331,9 +331,9 @@ export function initProjectsScene(getStops: () => number[]): (() => void) | null
 		},
 		seconds: (z, i, j) => {
 			const to = z.stops[j], from = z.stops[i];
-			if (from === 0 && j === 1) return 2.8;                      // the header goes out, the first beam crosses
-			if (to === 0 && i === 1) return 1.8;
-			return 1.3 + Math.min(0.9, (Math.abs(to - from) / vh()) * 0.6);
+			if (from === 0 && j === 1) return 3.8;                      // the header goes out, the first beam crosses
+			if (to === 0 && i === 1) return 2.6;
+			return 2.1 + Math.min(1.1, (Math.abs(to - from) / vh()) * 0.7);
 		},
 	});
 }
