@@ -586,7 +586,9 @@ const SCREENS = projects.length + HOLD;
 			const dt = Math.min(0.1, (now - limT) / 1000);
 			limT = now;
 			const d = targetU - curU;
-			const m = SPEED * dt;
+			// the further behind the light is, the quicker it goes (up to about 2x with two pictures to catch up), so
+			// quick successive swipes are followed, while one flick still gets the calm pace
+			const m = SPEED * (1 + clamp((Math.abs(d) - 0.7) / 1.5, 0, 1)) * dt;
 			curU = Math.abs(d) <= m ? targetU : curU + Math.sign(d) * m;
 			apply(curU);
 			if (curU !== targetU) limRaf = requestAnimationFrame(limTick);
@@ -725,9 +727,20 @@ const SCREENS = projects.length + HOLD;
 				timer = window.setTimeout(decide, IDLE);
 			};
 			lenis.on('scroll', onScroll);
+			// Touch: every new touch is a new gesture. It starts from the picture the page is on at that moment and
+			// takes over from any glide still running, so swipes in quick succession each move on one picture without
+			// waiting for the page to go quiet first (that wait is what made fast scrolling impossible).
+			const onTouchStart = () => {
+				if (!coarse || lenis.isStopped) return;
+				anchor = -1;
+				if (snapping) { snapping = false; clearTimeout(fail); }
+				window.clearTimeout(timer);
+			};
+			window.addEventListener('touchstart', onTouchStart, { passive: true });
 
 			snapOff = () => {
 				lenis.off('scroll', onScroll);
+				window.removeEventListener('touchstart', onTouchStart);
 				window.clearTimeout(timer);
 				window.clearTimeout(fail);
 			};
