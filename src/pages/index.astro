@@ -103,12 +103,27 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			let ticking = false;
-			let lastY = window.scrollY;
-			const update = () => {
+			// Touch: the exit has a top speed (SPEED of the exit a second), so a hard fling cannot rush through
+			// the light going out, the blur and the manifesto coming up: the scroll may run ahead, the animation
+			// catches up at its own calm pace (a slow drag is followed exactly). Same idea as Selected work.
+			const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+			const SPEED = 1.0;
+			let ye = window.scrollY;
+			let limT = 0;
+			const update = (now?: number) => {
 				ticking = false;
-				const y = window.scrollY;
-				const goingUp = y < lastY - 0.5;
-				lastY = y;
+				const yReal = window.scrollY;
+				let y = yReal;
+				if (coarse) {
+					const dt = now && limT ? Math.min(0.1, (now - limT) / 1000) : 0;
+					limT = now ?? 0;
+					const m = SPEED * range * dt;
+					const d = yReal - ye;
+					ye = Math.abs(d) <= m || Math.abs(d) < 1 ? yReal : ye + Math.sign(d) * m;
+					y = ye;
+					if (ye !== yReal) { ticking = true; requestAnimationFrame(update); }
+					else limT = 0;
+				}
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
@@ -121,7 +136,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				applyLight();
 				const bk = smooth(clamp01((p - 0.02) / 0.30));
 				const a = smooth(clamp01((p - 0.22) / 0.34));
-				const live = y < pinStart + window.innerHeight;
+				const live = yReal < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 5.5).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
@@ -136,17 +151,36 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Before its own pin the stage would ride up from the bottom of the
 				// screen: hold it on the spot instead, so it only ever comes out of
 				// the dark, never scrolls in.
-				stage.style.transform = y < pinStart ? `translate3d(0, ${(y - pinStart).toFixed(1)}px, 0)` : '';
 				stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
 			};
-			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// The hold (the stage standing on the spot before its own pin) is set in the SAME frame the scroll moves, not a
+			// frame later in a requestAnimationFrame: a frame late, the text slipped up and snapped back while scrolling.
+			// On Lenis's own scroll event when there is one (it fires in the frame that moves the page), else on the scroll event.
+			const hold = () => {
+				const yy = window.scrollY;
+				const t = yy < pinStart ? `translate3d(0, ${(yy - pinStart).toFixed(1)}px, 0)` : '';
+				if (stage.style.transform !== t) stage.style.transform = t;
+			};
+			const onScroll = () => { hold(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			let lenisOff: (() => void) | null = null;
+			let lenisRaf = 0, lenisTries = 0;
+			const attachLenis = () => {
+				const l = (window as any).__lenis;
+				if (l) { l.on('scroll', hold); lenisOff = () => l.off?.('scroll', hold); return; }
+				if (++lenisTries < 120) lenisRaf = requestAnimationFrame(attachLenis);
+			};
+			attachLenis();
 			const onResize = () => { measure(); onScroll(); };
 			measure();
+			ye = window.scrollY;
+			hold();
 			update();
 			window.addEventListener('scroll', onScroll, { passive: true });
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
+				cancelAnimationFrame(lenisRaf);
+				lenisOff?.();
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 					stage.style.transform = '';
