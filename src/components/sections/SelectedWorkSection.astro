@@ -790,7 +790,14 @@ const SCREENS = projects.length + HOLD;
 				lenis.scrollTo(target, { duration: 1.2, easing: settle, force: true, lock: false, onComplete: done });
 			};
 			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
-			const engage = (k: number, jumpY?: number) => {
+			// the finger that is down right now (tracked all the time): a gesture that brings the page INTO the view from
+			// below is carried on by the stage (so the swipe that scrolled up to the last picture is not lost and one
+			// does not have to touch again). From above it is not: the title stands for a moment first.
+			let touch: any = null;
+			const trackDown = (e: PointerEvent) => { touch = e.pointerType === 'mouse' ? null : { id: e.pointerId, y: e.clientY }; };
+			const trackMove = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch.y = e.clientY; };
+			const trackUp = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch = null; };
+			const engage = (k: number, jumpY?: number, carry = false) => {
 				if (on) return;
 				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
 				grab();
@@ -799,6 +806,11 @@ const SCREENS = projects.length + HOLD;
 				lastY = lockY;
 				idx = k;
 				applyP(k);
+				if (carry && touch && !drag) {
+					const now = performance.now();
+					drag = { y: touch.y, ly: touch.y, t: now, id: touch.id, moved: 0, p0: P, cap: true, hist: [[now, touch.y]] };
+					try { document.documentElement.setPointerCapture(touch.id); } catch (_) {}
+				}
 			};
 			const stepBy = (dir: number) => {
 				const k = idx + dir;
@@ -814,12 +826,15 @@ const SCREENS = projects.length + HOLD;
 			const onDown = (e: PointerEvent) => {
 				if (!free() || e.pointerType === 'mouse') return;
 				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
-				drag = { y: e.clientY, ly: e.clientY, t: performance.now(), id: e.pointerId, moved: 0, p0: P, cap: false };
+				drag = { y: e.clientY, ly: e.clientY, t: performance.now(), id: e.pointerId, moved: 0, p0: P, cap: false, hist: [[performance.now(), e.clientY]] };
 				if (!(e.target as HTMLElement).closest('button,a')) capture(e);   // taps on the name / Explore must still click
 			};
 			const onMove = (e: PointerEvent) => {
 				if (!drag || e.pointerId !== drag.id) return;
 				drag.ly = e.clientY;
+				const now = performance.now();
+				drag.hist.push([now, e.clientY]);   // the last ~120 ms: the speed of the flick at its END, not averaged over the whole touch
+				while (drag.hist.length > 2 && now - drag.hist[0][0] > 120) drag.hist.shift();
 				const d = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(d));
 				if (!drag.cap && drag.moved > 6) capture(e);
 				let q = drag.p0 - d / (vh() * 0.9);
@@ -829,13 +844,16 @@ const SCREENS = projects.length + HOLD;
 			const onUp = (e: PointerEvent) => {
 				if (!drag || e.pointerId !== drag.id) return;
 				const y = e.type === 'pointercancel' ? drag.ly : e.clientY;
-				const d = y - drag.y, v = d / Math.max(1, performance.now() - drag.t), dir = d < 0 ? 1 : -1;
+				const d = y - drag.y;
+				const h0 = drag.hist[0], v = h0 ? (y - h0[1]) / Math.max(1, performance.now() - h0[0]) : 0;   // recent speed, px / ms
+				const dir = (Math.abs(v) > 0.2 ? v : d) < 0 ? 1 : -1;   // a flick's own direction, else where the finger ended up
 				const moved = drag.moved;
 				drag = null;
 				try { document.documentElement.releasePointerCapture(e.pointerId); } catch (_) {}
 				if (moved > 8) { suppressClick = true; setTimeout(() => (suppressClick = false), 350); }
 				if (moved <= 2) { if (Math.abs(P - idx) > 0.001) glideTo(idx); return; }   // a tap: carry on to where it was going
-				const commit = Math.abs(d) > vh() * 0.1 || Math.abs(v) > 0.4;
+				// forgiving: a short drag (5 % of the height) or any quick flick moves one picture; only a tiny touch settles back
+				const commit = Math.abs(d) > vh() * 0.05 || Math.abs(v) > 0.25;
 				if (commit) { stepBy(dir); return; }
 				idx = clamp(Math.round(P), 0, n);   // a light touch settles back on the nearest picture
 				glideTo(idx);
@@ -862,11 +880,15 @@ const SCREENS = projects.length + HOLD;
 				}
 				if (gliding || reduced() || root.classList.contains('pt-restoring')) { lastY = y; return; }
 				if (lastY < top && y >= top) engage(0, stop(0));                                  // coming down: the title's rest
-				else if (lastY >= bottom && y < bottom) engage(n, y < stop(n) ? stop(n) : undefined);   // coming back up: the last picture
+				else if (lastY >= bottom && y < bottom) engage(n, y < stop(n) ? stop(n) : undefined, true);   // coming back up: the last picture
 				lastY = y;
 			};
 			const onRefresh = () => { if (on) lockY = clamp(lockY, stop(0), stPin.end - 1); };
 
+			document.addEventListener('pointerdown', trackDown, true);
+			document.addEventListener('pointermove', trackMove, true);
+			document.addEventListener('pointerup', trackUp, true);
+			document.addEventListener('pointercancel', trackUp, true);
 			document.addEventListener('pointerdown', onDown);
 			document.addEventListener('pointermove', onMove);
 			document.addEventListener('pointerup', onUp);
@@ -889,6 +911,10 @@ const SCREENS = projects.length + HOLD;
 			snapOff = () => {
 				cancelAnimationFrame(tweenRaf);
 				clearTimeout(glideTimer);
+				document.removeEventListener('pointerdown', trackDown, true);
+				document.removeEventListener('pointermove', trackMove, true);
+				document.removeEventListener('pointerup', trackUp, true);
+				document.removeEventListener('pointercancel', trackUp, true);
 				document.removeEventListener('pointerdown', onDown);
 				document.removeEventListener('pointermove', onMove);
 				document.removeEventListener('pointerup', onUp);
