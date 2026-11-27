@@ -51,6 +51,15 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }
 		}
+		/* Phones and tablets: no pinned choreography at all. The hero is an ordinary screen that scrolls away, the
+		   manifesto an ordinary block; the type goes out of the top (and comes in from the bottom) through blur by its
+		   own position on the screen, and the light dims as the hero leaves (script below, the static branch). */
+		@media (prefers-reduced-motion: no-preference) and (max-width: 1024px), (prefers-reduced-motion: no-preference) and (hover: none) and (pointer: coarse) {
+			#hero-pin { height: auto; }
+			#hero-pin > #hero { position: relative; }
+			#manifesto { margin-top: 0; pointer-events: auto; }
+			#manifesto > .sticky { opacity: 1; }
+		}
 	</style>
 
 	<script>
@@ -74,6 +83,42 @@ import CtaSection from '../components/sections/CtaSection.astro';
 
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
+			// Phones and tablets: a plain scroll. The light dims and the hero's type goes into blur as the hero leaves
+			// the top (all from the scroll position, nothing timed, nothing pinned or locked).
+			if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
+				const centre = hero.querySelector<HTMLElement>('.hero-stage');
+				let raf = 0;
+				const frame = () => {
+					raf = 0;
+					const vh = window.innerHeight;
+					const y = window.scrollY;
+					const v = 1 - smooth(clamp01(y / (0.8 * vh)));
+					if (rays) {
+						const dark = v <= 0.001;
+						if (rays.dataset.dark !== (dark ? '1' : '')) {
+							rays.dataset.dark = dark ? '1' : '';
+							rays.dispatchEvent(new CustomEvent('pt:rays-dark', { detail: dark }));
+						}
+						rays.style.filter = v < 0.999 ? `brightness(${v.toFixed(3)})` : '';
+					}
+					if (centre) {
+						const t = smooth(clamp01(y / (0.5 * vh)));
+						centre.style.opacity = t > 0 ? (1 - t).toFixed(3) : '';
+						centre.style.filter = t > 0 ? `blur(${(t * 5.5).toFixed(1)}px)` : '';
+					}
+				};
+				const onS = () => { if (!raf) raf = requestAnimationFrame(frame); };
+				window.addEventListener('scroll', onS, { passive: true });
+				frame();
+				_heroExitOff = () => {
+					window.removeEventListener('scroll', onS);
+					cancelAnimationFrame(raf);
+					if (rays) rays.style.filter = '';
+					if (centre) { centre.style.opacity = ''; centre.style.filter = ''; }
+					_heroExitOff = null;
+				};
+				return;
+			}
 			let range = 1;
 			let pinStart = 1;
 			const measure = () => {
@@ -103,12 +148,28 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				gsap.to(lightState, { v: off ? 0 : 1, duration: off ? 1.4 : 1.2, ease: 'power2.out', onUpdate: applyLight });
 			};
 			let ticking = false;
-			let lastY = window.scrollY;
-			const update = () => {
+			// Touch: the exit has a top speed (SPEED of the exit a second), so a hard fling cannot rush through
+			// the light going out, the blur and the manifesto coming up: the scroll may run ahead, the animation
+			// catches up at its own calm pace (a slow drag is followed exactly). Same idea as Selected work.
+			const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+			const SPEED = 1.0;
+			const LIMIT = false;   // (the paced catch-up is replaced by the fire below)
+			let ye = window.scrollY;
+			let limT = 0;
+			const update = (now?: number) => {
 				ticking = false;
-				const y = window.scrollY;
-				const goingUp = y < lastY - 0.5;
-				lastY = y;
+				const yReal = window.scrollY;
+				let y = yReal;
+				if (coarse && LIMIT) {
+					const dt = now && limT ? Math.min(0.1, (now - limT) / 1000) : 0;
+					limT = now ?? 0;
+					const m = SPEED * range * dt;
+					const d = yReal - ye;
+					ye = Math.abs(d) <= m || Math.abs(d) < 1 ? yReal : ye + Math.sign(d) * m;
+					y = ye;
+					if (ye !== yReal) { ticking = true; requestAnimationFrame(update); }
+					else limT = 0;
+				}
 				const p = y / range;
 				// The light goes first: it is the source of everything on screen.
 				// It goes out (and comes back) on the clock — one slow fade of the
@@ -121,7 +182,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				applyLight();
 				const bk = smooth(clamp01((p - 0.02) / 0.30));
 				const a = smooth(clamp01((p - 0.22) / 0.34));
-				const live = y < pinStart + window.innerHeight;
+				const live = yReal < pinStart + window.innerHeight;
 				blur.style.visibility = bk > 0 && live ? 'visible' : 'hidden';
 				blur.style.backdropFilter = blur.style.webkitBackdropFilter = bk > 0 ? `blur(${(bk * 5.5).toFixed(1)}px)` : '';
 				veil.style.visibility = a > 0 && live ? 'visible' : 'hidden';
@@ -136,17 +197,73 @@ import CtaSection from '../components/sections/CtaSection.astro';
 				// Before its own pin the stage would ride up from the bottom of the
 				// screen: hold it on the spot instead, so it only ever comes out of
 				// the dark, never scrolls in.
-				stage.style.transform = y < pinStart ? `translate3d(0, ${(y - pinStart).toFixed(1)}px, 0)` : '';
 				stage.style.opacity = smooth(clamp01((y - (pinStart - lead)) / span)).toFixed(3);
 			};
-			const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// The hold (the stage standing on the spot before its own pin) is set in the SAME frame the scroll moves, not a
+			// frame later in a requestAnimationFrame: a frame late, the text slipped up and snapped back while scrolling.
+			// On Lenis's own scroll event when there is one (it fires in the frame that moves the page), else on the scroll event.
+			const hold = () => {
+				const yy = window.scrollY;
+				const t = yy < pinStart ? `translate3d(0, ${(yy - pinStart).toFixed(1)}px, 0)` : '';
+				if (stage.style.transform !== t) stage.style.transform = t;
+			};
+			const onScroll = () => { hold(); if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+			// Touch: ONE push of the finger fires the whole exit on the clock (the light goes out, the blur, the dark, the
+			// line comes up), the scroll locked while it plays so a fling cannot rush it or run ahead; then it is free
+			// again and the words fill only as the user scrolls. The way back is the same. A slow nudge does the same
+			// (it is a gesture, not a scrub): the exit never stands half done.
+			let userScroll = false;
+			let idleT = 0;
+			let playing = false;
+			const END = () => pinStart + 0.58 * range;   // the line is up, the words not yet begun
+			const onTouchMove = () => { userScroll = true; window.clearTimeout(idleT); };
+			const onTouchEnd = () => { window.clearTimeout(idleT); idleT = window.setTimeout(() => { userScroll = false; }, 400); };
+			const fire = () => {
+				const l = (window as any).__lenis;
+				if (!coarse || !l || playing || !userScroll || l.isStopped) return;
+				const y = l.scroll;
+				const end = END();
+				let to = -1;
+				if (l.direction > 0 && y > 2 && y < end - 4) to = end;
+				else if (l.direction < 0 && y > 2 && y < end - 4) to = 0;
+				if (to < 0) return;
+				playing = true;
+				l.scrollTo(to, {
+					duration: to === 0 ? 1.1 : 1.5,
+					easing: (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t),
+					force: true,
+					lock: true,
+					onComplete: () => { playing = false; userScroll = false; },
+				});
+			};
+			if (coarse) {
+				window.addEventListener('touchmove', onTouchMove, { passive: true });
+				window.addEventListener('touchend', onTouchEnd, { passive: true });
+				window.addEventListener('touchcancel', onTouchEnd, { passive: true });
+			}
+			let lenisOff: (() => void) | null = null;
+			let lenisRaf = 0, lenisTries = 0;
+			const attachLenis = () => {
+				const l = (window as any).__lenis;
+				if (l) { const h = () => { hold(); fire(); }; l.on('scroll', h); lenisOff = () => l.off?.('scroll', h); return; }
+				if (++lenisTries < 120) lenisRaf = requestAnimationFrame(attachLenis);
+			};
+			attachLenis();
 			const onResize = () => { measure(); onScroll(); };
 			measure();
+			ye = window.scrollY;
+			hold();
 			update();
 			window.addEventListener('scroll', onScroll, { passive: true });
 			window.addEventListener('resize', onResize, { passive: true });
 			const late = window.setTimeout(onResize, 400); // after fonts / layout settle
 			_heroExitOff = () => {
+				cancelAnimationFrame(lenisRaf);
+				lenisOff?.();
+				window.removeEventListener('touchmove', onTouchMove);
+				window.removeEventListener('touchend', onTouchEnd);
+				window.removeEventListener('touchcancel', onTouchEnd);
+				window.clearTimeout(idleT);
 				gsap.killTweensOf(lightState);
 				if (rays) rays.style.filter = '';
 					stage.style.transform = '';
