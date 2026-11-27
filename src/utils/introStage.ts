@@ -20,6 +20,7 @@ export const CFG = {
 	stepBlur: 16,        // px  blur of a step's elements while out of focus
 	stepBlurLow: 10,     // px  ... on weaker phones
 	overlap: 0.2,        // hero <-> manifesto: a step starts showing this much earlier (share of a step), so at the midpoint both are partly visible and the screen is never empty (0 = the old, empty midpoint)
+	reentry: 0.35,       // coming back up from the page: the stage starts this far short of the hand-off, so the manifesto is already coming in (no black gap)
 	stagger: 0.035,      // per element index, entering steps only
 	fillDelay: 0,        // s   before the fill starts
 	fillTime: 2.6,       // s   how long the text takes to fill (inOutSine)
@@ -162,8 +163,9 @@ export function initIntroStage(): (() => void) | null {
 
 		for (let i = 0; i < 2; i++) {
 			const d = i - v, ad = Math.abs(d), box = containers[i];
-			// the manifesto going out to the page (d < 0) keeps the plain timing; every other change overlaps
-			const ov = i === 1 && d < 0 ? 0 : CFG.overlap, reach = 0.5 + ov;
+			// the manifesto going OUT to the page (d < 0, and pos still moving on) keeps the plain timing; every other
+			// change overlaps, also the manifesto coming back in from the page (goal < pos): no black stretch on the way up
+			const ov = i === 1 && d < 0 && goal >= S.pos ? 0 : CFG.overlap, reach = 0.5 + ov;
 			if (ad >= reach) {   // c is 0 from here on: the step is gone (not drawn, not clickable)
 				if (shown[i]) { box.style.visibility = 'hidden'; shown[i] = false; }
 				continue;
@@ -316,7 +318,8 @@ export function initIntroStage(): (() => void) | null {
 		if (on) return;
 		grab();
 		jump(0);
-		S.pos = LAST; idx = LAST; heroTouched = true;
+		// start where the manifesto is already (faintly) showing, not at the far end where nothing is drawn
+		S.pos = LAST - CFG.reentry; goal = to; idx = LAST; heroTouched = true;
 		render();
 		lastStep = performance.now();
 		settle(to);

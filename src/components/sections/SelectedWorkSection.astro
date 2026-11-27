@@ -468,6 +468,11 @@ const SCREENS = projects.length + HOLD;
 			if (!beam) fallback();
 		}
 
+		// Touch (phones / tablets): one gesture = one picture, on a clock (see setupStep below). While the stage holds the
+		// page (`on`) or a hand-off glide runs (`gliding`), the scroll position does not drive the light.
+		const touchStep = window.matchMedia('(hover: none) and (pointer: coarse)').matches && !reduced();
+		let stepped = false, on = false, gliding = false;
+
 		let pos = 0;      // 0 .. n: each project in turn (the light's position)
 		let uPos = 0;     // the scroll since the title's rest, in steps: first the title goes out and there is a moment of dark (0 .. DARK), then the light
 		// The title is out by 0.6 of DARK, then a moment of dark, and only then the light. The dark is its OWN stretch of
@@ -592,8 +597,9 @@ const SCREENS = projects.length + HOLD;
 			if (curU !== targetU) limRaf = requestAnimationFrame(limTick);
 		};
 		const setFrom = (progress: number, instant = false) => {
+			if (stepped && (on || gliding)) return;   // the stage (or the hand-off) owns the light
 			const u = Math.max(0, (progress * length - LEAD) / PER);
-			if (!coarse || reduced() || instant) { targetU = curU = u; apply(u); return; }
+			if (!coarse || reduced() || instant || stepped) { targetU = curU = u; apply(u); return; }
 			targetU = u;
 			if (!limRaf && curU !== targetU) { limT = performance.now(); limRaf = requestAnimationFrame(limTick); }
 		};
@@ -732,11 +738,175 @@ const SCREENS = projects.length + HOLD;
 				window.clearTimeout(fail);
 			};
 		};
+		// ── Touch: one gesture = one picture ───────────────────────────────────
+		// The same idea as the home opening (utils/introStage.ts). Scrolling down into the title's rest, the stage takes
+		// the page (Lenis stopped, the scroll position held); then a swipe / drag / key / wheel moves the light one picture
+		// on a clock (the same time whatever the force of the flick), a new gesture takes over a running one. Past the last
+		// picture (or back past the title) the page is handed to Lenis again and glides on. Coming back up from the closing
+		// panel the stage takes the page again at the last picture. No speed limiter, no dock, no cut-off momentum.
+		const setupStep = () => {
+			stepped = true;
+			cancelAnimationFrame(limRaf); limRaf = 0;
+			const vh = () => window.innerHeight;
+			const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
+			let P = 0, idx = 0, tweenRaf = 0, drag: any = null, suppressClick = false, weStopped = false;
+			let lockY = 0, lastY = window.scrollY, lastWheel = 0, glideTimer = 0;
+
+			const lock = (yes: boolean) => {
+				for (const el of [root.style, document.body.style] as any[]) {
+					el.touchAction = yes ? 'none' : '';
+					el.overscrollBehavior = yes ? 'none' : '';
+					el.userSelect = yes ? 'none' : '';
+					el.webkitUserSelect = yes ? 'none' : '';
+					el.webkitTouchCallout = yes ? 'none' : '';
+				}
+			};
+			const grab = () => { on = true; lock(true); if (!lenis.isStopped) { lenis.stop(); weStopped = true; } };
+			const letGo = () => { on = false; lock(false); if (weStopped) { lenis.start(); weStopped = false; } };
+			const jumpTo = (y: number) => lenis.scrollTo(y, { immediate: true, force: true });
+
+			const applyP = (v: number) => { P = v; uPos = Math.max(0, v); pos = clamp(v, 0, n); render(); };
+			const glideTo = (target: number) => {
+				cancelAnimationFrame(tweenRaf);
+				const from = P, t0 = performance.now();
+				if (from === target) { tweenRaf = 0; return; }
+				const ms = 450 + 650 * Math.min(1, Math.abs(target - from));   // a full picture ~1.1 s; the rest of a drag is quicker
+				const tick = (now: number) => {
+					const t = Math.min(1, (now - t0) / ms);
+					applyP(from + (target - from) * settle(t));
+					tweenRaf = t < 1 ? requestAnimationFrame(tick) : 0;
+				};
+				tweenRaf = requestAnimationFrame(tick);
+			};
+
+			// hand the page back to Lenis: 1 = on past the last picture to the closing panel, -1 = back up past the title
+			const leave = (dir: 1 | -1) => {
+				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
+				letGo();
+				gliding = true;
+				const done = () => { clearTimeout(glideTimer); gliding = false; lastY = window.scrollY; setFrom(stPin.progress, true); };
+				glideTimer = window.setTimeout(done, 3000);   // never stay stuck
+				const target = dir > 0 ? stPin.end + 0.45 * vh() : Math.max(0, stPin.start - 0.5 * vh());
+				lenis.scrollTo(target, { duration: 1.2, easing: settle, force: true, lock: false, onComplete: done });
+			};
+			// the stage takes the page at picture k (0 = the title); jumpY: where to put the scroll (undefined = leave it)
+			const engage = (k: number, jumpY?: number) => {
+				if (on) return;
+				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
+				grab();
+				if (jumpY !== undefined) jumpTo(jumpY);
+				lockY = jumpY !== undefined ? jumpY : window.scrollY;
+				lastY = lockY;
+				idx = k;
+				applyP(k);
+			};
+			const stepBy = (dir: number) => {
+				const k = idx + dir;
+				if (k > n) { if (idx === n) leave(1); return; }
+				if (k < 0) { if (idx === 0) leave(-1); return; }
+				idx = k;
+				glideTo(k);
+			};
+			goTo = (k: number) => { if (on) { idx = clamp(k, 0, n); glideTo(idx); } };
+
+			const free = () => on && !menuOpen();
+			const capture = (e: PointerEvent) => { drag.cap = true; try { document.documentElement.setPointerCapture(e.pointerId); } catch (_) {} };
+			const onDown = (e: PointerEvent) => {
+				if (!free() || e.pointerType === 'mouse') return;
+				cancelAnimationFrame(tweenRaf); tweenRaf = 0;
+				drag = { y: e.clientY, ly: e.clientY, t: performance.now(), id: e.pointerId, moved: 0, p0: P, cap: false };
+				if (!(e.target as HTMLElement).closest('button,a')) capture(e);   // taps on the name / Explore must still click
+			};
+			const onMove = (e: PointerEvent) => {
+				if (!drag || e.pointerId !== drag.id) return;
+				drag.ly = e.clientY;
+				const d = e.clientY - drag.y; drag.moved = Math.max(drag.moved, Math.abs(d));
+				if (!drag.cap && drag.moved > 6) capture(e);
+				let q = drag.p0 - d / (vh() * 0.9);
+				if (q < 0) q *= 0.25; else if (q > n) q = n + (q - n) * 0.25;
+				applyP(q);   // the light follows the finger; on release it settles on a picture
+			};
+			const onUp = (e: PointerEvent) => {
+				if (!drag || e.pointerId !== drag.id) return;
+				const y = e.type === 'pointercancel' ? drag.ly : e.clientY;
+				const d = y - drag.y, v = d / Math.max(1, performance.now() - drag.t), dir = d < 0 ? 1 : -1;
+				const moved = drag.moved;
+				drag = null;
+				try { document.documentElement.releasePointerCapture(e.pointerId); } catch (_) {}
+				if (moved > 8) { suppressClick = true; setTimeout(() => (suppressClick = false), 350); }
+				if (moved <= 2) { if (Math.abs(P - idx) > 0.001) glideTo(idx); return; }   // a tap: carry on to where it was going
+				const commit = Math.abs(d) > vh() * 0.1 || Math.abs(v) > 0.4;
+				if (commit) { stepBy(dir); return; }
+				idx = clamp(Math.round(P), 0, n);   // a light touch settles back on the nearest picture
+				glideTo(idx);
+			};
+			const onClick = (e: MouseEvent) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); } };
+			// a wheel / trackpad on a touch-class device (an iPad with a trackpad): one gesture = one step
+			const onWheel = (e: WheelEvent) => {
+				if (!free()) return;
+				e.preventDefault();
+				const now = performance.now(), since = now - lastWheel;
+				lastWheel = now;   // the inertia tail keeps extending the cooldown
+				if (Math.abs(e.deltaY) < 8 || since < 700) return;
+				stepBy(e.deltaY > 0 ? 1 : -1);
+			};
+
+			// the scroll position decides when the stage takes the page (crossing the lines), and holds it while it has it
+			const onScroll = () => {
+				const y = window.scrollY, u = unit();
+				const top = stop(0) - 0.12 * u, bottom = stPin.end - 0.02 * u;
+				if (on) {
+					if (Math.abs(y - lockY) > 1) jumpTo(lockY);   // the menu closing started Lenis again, a restored scroll ...
+					lastY = y;
+					return;
+				}
+				if (gliding || reduced() || root.classList.contains('pt-restoring')) { lastY = y; return; }
+				if (lastY < top && y >= top) engage(0, stop(0));                                  // coming down: the title's rest
+				else if (lastY >= bottom && y < bottom) engage(n, y < stop(n) ? stop(n) : undefined);   // coming back up: the last picture
+				lastY = y;
+			};
+			const onRefresh = () => { if (on) lockY = clamp(lockY, stop(0), stPin.end - 1); };
+
+			document.addEventListener('pointerdown', onDown);
+			document.addEventListener('pointermove', onMove);
+			document.addEventListener('pointerup', onUp);
+			document.addEventListener('pointercancel', onUp);
+			document.addEventListener('click', onClick, true);
+			addEventListener('wheel', onWheel, { passive: false });
+			addEventListener('scroll', onScroll, { passive: true });
+			ScrollTrigger.addEventListener('refresh', onRefresh);
+
+			// a page that opens already inside the view (a restored scroll): the stage takes it at the nearest picture
+			{
+				const y = window.scrollY, u = unit();
+				if (y >= stop(0) - 0.12 * u && y < stPin.end - 0.02 * u) {
+					let k = 0;
+					for (let i = 1; i <= n; i++) if (Math.abs(stop(i) - y) < Math.abs(stop(k) - y)) k = i;
+					engage(k, stop(k));
+				}
+			}
+
+			snapOff = () => {
+				cancelAnimationFrame(tweenRaf);
+				clearTimeout(glideTimer);
+				document.removeEventListener('pointerdown', onDown);
+				document.removeEventListener('pointermove', onMove);
+				document.removeEventListener('pointerup', onUp);
+				document.removeEventListener('pointercancel', onUp);
+				document.removeEventListener('click', onClick, true);
+				removeEventListener('wheel', onWheel);
+				removeEventListener('scroll', onScroll);
+				ScrollTrigger.removeEventListener('refresh', onRefresh);
+				if (on) letGo();
+				on = false; gliding = false; stepped = false;
+			};
+		};
+
 		let waitRaf = 0;
 		let tries = 0;
 		const attach = () => {
 			lenis = (window as any).__lenis;
-			if (lenis) { setupSnap(); return; }
+			if (lenis) { if (touchStep) setupStep(); else setupSnap(); return; }
 			if (++tries < 180) waitRaf = requestAnimationFrame(attach);   // ~3 s, then plain scroll
 		};
 		if (!reduced()) attach();
