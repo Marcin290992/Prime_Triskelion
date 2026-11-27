@@ -91,11 +91,16 @@
 	.cta-btn-wrap.visible { opacity: 1; transform: translateY(0); filter: blur(0); }
 
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		.cta-title, .cta-btn-wrap {
+		/* Touch: no scrub, just a one-shot reveal (IntersectionObserver adds .cta-io, then .visible).
+		   Without JS or with reduced motion the section stays plainly visible. */
+		#contact-cta:not(.cta-io) .cta-title,
+		#contact-cta:not(.cta-io) .cta-btn-wrap {
 			opacity: 1;
 			filter: blur(0);
 			transform: none;
 		}
+		#contact-cta.cta-io .cta-title { transition: opacity 1s ease, filter 1.2s cubic-bezier(0.16,1,0.3,1); }
+		#contact-cta.cta-io .cta-btn-wrap { transition: opacity 0.8s ease 0.3s, transform 0.8s cubic-bezier(0.16,1,0.3,1) 0.3s, filter 1s cubic-bezier(0.16,1,0.3,1) 0.3s; }
 	}
 
 	/* Short-viewport laptops (1080p/900p with browser chrome, e.g. 15" laptops):
@@ -135,6 +140,18 @@
 
 			const redEl = section.querySelector<HTMLElement>('.cta-red');
 			if (redEl) initBlurReveal(redEl, redEl, 'top 70%');
+		} else if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+			// Touch: a one-shot reveal, no scrub
+			const title = section.querySelector('.cta-title');
+			const btnWrap = section.querySelector('.cta-btn-wrap');
+			section.classList.add('cta-io');
+			const io = new IntersectionObserver((entries) => {
+				if (!entries.some((e) => e.isIntersecting)) return;
+				io.disconnect();
+				title?.classList.add('visible');
+				btnWrap?.classList.add('visible');
+			}, { threshold: 0.2 });
+			io.observe(section);
 		}
 
 	}

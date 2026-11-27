@@ -51,6 +51,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			#manifesto { margin-top: calc(var(--app-stable-vh) * -100); pointer-events: none; }
 			#manifesto > .sticky { opacity: 0; }
 		}
+		/* Phones and tablets: the opening is a stage of steps (utils/introStage.ts). The manifesto's screen is a fixed one that the
+		   stage shows / hides; the section keeps its height, so everything after it sits where it always did. */
+		@media (prefers-reduced-motion: no-preference) and (hover: none) and (pointer: coarse) {
+			#manifesto > .sticky { position: fixed; top: 0; left: 0; opacity: 1; visibility: hidden; }
+		}
 	</style>
 
 	<script>
@@ -71,6 +76,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 			const stage = man?.querySelector<HTMLElement>(':scope > .sticky');
 			if (!pin || !hero || !veil || !blur || !man || !stage) return;
 			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+			if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) return;   // phones / tablets: the stage (introStage.ts) drives the exit
 
 			const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 			const smooth = (t: number) => t * t * (3 - 2 * t);
@@ -176,6 +182,14 @@ import CtaSection from '../components/sections/CtaSection.astro';
 		}
 		document.addEventListener('astro:page-load', initHeroExit);
 		document.addEventListener('astro:before-swap', () => _heroExitOff?.());
+	</script>
+
+	<script>
+		import { initIntroStage } from '../utils/introStage';
+		// Phones and tablets: the opening as a stage of steps (one gesture, one step); a no-op on desktop. See utils/introStage.ts.
+		let _stageOff: (() => void) | null = null;
+		document.addEventListener('astro:page-load', () => { _stageOff?.(); _stageOff = initIntroStage(); });
+		document.addEventListener('astro:before-swap', () => { _stageOff?.(); _stageOff = null; });
 	</script>
 
 	<script>

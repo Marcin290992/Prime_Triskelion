@@ -23,9 +23,9 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 			style="font-size:clamp(1.55rem,2.5vw,2.5rem);max-width:68rem;font-family:var(--f-body);color:rgb(var(--c-cream))"
 			aria-label={paragraphs.join(" ")}
 		>
-			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
-			<span class="mw br gap"></span>
-			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style}>{w}</span>)}
+			{words[0].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style} aria-hidden="true">{w}</span>)}
+			<span class="mw br gap" aria-hidden="true"></span>
+			{words[1].map(({ w, style, accent }) => <span class:list={['mw', accent && 'mw--accent']} style={style} aria-hidden="true">{w}</span>)}
 		</h2>
 	</div>
 </section>
@@ -45,6 +45,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		display: inline-block;
 		margin-right: 0.3em;
 	}
+	/* Phones and tablets: the words are driven by utils/introStage.ts (the fill on the clock) */
+	@media (hover: none) and (pointer: coarse) { .mw { will-change: filter, opacity, transform; } }
 	.mw.br.gap { height: 1em; }
 	.mw.br {
 		display: block;
@@ -63,6 +65,8 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	function initManifesto() {
 		const section = document.getElementById('manifesto');
 		if (!section) return;
+		// Phones and tablets: the stage (utils/introStage.ts) drives the line, not a scrubbed timeline
+		if (window.matchMedia('(hover: none) and (pointer: coarse)').matches && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		const content = section.querySelector<HTMLElement>(':scope > div');
 		if (!content) return;
 
