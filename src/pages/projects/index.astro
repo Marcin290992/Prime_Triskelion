@@ -258,21 +258,40 @@ const total = String(projects.length).padStart(2, '0');
 
     // ── The header's exit ──
     // The light stays. The picture stage comes up (black, under the header) and the home page's beam runs across it from the
-    // corner, slowly (over most of the way to the first name); the word "Projects." and the light stay on screen, over the
-    // beam, until it has crossed the middle of the screen, and only then go (see place()).
+    // corner, slowly (over most of the way to the first name); the word "Projects." and the light stay as they are and the
+    // beam cuts them away as it crosses (see headExit).
     const pin = page.querySelector<HTMLElement>('#pp-pin');
     const head = pin?.querySelector<HTMLElement>('.pp-hero') ?? null;
-    const titleWrap = head?.querySelector<HTMLElement>('.pp-title-wrap') ?? null;
     const pinRange = () => (pin && head ? Math.max(1, pin.offsetHeight - head.offsetHeight) : 1);
+    // The header (the word and the light) is cut away by the beam, as the beam crosses it: the header is masked along the
+    // very line the beam's front runs on (the same geometry as utils/beamSlides.ts: the front is the line where
+    // x = head, x = along + (across - 0.5) * tilt, see its shader), so the word goes under the beam, not over it.
     const headExit = (pos: number) => {
       if (!pin || !head) return;
-      // the light stays as it is while the beam runs over the screen; it goes with the word, once the beam has crossed the middle
-      const light = 1 - smooth((pos - 0.38) / 0.3);
-      const cv = head.querySelector<HTMLElement>('canvas');
-      if (cv) {
-        cv.style.filter = light < 0.999 ? `opacity(${light.toFixed(3)})` : '';
-        cv.style.visibility = light < 0.01 ? 'hidden' : '';
-      }
+      if (pos <= 0.0005) { head.style.maskImage = head.style.webkitMaskImage = ''; head.style.visibility = ''; return; }
+      if (pos >= 0.9995) { head.style.visibility = 'hidden'; return; }
+      head.style.visibility = '';
+      const W = head.clientWidth, H = head.clientHeight;
+      const tall = W / H < 1;
+      const tilt = tall ? (W / H) * 0.35 : 1;
+      // how x grows over the screen, in pixels (x grows up and to the right of the bottom-left corner)
+      const gx = tall ? tilt / W : 1 / W;
+      const gy = -1 / H * (tall ? 1 : tilt);
+      const g = Math.hypot(gx, gy);
+      const dx = gx / g, dy = gy / g;                     // unit vector of the growing x, screen coordinates
+      const theta = Math.atan2(dx, -dy);                  // the css angle of that direction
+      const len = Math.abs(W * dx) + Math.abs(H * dy);    // the length of the css gradient line
+      const reach = Math.abs(tilt) * 0.5 + 0.3;
+      const headX = -reach + Math.max(0, Math.min(1, pos)) * (1 + 2 * reach);
+      const tHead = (headX - 0.5) / g + len / 2;          // where the front is along the gradient line, px
+      const soft = 0.12 / g;                              // the front's soft edge (the shader's smoothstep +-0.12)
+      const img = `linear-gradient(${theta.toFixed(4)}rad, transparent ${(tHead - soft).toFixed(1)}px, #000 ${(tHead + soft).toFixed(1)}px)`;
+      // the header moves up once its pin is over: keep the cut on the screen, not on the header
+      const top = head.getBoundingClientRect().top;
+      head.style.maskImage = head.style.webkitMaskImage = img;
+      head.style.maskRepeat = head.style.webkitMaskRepeat = 'no-repeat';
+      head.style.maskSize = head.style.webkitMaskSize = `${W}px ${H}px`;
+      head.style.maskPosition = head.style.webkitMaskPosition = `0px ${(-top).toFixed(1)}px`;
     };
 
     let beam: BeamSlides | null = null;
@@ -430,12 +449,6 @@ const total = String(projects.length).padStart(2, '0');
       }
       setBeam(pos);
       headExit(pos);
-      // the word stays until the beam has crossed the middle of the screen, then goes into the blur and out
-      if (titleWrap) {
-        const t = smooth((pos - 0.38) / 0.24);
-        titleWrap.style.opacity = t > 0 ? (1 - t).toFixed(3) : '';
-        titleWrap.style.filter = t > 0 ? `blur(${(t * BLUR).toFixed(1)}px)` : '';
-      }
       // The type follows the beam: it changes where the beam crosses the middle of the screen (half way through a step),
       // not when the beam starts.
       const dest = Math.round(pos);
