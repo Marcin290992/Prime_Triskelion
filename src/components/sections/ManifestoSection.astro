@@ -37,13 +37,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		padding-right: var(--site-gutter) !important;
 		box-sizing: border-box;
 	}
-	/* Phones and tablets: an ordinary block (no pin, no scrubbed fill): each word comes up out of blur from the bottom and
-	   goes out of the top into blur by its own position on the screen (script). */
-	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#manifesto { height: auto !important; padding: 0 0 6svh; margin-top: -6svh; }
-		#manifesto > .sticky { position: relative !important; top: auto !important; height: auto !important; }
-		.mw--accent { color: rgb(var(--c-red)); }
-	}
 	.mw {
 		display: inline-block;
 		margin-right: 0.3em;
@@ -62,7 +55,6 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	import ScrollTrigger from 'gsap/ScrollTrigger';
 
 	let _manifestoST: ReturnType<typeof ScrollTrigger.create> | null = null;
-	let _staticOff: (() => void) | null = null;
 
 	function initManifesto() {
 		const section = document.getElementById('manifesto');
@@ -75,54 +67,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 
 		_manifestoST?.kill();
 		_manifestoST = null;
-		_staticOff?.();
 		gsap.registerPlugin(ScrollTrigger);
-		if (window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) {
-			// Plain scroll, nothing pinned, nothing the scroll can outrun:
-			//  - IN is on the clock: a word that reaches the lower part of the screen is brought out of the 5.5px blur by its own
-			//    short animation (about 0.9 s, soft ease, a small stagger so a line is filled in word after word). However fast the
-			//    page is scrolled, the text still settles sharp, so nothing can be skipped.
-			//  - OUT is by position (at the top of the screen it goes into blur and away), smoothed so a fast flick eases
-			//    instead of jumping.
-			const sm = (t: number) => { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); };
-			type W = { el: HTMLElement; p: number; started: boolean; x: number };
-			const list: W[] = Array.from(words).map((el) => ({ el, p: 0, started: false, x: 1 }));
-			let raf = 0;
-			let near = true;
-			let batch = 0;
-			const frame = () => {
-				raf = 0;
-				const vh = window.innerHeight;
-				let busy = false;
-				batch = 0;
-				list.forEach((w) => {
-					const r = w.el.getBoundingClientRect();
-					const cy = (r.top + r.height / 2) / vh;
-					if (!w.started && cy < 0.82 && cy > -0.2) {
-						w.started = true;
-						gsap.to(w, { p: 1, duration: 0.9, delay: Math.min(0.5, batch++ * 0.03), ease: 'power2.out' });
-					}
-					const target = sm((cy - 0.08) / 0.22);
-					w.x += (target - w.x) * 0.25;
-					if (Math.abs(target - w.x) < 0.004) w.x = target; else busy = true;
-					if (w.started && w.p < 1) busy = true;
-					const o = w.p * w.x;   // nothing shows before the word's own entry
-					const bl = Math.max(1 - w.p, 1 - w.x);
-					w.el.style.opacity = o.toFixed(3);
-					w.el.style.filter = bl < 0.005 ? 'none' : `blur(${(bl * 5.5).toFixed(1)}px)`;
-					w.el.style.transform = bl < 0.005 ? 'none' : `translateY(${(bl * (cy > 0.5 ? 10 : -8)).toFixed(1)}px)`;
-				});
-				if (busy && near) raf = requestAnimationFrame(frame);
-			};
-			const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
-			const io = new IntersectionObserver((e) => { near = e[0].isIntersecting; if (near) kick(); }, { rootMargin: '30% 0px' });
-			io.observe(section);
-			window.addEventListener('scroll', kick, { passive: true });
-			window.addEventListener('resize', kick, { passive: true });
-			frame();
-			_staticOff = () => { io.disconnect(); window.removeEventListener('scroll', kick); window.removeEventListener('resize', kick); cancelAnimationFrame(raf); list.forEach((w) => gsap.killTweensOf(w)); _staticOff = null; };
-			return;
-		}
 		// Touch: less blur and shorter dark stretches before/after the line, so the page never looks empty or broken.
 		const touchy = true; // same short pacing on every device
 		gsap.set(words, { filter: 'blur(5.5px)', opacity: touchy ? 0.35 : 0.15, y: 0 });
@@ -153,7 +98,7 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 		_manifestoST = ScrollTrigger.create({
 			animation: tl,
 			trigger: section,
-			start: () => window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 'top top-=' + Math.round(window.innerHeight * 0.29) : 'top top+=' + Math.round(window.innerHeight * 0.2),   // the words start to focus while the line is still coming up out of the dark
+			start: () => 'top top+=' + Math.round(window.innerHeight * 0.2),   // the words start to focus while the line is still coming up out of the dark
 			end: 'bottom bottom',
 			scrub: true,
 		});
@@ -166,6 +111,5 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++), accen
 	document.addEventListener('astro:before-swap', () => {
 		_manifestoST?.kill();
 		_manifestoST = null;
-		_staticOff?.();
 	});
 </script>

@@ -47,7 +47,7 @@ const services = ['Websites', 'Identity', 'Motion', 'Direction'];
 	   the services are pulled further up: the first name is already coming up from below while the line is still
 	   going into blur, with no empty dark between the two. */
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-		#services { margin-top: 0; }
+		#services { margin-top: calc(var(--app-stable-vh, 1svh) * -33); }
 	}
 
 	/* ── The list: big names, centred like a menu of options (no numbers, no rules) ─────── */

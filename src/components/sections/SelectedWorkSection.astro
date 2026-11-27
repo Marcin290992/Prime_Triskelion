@@ -595,8 +595,7 @@ const SCREENS = projects.length + HOLD;
 		const coarse = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
 		// (On a wide screen the wheel moves the page 0.36/0.5 = 0.72x as far as it used to, see Layout.astro: steps 0.72.
 		// On touch the scroll is the original one, utils/touchLenis.ts, and the steps are the longer ones.)
-		// Touch: the title stands a good while before the first picture (it was too easy to scroll past)
-		const LEAD = coarse ? 0.5 : 0.12;
+		const LEAD = 0.12;
 		const PER = coarse ? 0.36 : 0.32;
 		const length = LEAD + PER * (n + hold + DARK);   // in screens
 		wrap.style.setProperty('--screens', String(length + 1));

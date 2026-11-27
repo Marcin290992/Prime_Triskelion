@@ -421,12 +421,12 @@ const { title, description = "Prime Triskelion — one-person design studio craf
       // see utils/touchLenis.ts.
       // Phone scroll feel, to compare on a real device (the default is unchanged): add ?scroll=native (the browser's own
       // touch scroll and momentum, Lenis only follows it), ?scroll=light (Lenis drives it, a much lighter drag) or
-      // ?scroll=heavy (the long drag, now the default). Without it: the long drag.
+      // ?scroll=heavy (a longer drag). Without it: utils/touchLenis.ts.
       const feel = new URLSearchParams(window.location.search).get('scroll');
       const touchOptions = feel === 'native' ? { ...TOUCH_LENIS_OPTIONS, syncTouch: false }
         : feel === 'light' ? { ...TOUCH_LENIS_OPTIONS, syncTouchLerp: 0.16 }
         : feel === 'heavy' ? { ...TOUCH_LENIS_OPTIONS, syncTouchLerp: 0.04 }
-        : { ...TOUCH_LENIS_OPTIONS, syncTouchLerp: 0.04 };   // the longer drag felt best on a real phone
+        : { ...TOUCH_LENIS_OPTIONS };
       _layoutLenis = new Lenis(isTouch ? touchOptions : {
         // Narrow windows (phone/tablet widths) get a much lighter drag.
         // Cinematic on a wide screen: a longer glide (0.06 -> 0.035) and a heavier wheel (0.5 -> 0.36).
