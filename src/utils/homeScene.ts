@@ -50,6 +50,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 	let moveTimer = 0;
 	let lastWheel = 0;      // when the last wheel event came ...
 	let lastAbs = 0;        // ... and how strong it was
+	let stepAbs = 0;        // how strong the push was that took the last step
 	let lastKey = 0;
 	let raf = 0;
 	let tries = 0;
@@ -75,7 +76,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 	const outCubic = (t: number) => 1 - (1 - t) ** 3;
 	const moveTo = (y: number, seconds: number) => {
 		if (!lenis) return;
-		const quick = moving;
+		const quick = moving || !!lenis.isScrolling;   // taking over a running step or a glide: no stand-still at the start
 		moving = true;
 		target = y;
 		lastStep = performance.now();
@@ -136,7 +137,12 @@ function createScene(cfg: Cfg): (() => void) | null {
 		// a step is taken on a clear flick: (a) at rest any real delta; (b) while one runs, a strong one at least 260 ms after
 		// the last step began (so a spin of the wheel runs through the stops, and a trackpad's fading tail does not)
 		const strong = abs >= (moving ? 40 : 8);
-		if (!push || !strong || now - lastStep < (moving ? 260 : 120)) return;
+		// a wheel that is kept spinning (the deltas stay about as strong as the push that began it) goes on through the stops, one
+		// every 320 ms, and does not wait for a pause; a fading tail (its deltas drop away) does not count
+		const sustained = moving && abs >= Math.max(40, 0.7 * stepAbs);
+		const running = !moving && v.to === z.stops[0] && y < z.stops[0] - 3 && e.deltaY > 0;   // on the way into a zone: on to its first stop at once
+		if (!running && (!strong || !(push || sustained) || now - lastStep < (moving ? 320 : 120))) return;
+		stepAbs = abs;
 		step(z, window.scrollY, v.to);
 	};
 
@@ -213,6 +219,23 @@ function createScene(cfg: Cfg): (() => void) | null {
 		step(g.z, window.scrollY, ver.to);
 	};
 
+	// A free scroll (a wheel's or a finger's glide still running) that runs into a zone is taken over by a step in the same
+	// direction: it flows on to the next stop instead of stopping dead at the edge, or running through the stops.
+	const onFlow = () => {
+		if (dead || moving || holding() || !lenis) return;
+		const zs = cfg.zones();
+		if (!zs) return;
+		const dir = lenis.direction;
+		if (!dir || !lenis.isScrolling) return;
+		const y = window.scrollY;
+		const z = zoneAt(zs, y);
+		if (!z) return;
+		const to = dir > 0 ? nextStop(z, y) : prevStop(z, y);
+		if (to == null) return;
+		grab();
+		step(z, y, to);
+	};
+
 	// ── the first moments: the lenis appears a frame after the page, the sections after it ──
 	const attach = () => {
 		if (dead) return;
@@ -220,6 +243,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		const zs = lenis ? cfg.zones() : null;
 		if (lenis && zs) {
 			if (zoneAt(zs, window.scrollY)) grab();
+			lenis.on('scroll', onFlow);
 			return;
 		}
 		if (++tries < 400) raf = requestAnimationFrame(attach);
@@ -244,6 +268,7 @@ function createScene(cfg: Cfg): (() => void) | null {
 		window.removeEventListener('touchend', onTouchEnd, { capture: true } as any);
 		window.removeEventListener('touchcancel', onTouchEnd, { capture: true } as any);
 		root.classList.remove('scene-on');
+		lenis?.off?.('scroll', onFlow);
 		if (lenis && weStopped) lenis.start();
 	};
 }
