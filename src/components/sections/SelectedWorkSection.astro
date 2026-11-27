@@ -785,7 +785,7 @@ const SCREENS = projects.length + HOLD;
 				letGo();
 				gliding = true;
 				const done = () => { clearTimeout(glideTimer); gliding = false; lastY = window.scrollY; setFrom(stPin.progress, true); };
-				glideTimer = window.setTimeout(done, 3000);   // never stay stuck
+				glideTimer = window.setTimeout(done, 1800);   // never stay stuck (the glide itself takes 1.1 s)
 				// The page was held at the title's rest while the pictures changed. The stage stands still over the whole
 				// zone, so move the scroll to the very edge of it at once (nothing on screen changes) and glide on from
 				// there: the page starts moving the moment the swipe ends, instead of after ~1 s of invisible scroll.
@@ -798,7 +798,12 @@ const SCREENS = projects.length + HOLD;
 			// below is carried on by the stage (so the swipe that scrolled up to the last picture is not lost and one
 			// does not have to touch again). From above it is not: the title stands for a moment first.
 			let touch: any = null;
-			const trackDown = (e: PointerEvent) => { touch = e.pointerType === 'mouse' ? null : { id: e.pointerId, y: e.clientY }; };
+			const trackDown = (e: PointerEvent) => {
+				touch = e.pointerType === 'mouse' ? null : { id: e.pointerId, y: e.clientY };
+				// a finger down during the hand-off glide takes the page over at once: the stage must be able to catch it
+				// again (turning back at once used to run straight through the pictures as a plain scroll)
+				if (gliding && touch) { gliding = false; clearTimeout(glideTimer); lastY = window.scrollY; setFrom(stPin.progress, true); }
+			};
 			const trackMove = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch.y = e.clientY; };
 			const trackUp = (e: PointerEvent) => { if (touch && e.pointerId === touch.id) touch = null; };
 			const engage = (k: number, jumpY?: number, carry = false) => {
