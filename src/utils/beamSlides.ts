@@ -13,6 +13,9 @@
 
 export interface BeamSlides {
 	setPos(pos: number): void;
+	/** A transition between two frames (0 = the dark, k = picture k) that need not be neighbours: p = 0 shows `a`, p = 1 shows `b`.
+	 *  Cleared by the next setPos. */
+	setMix(a: number, b: number, p: number): void;
 	resize(): void;
 	destroy(): void;
 }
@@ -196,6 +199,7 @@ export function createBeamSlides(
 	if (bx) { bx.fillStyle = '#000'; bx.fillRect(0, 0, 1, 1); }
 	const frames: Frame[] = [makeTexture(black, 1, 1)];
 	let pos = 0;
+	let mix: { a: number; b: number; p: number } | null = null;
 	let raf = 0;
 	let dead = false;
 
@@ -241,12 +245,19 @@ export function createBeamSlides(
 		raf = 0;
 		if (dead) return;
 		const last = frames.length - 1;
-		const i = Math.min(Math.floor(pos), last - 1);
-		const f = pos - i;
-		// linear: the easing comes from the scroll (the snap's ease and the glide), as
-		// in the test file; a smoothstep on top made the light crawl at both ends
-		const p = Math.min(1, Math.max(0, (f - range[0]) / (range[1] - range[0])));
-		const a = frames[i], b = frames[i + 1];
+		let i: number, p: number, a: Frame, b: Frame;
+		if (mix) {
+			i = Math.min(mix.a, mix.b);
+			p = Math.min(1, Math.max(0, mix.p));
+			a = frames[mix.a]; b = frames[mix.b];
+		} else {
+			i = Math.min(Math.floor(pos), last - 1);
+			const f = pos - i;
+			// linear: the easing comes from the scroll (the snap's ease and the glide), as
+			// in the test file; a smoothstep on top made the light crawl at both ends
+			p = Math.min(1, Math.max(0, (f - range[0]) / (range[1] - range[0])));
+			a = frames[i]; b = frames[i + 1];
+		}
 		gl!.activeTexture(gl!.TEXTURE0);
 		gl!.bindTexture(gl!.TEXTURE_2D, (a.ready ? a : frames[0]).tex);
 		gl!.activeTexture(gl!.TEXTURE1);
@@ -271,8 +282,14 @@ export function createBeamSlides(
 		setPos(v: number) {
 			const m = images.length;
 			const n = v < 0 ? 0 : v > m ? m : v;
-			if (n === pos) return;
+			if (n === pos && !mix) return;
 			pos = n;
+			mix = null;
+			requestDraw();
+		},
+		setMix(a: number, b: number, p: number) {
+			const m = images.length;
+			mix = { a: Math.min(Math.max(a, 0), m), b: Math.min(Math.max(b, 0), m), p };
 			requestDraw();
 		},
 		resize,

@@ -54,7 +54,7 @@ const total = String(items.length).padStart(2, '0');
 					{items.map((p) => (
 						<li class="pj__item">
 							{p.live ? (
-								<a class="pj__row" href={p.href} data-case data-case-src={p.full}>
+								<a class="pj__row" href={p.href} data-case data-case-src={p.full} data-case-shade=".pj__shade" data-case-fade=".pj__inner">
 									<span class="pj__num" data-total={total}>{p.num}</span>
 									<span class="pj__name" data-text={p.title}>{p.title}</span>
 									<span class="pj__meta">
@@ -62,8 +62,8 @@ const total = String(items.length).padStart(2, '0');
 										<span class="pj__year">{p.year}</span>
 										<span class="pj__go">View project ↗</span>
 									</span>
-									<!-- The case-study entrance grows from this picture (desktop only, see pageTransitions.ts) -->
-									<Image class="pj__thumb" src={p.card} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="lazy" decoding="async" />
+									<!-- The case-study entrance grows from this picture (desktop only, see pageTransitions.ts). Its crop is the canvas's (the picture's focus: x = focus, y = 0.4 from the bottom = 60% from the top). -->
+									<Image class="pj__thumb" src={p.card} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="lazy" decoding="async" style={`object-position: ${p.focus * 100}% 60%`} />
 								</a>
 							) : (
 								<div class="pj__row pj__row--soon">
@@ -467,32 +467,67 @@ const total = String(items.length).padStart(2, '0');
 		let tweenRaf = 0, waitRaf = 0, stageObj: WorkStage | null = null;
 
 		if (!narrow) {
-			// ── desktop: the pointer chooses, the light goes there on the clock ──
-			const tweenTo = (target: number) => {
-				cancelAnimationFrame(tweenRaf);
-				if (reduced()) { place(target); return; }
-				const from = pos, t0 = performance.now();
-				const ms = 700 + 500 * Math.min(2, Math.abs(target - from));
-				const tick = (now: number) => {
-					const t = Math.min(1, (now - t0) / ms);
-					place(from + (target - from) * inOutSine(t));
-					tweenRaf = t < 1 ? requestAnimationFrame(tick) : 0;
-				};
-				tweenRaf = requestAnimationFrame(tick);
+			// ── desktop: the pointer chooses; the light goes straight from the picture on screen to the chosen one ──
+			// (frames: 0 = dark, k = project k). A transition runs between two frames only, so a jump from 1 to 3 does not pass 2.
+			let shown = 0;   // the frame fully on screen
+			let run: { from: number; to: number; e0: number; t0: number; ms: number } | null = null;
+			let pending = -1;   // a choice made while a transition runs: it starts once that one has landed
+			const mixAt = (from: number, to: number, e: number) => {
+				const lo = Math.min(from, to), hi = Math.max(from, to);
+				const p = to > from ? e : 1 - e;   // going back retraces the way it came
+				beam?.setMix(lo, hi, p);
+				if (root.classList.contains('pj--fallback')) {
+					images.forEach((im, k) => { im.style.opacity = k + 1 === lo ? (1 - smooth(p)).toFixed(3) : k + 1 === hi ? smooth(p).toFixed(3) : '0'; });
+				}
 			};
-			const choose = (i: number) => { if (i !== active) { mark(i); tweenTo(i + 1); } };
-			// only a real pointer movement chooses: the page scrolling under a still cursor (a pointerenter) must not
-			let px = -1, py = -1;
+			const land = (frame: number) => { shown = frame; run = null; place(frame); };
+			const advance = (now: number) => {
+				if (!run) return;
+				const t = Math.min(1, (now - run.t0) / run.ms);
+				mixAt(run.from, run.to, run.e0 + (1 - run.e0) * inOutSine(t));
+				if (t < 1) { tweenRaf = requestAnimationFrame(advance); return; }
+				tweenRaf = 0;
+				const to = run.to;
+				land(to);
+				const next = pending;
+				pending = -1;
+				if (next >= 0 && next !== to) begin(next);
+			};
+			const begin = (to: number) => {
+				run = { from: shown, to, e0: 0, t0: performance.now(), ms: 1200 };
+				tweenRaf = requestAnimationFrame(advance);
+			};
+			const goto = (frame: number) => {
+				if (reduced()) { land(frame); return; }
+				if (!run) { if (frame !== shown) begin(frame); return; }
+				if (frame === run.to) { pending = -1; return; }
+				const now = performance.now(), t = Math.min(1, (now - run.t0) / run.ms);
+				const e = run.e0 + (1 - run.e0) * inOutSine(t);   // how far the running transition has got
+				if (frame === run.from) {
+					// back to where it came from: retrace the rest of the way
+					run = { from: run.to, to: run.from, e0: 1 - e, t0: now, ms: 600 };
+					pending = -1;
+				} else {
+					// a third picture: hurry the running one to its end (the picture does not jump), then go on to the new one
+					run = { from: run.from, to: run.to, e0: e, t0: now, ms: 200 };
+					pending = frame;
+				}
+			};
+			const choose = (i: number) => { if (i !== active) { mark(i); goto(i + 1); } };
+			// only a real pointer movement chooses (the page scrolling under a still cursor must not), and only once the pointer
+			// has stayed on the row a moment: sweeping across rows 2 on the way to 3 must not start row 2
+			let px = -1, py = -1, intent = 0;
 			rows.forEach((r, i) => {
 				const move = (e: PointerEvent) => {
 					if (e.clientX === px && e.clientY === py) return;
 					px = e.clientX; py = e.clientY;
-					choose(i);
+					window.clearTimeout(intent);
+					if (i !== active) intent = window.setTimeout(() => choose(i), 130);
 				};
 				const focus = () => choose(i);
 				r.addEventListener('pointermove', move);
 				r.addEventListener('focus', focus);
-				offs.push(() => { r.removeEventListener('pointermove', move); r.removeEventListener('focus', focus); });
+				offs.push(() => { r.removeEventListener('pointermove', move); r.removeEventListener('focus', focus); window.clearTimeout(intent); });
 			});
 			// the first picture comes up out of the dark as the index comes into view
 			const io = new IntersectionObserver((entries) => {

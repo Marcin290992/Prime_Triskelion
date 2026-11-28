@@ -41,7 +41,8 @@ declare global {
 	}
 }
 
-const CASE_OPEN_SECONDS = 1.2;
+const CASE_FADE_SECONDS = 0.4;   // the page's own options go out first (data-case-fade) ...
+const CASE_OPEN_SECONDS = 1.2;   // ... and only then the picture opens
 const CASE_MIDPOINT_PUSH = 0.12;
 const CASE_SCRIM_OPACITY = 0.4;
 
@@ -57,6 +58,7 @@ let nativeSkipped = false;
 let requestedIncoming: IncomingEffect | null = null;
 let transitionReady: Promise<void> = Promise.resolve();
 let caseShot: HTMLElement | null = null;
+let caseFaded: Element[] = [];   // what the entrance faded out: put back if the entrance is abandoned
 let nativeHistoryTransition = false;
 let restoring = false;
 let cutSwapComplete = false;
@@ -106,6 +108,7 @@ document.addEventListener('astro:before-preparation', (rawEvent) => {
 	nativeHistoryTransition = false;
 	caseShot?.remove();
 	caseShot = null;
+	if (caseFaded.length) { gsap.set(caseFaded, { clearProps: 'opacity' }); caseFaded = []; }
 
 	if (incoming !== null) {
 		activeRun = { kind: 'menu', skipNative: true, incoming, restoreY: null };
@@ -251,6 +254,20 @@ function prepareCaseStudy(event: PreparationEvent): boolean {
 	const stage = frame.firstElementChild as HTMLElement;
 	const scrim = frame.lastElementChild as HTMLElement;
 
+	// The list page may shade its picture (a dim, a fade at the edges). Painted over the visible window of the picture (it grows
+	// with the window, so its faded edge is always the window's edge), it makes the first frame of the entrance the picture as it
+	// was on screen, and it lifts as the picture opens (no flash of a brighter picture, and no bright strip where the window has
+	// grown past the thumbnail's own rectangle).
+	const shadeSource = link.getAttribute('data-case-shade');
+	const shadeElement = shadeSource ? document.querySelector(shadeSource) : null;
+	const shadeImage = shadeElement ? getComputedStyle(shadeElement).backgroundImage : 'none';
+	let shade: HTMLElement | null = null;
+	if (shadeImage && shadeImage !== 'none') {
+		shade = document.createElement('div');
+		shade.style.cssText = `position:absolute;background-image:${shadeImage};background-size:100% 100%;pointer-events:none`;
+		frame.insertBefore(shade, scrim);
+	}
+
 	const addImage = (src: string) => {
 		const element = document.createElement('img');
 		element.src = src;
@@ -270,10 +287,22 @@ function prepareCaseStudy(event: PreparationEvent): boolean {
 		);
 	}
 
+	// the push grows with how much the picture has to grow (a card: the full CASE_MIDPOINT_PUSH; a big source: little)
+	const pushAmount = Math.min(CASE_MIDPOINT_PUSH, Math.max(0.015, (1 - initialScale) * 0.24));
+	const smoothStep = (x: number) => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
+
 	const paint = (progress: number) => {
 		const remaining = 1 - progress;
 		frame.style.clipPath = `inset(${inset.map((value) => `${(value * remaining).toFixed(1)}px`).join(' ')} round ${(radius * remaining).toFixed(1)}px)`;
-		const push = (initialScale + (1 - initialScale) * progress) * (1 + CASE_MIDPOINT_PUSH * Math.sin(Math.PI * progress));
+		const push = (initialScale + (1 - initialScale) * progress) * (1 + pushAmount * Math.sin(Math.PI * progress));
+		if (shade) {
+			// the window of the picture that is visible now (the clip's rectangle)
+			shade.style.left = `${(inset[3] * remaining).toFixed(1)}px`;
+			shade.style.top = `${(inset[0] * remaining).toFixed(1)}px`;
+			shade.style.width = `${(screen.width - (inset[3] + inset[1]) * remaining).toFixed(1)}px`;
+			shade.style.height = `${(screen.height - (inset[0] + inset[2]) * remaining).toFixed(1)}px`;
+			shade.style.opacity = (1 - smoothStep(progress / 0.3)).toFixed(3);
+		}
 		stage.style.transform = `translate3d(${(moveX * remaining).toFixed(1)}px,${(moveY * remaining).toFixed(1)}px,0) scale(${push.toFixed(4)})`;
 		scrim.style.opacity = String(CASE_SCRIM_OPACITY * progress);
 		shot.style.backgroundColor = `rgb(0 0 0 / ${Math.min(1, progress * 1.6).toFixed(3)})`;
@@ -281,12 +310,16 @@ function prepareCaseStudy(event: PreparationEvent): boolean {
 
 	paint(0);
 	const progress = { value: 0 };
+	const fadeSelector = link.getAttribute('data-case-fade');
+	caseFaded = fadeSelector ? Array.from(document.querySelectorAll(fadeSelector)) : [];
 	const open = Promise.race([
 		thumbnail.decode().catch((error) => {
 			console.warn('[pageTransitions] Could not decode the case-study thumbnail.', error);
 		}),
 		delay(250),
-	]).then(() => {
+	]).then(async () => {
+		// first the options go out (the picture stays as it is), then the picture opens
+		if (caseFaded.length) await gsap.to(caseFaded, { opacity: 0, duration: CASE_FADE_SECONDS, ease: 'power2.out' });
 		shot.style.visibility = '';
 		return gsap.to(progress, {
 			value: 1,
