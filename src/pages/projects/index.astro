@@ -233,6 +233,12 @@ const total = String(items.length).padStart(2, '0');
 	   inner edge, top and bottom (no frame, no shadow). To put the picture on the right: swap `left` / `right` below and in
 	   the shade's gradient. */
 	@media (min-width: 1025px) and (not ((hover: none) and (pointer: coarse))) {
+		/* The header stays pinned while the first screen of scroll takes it out in blur and brings the index in out of blur
+		   (script, initIndex): the list is pulled up under it, so the two overlap and there is no empty black between. */
+		@media (prefers-reduced-motion: no-preference) {
+			.proj-header { position: sticky; top: 0; z-index: 4; pointer-events: none; }
+			.pj { margin-top: -40vh; }
+		}
 		.pj {
 			height: 100vh;
 			height: 100svh;
@@ -537,6 +543,54 @@ const total = String(items.length).padStart(2, '0');
 			}, { threshold: 0.4 });
 			io.observe(root);
 			offs.push(() => io.disconnect());
+
+			// ── the header goes out in blur, the index comes in out of blur (scrubbed by the first 0.6 of a screen of scroll) ──
+			if (!reduced()) {
+				const header = document.querySelector<HTMLElement>('.proj-header');
+				const inner = root.querySelector<HTMLElement>('.pj__inner');
+				const run = () => {
+					const p = clamp(window.scrollY / (0.6 * window.innerHeight));
+					if (header) {
+						const h = smooth(p);
+						header.style.opacity = (1 - h).toFixed(3);
+						header.style.filter = h > 0.001 ? `blur(${(h * 18).toFixed(1)}px)` : '';
+						header.style.visibility = h >= 0.999 ? 'hidden' : '';
+						header.classList.toggle('rays-off', h >= 0.999);
+					}
+					const q = smooth((p - 0.25) / 0.75);
+					stage.style.opacity = q.toFixed(3);
+					if (inner) {
+						inner.style.opacity = q.toFixed(3);
+						inner.style.filter = q < 0.999 ? `blur(${((1 - q) * 14).toFixed(1)}px)` : '';
+					}
+				};
+				// An accidental scroll up from the list must not carry the visitor back to the header: at the list's resting
+				// point a wheel up is held until it is clearly meant (about four notches in one sweep); then it goes through.
+				let acc = 0, lastWheel = 0, released = false;
+				const restY = () => root.getBoundingClientRect().top + window.scrollY;
+				const hold = (e: WheelEvent) => {
+					const y = window.scrollY, rest = restY();
+					if (y > rest + 60 || y < rest - 150) { released = false; acc = 0; return; }
+					if (e.deltaY >= 0 || y < rest - 4 || released) { if (e.deltaY > 0) acc = 0; return; }
+					const now = performance.now();
+					if (now - lastWheel > 250) acc = 0;
+					lastWheel = now;
+					acc += -e.deltaY;
+					if (acc >= 400) { released = true; return; }
+					e.preventDefault();
+					e.stopImmediatePropagation();
+				};
+				addEventListener('wheel', hold, { passive: false, capture: true });
+				run();
+				addEventListener('scroll', run, { passive: true });
+				addEventListener('resize', run, { passive: true });
+				offs.push(() => {
+					removeEventListener('wheel', hold, { capture: true });
+					removeEventListener('scroll', run);
+					removeEventListener('resize', run);
+					[header, stage, inner].forEach((el) => { if (el) { el.style.opacity = ''; el.style.filter = ''; el.style.visibility = ''; } });
+				});
+			}
 		} else {
 			// ── phones and tablets: a tall zone, one step per gesture ──
 			// With the stage the header ("My Projects.") is step 0 of it, in the pinned layer (moved there below), and the projects

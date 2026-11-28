@@ -122,7 +122,7 @@ const SCREENS = projects.length + HOLD;
 		   blurred out and there is a short stretch of dark before the title. Pulled up under the end of Services, so the pinned view takes over just as the options blur out:
 		   the title comes out of blur where they were, with no long black stretch between (Services is above
 		   it, so it stays readable until it blurs out). */
-		margin-top: calc(var(--app-stable-vh, 1svh) * -20);
+		margin-top: calc(var(--app-stable-vh, 1svh) * -35); /* was -20: less dark between the last option and the title */
 		height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens));
 	}
 	.swb__stage {

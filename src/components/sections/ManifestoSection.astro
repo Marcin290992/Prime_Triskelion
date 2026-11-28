@@ -40,6 +40,10 @@ const words = lines.map((line) => line.map((w) => ({ w, style: slice(n++) })));
 	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
 		#manifesto { height: calc(var(--app-stable-vh) * 225) !important; }
 	}
+	/* Desktop: a shorter hold (70vh of scroll instead of 100) so the line does not stand alone for long */
+	@media (min-width: 1025px) and (hover: hover) {
+		#manifesto { height: calc(var(--app-stable-vh) * 170) !important; }
+	}
 	.mw {
 		display: inline-block;
 		margin-right: 0.3em;
