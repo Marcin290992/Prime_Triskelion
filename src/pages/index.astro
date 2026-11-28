@@ -17,7 +17,7 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</div>
 	<div id="hero-blur" aria-hidden="true"></div>
 	<div id="hero-veil" aria-hidden="true"></div>
-	<div class="relative" style="z-index:30">
+	<div class="relative home-flow" style="z-index:30">
 		<ManifestoSection />
 		<ServicesSection />
 		<SelectedWorkSection />
@@ -29,6 +29,11 @@ import CtaSection from '../components/sections/CtaSection.astro';
 	</div>
 
 	<style is:global>
+		/* The sections after the hero are pulled up over it (the manifesto's negative margin collapses through this wrapper, so the
+		   wrapper itself starts half way down the hero): the box must not catch the pointer, or the hero's own buttons (Start a
+		   project) under it cannot be clicked. The sections themselves take it back (the manifesto stays click-through). */
+		.home-flow { pointer-events: none; }
+		.home-flow > :not(#manifesto) { pointer-events: auto; }
 		/* Desktop: the hero stays put for one more screen while it goes out
 		   into the black (#hero-veil, driven by the script below), and the
 		   manifesto is pulled up to start exactly where that ends — its words
