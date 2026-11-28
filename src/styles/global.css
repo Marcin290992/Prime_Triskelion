@@ -158,7 +158,6 @@ html::-webkit-scrollbar {
 html:active-view-transition .hud-icon-btn,
 html:active-view-transition .h-hero-cta,
 html:active-view-transition .nav-cta,
-html:active-view-transition .proj-foot,
 html:active-view-transition .svc-badge,
 html:active-view-transition .zoom-col {
   -webkit-backdrop-filter: none !important;
@@ -581,7 +580,6 @@ html body .hud-menu-btn::after {
   /* Item names under a title (a project, a process step): one clear step
      below it, the same everywhere — at 38px a project read as big as
      "My Projects." itself. */
-  html body .proj-foot__name,
   html body .pstack__title {
     font-size: calc(var(--hero-size) * 0.55) !important;
   }

@@ -5,6 +5,8 @@
 // page yet (its card links nowhere). Add `detail` and it gets /projects/<slug>/.
 import type { ImageMetadata } from 'astro';
 import deeer2 from '../img/deeer2.webp';
+import placeholderTwo from '../img/services/websites.jpg';
+import placeholderThree from '../img/process/development.jpg';
 import scr1 from '../img/wos/screen-1.jpg';
 import scr2 from '../img/wos/screen-2.jpg';
 import scr3 from '../img/wos/screen-3.jpg';
@@ -46,11 +48,9 @@ export interface Project {
   categories: string[];
   year: string;
   /** Card picture on the list: a local image, or a URL for a placeholder. */
-  card: ImageMetadata | string;
-  /** Background colour of the list section. */
-  bg: string;
-  /** Direction of the giant background word on the list (1 / -1). */
-  speed: 1 | -1;
+  card: ImageMetadata;
+  /** Where the picture's subject sits across it, 0 (left) .. 1 (right): a narrow screen crops the picture around it. */
+  focus?: number;
   detail?: ProjectDetail;
 }
 
@@ -61,8 +61,7 @@ export const projects: Project[] = [
     categories: ['Brand Identity', 'Web Design', 'Development'],
     year: '2025',
     card: deeer2,
-    bg: '#0c0d0b',
-    speed: 1,
+    focus: 0.15,
     detail: {
       short: 'Branding & Web',
       summary:
@@ -112,27 +111,14 @@ export const projects: Project[] = [
     title: 'Project Two',
     categories: ['Web Design', 'Development'],
     year: '2024',
-    card: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1400&fit=crop',
-    bg: '#0d0b0b',
-    speed: -1,
+    card: placeholderTwo,
   },
   {
     slug: 'project-three',
     title: 'Project Three',
     categories: ['Brand Identity', 'Strategy'],
     year: '2023',
-    card: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1400&fit=crop',
-    bg: '#0b0b0d',
-    speed: 1,
-  },
-  {
-    slug: 'project-four',
-    title: 'Project Four',
-    categories: ['Motion', 'Development'],
-    year: '2023',
-    card: deeer2,
-    bg: '#0d0c0a',
-    speed: -1,
+    card: placeholderThree,
   },
 ];
 

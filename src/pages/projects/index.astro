@@ -1,570 +1,532 @@
 ---
+import { Image, getImage } from 'astro:assets';
 import Layout from '../../layouts/Layout.astro';
 import CtaSection from '../../components/sections/CtaSection.astro';
-import { getImage } from 'astro:assets';
-import { projects as data, hrefOf } from '../../data/projects';
+import { projects, hrefOf } from '../../data/projects';
 
-// Titles, tags, years and card pictures come from src/data/projects.ts (the same
-// file the /projects/[slug] case-study pages read). A local card picture can be
-// a 7360px-wide source, so getImage() pre-generates a downscaled one for the card
-// and a 2400px one for the full-screen case-study entrance (data-case-src).
-// Placeholders keep their remote URL (no `full`).
-const projects = await Promise.all(
-  data.map(async (p) => {
-    const local = typeof p.card !== 'string';
-    const img = local ? (await getImage({ src: p.card, width: 900, height: 1200 })).src : (p.card as string);
-    const full = local ? (await getImage({ src: p.card, width: 2400 })).src : undefined;
-    return { slug: hrefOf(p), title: p.title, categories: p.categories, year: p.year, img, full, bg: p.bg, speed: p.speed };
-  })
+// The project index: the names as a list, the picture of the active one full-screen behind it (the same light that
+// moves between the pictures on the home page). Titles, tags, years and pictures come from src/data/projects.ts, the
+// file the /projects/[slug] case studies read too. `full` is the 2400px picture the case-study entrance opens from.
+const items = await Promise.all(
+	projects.map(async (p, i) => ({
+		num: String(i + 1).padStart(2, '0'),
+		href: hrefOf(p),
+		live: Boolean(p.detail),
+		title: p.title,
+		categories: p.categories,
+		year: p.year,
+		card: p.card,
+		focus: p.focus ?? 0.5,
+		full: (await getImage({ src: p.card, width: 2400 })).src,
+	}))
 );
+const total = String(items.length).padStart(2, '0');
 ---
 
 <Layout
-  title="Projects — Prime Triskelion"
-  description="Selected work by Prime Triskelion — brand identity, web design, motion and digital strategy."
+	title="Projects — Prime Triskelion"
+	description="Selected work by Prime Triskelion — brand identity, web design, motion and digital strategy."
 >
-  <main id="projects-page">
+	<main id="projects-page">
 
-    <!-- Brief header -->
-    <header class="proj-header" data-side-rays data-rays-pin>
-      <h1 class="proj-title">
-        <span class="proj-title__line"><span class="proj-title__word">My</span></span>
-        <span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
-      </h1>
-      <p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
-    </header>
+		<header class="proj-header" data-side-rays data-rays-pin>
+			<h1 class="proj-title">
+				<span class="proj-title__line"><span class="proj-title__word">My</span></span>
+				<span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
+			</h1>
+			<p class="proj-header__lead">Brand identities, websites and motion — a selection of recent work, from first idea to launch.</p>
+		</header>
 
-    <!-- Mask reveal sections -->
-    <div data-after-hero id="projects-list">
-    {projects.map((p) => (
-      <section
-        class="proj-section"
-        style={`--bg: ${p.bg}`}
-        aria-label={p.title}
-      >
-        <a class="proj-inner" href={p.slug} data-case data-case-src={p.full}>
+		<section id="projects-index" class="pj" data-after-hero aria-label="Projects">
 
-          <!-- Giant bg text -->
-          <span class="proj-bg-text" data-speed={p.speed} aria-hidden="true">
-            {p.title}
-          </span>
+			<!-- The picture of the active project fills the screen: WebGL light between the pictures, or (no WebGL, reduced
+			     motion) the same images cross-fading. -->
+			<div class="pj__stage" aria-hidden="true">
+				<canvas class="pj__canvas"></canvas>
+				{items.map((p) => (
+					<Image class="pj__img" src={p.card} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="eager" decoding="async" data-fx={p.focus} />
+				))}
+				<div class="pj__shade"></div>
+			</div>
 
-          <!-- Project image -->
-          <div class="proj-img-wrap" data-case-media>
-            {p.img
-              ? <img src={p.img} alt={p.title} crossorigin="anonymous" />
-              : (
-                <div class="proj-img-ph"></div>
-              )
-            }
-          </div>
+			<div class="pj__inner">
+				<ol class="pj__list">
+					{items.map((p) => (
+						<li class="pj__item">
+							{p.live ? (
+								<a class="pj__row" href={p.href} data-case data-case-src={p.full}>
+									<span class="pj__num" data-total={total}>{p.num}</span>
+									<span class="pj__name">{p.title}</span>
+									<span class="pj__meta">
+										<span class="pj__tags">{p.categories.join(' · ')}</span>
+										<span class="pj__year">{p.year}</span>
+										<span class="pj__go">View project ↗</span>
+									</span>
+									<!-- The case-study entrance grows from this picture (desktop only, see pageTransitions.ts) -->
+									<Image class="pj__thumb" src={p.card} alt="" widths={[1200, 1800, 2400]} sizes="100vw" loading="lazy" decoding="async" />
+								</a>
+							) : (
+								<div class="pj__row pj__row--soon">
+									<span class="pj__num" data-total={total}>{p.num}</span>
+									<span class="pj__name">{p.title}</span>
+									<span class="pj__meta">
+										<span class="pj__tags">{p.categories.join(' · ')}</span>
+										<span class="pj__year">{p.year}</span>
+										<span class="pj__go">Case study soon</span>
+									</span>
+								</div>
+							)}
+						</li>
+					))}
+				</ol>
+				<p class="pj__count" aria-hidden="true"><span id="pj-current">01</span> / {String(items.length).padStart(2, '0')}</p>
+			</div>
+		</section>
 
-          <!-- Bottom info bar -->
-          <div class="proj-foot">
-            <div class="proj-foot__left">
-              <span class="proj-foot__name">{p.title}</span>
-            </div>
-            <div class="proj-foot__center">
-              {p.categories.map((c) => <span class="proj-foot__tag">{c}</span>)}
-            </div>
-            <div class="proj-foot__right">
-              <span class="proj-foot__year">{p.year}</span>
-            </div>
-          </div>
-
-        </a>
-      </section>
-    ))}
-    </div>
-
-  </main>
-  <CtaSection />
+	</main>
+	<CtaSection />
 </Layout>
 
 <style>
-  #projects-page {
-    background: rgb(var(--c-bg));
-    color: rgb(var(--c-cream));
-  }
+	#projects-page {
+		background: rgb(var(--c-bg));
+		color: rgb(var(--c-cream));
+	}
 
-  /* â•â• HEADER â•â• */
-  .proj-header {
-    position: relative;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: clamp(8rem, 16vh, 14rem) var(--site-gutter) clamp(8rem, 18vh, 13rem);
-    box-sizing: border-box;
-  }
+	/* ── header: the title alone on the first screen ── */
+	.proj-header {
+		position: relative;
+		height: 100vh;
+		height: 100dvh;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		padding: clamp(8rem, 16vh, 14rem) var(--site-gutter) clamp(8rem, 18vh, 13rem);
+		box-sizing: border-box;
+	}
+	.proj-title {
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(3.5rem, 8vw, 8.5rem);
+		letter-spacing: -0.01em;
+		text-transform: uppercase;
+		line-height: 0.9;
+		color: rgb(var(--c-cream));
+	}
+	.proj-title__line { display: block; padding-bottom: 0.08em; }
+	.proj-title__word { display: block; opacity: 0; filter: blur(18px); }
+	.proj-title em { font-style: normal; color: rgb(var(--c-red)); }
+	/* phones and tablets only (same style as Services' .svc-hero__lead) */
+	.proj-header__lead {
+		display: none;
+		font-family: var(--f-body);
+		font-weight: 300;
+		font-size: clamp(0.95rem, 1.1vw, 1.15rem);
+		line-height: 1.55;
+		letter-spacing: 0.01em;
+		color: rgb(var(--c-cream) / 0.82);
+		max-width: 34ch;
+		margin: clamp(1.2rem, 2vw, 1.8rem) 0 0;
+		opacity: 0;
+		transform: translateY(10px);
+	}
 
-  .proj-title {
-    font-family: var(--f-display);
-    font-weight: 600;
-    font-size: clamp(3.5rem, 8vw, 8.5rem);
-    letter-spacing: -0.01em;
-    text-transform: uppercase;
-    line-height: 0.9;
-    color: rgb(var(--c-cream));
-  }
-  .proj-title__line { display: block; padding-bottom: 0.08em; }
-  .proj-title__word { display: block; opacity: 0; filter: blur(18px); }
-  .proj-title em { font-style: normal; color: rgb(var(--c-red)); }
-  /* Mobile only for now (placeholder copy) — same style as Services'
-     .svc-hero__lead. */
-  .proj-header__lead {
-    display: none;
-    font-family: var(--f-body);
-    font-weight: 300;
-    font-size: clamp(0.95rem, 1.1vw, 1.15rem);
-    line-height: 1.55;
-    letter-spacing: 0.01em;
-    color: rgb(var(--c-cream) / 0.82);
-    max-width: 34ch;
-    margin: clamp(1.2rem, 2vw, 1.8rem) 0 0;
-    opacity: 0;
-    transform: translateY(10px);
-  }
+	/* ── the index ── */
+	.pj {
+		position: relative;
+		height: 100vh;
+		height: 100svh;
+		min-height: 36rem;
+		background: rgb(var(--c-bg));
+	}
+	.pj__stage {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		background: #000;
+	}
+	.pj__canvas,
+	.pj__img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+	/* the pictures are the canvas's textures; they only show (cross-fading) without WebGL */
+	.pj__img { object-fit: cover; visibility: hidden; opacity: 0; }
+	.pj--fallback .pj__img { visibility: visible; }
+	.pj--fallback .pj__canvas { display: none; }
+	/* The pictures sit in the dark: dim on the side of the list, falling away to the page's black above and below, so each
+	   one comes up out of the dark and the text always has a ground. */
+	.pj__shade {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background:
+			linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 45%, rgb(0 0 0 / 0.12) 100%),
+			linear-gradient(180deg, rgb(var(--c-bg)) 0%, transparent 20%, transparent 68%, rgb(var(--c-bg)) 100%);
+	}
 
+	.pj__inner {
+		position: relative;
+		z-index: 2;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		padding: 0 var(--site-gutter);
+		box-sizing: border-box;
+	}
+	.pj__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		width: min(68rem, 100%);
+	}
+	.pj__item { border-top: 1px solid rgb(var(--c-cream) / 0.14); }
+	.pj__item:last-child { border-bottom: 1px solid rgb(var(--c-cream) / 0.14); }
 
-  /* â•â• MASK SECTION â•â• */
-  .proj-section {
-    position: relative;
-    height: 100vh;
-    height: 100dvh;
-    width: 100%;
-    overflow: hidden;
-    background: var(--bg, rgb(var(--c-bg)));
-    transition: background-color 0.6s ease;
-    /* Mask for the fixed .proj-inner below — clip-path (unlike overflow)
-       also clips position:fixed descendants, so each section is a window
-       onto its own viewport-pinned panel. No transform here: it would
-       turn the section into the containing block and un-fix the inner. */
-    clip-path: inset(0);
-  }
+	.pj__row {
+		display: grid;
+		grid-template-columns: 3.5rem 1fr auto;
+		align-items: baseline;
+		column-gap: 1rem;
+		padding: clamp(1rem, 2.6vh, 1.8rem) 0;
+		color: inherit;
+		text-decoration: none;
+		cursor: pointer;
+	}
+	.pj__row--soon { cursor: default; }
 
-  /* â•â• INNER (fixed, masked by section) â•â• */
-  /* Pinned to the viewport, masked by the section. Used to be
-     position:absolute + a rAF loop writing translateY(-rect.top) every
-     frame to fake this — unsynchronised with Lenis's scroll write, so on
-     desktop Safari the panel lagged the section by a frame and visibly
-     jumped while scrolling. Real position:fixed moves with the scroll in
-     the same composited frame. */
-  .proj-inner {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    color: inherit;
-    cursor: pointer;
-  }
+	.pj__num {
+		font-family: var(--f-body);
+		font-size: 0.8rem;
+		letter-spacing: 0.2em;
+		font-variant-numeric: tabular-nums;
+		color: rgb(var(--c-cream) / 0.4);
+		transition: color 0.6s ease;
+	}
+	.pj__name {
+		font-family: var(--f-display);
+		font-weight: 600;
+		font-size: clamp(2.4rem, 5.2vw, 6rem);
+		line-height: 0.95;
+		letter-spacing: -0.02em;
+		text-transform: uppercase;
+		color: rgb(var(--c-cream) / 0.34);
+		transition: color 0.6s ease;
+	}
+	.pj__meta {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.4rem;
+		font-family: var(--f-body);
+		font-weight: 300;
+		font-size: clamp(0.7rem, 0.9vw, 0.9rem);
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		color: rgb(var(--c-cream) / 0.4);
+		transition: color 0.6s ease;
+	}
+	.pj__go {
+		opacity: 0;
+		transform: translateX(-6px);
+		transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.pj__row.is-active .pj__num { color: rgb(var(--c-red)); }
+	.pj__row.is-active .pj__name { color: rgb(var(--c-cream)); }
+	.pj__row.is-active .pj__meta { color: rgb(var(--c-cream) / 0.85); }
+	.pj__row.is-active .pj__go { opacity: 1; transform: none; }
+	.pj__row:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.5); outline-offset: 4px; }
 
-  /* â•â• BG TEXT â•â• */
-  .proj-bg-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-family: var(--f-display);
-    font-weight: 600;
-    font-size: clamp(6rem, 17vw, 21rem);
-    text-transform: uppercase;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    color: rgb(var(--c-cream) / 0.055);
-    white-space: nowrap;
-    mix-blend-mode: overlay;
-    pointer-events: none;
-    z-index: 1;
-    user-select: none;
-  }
+	/* the case-study entrance grows from the active picture: this copy only gives it the rectangle (the whole screen) */
+	.pj__thumb {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		visibility: hidden;
+		pointer-events: none;
+	}
 
-  /* â•â• IMAGE â•â• */
-  .proj-img-wrap {
-    position: relative;
-    width: clamp(260px, 42vw, 680px);
-    height: clamp(180px, 52vh, 480px);
-    z-index: 2;
-    overflow: hidden;
-    box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.05);
-  }
-  .proj-img-wrap img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+	.pj__count {
+		position: absolute;
+		right: var(--site-gutter);
+		bottom: clamp(5.5rem, 12vh, 8rem);
+		margin: 0;
+		font-family: var(--f-body);
+		font-size: 0.8rem;
+		letter-spacing: 0.2em;
+		font-variant-numeric: tabular-nums;
+		color: rgb(var(--c-cream) / 0.55);
+	}
 
-  /* Image placeholder */
-  .proj-img-ph {
-    width: 100%;
-    height: 100%;
-    background:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 39px, rgba(255,255,255,0.025) 40px),
-      linear-gradient(160deg, #141418 0%, #0e0e12 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+	/* ── phones and tablets: one project per screen, the way Selected work is on the home page ──
+	   The index is a tall zone with a pinned (sticky) picture and a pinned layer of text. On touch the stage
+	   (utils/workStage.ts) steps it: one gesture = one project. Elsewhere (a narrow window, reduced motion) the scroll drives it. */
+	@media (max-width: 1024px), (hover: none) and (pointer: coarse) {
+		.proj-header {
+			height: 100svh;
+			height: calc(var(--app-stable-vh, 1svh) * 100);
+			min-height: unset;
+			justify-content: center;
+			padding-top: 5rem;
+			padding-bottom: 1.5rem;
+		}
+		.proj-header__lead { display: block; }
 
-  /* Gradient pod stopkÄ… — kontrast na desktopie */
-  .proj-inner::before {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 55%;
-    background: linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.25) 45%, transparent 100%);
-    pointer-events: none;
-    z-index: 2;
-  }
+		.pj {
+			height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens, 3));
+			min-height: 0;
+		}
+		.pj__stage,
+		.pj__inner {
+			position: sticky;
+			inset: auto;
+			top: 0;
+			height: 100svh;
+			height: calc(var(--app-stable-vh, 1svh) * 100);
+		}
+		.pj__shade {
+			background:
+				linear-gradient(0deg, rgb(var(--c-bg)) 0%, rgb(var(--c-bg) / 0.92) 8%, transparent 26%),
+				linear-gradient(0deg, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.55) 32%, rgb(0 0 0 / 0.08) 62%),
+				linear-gradient(180deg, rgb(var(--c-bg)) 0%, transparent 18%);
+		}
+		.pj__inner {
+			display: block;
+			margin-top: calc(var(--app-stable-vh, 1svh) * -100);
+			padding: 0;
+		}
 
-  /* â•â• FOOTER INFO â•â• */
-  .proj-foot {
-    position: absolute;
-    bottom: clamp(7rem, 13vh, 10rem);
-    left: var(--site-gutter);
-    right: var(--site-gutter);
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: flex-end;
-    gap: 1rem;
-    z-index: 3;
-  }
-
-  .proj-foot__left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-  .proj-foot__name {
-    font-family: var(--f-display);
-    font-weight: 600;
-    font-size: clamp(2.4rem, 4.5vw, 6rem);
-    text-transform: uppercase;
-    letter-spacing: -0.02em;
-    line-height: 0.95;
-    color: rgb(var(--c-cream));
-  }
-
-  .proj-foot__center {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .proj-foot__tag {
-    font-family: var(--f-body);
-    font-size: clamp(0.75rem, 1vw, 1rem);
-    font-weight: 300;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: rgb(var(--c-cream) / 0.7);
-    white-space: nowrap;   /* a category never breaks across two lines */
-  }
-
-  /* In a row (laptop and mobile layouts below) the tags are told apart by
-     a dot; stacked in a column (big screens) they don't need one. */
-  .proj-foot__right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.6rem;
-  }
-  .proj-foot__year {
-    font-family: var(--f-body);
-    font-size: clamp(0.75rem, 1vw, 1rem);
-    font-weight: 300;
-    letter-spacing: 0.2em;
-    color: rgb(var(--c-cream) / 0.65);
-  }
-
-  /* Desktop: the frame leans in a touch under the cursor and its edge
-     lights up; the title comes to full strength. (The enter/leave focus
-     pull is scroll-driven, in the script below.) */
-  @media (hover: hover) and (pointer: fine) {
-    .proj-img-wrap {
-      transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.8s ease;
-    }
-    .proj-foot__name { transition: color 0.5s ease; }
-    .proj-foot__tag, .proj-foot__year { transition: color 0.5s ease; }
-    .proj-inner:hover .proj-img-wrap {
-      transform: scale(1.025);
-      box-shadow: 0 40px 90px rgba(0,0,0,0.85), 0 0 0 1px rgba(255,255,255,0.16);
-    }
-    .proj-inner:hover .proj-foot__tag,
-    .proj-inner:hover .proj-foot__year { color: rgb(var(--c-cream) / 0.95); }
-  }
-
-  /* â•â• MOBILE / TABLET â•â• */
-  /* Laptop 1025–1600px */
-  @media (min-width: 1025px) and (hover: hover) and (max-width: 1600px), (min-width: 1025px) and (pointer: fine) and (max-width: 1600px) {
-    .proj-foot {
-      bottom: clamp(5.5rem, 11vh, 8rem);
-      grid-template-columns: 1fr auto 1fr;
-      gap: 1rem 2vw;
-      align-items: center;
-    }
-    .proj-foot__name {
-      font-size: clamp(1.8rem, 3.2vw, 4rem);
-    }
-    .proj-foot__center {
-      flex-direction: row;
-      flex-wrap: nowrap;   /* always one row, side by side */
-      justify-content: center;
-      gap: 0.3rem 1rem;
-    }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: 1rem; opacity: 0.6; }
-    .proj-foot__right {
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-end;
-      gap: 1.2rem;
-    }
-  }
-
-  @media (max-width: 1024px), (hover: none) and (pointer: coarse) {
-    /* Header — tytuÅ‚ od razu widoczny na wejÅ›ciu */
-    /* Cinematic first screen: the title alone, vertically centred, the
-       cards only on scroll. Sized off the stable --app-stable-vh (set once
-       in Layout.astro) so the URL bar can't resize it mid-scroll. */
-    .proj-header {
-      /* A whole screen: the title has it to itself, no card peeks in below. */
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      min-height: unset;
-      justify-content: center;
-      padding-top: 5rem;
-      padding-bottom: 1.5rem;
-    }
-    .proj-header__lead { display: block; }
-
-    /* Same scene as desktop: each project a full screen, its photo and title
-       pinned to the viewport and revealed through the section's window as
-       the page scrolls (the blur-in and parallax run in the script below).
-       Sized off the stable --app-stable-vh so the browser bar can't resize
-       it mid-scroll. */
-    .proj-section {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-    }
-    .proj-inner {
-      height: 100svh;
-      height: calc(var(--app-stable-vh, 1svh) * 100);
-      box-sizing: border-box;
-      /* The photo is centred in the free space between the logo (top) and
-         the name / tags / MENU block (bottom), not in the whole screen. */
-      padding: clamp(4.5rem, calc(var(--app-stable-vh, 1svh) * 10), 6rem) 0 clamp(11rem, calc(var(--app-stable-vh, 1svh) * 26), 13rem);
-    }
-    .proj-bg-text { font-size: clamp(5rem, 24vw, 21rem); }
-    .proj-img-wrap {
-      width: clamp(240px, 72vw, 680px);
-      height: clamp(180px, 50svh, 520px);
-      height: clamp(180px, calc(var(--app-stable-vh, 1svh) * 50), 520px);
-    }
-    /* Name and year on one line, the tags under — above the bottom MENU button. */
-    .proj-foot {
-      bottom: 6.5rem;
-      grid-template-columns: 1fr auto;
-      align-items: end;
-      gap: 0.6rem 1rem;
-    }
-    .proj-foot__left { grid-column: 1; grid-row: 1; }
-    .proj-foot__name { font-size: clamp(1.9rem, 8.5vw, 3.6rem); }
-    .proj-foot__center {
-      grid-column: 1 / 3;
-      grid-row: 2;
-      flex-direction: row;
-      flex-wrap: nowrap;   /* the three categories are always side by side in ONE row, never broken */
-      align-items: center;
-      justify-content: flex-start;
-      gap: 0 clamp(0.45rem, 2.4vw, 0.9rem);
-    }
-    .proj-foot__center .proj-foot__tag { font-size: clamp(7.5px, 2.5vw, 12px); letter-spacing: clamp(0.08em, 0.5vw, 0.2em); }
-    .proj-foot__right { grid-column: 2; grid-row: 1; align-items: flex-end; }
-    .proj-foot__tag + .proj-foot__tag::before { content: '·'; margin-right: clamp(0.45rem, 2.4vw, 0.9rem); opacity: 0.6; }
-    @media (min-width: 700px) {
-      .proj-img-wrap { width: clamp(420px, 56vw, 680px); }
-      .proj-foot__name { font-size: clamp(2.4rem, 5vw, 4rem); }
-    }
-
-  }
+		/* the projects' texts stack at the bottom; the one on screen comes in (and the others leave) on the clock */
+		.pj__list { position: absolute; inset: 0; width: auto; }
+		.pj__item,
+		.pj__item:last-child {
+			position: absolute;
+			left: var(--site-gutter);
+			right: var(--site-gutter);
+			bottom: 8rem;
+			border: 0;
+			opacity: 0;
+			visibility: hidden;
+			pointer-events: none;
+			transform: translateY(14px);
+			transition: opacity 0.3s ease, transform 0.3s ease, visibility 0s linear 0.3s;
+		}
+		.pj__item.is-active {
+			opacity: 1;
+			visibility: visible;
+			pointer-events: auto;
+			transform: none;
+			transition: opacity 0.6s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+		}
+		.pj__row {
+			display: flex;
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.85rem;
+			padding: 0;
+		}
+		.pj__num { order: 0; color: rgb(var(--c-red)); }
+		.pj__num::after { content: ' / ' attr(data-total); color: rgb(var(--c-cream) / 0.45); }
+		.pj__name {
+			order: 1;
+			font-size: clamp(2.4rem, 11.5vw, 4.4rem);
+			color: rgb(var(--c-cream));
+			text-shadow: 0 1px 2px rgb(0 0 0 / 0.9), 0 0 18px rgb(0 0 0 / 0.7);
+		}
+		.pj__meta {
+			order: 2;
+			flex-direction: row;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: 0.4rem 1.1rem;
+			font-size: 0.72rem;
+			color: rgb(var(--c-cream) / 0.8);
+		}
+		.pj__go { opacity: 1; transform: none; color: rgb(var(--c-cream)); }
+		.pj__thumb, .pj__count { display: none; }
+	}
 </style>
 
 <script>
-  import gsap from 'gsap';
-  import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
+	import gsap from 'gsap';
+	import ScrollTrigger from 'gsap/ScrollTrigger';
+	import { createBeamSlides } from '../../utils/beamSlides';
+	import { createWorkStage, type WorkStage } from '../../utils/workStage';
+	import { afterPageTransition, revealAfterHero, titleIn, supportIn, subpageMode } from '../../utils/afterPageTransition';
 
-  function initProjectsPage() {
-    if (!document.getElementById('projects-page')) return;
+	gsap.registerPlugin(ScrollTrigger);
 
-    // â”€â”€ Header entrance â”€â”€
-    const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
-    const lead = document.querySelector<HTMLElement>('.proj-header__lead');
-    const mode = subpageMode();
-    const isMob = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+	const clamp = (v: number, a = 0, b = 1) => (v < a ? a : v > b ? b : v);
+	const smooth = (v: number) => { v = clamp(v); return v * v * (3 - 2 * v); };
+	const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
+	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    afterPageTransition(() => {
-      const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
-      titleIn(tl, titleWords);
-      if (isMob || mode !== 'full') supportIn(tl, lead, 1.3);
-      else if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
-      revealAfterHero();
-    });
+	let cleanup: (() => void) | null = null;
 
+	function initHeader() {
+		const titleWords = document.querySelectorAll<HTMLElement>('.proj-title__word');
+		const lead = document.querySelector<HTMLElement>('.proj-header__lead');
+		const mode = subpageMode();
+		const narrow = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		afterPageTransition(() => {
+			const tl = gsap.timeline({ defaults: { ease: 'power4.out' } });
+			titleIn(tl, titleWords);
+			if (narrow || mode !== 'full') supportIn(tl, lead, 1.3);
+			else if (lead) tl.to(lead, { opacity: 1, y: 0, duration: 1, ease: 'power3.out' }, 0.5);
+			revealAfterHero();
+		});
+	}
 
-    // â”€â”€ Bg-text parallax (the mask itself is pure CSS) â”€â”€
-    const reduce_ = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // Cache references once — never query DOM inside the render loop
-    const panels = Array.from(
-      document.querySelectorAll<HTMLElement>('.proj-section')
-    ).map(sec => ({
-      sec,
-      bgText:  sec.querySelector<HTMLElement>('.proj-bg-text'),
-      foot:    sec.querySelector<HTMLElement>('.proj-foot'),
-      img:     sec.querySelector<HTMLElement>('.proj-img-wrap img'),
-      speed:   parseFloat(sec.querySelector<HTMLElement>('.proj-bg-text')?.dataset.speed ?? '1'),
-    }));
+	// The index. One number, `pos`, is the light between the pictures: 0 = dark, k = project k.
+	//   Desktop: the pointer (or the keyboard focus) on a row chooses the project; the light moves there on the clock.
+	//   Phones and tablets: the page is a tall zone (see the CSS). On touch the stage (utils/workStage.ts) steps it, one gesture =
+	//   one project; the scroll position only brings the stage in and out. Elsewhere (a narrow window with a mouse, reduced
+	//   motion) the scroll drives the light directly.
+	// Step 0 of the stage is the first project, so it is created for projects - 1 steps.
+	function initIndex() {
+		const root = document.getElementById('projects-index');
+		if (!root) return;
+		const canvas = root.querySelector<HTMLCanvasElement>('.pj__canvas')!;
+		const stage = root.querySelector<HTMLElement>('.pj__stage')!;
+		const images = Array.from(root.querySelectorAll<HTMLImageElement>('.pj__img'));
+		const items = Array.from(root.querySelectorAll<HTMLElement>('.pj__item'));
+		const rows = Array.from(root.querySelectorAll<HTMLElement>('.pj__row'));
+		const current = document.getElementById('pj-current');
+		const N = items.length;
+		const narrow = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches;
+		const stageMode = narrow && !reduced();   // one gesture (swipe, wheel, key) = one project
 
-    // Phones/tablets: the last card, once it fills the screen, stops being
-    // pinned and scrolls on with the page.
-    const lastSec = document.querySelector<HTMLElement>('.proj-section:last-child');
-    // The last project sinks into black as its window closes (an overlay in the
-    // page colour on that section), so the CTA arrives on a dark screen.
-    const sink = document.createElement('div');
-    sink.setAttribute('aria-hidden', 'true');
-    sink.style.cssText = 'position:absolute;inset:0;z-index:5;pointer-events:none;opacity:0;background:rgb(var(--c-bg));';
-    // (in the pinned panel, the same layer as the photo — in the section they
-    // rounded differently and a 1px sliver of the photo showed at the edge)
-    lastSec?.querySelector('.proj-inner')?.appendChild(sink);
-    // The first project is the mirror of that: it comes up out of the dark as
-    // its window opens under the header.
-    const firstSec = document.querySelector<HTMLElement>('.proj-section');
-    const rise = sink.cloneNode() as HTMLElement;
-    rise.style.opacity = '1';
-    firstSec?.querySelector('.proj-inner')?.appendChild(rise);
-    // However the page is arrived at already scrolled to the list (a link to #projects-list, or the browser's Back
-    // button, which puts the scroll position back a moment AFTER the page has started), the first project is in its
-    // window at once and the scroll alone would show its photo at full strength: a hard cut. So the first photo always
-    // starts under the dark and comes up out of it on the clock (softly, like everything that arrives on a page). Seen
-    // from the top of the page it changes nothing: the project is far below the fold until the scroll gets there.
-    // It is counted frame by frame in the render loop below, each frame at most 50 ms (not by GSAP's clock: after a
-    // long first frame, which a page restored by the Back button often has, that clock jumps ahead by the whole
-    // stall and the soft entrance was over in a single frame, so it still looked like a cut).
-    const entry = { v: reduce_ ? 0 : 1 };
-    let entryT = 0;
-    let entryGo = false;
-    let entryLast = performance.now();
-    if (!reduce_) afterPageTransition(() => { entryGo = true; });
-    let raf = 0;
-    // As a card's window opens (and closes again) its title block comes out
-    // of a blur and its photo settles from a hair oversized — scroll-driven,
-    // so it follows the wheel exactly. Only the small text block is filtered
-    // (never the big photo), the photo gets a transform.
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const FOOT_BLUR = 8;      // px, at fully hidden
-    const IMG_SETTLE = 0.08;  // scale above 1, at fully hidden
-    const smooth = (a: number, b: number, x: number) => {
-      const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
-      return t * t * (3 - 2 * t);
-    };
+		const fallback = () => root.classList.add('pj--fallback');
+		const beam = reduced() ? null : createBeamSlides(canvas, images, fallback, [0, 1]);
+		if (!beam) fallback();
 
-    function render() {
-      const vh = window.innerHeight;
-      {
-        const now = performance.now();
-        const dt = Math.min(0.05, (now - entryLast) / 1000);
-        entryLast = now;
-        if (entryGo && entry.v > 0) {
-          entryT += dt;
-          const k = Math.max(0, Math.min(1, (entryT - 0.1) / 1.9));
-          entry.v = 1 - (0.5 - 0.5 * Math.cos(Math.PI * k));   // in-out sine
-        }
-      }
-      for (const { sec, bgText, foot, img, speed } of panels) {
-        const rect = sec.getBoundingClientRect();
+		let pos = 0, active = -1;
+		const place = (p: number) => {
+			pos = p;
+			beam?.setPos(p);
+			if (root.classList.contains('pj--fallback')) {
+				images.forEach((im, k) => { im.style.opacity = (1 - smooth((Math.abs(p - (k + 1)) - 0.1) / 0.5)).toFixed(3); });
+			}
+		};
+		// which project's text is on screen
+		const mark = (i: number) => {
+			if (i === active) return;
+			active = i;
+			items.forEach((el, k) => el.classList.toggle('is-active', k === i));
+			rows.forEach((r, k) => { if (k === i) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
+			if (current) current.textContent = String(i + 1).padStart(2, '0');
+		};
 
-        if (sec === lastSec && !reduce) {
-          const left = Math.max(0, Math.min(1, rect.bottom / vh));
-          const d = rect.top <= 0 ? 1 - smooth(0.3, 1.0, left) : 0;
-          sink.style.opacity = d.toFixed(3);
-        }
+		const offs: Array<() => void> = [];
+		let tweenRaf = 0, waitRaf = 0, stageObj: WorkStage | null = null;
 
-        if (sec === firstSec && !reduce) {
-          const shown = Math.max(0, Math.min(1, (vh - rect.top) / vh));
-          const d = rect.top > 0 ? 1 - smooth(0.4, 1.0, shown) : 0;
-          rise.style.opacity = Math.max(d, entry.v).toFixed(3);
-        }
+		if (!narrow) {
+			// ── desktop: the pointer chooses, the light goes there on the clock ──
+			const tweenTo = (target: number) => {
+				cancelAnimationFrame(tweenRaf);
+				if (reduced()) { place(target); return; }
+				const from = pos, t0 = performance.now();
+				const ms = 700 + 500 * Math.min(2, Math.abs(target - from));
+				const tick = (now: number) => {
+					const t = Math.min(1, (now - t0) / ms);
+					place(from + (target - from) * inOutSine(t));
+					tweenRaf = t < 1 ? requestAnimationFrame(tick) : 0;
+				};
+				tweenRaf = requestAnimationFrame(tick);
+			};
+			const choose = (i: number) => { if (i !== active) { mark(i); tweenTo(i + 1); } };
+			rows.forEach((r, i) => {
+				const on = () => choose(i);
+				r.addEventListener('pointerenter', on);
+				r.addEventListener('focus', on);
+				offs.push(() => { r.removeEventListener('pointerenter', on); r.removeEventListener('focus', on); });
+			});
+			// the first picture comes up out of the dark as the index comes into view
+			const io = new IntersectionObserver((entries) => {
+				if (entries.some((e) => e.isIntersecting) && active < 0) choose(0);
+			}, { threshold: 0.4 });
+			io.observe(root);
+			offs.push(() => io.disconnect());
+		} else {
+			// ── phones and tablets: a tall zone, one project per step ──
+			const LEAD = 0.14, PER = 0.36, HOLD = 0.4;     // screens of scroll: the stage takes the page as soon as the zone has pinned
+			const steps = N - 1;
+			const length = LEAD + PER * (steps + HOLD);
+			root.style.setProperty('--screens', String(length + 1));
 
-        if (rect.top > vh || rect.bottom < 0) continue;
+			// the project whose text is on screen: the one the light is going TO (at rest the one on screen)
+			let lastPos = 1, forward = true;
+			const follow = (p: number) => {
+				place(p);
+				if (p !== lastPos) { forward = p > lastPos; lastPos = p; }
+				const near = Math.round(p);
+				const dest = Math.abs(p - near) < 0.05 ? near : forward ? Math.ceil(p) : Math.floor(p);
+				mark(clamp(dest, 1, N) - 1);
+			};
+			follow(1);
 
-        if (bgText) {
-          bgText.style.transform =
-            `translate(calc(-50% + ${rect.top * speed * 0.12}px), -50%)`;
-        }
+			// outside the stage's hands the scroll position gives the light (the way it was left: above the zone the first
+			// project, below it the last); with no touch stage it is followed continuously
+			function setFrom(progress: number) {
+				if (stageObj?.holding()) return;
+				if (stageMode) { follow(progress > 0.5 ? N : 1); return; }
+				follow(1 + clamp((progress * length - LEAD) / PER, 0, steps));
+			}
+			const trigger = ScrollTrigger.create({ trigger: root, start: 'top top', end: 'bottom bottom', invalidateOnRefresh: true,
+				onUpdate: (s) => setFrom(s.progress), onRefresh: (s) => setFrom(s.progress) });
+			const unit = () => (trigger.end - trigger.start) / length;
+			const stop = (k: number) => trigger.start + (LEAD + PER * k) * unit();   // where project k + 1 rests
 
-        if (!reduce) {
-          // How much of the screen this card's window covers: 0 → 1 as it
-          // opens, 1 → 0 as the next one closes it.
-          const f = (Math.min(rect.bottom, vh) - Math.max(rect.top, 0)) / vh;
-          if (foot) {
-            const t = smooth(0.4, 0.92, f);
-            foot.style.opacity = t.toFixed(3);
-            foot.style.filter = `blur(${((1 - t) * FOOT_BLUR).toFixed(2)}px)`;
-          }
-          if (img) img.style.transform = `scale(${(1 + (1 - smooth(0, 1, f)) * IMG_SETTLE).toFixed(4)})`;
-        }
-      }
-      raf = requestAnimationFrame(render);
-    }
+			const attach = () => {
+				const lenis = (window as any).__lenis;
+				if (!lenis) { if (++tries < 180) waitRaf = requestAnimationFrame(attach); return; }
+				stageObj = createWorkStage({
+					n: steps, lenis, trigger, stop, unit,
+					setPos: (p) => follow(1 + p),
+					syncFromScroll: () => setFrom(trigger.progress),
+					// the header (the page's own "hero") plays its way back; the stage does not glide the page up against it
+					leaveUp: (done) => Boolean((window as any).__ptPinHeader?.goUp(done)),
+				});
+			};
+			let tries = 0;
+			if (stageMode) attach();
+			// the keys step the stage too, while it holds the page
+			const onKey = (e: KeyboardEvent) => {
+				if (!stageObj?.holding()) return;
+				const t = e.target as HTMLElement | null;
+				if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+				if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); stageObj.step(1); }
+				else if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); stageObj.step(-1); }
+			};
+			window.addEventListener('keydown', onKey);
+			offs.push(() => { window.removeEventListener('keydown', onKey); trigger.kill(); });
+		}
 
-    raf = requestAnimationFrame(render);
+		const ro = new ResizeObserver(() => beam?.resize());
+		ro.observe(stage);
 
-    // â”€â”€ Dominant colour extraction â”€â”€
-    const canvas = document.createElement('canvas');
-    canvas.width = 40;
-    canvas.height = 40;
-    const ctx = canvas.getContext('2d');
+		cleanup = () => {
+			cancelAnimationFrame(tweenRaf);
+			cancelAnimationFrame(waitRaf);
+			stageObj?.destroy();
+			offs.forEach((fn) => fn());
+			ro.disconnect();
+			beam?.destroy();
+		};
+	}
 
-    if (ctx) {
-      document.querySelectorAll<HTMLElement>('.proj-section').forEach(sec => {
-        const img = sec.querySelector<HTMLImageElement>('.proj-img-wrap img');
-        if (!img) return;
-
-        const extract = () => {
-          try {
-            ctx.clearRect(0, 0, 40, 40);
-            ctx.drawImage(img, 0, 0, 40, 40);
-            const px = ctx.getImageData(0, 0, 40, 40).data;
-            let r = 0, g = 0, b = 0;
-            const n = px.length / 4;
-            for (let i = 0; i < px.length; i += 4) {
-              r += px[i]; g += px[i + 1]; b += px[i + 2];
-            }
-            // Darken to ~10% — rich but very dark tinted bg
-            const d = 0.1;
-            sec.style.backgroundColor =
-              `rgb(${Math.round(r/n*d)},${Math.round(g/n*d)},${Math.round(b/n*d)})`;
-          } catch {
-            // CORS blocked — keep existing --bg
-          }
-        };
-
-        img.complete ? extract() : img.addEventListener('load', extract, { once: true });
-      });
-    }
-
-    document.addEventListener('astro:before-swap', () => {
-      cancelAnimationFrame(raf);
-    }, { once: true });
-  }
-
-  document.addEventListener('astro:page-load', initProjectsPage);
+	document.addEventListener('astro:page-load', () => {
+		cleanup?.();
+		cleanup = null;
+		if (!document.getElementById('projects-page')) return;
+		initHeader();
+		initIndex();
+	});
+	document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = null; });
 </script>
-

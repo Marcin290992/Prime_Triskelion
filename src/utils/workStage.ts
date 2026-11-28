@@ -16,6 +16,7 @@
 // Only the mechanism lives here: the section supplies the pictures, the render and the scroll geometry (WorkStageHost).
 
 import ScrollTrigger from 'gsap/ScrollTrigger';
+import { createWheelGesture } from './wheelGesture';
 
 export interface WorkStageHost {
 	n: number;                              // number of pictures
@@ -25,10 +26,14 @@ export interface WorkStageHost {
 	unit(): number;                         // one screen of scroll inside the zone
 	setPos(p: number): void;                // move the light (and all that follows it) to p: 0 = title, k = picture k
 	syncFromScroll(): void;                 // hand the light back to the scroll position
+	/** Leave upward by the page's own means (the header's way back) instead of gliding; call `done` when it has finished.
+	 *  Returns false when it cannot (then the stage glides). */
+	leaveUp?(done: () => void): boolean;
 }
 
 export interface WorkStage {
-	goTo(k: number): void;                  // a key / button: go to picture k (only while the stage has the page)
+	goTo(k: number): void;                  // a button: go to picture k (only while the stage has the page)
+	step(dir: 1 | -1): void;                // a key: one picture on / back (only while the stage has the page)
 	holding(): boolean;                     // the stage (or its glide) owns the light: the scroll must not drive it
 	destroy(): void;
 }
@@ -46,6 +51,7 @@ const CFG = {
 	assistMin: 40,          // px  a flick down shorter than this is no flick
 	assistPast: 0.06,       // screens: the glide ends a little inside the catch line, or it never crosses it
 	glideFailsafeMs: 1800,
+	leaveUpFailsafeMs: 4000, // the header's way back takes about 2 s
 	// where the stage takes the page
 	catchAbove: 0.12,       // coming down: this much (screens) before the title's rest
 	catchBelow: 0.02,       // coming up: this much before the end of the zone
@@ -61,8 +67,6 @@ const CFG = {
 	tap: 2,                 // px  less than this is a tap
 	clickBlock: 8,          // px  a drag longer than this blocks the click that follows ...
 	clickBlockMs: 350,      // ms  ... for this long
-	wheelMin: 8,            // smallest wheel delta that counts as a gesture (an iPad with a trackpad)
-	wheelCooldownMs: 700,   // ms  one wheel gesture = one step; a trackpad's inertia tail extends this
 };
 
 const clamp = (x: number, a: number, b: number) => (x < a ? a : x > b ? b : x);
@@ -70,7 +74,7 @@ const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 const outCubic = (t: number) => 1 - (1 - t) ** 3;
 
 export function createWorkStage(host: WorkStageHost): WorkStage {
-	const { n, lenis, trigger, stop, unit, setPos, syncFromScroll } = host;
+	const { n, lenis, trigger, stop, unit, setPos, syncFromScroll, leaveUp } = host;
 	const root = document.documentElement;
 	const vh = () => window.innerHeight;
 	const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
@@ -82,7 +86,6 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 	let weStopped = false;              // we stopped Lenis and must start it again
 	let lockY = 0;                      // the scroll position held while the stage has the page
 	let lastY = window.scrollY;
-	let lastWheel = 0;
 	let drag: any = null;
 	let touch: { id: number; y: number; y0: number } | null = null;   // the finger that is down, tracked all the time
 	let suppressClick = false;
@@ -163,6 +166,11 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		glideTimer = window.setTimeout(endGlide, CFG.glideFailsafeMs);
 		// The page was held at the title's rest while the pictures changed, and the stage stands still over the whole zone: move
 		// the scroll to the edge of it at once (nothing on screen changes), so the glide starts moving the page immediately.
+		if (dir < 0 && leaveUp?.(() => { releaseLenis(); endGlide(); })) {
+			clearTimeout(glideTimer);
+			glideTimer = window.setTimeout(() => { releaseLenis(); endGlide(); }, CFG.leaveUpFailsafeMs);
+			return;
+		}
 		jumpTo(dir > 0 ? trigger.end - 1 : trigger.start + 1);
 		const target = dir > 0 ? trigger.end + CFG.leaveBelow * vh() : Math.max(0, trigger.start - CFG.leaveAbove * vh());
 		glideScroll(target, CFG.leaveMs, endGlide);
@@ -241,14 +249,12 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		tweenTo(idx);
 	};
 	const onClick = (e: MouseEvent) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); } };
-	// a wheel / trackpad on a touch-class device (an iPad with a trackpad)
+	// a wheel / trackpad (an iPad with a trackpad, a narrow window with a mouse): one gesture = one step
+	const wheelStep = createWheelGesture((dir) => stepBy(dir));
 	const onWheel = (e: WheelEvent) => {
 		if (!free()) return;
 		e.preventDefault();
-		const now = performance.now(), since = now - lastWheel;
-		lastWheel = now;   // inertia keeps extending the cooldown, so a trackpad's tail never makes a second step
-		if (Math.abs(e.deltaY) < CFG.wheelMin || since < CFG.wheelCooldownMs) return;
-		stepBy(e.deltaY > 0 ? 1 : -1);
+		wheelStep(e);
 	};
 
 	// ── the scroll position: when the stage takes the page, and what it does to a jump while it has it ──
@@ -305,6 +311,7 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 
 	return {
 		goTo(k) { if (on) { idx = clamp(k, 0, n); tweenTo(idx); } },
+		step(dir) { if (free()) stepBy(dir); },
 		holding: () => on || gliding,
 		destroy() {
 			stopTween(); stopGlide();

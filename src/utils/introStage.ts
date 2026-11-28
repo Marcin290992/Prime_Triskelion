@@ -13,6 +13,8 @@
 //
 // Only the mechanism lives here: looks (fonts, colours, markup) stay with the sections. Everything tunable is in CFG.
 
+import { createWheelGesture } from './wheelGesture';
+
 export const CFG = {
 	// motion
 	tempo: 0.5,           // speed of a step relative to the page's Lenis (1 = its own lerp)
@@ -37,8 +39,6 @@ export const CFG = {
 	captureAfter: 6,      // px  a drag on a button / link captures the pointer only after this
 	clickBlock: 8,        // px  a drag longer than this blocks the click that follows ...
 	clickBlockMs: 350,    // ms  ... for this long
-	wheelMin: 8,          // smallest wheel delta that counts as a gesture (an iPad with a trackpad)
-	wheelCooldownMs: 700, // ms  one wheel gesture = one step; a trackpad's inertia tail extends this
 	// gate: input waits for the hero's text to land
 	introGraceMs: 600,    // ms  at least this long after the stage started (the text's own fade-in must not be fought)
 	introGateMs: 2500,    // ms  at most this long
@@ -341,15 +341,12 @@ export function initIntroStage(): (() => void) | null {
 		settle(n);
 	};
 	const onClick = (e: MouseEvent) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); } };
-	// a wheel / trackpad on a touch-class device (an iPad with a trackpad)
-	let lastWheel = 0;
+	// a wheel / trackpad (an iPad with a trackpad, a narrow window with a mouse): one gesture = one step
+	const wheelStep = createWheelGesture((dir) => goTo(idx + dir));
 	const onWheel = (e: WheelEvent) => {
 		if (!free()) return;
 		e.preventDefault();
-		const now = performance.now(), since = now - lastWheel;
-		lastWheel = now;   // inertia keeps extending the cooldown, so a trackpad's tail never makes a second step
-		if (Math.abs(e.deltaY) < CFG.wheelMin || since < CFG.wheelCooldownMs) return;
-		goTo(idx + (e.deltaY > 0 ? 1 : -1));
+		wheelStep(e);
 	};
 	const onResize = () => { measure(); render(); };
 
