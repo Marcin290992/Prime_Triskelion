@@ -106,6 +106,7 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 
 	// ── the light ──
 	const show = (v: number) => { P = v; setPos(v); };
+	let syncWaits = false;   // the page handed the light back while it was still moving: it takes it when it has landed
 	const tweenTo = (target: number) => {
 		cancelAnimationFrame(tweenRaf);
 		const from = P, t0 = performance.now();
@@ -114,7 +115,9 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		const tick = (now: number) => {
 			const t = Math.min(1, (now - t0) / ms);
 			show(from + (target - from) * inOutSine(t));
-			tweenRaf = t < 1 ? requestAnimationFrame(tick) : 0;
+			if (t < 1) { tweenRaf = requestAnimationFrame(tick); return; }
+			tweenRaf = 0;
+			if (syncWaits && !on && !gliding) { syncWaits = false; syncFromScroll(); }
 		};
 		tweenRaf = requestAnimationFrame(tick);
 	};
@@ -140,7 +143,7 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		clearTimeout(glideTimer);
 		gliding = false;
 		lastY = window.scrollY;
-		syncFromScroll();
+		if (tweenRaf) syncWaits = true; else syncFromScroll();
 	};
 
 	// ── taking and handing over the page ──
@@ -157,7 +160,6 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 	};
 	// 1 = on past the last picture to the panel, -1 = back up past the title
 	const leave = (dir: 1 | -1) => {
-		stopTween();
 		on = false; lock(false);            // the stage lets go; Lenis stays stopped, the glide owns it until it ends
 		gliding = true;
 		glideTimer = window.setTimeout(endGlide, CFG.glideFailsafeMs);
@@ -209,9 +211,11 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 
 	const onDown = (e: PointerEvent) => {
 		if (!free() || e.pointerType === 'mouse') return;
-		stopTween();
 		const now = performance.now();
-		drag = { y: e.clientY, ly: e.clientY, id: e.pointerId, moved: 0, p0: P, cap: false, hist: [[now, e.clientY]] };
+		// A step that is running keeps running: the touch only becomes a drag (the light following the finger) when it starts
+		// from rest. Stopping the step at the touch left the light standing still until the finger moved (and, with quick
+		// flicks one after another, for most of the time).
+		drag = { y: e.clientY, ly: e.clientY, id: e.pointerId, moved: 0, p0: P, cap: false, hist: [[now, e.clientY]], stepping: tweenRaf !== 0 };
 		if (!(e.target as HTMLElement).closest('button,a')) capture(e);   // taps on the name / Explore must still click
 	};
 	const onMove = (e: PointerEvent) => {
@@ -223,6 +227,8 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		const d = e.clientY - drag.y;
 		drag.moved = Math.max(drag.moved, Math.abs(d));
 		if (!drag.cap && drag.moved > CFG.captureAfter) capture(e);
+		if (drag.stepping) return;   // the step that was running goes on; this gesture decides the next one when it ends
+		stopTween();
 		let q = drag.p0 - d / (vh() * CFG.dragSpan);
 		if (q < 0) q *= CFG.edgeResist; else if (q > n) q = n + (q - n) * CFG.edgeResist;
 		show(q);   // the light follows the finger; on release it settles on a picture
@@ -234,12 +240,13 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		const h0 = drag.hist[0];
 		const v = h0 ? (y - h0[1]) / Math.max(1, performance.now() - h0[0]) : 0;   // recent speed, px / ms
 		const dir = (Math.abs(v) > CFG.flickMin ? v : d) < 0 ? 1 : -1;
-		const moved = drag.moved;
+		const moved = drag.moved, stepping = drag.stepping;
 		drag = null;
 		try { root.releasePointerCapture(e.pointerId); } catch (_) {}
 		if (moved > CFG.clickBlock) { suppressClick = true; setTimeout(() => (suppressClick = false), CFG.clickBlockMs); }
-		if (moved <= CFG.tap) { if (Math.abs(P - idx) > 0.001) tweenTo(idx); return; }   // a tap: carry on to where it was going
+		if (moved <= CFG.tap) { if (!stepping && Math.abs(P - idx) > 0.001) tweenTo(idx); return; }   // a tap: carry on to where it was going
 		if (Math.abs(d) > vh() * CFG.commitDist || Math.abs(v) > CFG.commitSpeed) { stepBy(dir); return; }
+		if (stepping) return;               // a touch too light during a step: the step goes on
 		idx = clamp(Math.round(P), 0, n);   // a touch too light: settle back on the nearest picture
 		tweenTo(idx);
 	};

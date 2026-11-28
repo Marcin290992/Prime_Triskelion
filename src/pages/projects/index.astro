@@ -404,6 +404,8 @@ const total = String(items.length).padStart(2, '0');
 	const smooth = (v: number) => { v = clamp(v); return v * v * (3 - 2 * v); };
 	const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	// the beam of this page: one lean and side for every step (the one the third project has: a gentle lean, the light from the start)
+	const BEAM: [number, number] = [0.35, 1];
 
 	let cleanup: (() => void) | null = null;
 
@@ -440,7 +442,7 @@ const total = String(items.length).padStart(2, '0');
 		const stageMode = narrow && !reduced();   // one gesture (swipe, wheel, key) = one project
 
 		const fallback = () => root.classList.add('pj--fallback');
-		const beam = reduced() ? null : createBeamSlides(canvas, images, fallback, [0, 1], { vary: true });
+		const beam = reduced() ? null : createBeamSlides(canvas, images, fallback, [0, 1], { variant: BEAM });
 		if (!beam) fallback();
 
 		let pos = 0, active = -1;

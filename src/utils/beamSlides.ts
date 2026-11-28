@@ -136,9 +136,6 @@ void main() {
 
 interface Frame { tex: WebGLTexture; aspect: number; ready: boolean; fx: number; fy: number; }
 
-// [lean multiplier, side] for step 0, 1, 2 ... (then round again). The first is the default look.
-const VARIANTS: Array<[number, number]> = [[1, 1], [-1.5, -1], [0.35, 1], [-0.8, -1], [2, 1], [-0.45, -1]];
-
 export function createBeamSlides(
 	canvas: HTMLCanvasElement,
 	images: HTMLImageElement[],
@@ -146,8 +143,9 @@ export function createBeamSlides(
 	// where in each step (0..1) the beam starts and ends; the rest is a still
 	// frame. A wider rest gives a finger time to land on the text and the button.
 	range: [number, number] = [0.15, 0.85],
-	// vary: every step gets its own lean and side (VARIANTS), so the light never crosses twice the same way. Off: always the first.
-	options: { vary?: boolean } = {},
+	// variant: [lean multiplier, side] of the beam, the same for every step. The multiplier's sign is the way it leans, 1 is the
+	// default look; the side is +1 (the light comes from the start of its axis) or -1 (from the other end).
+	options: { variant?: [number, number] } = {},
 ): BeamSlides | null {
 	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
 	if (!gl) return null;
@@ -266,7 +264,7 @@ export function createBeamSlides(
 		gl!.uniform1f(U.uToAspect, b.ready ? b.aspect : 1);
 		gl!.uniform2f(U.uFromFocus, a.ready ? a.fx : 0.5, a.ready ? a.fy : 0.4);
 		gl!.uniform2f(U.uToFocus, b.ready ? b.fx : 0.5, b.ready ? b.fy : 0.4);
-		const [tilt, flip] = options.vary ? VARIANTS[i % VARIANTS.length] : VARIANTS[0];
+		const [tilt, flip] = options.variant ?? [1, 1];
 		gl!.uniform1f(U.uTilt, tilt);
 		gl!.uniform1f(U.uFlip, flip);
 		gl!.uniform1f(U.uP, p);
