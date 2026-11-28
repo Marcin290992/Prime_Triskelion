@@ -734,24 +734,6 @@ function initOxygenMenu() {
   }
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // Phones and tablets, home page: the opening (hero, then the manifesto) is a stage of steps (introStage.ts) that holds the
-  // scroll at 0, so no scroll event ever reaches the chip while it plays. The stage reports its position instead and it is
-  // read as a scroll: the hero is the top of the page (chip full size, MENU), the manifesto is scrolled (chip shrunk, the
-  // bar swapped for the contact icon); the way back to the hero grows it again.
-  function onStage(e: Event) {
-    if (!isMobile || state.isMenuOpen) return;
-    const pos = (e as CustomEvent<number>).detail;
-    const shrink = Math.min(1, Math.max(0, pos));
-    if (Math.abs(shrink - state.menuShrink) > 0.002) {
-      state.menuShrink = shrink;
-      persistedMenuShrink = shrink;
-      if (hudMenuBtn) gsap.to(hudMenuBtn, { scale: menuScale(), duration: 0.35, ease: 'power2.out', overwrite: 'auto' });
-    }
-    const hide = pos >= 0.6 ? true : pos <= 0.4 ? false : state.barHidden;
-    if (hide !== state.barHidden) { state.barHidden = hide; setBarHidden(hide); }
-  }
-  window.addEventListener('pt:stage-pos', onStage);
-
   // ── Init ──
   // #ox-hud-mobile carries the .hud-scroll-hidden class across navigations
   // wherever the browser/Astro happens to preserve it (bfcache restore,
@@ -840,7 +822,6 @@ function initOxygenMenu() {
     }
     if (state.timeInterval) clearInterval(state.timeInterval);
     window.removeEventListener('scroll', onScroll);
-    window.removeEventListener('pt:stage-pos', onStage);
     window.removeEventListener('pageshow', onPageShow);
     document.removeEventListener('keydown', onKeyDown);
     // menuSpecular is intentionally NOT destroyed here — see above.

@@ -145,11 +145,8 @@ export function initIntroStage(): (() => void) | null {
 		rays.style.filter = level < 0.999 ? `brightness(${level.toFixed(3)})` : '';
 	};
 
-	// The page's chrome reads the stage as a scroll: hero = the top of the page, manifesto = scrolled (see oxygenMenu.ts)
-	let lastStagePos = -1;
 	function render() {
 		const v = S.pos;
-		if (Math.abs(v - lastStagePos) > 0.002) { lastStagePos = v; window.dispatchEvent(new CustomEvent('pt:stage-pos', { detail: v })); }
 
 		// the hero's light goes out first, then the blur and the veil take what is left
 		const p = clamp(v, 0, 1);
