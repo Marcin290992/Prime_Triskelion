@@ -929,7 +929,7 @@ const [line1, line2] = d.titleLines;
     trigger: Element,
     end: string,
     opts: { slow: number; fast: number; onPhase?: (phase: ClockPhase) => void },
-  ) {
+  ): { schedule: (ms: number) => void } {
     tl.paused(true);
     const lenisOf = () => (window as any).__lenis as { stop: () => void; start: () => void; scrollTo: (y: number, o?: object) => void; isStopped: boolean } | undefined;
     const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
@@ -1030,7 +1030,15 @@ const [line1, line2] = d.titleLines;
     window.addEventListener('keydown', onKey, { capture: true });
     window.addEventListener('touchstart', onTouchStart, cap);
     window.addEventListener('touchmove', onTouchMove, cap);
+    // Starts the sequence by itself after `ms` unless the visitor has already pushed (or is mid-sequence, or the menu is
+    // open): nobody has to scroll to see the picture and the copy.
+    let autoTimer = 0;
+    const schedule = (ms: number) => {
+      window.clearTimeout(autoTimer);
+      autoTimer = window.setTimeout(() => { if (phase === 'start' && atStart()) playIn(); }, ms);
+    };
     _cinOff = () => {
+      window.clearTimeout(autoTimer);
       window.removeEventListener('wheel', onWheel, cap);
       window.removeEventListener('keydown', onKey, { capture: true });
       window.removeEventListener('touchstart', onTouchStart, cap);
@@ -1039,6 +1047,7 @@ const [line1, line2] = d.titleLines;
       tl.eventCallback('onReverseComplete', null);
       release();
     };
+    return { schedule };
   }
 
   // ── Desktop: cinematic pinned animation ──
@@ -1065,6 +1074,15 @@ const [line1, line2] = d.titleLines;
     _beam = beam;
     if (beam && heroImg) heroImg.style.visibility = 'hidden';   // the canvas stands in for it
     const beamProxy = { p: 0 };
+    // Coming from the projects slider, the beam has already swept this picture in: it is simply there, and only the copy
+    // comes in (no second beam). The slider leaves the flag for one arrival.
+    let fromSlider = false;
+    try { fromSlider = sessionStorage.getItem('pt-from-slider') === '1'; sessionStorage.removeItem('pt-from-slider'); } catch { /* private mode */ }
+    if (fromSlider) {
+      gsap.set(image, { opacity: 1, scale: 1.06, yPercent: 0 });
+      beamProxy.p = 1;
+      beam?.setProgress(1);
+    }
     if (bottomEls.length) gsap.set(bottomEls, { opacity: 0, y: 28, filter: 'blur(8px)' });
 
     // The title goes out where it stands, the way the home hero does: it goes
@@ -1073,32 +1091,50 @@ const [line1, line2] = d.titleLines;
     // after it. It plays on the CLOCK, like the hero's exit on Projects and Services: the first push down starts it
     // and the page waits until the picture is in and the copy sharp; then the scroll carries on. Pushing up from
     // just below plays it back. (With reduced motion it is the plain scrubbed version.)
-    const tl = gsap.timeline({ defaults: { ease: 'none' } })
-      .to([wordL, wordR], { filter: 'blur(12px)', duration: 0.6, ease: 'sine.in' }, 0)
-      .to([wordL, wordR], { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25)
-      // The picture starts only once the title is nearly gone and fades up slowly;
-      // scale/shift run longer than the fade, so it never pops in over the title.
-      .to(image, { scale: 1.06, yPercent: 0, ease: 'sine.out', duration: 1.5 }, 0.8);
+    // The two big words only repeat the title that the copy below already carries, and cost about three seconds before
+    // anything else could happen: off (set true to bring the old opening back).
+    const BIG_WORDS = false;
+    const t0 = BIG_WORDS ? 0.8 : 0;   // where the picture starts
+    const tl = gsap.timeline({ defaults: { ease: 'none' } });
+    if (BIG_WORDS) {
+      tl.to([wordL, wordR], { filter: 'blur(12px)', duration: 0.6, ease: 'sine.in' }, 0)
+        .to([wordL, wordR], { opacity: 0, duration: 0.6, ease: 'sine.inOut' }, 0.25);
+    } else {
+      section.querySelector<HTMLElement>('.wos-cin__texts')?.style.setProperty('display', 'none');
+    }
+    // The picture starts only once the title is nearly gone and fades up slowly;
+    // scale/shift run longer than the fade, so it never pops in over the title.
+    if (!fromSlider) tl.to(image, { scale: 1.06, yPercent: 0, ease: 'sine.out', duration: 1.5 }, t0);
     // The picture comes in on a band of light sweeping over it (WebGL). With
     // no WebGL it simply fades up, as before.
-    if (beam) {
+    if (fromSlider) {
+      /* the picture is already in place */
+    } else if (beam) {
       // the box itself (grid lines, mask) shows only once the beam starts
-      tl.fromTo(image, { opacity: 0 }, { opacity: 1, duration: 0.05, ease: 'none', immediateRender: false }, 0.84)
-        .fromTo(beamProxy, { p: 0 }, { p: 1, duration: 1.3, ease: 'power1.inOut', immediateRender: false, onUpdate: () => beam.setProgress(beamProxy.p) }, 0.85);
+      tl.fromTo(image, { opacity: 0 }, { opacity: 1, duration: 0.05, ease: 'none', immediateRender: false }, t0 + 0.04)
+        .fromTo(beamProxy, { p: 0 }, { p: 1, duration: 1.3, ease: 'power1.inOut', immediateRender: false, onUpdate: () => beam.setProgress(beamProxy.p) }, t0 + 0.05);
     } else {
-      tl.to(image, { opacity: 1, ease: 'power1.inOut', duration: 1.1 }, 0.85);
+      tl.to(image, { opacity: 1, ease: 'power1.inOut', duration: 1.1 }, t0 + 0.05);
     }
 
     if (bottomEls.length) {
       tl.to(bottomEls, {
         opacity: 1, y: 0, filter: 'blur(0px)',
         stagger: 0.12, duration: 0.6, ease: 'sine.out',
-      }, 1.6);
+      }, fromSlider ? 0.1 : t0 + 0.8);
     }
 
     // Entrance: the word split focus-pulls in like every other page title.
     const words = section.querySelectorAll<HTMLElement>('.wos-cin__w');
-    afterPageTransition(() => { titleIn(gsap.timeline(), words); });
+    // After the title has come in and had a moment to be read, the sequence plays by itself (no scroll needed); a push
+    // down before that starts it at once.
+    const AUTO_MS = BIG_WORDS ? 1500 : 250;
+    let clock: { schedule: (ms: number) => void } | null = null;
+    let autoWaiting = false;
+    afterPageTransition(() => {
+      if (BIG_WORDS) titleIn(gsap.timeline(), words);
+      if (clock) clock.schedule(AUTO_MS); else autoWaiting = true;
+    });
 
     watchMenu();
     watchGesture();
@@ -1110,7 +1146,12 @@ const [line1, line2] = d.titleLines;
     }
 
     // The picture and the copy come in on the clock (see playOnClock).
-    playOnClock(tl, section, '+=110%', { slow: 0.85, fast: 1.1 });
+    // The opening plays in full the first time in a visit; every later case study gets a quick version (about 0.8 s)
+    // so nobody has to sit through it again.
+    let seen = false;
+    try { seen = sessionStorage.getItem('pt-case-intro') === '1'; sessionStorage.setItem('pt-case-intro', '1'); } catch { /* private mode */ }
+    clock = playOnClock(tl, section, '+=110%', { slow: seen ? 2.5 : 0.85, fast: 1.1 });
+    if (autoWaiting) clock.schedule(AUTO_MS);
   }
 
 
