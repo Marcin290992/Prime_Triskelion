@@ -136,7 +136,11 @@ function initOxygenMenu() {
     (window as any).__oxygenMenuCleanup();
   }
 
-  const menuScale = () => 1 - state.menuShrink * (1 - MENU_SHRINK_SCALE);
+  // The Projects slider never scrolls (the page is locked), so the chip is always full size there: arriving from a page
+  // where it had shrunk (a case study scrolled down and back) it grows back at once instead of staying small.
+  const fullSizeHere = () => !!document.getElementById('pz-page');
+  if (fullSizeHere()) { state.menuShrink = 0; persistedMenuShrink = 0; }
+  const menuScale = () => (fullSizeHere() ? 1 : 1 - state.menuShrink * (1 - MENU_SHRINK_SCALE));
 
   function getLenis() {
     return (window as any).__lenis;

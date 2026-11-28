@@ -154,6 +154,7 @@ const slides = await Promise.all(
 	import { createBeamSlides } from '../../utils/beamSlides';
 
 	let cleanup: (() => void) | null = null;
+	let pauseNow: (() => void) | null = null;
 
 	// the Zen Obasi defaults (Slider.jsx), unchanged except the grain a touch calmer
 	const CONFIG = {
@@ -167,7 +168,7 @@ const slides = await Promise.all(
 		panorama: { radius: 1, side: -1, scale: 1, speedRadius: 0.5 },
 		scene: { streak: 0.025, rgbShift: 0.025, parallax: 0.025, shading: 0.25, backside: 0.4, fogDepth: 8, fogStrength: 0.85, nearFade: 1.5 },
 		edges: { blur: { tablet: 0.02, desktop: 0.035 }, aberration: { tablet: 0.01, desktop: 0.035 }, zone: 0.35, shimmer: 0.0075, shimmerScale: 10, shimmerSpeed: 5, shimmerZone: 0.25 },
-		fluid: { brushSize: 25, brushStrength: 0.5, distortion: 120, decay: 0.98, trail: 0.8, stopDecay: 0.85, resolution: matchMedia('(pointer: coarse)').matches ? 0.25 : 0.5 },
+		fluid: { brushSize: 25, brushStrength: 0.5, distortion: 120, decay: 0.98, trail: 0.8, stopDecay: 0.85, resolution: matchMedia('(pointer: coarse)').matches ? 0.25 : 0.5, still: matchMedia('(pointer: coarse)').matches },
 		grain: { amount: 0.11, blend: 0.1 },
 		pointer: { parallax: 0.5, vertical: 0.6, image: 0.008, ease: 3 },
 		expand: { duration: 1.2, ease: 'power4.inOut', zoom: 1.4, skip: true },
@@ -195,6 +196,7 @@ const slides = await Promise.all(
 		document.documentElement.classList.add('pz-lock');
 
 		let beam: ReturnType<typeof createBeamSlides> = null;
+		const touch = matchMedia('(pointer: coarse)').matches;
 
 		// Opening a card: the card has grown to the whole screen; our beam of light then sweeps that same picture in, and the
 		// project page follows (a placeholder with no page stays on the beam until Back).
@@ -203,12 +205,15 @@ const slides = await Promise.all(
 			const el = new Image();
 			el.src = img;
 			await el.decode().catch(() => {});
+			// the ribbon is going out and the beam takes over: stop drawing the ribbon (on a phone two WebGL scenes at once, and
+			// a CSS blur over a full-screen canvas, starved the compositor: the menu's beam stuttered)
+			if (href) engine.pause();   // (a placeholder with no page stays here: the ribbon must still be there on Back)
 			beam?.destroy();
 			beam = createBeamSlides(beamCanvas, [el], undefined, [0, 1], { variant: [0.35, 1] });
 			// B: no growing card. The ribbon and its text go out in blur and the dark, our light sweeps the project's picture in
 			// full screen, and the page follows with the picture already in place.
 			host.style.pointerEvents = 'none';
-			gsap.to(host, { opacity: 0, filter: 'blur(14px)', duration: 0.45, ease: 'sine.inOut' });
+			gsap.to(host, touch ? { opacity: 0, duration: 0.45, ease: 'sine.inOut' } : { opacity: 0, filter: 'blur(14px)', duration: 0.45, ease: 'sine.inOut' });
 			gsap.to(info, { opacity: 0, duration: 0.3 });
 			gsap.fromTo(beamCanvas, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: 'sine.inOut' });
 			const pos = { v: 0 };
@@ -265,8 +270,12 @@ const slides = await Promise.all(
 			onOpen: openProject,
 		});
 
+		pauseNow = () => engine.pause();
 		cleanup = () => {
-			engine.dispose();
+			// Stop at once (no drawing, no listeners); the heavy teardown (textures, render targets, forcing the context to
+			// go) waits until the page swap is over, so it does not sit in the middle of the transition.
+			engine.pause();
+			window.setTimeout(() => engine.dispose(), 600);
 			mo.disconnect();
 			beam?.destroy();
 			gsap.killTweensOf([beamCanvas, host, info]);
@@ -276,5 +285,8 @@ const slides = await Promise.all(
 	}
 
 	document.addEventListener('astro:page-load', () => { cleanup?.(); cleanup = null; init(); });
-	document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = null; });
+	// On a touch screen the ribbon stops drawing the moment a navigation starts (before the next page is even fetched), so the
+	// GPU is free for the page transition and the menu's beam.
+	document.addEventListener('astro:before-preparation', () => { if (matchMedia('(pointer: coarse)').matches) pauseNow?.(); });
+	document.addEventListener('astro:before-swap', () => { cleanup?.(); cleanup = null; pauseNow = null; });
 </script>

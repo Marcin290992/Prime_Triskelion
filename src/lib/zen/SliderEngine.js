@@ -153,6 +153,11 @@ export class SliderEngine {
     this.#engine = mount(container, config, options);
   }
 
+  // Stops drawing and listening at once (the heavy teardown can follow later, in dispose()).
+  pause() {
+    this.#engine.pause?.();
+  }
+
   dispose() {
     this.#engine.dispose();
   }
@@ -169,7 +174,7 @@ function mount(container, config, { slides, titleElement, counterElement, onExpa
       powerPreference: "high-performance",
     });
   } catch {
-    return { dispose() {} };
+    return { pause() {}, dispose() {} };
   }
   const controller = new AbortController();
   const { signal } = controller;
@@ -696,6 +701,7 @@ function mount(container, config, { slides, titleElement, counterElement, onExpa
   }
 
   let fluidPrevious = null;
+  let fluidDrawn = false;
   let grainFrame = 0;
 
   function renderPasses() {
@@ -711,7 +717,11 @@ function mount(container, config, { slides, titleElement, counterElement, onExpa
     fluidUniforms.uMouseActive.value = active ? 1 : 0;
     if (active) fluidUniforms.uMouse.value.set(...position, ...fluidPrevious);
     fluidPrevious = position;
-    uniforms.uFluid.value = fluidPass.render(renderer);
+    // (config.fluid.still: a touch screen has no pointer to pull the fluid, so it is drawn once and left alone)
+    if (!(config.fluid.still && fluidDrawn)) {
+      uniforms.uFluid.value = fluidPass.render(renderer);
+      fluidDrawn = true;
+    }
 
     const grainUniforms = grainPass.uniforms;
     grainUniforms.uTime.value = uniforms.uTime.value;
@@ -776,6 +786,10 @@ function mount(container, config, { slides, titleElement, counterElement, onExpa
   });
 
   return {
+    pause() {
+      controller.abort();
+      renderer.setAnimationLoop(null);
+    },
     dispose() {
       controller.abort();
       renderer.setAnimationLoop(null);
