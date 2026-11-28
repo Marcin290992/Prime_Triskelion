@@ -816,49 +816,32 @@ const [line1, line2] = d.titleLines;
     menuHold = false;
   });
 
-  // ── Mobile/tablet: the title alone on black, laid over the panel (one pinned screen).
-  // Scrolling blurs the title away, and the panel comes up out of blur in the same place ──
+  // ── Mobile/tablet: no splash screen. The title alone on black, pinned for a screen of scroll, only repeated the name
+  // the panel carries and made the visitor scroll before anything showed. Now the panel comes up out of blur by itself
+  // as the page arrives (on the clock, a beat after the page transition), and the tab timer starts when it is in. ──
   function initSplash() {
     const stage = document.getElementById('wos-stage');
-    const splash = stage?.querySelector<HTMLElement>('.wos-splash');
-    const title = stage?.querySelector<HTMLElement>('.wos-splash__title');
-    if (!stage || !splash || !title) return;
+    if (!stage) return;
+    stage.querySelector<HTMLElement>('.wos-splash')?.style.setProperty('display', 'none');
+    try { sessionStorage.removeItem('pt-from-slider'); } catch { /* private mode */ }   // (only the desktop hero uses it)
 
-    const mode = subpageMode();
-    if (mode === 'none' || reducedMotion()) gsap.set(title, { opacity: 1 });
-    else {
-      gsap.set(title, { opacity: 0, y: 10, filter: 'blur(8px)' });
-      afterPageTransition(() => {
-        gsap.to(title, { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.65, ease: 'power3.out', delay: 0.18 });
-      });
-    }
-    if (reducedMotion()) { splash.style.display = 'none'; return; }
-
-    const items = stage.querySelectorAll<HTMLElement>('.wos-pd__topbar, .wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs, .wos-pd__actions');
-    gsap.set(items, { opacity: 0, filter: 'blur(12px)' });
-
-    // The tab timer may run only once the panel is fully out of blur (pin finished).
+    // The tab timer may run only once the panel is fully out of blur.
     const gate = (on: boolean) => {
       if ((window as any).__wosTabsGate === on) return;
       (window as any).__wosTabsGate = on;
       document.dispatchEvent(new CustomEvent('wos:tabs-gate', { detail: on }));
     };
-    (window as any).__wosTabsGate = false;
+    const items = stage.querySelectorAll<HTMLElement>('.wos-pd__topbar, .wos-pd__meta, .wos-pd__title, .wos-pd__sub, .wos-pd__cats, .wos-pd__tabs, .wos-pd__actions');
+    if (reducedMotion() || subpageMode() === 'none') { gsap.set(items, { opacity: 1, filter: 'none' }); return; }
 
-    gsap.timeline({
-      defaults: { ease: 'none' },
-      scrollTrigger: {
-        trigger: stage, start: 'top top', end: '+=90%', scrub: 0.6, pin: true, invalidateOnRefresh: true,
-        onUpdate: (self) => gate(self.progress >= 0.995),
-      },
-    })
-      // Explicit start values: the entrance tween above is still running when this
-      // is built, so a plain .to() would remember its blurred start and scroll back
-      // to that blur instead of to a sharp title.
-      .fromTo(title, { filter: 'blur(0px)' }, { filter: 'blur(16px)', duration: 0.5, ease: 'sine.in', immediateRender: false }, 0)
-      .fromTo(title, { opacity: 1 }, { opacity: 0, duration: 0.5, ease: 'sine.inOut', immediateRender: false }, 0.2)
-      .to(splash, { opacity: 0, duration: 0.4 }, 0.55)
-      .to(items, { opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.5, ease: 'sine.out' }, 0.6);
+    gsap.set(items, { opacity: 0, filter: 'blur(12px)' });
+    (window as any).__wosTabsGate = false;
+    afterPageTransition(() => {
+      gsap.to(items, {
+        opacity: 1, filter: 'blur(0px)', stagger: 0.1, duration: 0.6, ease: 'sine.out', delay: 0.15,
+        onComplete: () => gate(true),
+      });
+    });
   }
 
   // ── Project detail: tabs that switch on their own (timer line under the active

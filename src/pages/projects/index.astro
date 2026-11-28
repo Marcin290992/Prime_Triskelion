@@ -82,9 +82,15 @@ const slides = await Promise.all(
 		content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 13rem; z-index: -1; pointer-events: none;
 		background: linear-gradient(0deg, rgb(0 0 0 / 0.7) 0%, rgb(0 0 0 / 0.32) 45%, transparent 100%);
 	}
-	.pz-left { display: grid; gap: 0.45rem; min-width: 0; }
+	.pz-left { position: relative; display: grid; gap: 0.45rem; min-width: 0; }
+	/* a dark pool right behind the name and the line: they sit over the bright, grainy neighbour card, and the red line
+	   in particular does not hold there without it */
+	.pz-left::before {
+		content: ''; position: absolute; z-index: -1; pointer-events: none; inset: -3.6rem -6rem -3rem -4.5rem;
+		background: radial-gradient(ellipse closest-side at 50% 52%, rgb(0 0 0 / 0.9) 0%, rgb(0 0 0 / 0.7) 40%, rgb(0 0 0 / 0.3) 72%, transparent 100%);
+	}
 	.pz-meta {
-		margin: 0; font-size: 0.68rem; font-weight: 400; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(var(--c-red));
+		margin: 0; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: rgb(var(--c-red));
 	}
 	.pz-title {
 		margin: 0; font-family: var(--f-display); font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; line-height: 0.92;
