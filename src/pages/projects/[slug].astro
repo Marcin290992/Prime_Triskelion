@@ -534,6 +534,16 @@ const [line1, line2] = d.titleLines;
   }
   .wos-pd__img.is-in { opacity: 1; transform: none; }
   .wos-pd__img.is-in :global(img) { transform: none; }
+  /* Desktop: parallax. The picture is 20% taller than its frame and drifts inside it as the page scrolls past (slower than
+     the page); --py is set by initGalleryParallax. `translate` is its own property, so the reveal above (transform) is
+     untouched. */
+  @media (min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .wos-pd__img :global(img) {
+      position: absolute; left: 0; top: -10%; width: 100%; height: 120%;
+      translate: 0 calc(var(--py, 0) * 1%);
+      will-change: translate;
+    }
+  }
 
   .wos-pd__next {
     display: flex; flex-direction: column; gap: 0.6rem; margin-top: 2rem;
@@ -762,6 +772,7 @@ const [line1, line2] = d.titleLines;
   import { isSafari } from '../../utils/isSafari';
   import { initBeamReveal, type BeamReveal } from '../../utils/beamReveal';
   import { afterPageTransition, revealAfterHero, titleIn, subpageMode, reducedMotion, syncTickerToScroll } from '../../utils/afterPageTransition';
+  import { ImageFluidEngine } from '../../lib/zen/ImageFluidEngine.js';
 
   gsap.registerPlugin(ScrollTrigger);
 
@@ -769,51 +780,11 @@ const [line1, line2] = d.titleLines;
   let _beam: BeamReveal | null = null;
   let _cinOff: (() => void) | null = null;
 
-  // While the menu is open, and for a moment after it closes, the hero's snap must
-  // not act: the menu stops Lenis and puts the scroll back with an immediate
-  // scrollTo on closing, which ScrollTrigger reads as a short scroll backwards and
-  // answered by snapping the hero back to the title.
-  let menuHold = false;
-  // The snap only acts after a real gesture (wheel, touch, key). Without this, the
-  // scroll the page makes by itself on arrival (reset / restore) stopped somewhere
-  // inside the sequence and the snap carried the page on by itself.
-  let userGesture = false;
-  const _gestureEvents = ['wheel', 'touchstart', 'keydown', 'pointerdown'] as const;
-  function onGesture() { userGesture = true; }
-  function watchGesture() {
-    userGesture = false;
-    _gestureEvents.forEach((e) => window.addEventListener(e, onGesture, { passive: true }));
-  }
-  function unwatchGesture() {
-    _gestureEvents.forEach((e) => window.removeEventListener(e, onGesture));
-  }
-  let _menuHoldTimer = 0;
-  let _menuObserver: MutationObserver | null = null;
-  function watchMenu() {
-    _menuObserver?.disconnect();
-    window.clearTimeout(_menuHoldTimer);
-    menuHold = document.body.classList.contains('oxygen-menu-open');
-    let wasOpen = menuHold;
-    _menuObserver = new MutationObserver(() => {
-      const open = document.body.classList.contains('oxygen-menu-open');
-      if (open === wasOpen) return;
-      wasOpen = open;
-      window.clearTimeout(_menuHoldTimer);
-      if (open) menuHold = true;
-      else _menuHoldTimer = window.setTimeout(() => { menuHold = false; }, 1200);
-    });
-    _menuObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  }
   document.addEventListener('astro:before-swap', () => {
-    unwatchGesture();
     _cinOff?.();
     _cinOff = null;
     _beam?.destroy();
     _beam = null;
-    _menuObserver?.disconnect();
-    _menuObserver = null;
-    window.clearTimeout(_menuHoldTimer);
-    menuHold = false;
   });
 
   // ── Mobile/tablet: no splash screen. The title alone on black, pinned for a screen of scroll, only repeated the name
@@ -842,6 +813,51 @@ const [line1, line2] = d.titleLines;
         onComplete: () => gate(true),
       });
     });
+  }
+
+  // ── Desktop: the gallery pictures drift inside their frames (parallax). Each frame's progress through the screen
+  // (-1 just coming in at the bottom .. 1 leaving at the top) becomes --py, the picture's offset in % of its own height
+  // (the picture is 20% taller than the frame, so +-8 stays inside the 10% overscan). Only frames on screen are updated. ──
+  function initGalleryParallax() {
+    if (!window.matchMedia('(min-width: 1025px) and (hover: hover) and (prefers-reduced-motion: no-preference)').matches) return;
+    const frames = Array.from(document.querySelectorAll<HTMLElement>('.wos-pd__img'));
+    if (!frames.length) return;
+    const visible = new Set<HTMLElement>();
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (e.isIntersecting) visible.add(e.target as HTMLElement); else visible.delete(e.target as HTMLElement);
+      onScroll();
+    }), { rootMargin: '20% 0px' });
+    frames.forEach((f) => io.observe(f));
+
+    const MAX = 8;
+    let ticking = false;
+    const update = () => {
+      ticking = false;
+      const vh = window.innerHeight;
+      visible.forEach((f) => {
+        const r = f.getBoundingClientRect();
+        const p = ((r.top + r.height / 2) - vh / 2) / (vh / 2 + r.height / 2);   // 1 below the screen .. -1 above it
+        f.style.setProperty('--py', (Math.max(-1, Math.min(1, p)) * -MAX).toFixed(2));
+      });
+    };
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    update();
+
+    // The pictures are drawn on a canvas (WebGL) with a fluid the pointer pulls through them, and a little film grain; a
+    // frame draws only while it is on screen. One context per frame (a handful on this page).
+    const engines = frames.map((f) => new ImageFluidEngine(f, {
+      maxPixelRatio: 2,
+      fluid: { brushSize: 25, brushStrength: 0.5, distortion: 120, decay: 0.98, trail: 0.8, stopDecay: 0.85, resolution: 0.5 },
+      grain: { amount: 0.1, blend: 0.1 },
+    }));
+    document.addEventListener('astro:before-swap', () => {
+      engines.forEach((en) => en.dispose());
+      io.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    }, { once: true });
   }
 
   // ── Project detail: tabs that switch on their own (timer line under the active
@@ -891,6 +907,8 @@ const [line1, line2] = d.titleLines;
       arm();
     }
 
+    initGalleryParallax();
+
     const imgs = Array.from(document.querySelectorAll<HTMLElement>('.wos-pd__img'));
     const io = new IntersectionObserver((entries) => entries.forEach((e) => {
       if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
@@ -899,139 +917,6 @@ const [line1, line2] = d.titleLines;
     document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
   }
 
-
-  // ── One gesture plays a whole sequence on the CLOCK ──
-  // The first push down at the top of `trigger` (wheel, key or finger) starts `tl` and the page waits until it has
-  // played through; then the scroll carries on. A push up while it stands finished, or coming back up into it from
-  // below, plays it back. The trigger is pinned for `end`; the pinned view looks the same wherever the scroll is
-  // inside the pin, so on finishing the scroll is simply carried on to the end of it. Used by the desktop hero and the
-  // phone's title screen, so both feel the same.
-  type ClockPhase = 'start' | 'playing' | 'done';
-  function playOnClock(
-    tl: gsap.core.Timeline,
-    trigger: Element,
-    end: string,
-    opts: { slow: number; fast: number; onPhase?: (phase: ClockPhase) => void },
-  ): { schedule: (ms: number) => void } {
-    tl.paused(true);
-    const lenisOf = () => (window as any).__lenis as { stop: () => void; start: () => void; scrollTo: (y: number, o?: object) => void; isStopped: boolean } | undefined;
-    const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
-    let phase: ClockPhase = 'start';   // start: the title; done: the picture and the copy
-    const setPhase = (p: ClockPhase) => { phase = p; opts.onPhase?.(p); };
-    let held = false;
-    const hold = () => { const l = lenisOf(); if (l && !l.isStopped) { l.stop(); held = true; } };
-    // (the menu has the page while it is open: it starts Lenis itself when it closes)
-    const release = () => { const l = lenisOf(); if (held) { held = false; if (l && !menuOpen()) l.start(); } };
-    const jump = (y: number) => lenisOf()?.scrollTo(y, { immediate: true, force: true });
-
-    let st: ReturnType<typeof ScrollTrigger.create>;
-    const finishIn = () => {
-      // the pinned view looks the same wherever the scroll is inside the pin: carry it on to the end of it
-      jump(st.end);
-      setPhase('done');
-      release();
-    };
-    const finishOut = () => {
-      jump(st.start);
-      setPhase('start');
-      release();
-    };
-    const playIn = () => {
-      if (phase !== 'start' || menuHold || menuOpen()) return;
-      setPhase('playing');
-      hold();
-      tl.eventCallback('onReverseComplete', null);
-      tl.eventCallback('onComplete', finishIn);
-      tl.timeScale(opts.slow).play(0);
-    };
-    const playOut = () => {
-      if (phase !== 'done' || menuHold || menuOpen()) return;
-      setPhase('playing');
-      hold();
-      jump(st.end);
-      tl.eventCallback('onComplete', null);
-      tl.eventCallback('onReverseComplete', finishOut);
-      tl.timeScale(opts.fast).reverse();
-    };
-
-    st = ScrollTrigger.create({
-      trigger,
-      start: 'top top',
-      end,
-      pin: true,
-      invalidateOnRefresh: true,
-      // arriving (reload, back/forward) already inside the pin: show the finished view at once
-      onRefresh: (self) => {
-        if (phase === 'playing') return;
-        if (self.scroll() > self.start + 4) { tl.progress(1); setPhase('done'); }
-        else { tl.progress(0); setPhase('start'); }
-      },
-      // Coming back up into the pinned view (a hard flick up from the copy) stops AT its end: the page does not fly on
-      // into the hero and play it back to the title. Going back to the title is a push of its own, made after the page
-      // has come to rest there (see onWheel: a quiet moment first).
-      onEnterBack: () => { if (phase === 'done') { armedAt = performance.now() + 600; jump(st.end); } },
-      onUpdate: (self) => {
-        // a scroll into the pin that is not a wheel or key (the scrollbar, a drag) starts it too
-        if (phase === 'start' && userGesture && self.scroll() > self.start + 24) playIn();
-        // the finished view is held at the end of the pin: the rest of a flick's momentum goes nowhere
-        else if (phase === 'done' && self.scroll() < st.end - 2 && self.scroll() > st.start + 2) jump(st.end);
-      },
-    });
-    _cinST = st;
-
-    let armedAt = 0;        // going back up into the hero is allowed only after this
-    let lastInputAt = 0;    // the last wheel / key / touch event: a push counts after a quiet moment
-    const QUIET = 350;
-    let quiet = true;       // was there a quiet moment before the event being handled?
-    const stamp = () => { const now = performance.now(); quiet = now - lastInputAt > QUIET && now >= armedAt; lastInputAt = now; };
-    const deliberate = () => quiet;
-    const atStart = () => st.scroll() <= st.start + 6;
-    const atEnd = () => st.scroll() >= st.end - 6 && st.scroll() <= st.end + 6;
-    const onWheel = (e: WheelEvent) => {
-      stamp();
-      if (phase === 'playing') return;
-      if (e.deltaY > 3 && phase === 'start' && atStart()) playIn();
-      else if (e.deltaY < -3 && phase === 'done' && atEnd() && deliberate()) playOut();
-    };
-    const onKey = (e: KeyboardEvent) => {
-      stamp();
-      if (phase === 'playing') return;
-      if (['ArrowDown', 'PageDown', ' ', 'End'].includes(e.key) && phase === 'start' && atStart()) playIn();
-      else if (['ArrowUp', 'PageUp', 'Home'].includes(e.key) && phase === 'done' && atEnd() && !e.repeat && deliberate()) playOut();
-    };
-    let ty = 0;
-    const onTouchStart = (e: TouchEvent) => { ty = e.touches[0]?.clientY ?? 0; };
-    const onTouchMove = (e: TouchEvent) => {
-      stamp();
-      if (phase === 'playing') return;
-      const dy = ty - (e.touches[0]?.clientY ?? ty);
-      if (dy > 12 && phase === 'start' && atStart()) playIn();
-      else if (dy < -12 && phase === 'done' && atEnd() && deliberate()) playOut();
-    };
-    const cap = { capture: true, passive: true } as const;
-    window.addEventListener('wheel', onWheel, cap);
-    window.addEventListener('keydown', onKey, { capture: true });
-    window.addEventListener('touchstart', onTouchStart, cap);
-    window.addEventListener('touchmove', onTouchMove, cap);
-    // Starts the sequence by itself after `ms` unless the visitor has already pushed (or is mid-sequence, or the menu is
-    // open): nobody has to scroll to see the picture and the copy.
-    let autoTimer = 0;
-    const schedule = (ms: number) => {
-      window.clearTimeout(autoTimer);
-      autoTimer = window.setTimeout(() => { if (phase === 'start' && atStart()) playIn(); }, ms);
-    };
-    _cinOff = () => {
-      window.clearTimeout(autoTimer);
-      window.removeEventListener('wheel', onWheel, cap);
-      window.removeEventListener('keydown', onKey, { capture: true });
-      window.removeEventListener('touchstart', onTouchStart, cap);
-      window.removeEventListener('touchmove', onTouchMove, cap);
-      tl.eventCallback('onComplete', null);
-      tl.eventCallback('onReverseComplete', null);
-      release();
-    };
-    return { schedule };
-  }
 
   // ── Desktop: cinematic pinned animation ──
   function initCinematic() {
@@ -1109,32 +994,20 @@ const [line1, line2] = d.titleLines;
 
     // Entrance: the word split focus-pulls in like every other page title.
     const words = section.querySelectorAll<HTMLElement>('.wos-cin__w');
-    // After the title has come in and had a moment to be read, the sequence plays by itself (no scroll needed); a push
-    // down before that starts it at once.
-    const AUTO_MS = BIG_WORDS ? 1500 : 250;
-    let clock: { schedule: (ms: number) => void } | null = null;
-    let autoWaiting = false;
-    afterPageTransition(() => {
-      if (BIG_WORDS) titleIn(gsap.timeline(), words);
-      if (clock) clock.schedule(AUTO_MS); else autoWaiting = true;
-    });
-
-    watchMenu();
-    watchGesture();
-
-    if (reducedMotion()) {
-      // plain scroll: scrubbed, nothing plays by itself
-      _cinST = ScrollTrigger.create({ trigger: section, start: 'top top', end: '+=110%', scrub: 0.8, pin: true, invalidateOnRefresh: true, animation: tl });
-      return;
-    }
-
-    // The picture and the copy come in on the clock (see playOnClock).
-    // The opening plays in full the first time in a visit; every later case study gets a quick version (about 0.8 s)
-    // so nobody has to sit through it again.
+    // The hero is one sequence on the clock: nothing is pinned and the scroll is never held. It starts by itself as the page
+    // arrives (in full the first time in a visit, quickly after that) and the content simply follows below, so scrolling up
+    // from the content just scrolls: there is no title to go back to. Arriving already scrolled, or with reduced motion,
+    // shows the finished hero at once.
     let seen = false;
     try { seen = sessionStorage.getItem('pt-case-intro') === '1'; sessionStorage.setItem('pt-case-intro', '1'); } catch { /* private mode */ }
-    clock = playOnClock(tl, section, '+=110%', { slow: seen ? 2.5 : 0.85, fast: 1.1 });
-    if (autoWaiting) clock.schedule(AUTO_MS);
+    tl.paused(true);
+    if (reducedMotion() || window.scrollY > 40) { tl.progress(1); return; }
+    let autoTimer = 0;
+    afterPageTransition(() => {
+      if (BIG_WORDS) titleIn(gsap.timeline(), words);
+      autoTimer = window.setTimeout(() => { tl.timeScale(seen ? 2.5 : 0.85).play(0); }, BIG_WORDS ? 1500 : 250);
+    });
+    _cinOff = () => window.clearTimeout(autoTimer);
   }
 
 
