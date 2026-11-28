@@ -29,7 +29,7 @@ const total = String(items.length).padStart(2, '0');
 >
 	<main id="projects-page">
 
-		<header class="proj-header" data-side-rays data-rays-pin>
+		<header class="proj-header" data-side-rays data-rays-pin data-stage-header>
 			<h1 class="proj-title">
 				<span class="proj-title__line"><span class="proj-title__word">My</span></span>
 				<span class="proj-title__line"><span class="proj-title__word"><em>Projects.</em></span></span>
@@ -56,7 +56,7 @@ const total = String(items.length).padStart(2, '0');
 							{p.live ? (
 								<a class="pj__row" href={p.href} data-case data-case-src={p.full}>
 									<span class="pj__num" data-total={total}>{p.num}</span>
-									<span class="pj__name">{p.title}</span>
+									<span class="pj__name" data-text={p.title}>{p.title}</span>
 									<span class="pj__meta">
 										<span class="pj__tags">{p.categories.join(' · ')}</span>
 										<span class="pj__year">{p.year}</span>
@@ -68,7 +68,7 @@ const total = String(items.length).padStart(2, '0');
 							) : (
 								<div class="pj__row pj__row--soon">
 									<span class="pj__num" data-total={total}>{p.num}</span>
-									<span class="pj__name">{p.title}</span>
+									<span class="pj__name" data-text={p.title}>{p.title}</span>
 									<span class="pj__meta">
 										<span class="pj__tags">{p.categories.join(' · ')}</span>
 										<span class="pj__year">{p.year}</span>
@@ -131,17 +131,13 @@ const total = String(items.length).padStart(2, '0');
 		transform: translateY(10px);
 	}
 
-	/* ── the index ── */
+	/* ── the index (shared by every layout) ── */
 	.pj {
 		position: relative;
-		height: 100vh;
-		height: 100svh;
-		min-height: 36rem;
 		background: rgb(var(--c-bg));
 	}
 	.pj__stage {
 		position: absolute;
-		inset: 0;
 		overflow: hidden;
 		background: #000;
 	}
@@ -157,46 +153,28 @@ const total = String(items.length).padStart(2, '0');
 	.pj__img { object-fit: cover; visibility: hidden; opacity: 0; }
 	.pj--fallback .pj__img { visibility: visible; }
 	.pj--fallback .pj__canvas { display: none; }
-	/* The pictures sit in the dark: dim on the side of the list, falling away to the page's black above and below, so each
-	   one comes up out of the dark and the text always has a ground. */
 	.pj__shade {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		background:
-			linear-gradient(90deg, rgb(0 0 0 / 0.82) 0%, rgb(0 0 0 / 0.5) 45%, rgb(0 0 0 / 0.12) 100%),
-			linear-gradient(180deg, rgb(var(--c-bg)) 0%, transparent 20%, transparent 68%, rgb(var(--c-bg)) 100%);
 	}
-
 	.pj__inner {
 		position: relative;
 		z-index: 2;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		padding: 0 var(--site-gutter);
 		box-sizing: border-box;
 	}
 	.pj__list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		width: min(68rem, 100%);
 	}
-	.pj__item { border-top: 1px solid rgb(var(--c-cream) / 0.14); }
-	.pj__item:last-child { border-bottom: 1px solid rgb(var(--c-cream) / 0.14); }
-
 	.pj__row {
-		display: grid;
-		grid-template-columns: 3.5rem 1fr auto;
-		align-items: baseline;
-		column-gap: 1rem;
-		padding: clamp(1rem, 2.6vh, 1.8rem) 0;
 		color: inherit;
 		text-decoration: none;
 		cursor: pointer;
 	}
 	.pj__row--soon { cursor: default; }
+	.pj__row:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.5); outline-offset: 4px; }
 
 	.pj__num {
 		font-family: var(--f-body);
@@ -209,7 +187,6 @@ const total = String(items.length).padStart(2, '0');
 	.pj__name {
 		font-family: var(--f-display);
 		font-weight: 600;
-		font-size: clamp(2.4rem, 5.2vw, 6rem);
 		line-height: 0.95;
 		letter-spacing: -0.02em;
 		text-transform: uppercase;
@@ -218,15 +195,11 @@ const total = String(items.length).padStart(2, '0');
 	}
 	.pj__meta {
 		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		gap: 0.4rem;
 		font-family: var(--f-body);
 		font-weight: 300;
 		font-size: clamp(0.7rem, 0.9vw, 0.9rem);
 		letter-spacing: 0.2em;
 		text-transform: uppercase;
-		white-space: nowrap;
 		color: rgb(var(--c-cream) / 0.4);
 		transition: color 0.6s ease;
 	}
@@ -236,32 +209,89 @@ const total = String(items.length).padStart(2, '0');
 		transition: opacity 0.5s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.pj__row.is-active .pj__num { color: rgb(var(--c-red)); }
-	.pj__row.is-active .pj__name { color: rgb(var(--c-cream)); }
 	.pj__row.is-active .pj__meta { color: rgb(var(--c-cream) / 0.85); }
 	.pj__row.is-active .pj__go { opacity: 1; transform: none; }
-	.pj__row:focus-visible { outline: 1px solid rgb(var(--c-cream) / 0.5); outline-offset: 4px; }
 
-	/* the case-study entrance grows from the active picture: this copy only gives it the rectangle (the whole screen) */
 	.pj__thumb {
 		position: fixed;
-		inset: 0;
-		width: 100%;
-		height: 100%;
 		object-fit: cover;
 		visibility: hidden;
 		pointer-events: none;
 	}
-
 	.pj__count {
 		position: absolute;
-		right: var(--site-gutter);
-		bottom: clamp(5.5rem, 12vh, 8rem);
 		margin: 0;
 		font-family: var(--f-body);
 		font-size: 0.8rem;
 		letter-spacing: 0.2em;
 		font-variant-numeric: tabular-nums;
 		color: rgb(var(--c-cream) / 0.55);
+	}
+
+	/* ── desktop: the picture of the active project on the left, the list on a clean dark ground on the right ──
+	   Nothing lies over the picture, so picture and text never compete. The picture falls away to the page's black on its
+	   inner edge, top and bottom (no frame, no shadow). To put the picture on the right: swap `left` / `right` below and in
+	   the shade's gradient. */
+	@media (min-width: 1025px) and (not ((hover: none) and (pointer: coarse))) {
+		.pj {
+			height: 100vh;
+			height: 100svh;
+			min-height: 36rem;
+		}
+		.pj__stage {
+			inset: 0 auto 0 0;
+			width: 56%;
+		}
+		.pj__shade {
+			background:
+				linear-gradient(90deg, transparent 52%, rgb(var(--c-bg)) 100%),
+				linear-gradient(180deg, rgb(var(--c-bg)) 0%, transparent 16%, transparent 80%, rgb(var(--c-bg)) 100%),
+				linear-gradient(0deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.18));
+		}
+		.pj__inner {
+			height: 100%;
+			display: flex;
+			align-items: center;
+			padding: 0 var(--site-gutter) 0 58%;
+		}
+		.pj__list { width: 100%; }
+		.pj__item { border-top: 1px solid rgb(var(--c-cream) / 0.14); }
+		.pj__item:last-child { border-bottom: 1px solid rgb(var(--c-cream) / 0.14); }
+
+		.pj__row {
+			display: grid;
+			grid-template-columns: 3rem 1fr;
+			column-gap: 0.5rem;
+			row-gap: 0.6rem;
+			align-items: baseline;
+			padding: clamp(1.1rem, 3vh, 2rem) 0;
+		}
+		.pj__num { grid-column: 1; grid-row: 1; }
+		.pj__name {
+			grid-column: 2;
+			grid-row: 1;
+			position: relative;
+			font-size: clamp(2rem, 3.4vw, 4.4rem);
+		}
+		/* the active name fills with the accent from the left */
+		.pj__name::after {
+			content: attr(data-text);
+			position: absolute;
+			inset: 0;
+			color: rgb(var(--c-red));
+			clip-path: inset(0 100% 0 0);
+			transition: clip-path 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.pj__row.is-active .pj__name::after { clip-path: inset(0 0 0 0); }
+		.pj__meta {
+			grid-column: 2;
+			grid-row: 2;
+			flex-wrap: wrap;
+			gap: 0.35rem 1.4rem;
+		}
+		/* the case-study entrance grows from the picture, which is this panel (desktop only, see pageTransitions.ts) */
+		.pj__thumb { left: 0; top: 0; width: 56vw; height: 100vh; }
+		.pj__count { right: var(--site-gutter); bottom: clamp(5.5rem, 12vh, 8rem); }
 	}
 
 	/* ── phones and tablets: one project per screen, the way Selected work is on the home page ──
@@ -277,6 +307,14 @@ const total = String(items.length).padStart(2, '0');
 			padding-bottom: 1.5rem;
 		}
 		.proj-header__lead { display: block; }
+		/* with the stage the header is step 0 of it: a layer in the pinned text layer, over the dark stage */
+		.proj-header.proj-header--staged {
+			position: absolute;
+			inset: 0;
+			height: auto;
+			z-index: 3;
+			pointer-events: none;
+		}
 
 		.pj {
 			height: calc(var(--app-stable-vh, 1svh) * 100 * var(--screens, 3));
@@ -383,13 +421,12 @@ const total = String(items.length).padStart(2, '0');
 		});
 	}
 
-	// The index. One number, `pos`, is the light between the pictures: 0 = dark, k = project k.
+	// The index. One number, `pos`, is the light between the pictures: 0 = dark (with the stage, the header), k = project k.
 	//   Desktop: the pointer (or the keyboard focus) on a row chooses the project; the light moves there on the clock.
 	//   Phones and tablets: the page is a tall zone (see the CSS). On touch the stage (utils/workStage.ts) steps it, one gesture =
 	//   one project; the scroll position only brings the stage in and out. Elsewhere (a narrow window with a mouse, reduced
 	//   motion) the scroll drives the light directly.
-	// Step 0 of the stage is the first project, so it is created for projects - 1 steps.
-	function initIndex() {
+		function initIndex() {
 		const root = document.getElementById('projects-index');
 		if (!root) return;
 		const canvas = root.querySelector<HTMLCanvasElement>('.pj__canvas')!;
@@ -403,7 +440,7 @@ const total = String(items.length).padStart(2, '0');
 		const stageMode = narrow && !reduced();   // one gesture (swipe, wheel, key) = one project
 
 		const fallback = () => root.classList.add('pj--fallback');
-		const beam = reduced() ? null : createBeamSlides(canvas, images, fallback, [0, 1]);
+		const beam = reduced() ? null : createBeamSlides(canvas, images, fallback, [0, 1], { vary: true });
 		if (!beam) fallback();
 
 		let pos = 0, active = -1;
@@ -419,7 +456,10 @@ const total = String(items.length).padStart(2, '0');
 			if (i === active) return;
 			active = i;
 			items.forEach((el, k) => el.classList.toggle('is-active', k === i));
-			rows.forEach((r, k) => { if (k === i) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
+			rows.forEach((r, k) => {
+				r.classList.toggle('is-active', k === i);   // the desktop list's highlight (the phone layout styles the item)
+				if (k === i) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current');
+			});
 			if (current) current.textContent = String(i + 1).padStart(2, '0');
 		};
 
@@ -441,11 +481,18 @@ const total = String(items.length).padStart(2, '0');
 				tweenRaf = requestAnimationFrame(tick);
 			};
 			const choose = (i: number) => { if (i !== active) { mark(i); tweenTo(i + 1); } };
+			// only a real pointer movement chooses: the page scrolling under a still cursor (a pointerenter) must not
+			let px = -1, py = -1;
 			rows.forEach((r, i) => {
-				const on = () => choose(i);
-				r.addEventListener('pointerenter', on);
-				r.addEventListener('focus', on);
-				offs.push(() => { r.removeEventListener('pointerenter', on); r.removeEventListener('focus', on); });
+				const move = (e: PointerEvent) => {
+					if (e.clientX === px && e.clientY === py) return;
+					px = e.clientX; py = e.clientY;
+					choose(i);
+				};
+				const focus = () => choose(i);
+				r.addEventListener('pointermove', move);
+				r.addEventListener('focus', focus);
+				offs.push(() => { r.removeEventListener('pointermove', move); r.removeEventListener('focus', focus); });
 			});
 			// the first picture comes up out of the dark as the index comes into view
 			const io = new IntersectionObserver((entries) => {
@@ -454,44 +501,66 @@ const total = String(items.length).padStart(2, '0');
 			io.observe(root);
 			offs.push(() => io.disconnect());
 		} else {
-			// ── phones and tablets: a tall zone, one project per step ──
-			const LEAD = 0.14, PER = 0.36, HOLD = 0.4;     // screens of scroll: the stage takes the page as soon as the zone has pinned
-			const steps = N - 1;
+			// ── phones and tablets: a tall zone, one step per gesture ──
+			// With the stage the header ("My Projects.") is step 0 of it, in the pinned layer (moved there below), and the projects
+			// are steps 1 .. N: one swipe takes the page from the header to project 1. Without it (reduced motion) the header stays
+			// where it is and the projects are steps 0 .. N - 1 of a zone that follows it.
+			const staged = stageMode;
+			const header = document.querySelector<HTMLElement>('.proj-header');
+			const inner = root.querySelector<HTMLElement>('.pj__inner')!;
+			if (staged && header) {
+				inner.prepend(header);
+				header.classList.add('proj-header--staged');
+				root.removeAttribute('data-after-hero');   // the header is inside: it must not wait for revealAfterHero
+			}
+			const first = staged ? 0 : 1;                 // the light's position at the zone's first step
+			const steps = N - first;                      // the stage's steps after step 0: staged N (the header + N projects), plain N - 1
+			const LEAD = staged ? 0 : 0.14, PER = 0.36, HOLD = 0.4;   // screens of scroll
 			const length = LEAD + PER * (steps + HOLD);
 			root.style.setProperty('--screens', String(length + 1));
 
+			// the header goes out as the first light comes in
+			const showHeader = (p: number) => {
+				if (!staged || !header) return;
+				const h = 1 - smooth(p / 0.45);
+				header.style.opacity = h.toFixed(3);
+				header.style.transform = h >= 0.999 ? '' : `translate3d(0, ${((1 - h) * -18).toFixed(1)}px, 0)`;
+				header.style.visibility = h <= 0.001 ? 'hidden' : '';
+				header.classList.toggle('rays-off', h <= 0.001);   // its light stops drawing when it is gone
+			};
+
 			// the project whose text is on screen: the one the light is going TO (at rest the one on screen)
-			let lastPos = 1, forward = true;
+			let lastPos = first, forward = true;
 			const follow = (p: number) => {
 				place(p);
+				showHeader(p);
 				if (p !== lastPos) { forward = p > lastPos; lastPos = p; }
 				const near = Math.round(p);
 				const dest = Math.abs(p - near) < 0.05 ? near : forward ? Math.ceil(p) : Math.floor(p);
-				mark(clamp(dest, 1, N) - 1);
+				mark(dest >= 1 ? Math.min(dest, N) - 1 : -1);
 			};
-			follow(1);
+			follow(first);
 
-			// outside the stage's hands the scroll position gives the light (the way it was left: above the zone the first
-			// project, below it the last); with no touch stage it is followed continuously
+			// outside the stage's hands the scroll position gives the light (the way it was left: above the zone the first step,
+			// below it the last); with no stage it is followed continuously
 			function setFrom(progress: number) {
 				if (stageObj?.holding()) return;
-				if (stageMode) { follow(progress > 0.5 ? N : 1); return; }
+				if (stageMode) { follow(progress > 0.5 ? N : first); return; }
 				follow(1 + clamp((progress * length - LEAD) / PER, 0, steps));
 			}
 			const trigger = ScrollTrigger.create({ trigger: root, start: 'top top', end: 'bottom bottom', invalidateOnRefresh: true,
 				onUpdate: (s) => setFrom(s.progress), onRefresh: (s) => setFrom(s.progress) });
 			const unit = () => (trigger.end - trigger.start) / length;
-			const stop = (k: number) => trigger.start + (LEAD + PER * k) * unit();   // where project k + 1 rests
+			const stop = (k: number) => trigger.start + (LEAD + PER * k) * unit();   // where step k rests
 
 			const attach = () => {
 				const lenis = (window as any).__lenis;
 				if (!lenis) { if (++tries < 180) waitRaf = requestAnimationFrame(attach); return; }
 				stageObj = createWorkStage({
 					n: steps, lenis, trigger, stop, unit,
-					setPos: (p) => follow(1 + p),
+					anchoredTop: staged,                      // the zone starts at the top of the page: nothing above step 0
+					setPos: (p) => follow(first + p),
 					syncFromScroll: () => setFrom(trigger.progress),
-					// the header (the page's own "hero") plays its way back; the stage does not glide the page up against it
-					leaveUp: (done) => Boolean((window as any).__ptPinHeader?.goUp(done)),
 				});
 			};
 			let tries = 0;

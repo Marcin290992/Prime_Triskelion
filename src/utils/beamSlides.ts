@@ -39,6 +39,8 @@ uniform vec2 uFromFocus;
 uniform vec2 uToFocus;
 uniform float uView;
 uniform float uP;
+uniform float uTilt;   // multiplies the beam's lean: the sign is the way it leans, 1 = the default
+uniform float uFlip;   // +1: the light sweeps from the start of the axis, -1: from the other end
 varying vec2 vUv;
 
 const float BEAM_WIDTH = 0.12;
@@ -84,7 +86,8 @@ void main() {
   bool tall = uView < 1.0;
   float along = tall ? uv.y : uv.x;
   float across = tall ? uv.x : uv.y;
-  float tilt = tall ? uView * 0.35 : 1.0;
+  along = uFlip > 0.0 ? along : 1.0 - along;
+  float tilt = (tall ? uView * 0.35 : 1.0) * uTilt;
   float x = along + (across - 0.5) * tilt;
   float reach = abs(tilt) * 0.5 + 2.5 * BEAM_WIDTH;
   float head = mix(-reach, 1.0 + reach, p);
@@ -106,7 +109,8 @@ void main() {
   float beam = (core * 1.2 + halo * 0.5) * BEAM_GAIN;
   float reveal = 1.0 - smoothstep(head - 0.12, head + 0.12, x);
 
-  vec2 n = tall ? normalize(vec2(tilt, 1.0)) : normalize(vec2(1.0, tilt));
+  float f = uFlip > 0.0 ? 1.0 : -1.0;   // the direction the sweep axis runs in uv
+  vec2 n = tall ? normalize(vec2(tilt, f)) : normalize(vec2(f, tilt));
   vec2 warp = n * d * halo * 0.08;
   float ca = core * 0.004 + halo * 0.002;
   vec2 uo = outUv + warp;
@@ -129,6 +133,9 @@ void main() {
 
 interface Frame { tex: WebGLTexture; aspect: number; ready: boolean; fx: number; fy: number; }
 
+// [lean multiplier, side] for step 0, 1, 2 ... (then round again). The first is the default look.
+const VARIANTS: Array<[number, number]> = [[1, 1], [-1.5, -1], [0.35, 1], [-0.8, -1], [2, 1], [-0.45, -1]];
+
 export function createBeamSlides(
 	canvas: HTMLCanvasElement,
 	images: HTMLImageElement[],
@@ -136,6 +143,8 @@ export function createBeamSlides(
 	// where in each step (0..1) the beam starts and ends; the rest is a still
 	// frame. A wider rest gives a finger time to land on the text and the button.
 	range: [number, number] = [0.15, 0.85],
+	// vary: every step gets its own lean and side (VARIANTS), so the light never crosses twice the same way. Off: always the first.
+	options: { vary?: boolean } = {},
 ): BeamSlides | null {
 	const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, premultipliedAlpha: false });
 	if (!gl) return null;
@@ -163,7 +172,7 @@ export function createBeamSlides(
 	const aPos = gl.getAttribLocation(prog, 'aPos');
 	gl.enableVertexAttribArray(aPos);
 	gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uFromFocus', 'uToFocus', 'uView', 'uP']
+	const U = Object.fromEntries(['uFrom', 'uTo', 'uFromAspect', 'uToAspect', 'uFromFocus', 'uToFocus', 'uView', 'uP', 'uTilt', 'uFlip']
 		.map((n) => [n, gl.getUniformLocation(prog, n)]));
 	gl.uniform1i(U.uFrom, 0);
 	gl.uniform1i(U.uTo, 1);
@@ -246,6 +255,9 @@ export function createBeamSlides(
 		gl!.uniform1f(U.uToAspect, b.ready ? b.aspect : 1);
 		gl!.uniform2f(U.uFromFocus, a.ready ? a.fx : 0.5, a.ready ? a.fy : 0.4);
 		gl!.uniform2f(U.uToFocus, b.ready ? b.fx : 0.5, b.ready ? b.fy : 0.4);
+		const [tilt, flip] = options.vary ? VARIANTS[i % VARIANTS.length] : VARIANTS[0];
+		gl!.uniform1f(U.uTilt, tilt);
+		gl!.uniform1f(U.uFlip, flip);
 		gl!.uniform1f(U.uP, p);
 		gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
 	}

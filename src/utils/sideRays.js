@@ -508,6 +508,8 @@ const LIGHT_OUT_S = 1.0; // the light going out
 const LIGHT_IN_S = 1.2;  // and coming back
 function pinHost(host) {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return null;
+  // On phones and tablets the Projects header is step 0 of the page's own stage (utils/workStage.ts), not a pinned header
+  if (host.hasAttribute('data-stage-header') && window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches) return null;
   const content = host.nextElementSibling;
   if (!content) return null;
   const maxBlur = window.matchMedia('(max-width: 1024px), (hover: none) and (pointer: coarse)').matches ? 14 : 22;
@@ -582,10 +584,10 @@ function pinHost(host) {
       .to(level, { dark: 0, duration: 0.8, ease: 'power2.inOut', onUpdate: render }, 1.8)
       .to(level, { soft: 0, duration: 0.9, ease: 'power2.out', onUpdate: render }, 1.95);
   };
-  const goUp = (done) => {
+  const goUp = () => {
     if (busy) return;
     lock();
-    tl = gsap.timeline({ onComplete: () => { unlock(); done?.(); } })
+    tl = gsap.timeline({ onComplete: unlock })
       .to(level, { soft: 1, duration: 0.45, ease: 'power2.out', onUpdate: render }, 0)
       .to(level, { dark: 1, duration: 0.55, ease: 'power2.inOut', onUpdate: render }, 0.1)
       .call(() => { jump(0); heldY = 0; setLight(true); }, null, 0.75)
@@ -635,11 +637,6 @@ function pinHost(host) {
     if (y > 4 && y < top - 4) jump(y > top / 2 ? top : 0);
   };
 
-  // The page's own stage (the project index, utils/workStage.ts) leaves upward through the header's way back instead of
-  // gliding the page up, where this very onScroll would pull it back to the section and then jump it to the top.
-  // goUp(done) -> false when the header is busy.
-  window.__ptPinHeader = { goUp: (done) => { if (busy) return false; goUp(done); return true; } };
-
   const cap = { capture: true, passive: false };
   window.addEventListener('wheel', onWheel, cap);
   window.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
@@ -650,7 +647,6 @@ function pinHost(host) {
   return () => {
     tl?.kill();
     gsap.killTweensOf(lit);
-    delete window.__ptPinHeader;
     window.removeEventListener('wheel', onWheel, cap);
     window.removeEventListener('touchstart', onTouchStart, { capture: true });
     window.removeEventListener('touchmove', onTouchMove, cap);

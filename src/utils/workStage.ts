@@ -26,9 +26,7 @@ export interface WorkStageHost {
 	unit(): number;                         // one screen of scroll inside the zone
 	setPos(p: number): void;                // move the light (and all that follows it) to p: 0 = title, k = picture k
 	syncFromScroll(): void;                 // hand the light back to the scroll position
-	/** Leave upward by the page's own means (the header's way back) instead of gliding; call `done` when it has finished.
-	 *  Returns false when it cannot (then the stage glides). */
-	leaveUp?(done: () => void): boolean;
+	anchoredTop?: boolean;                  // the zone starts at the very top of the page: stepping back from step 0 does nothing
 }
 
 export interface WorkStage {
@@ -51,7 +49,6 @@ const CFG = {
 	assistMin: 40,          // px  a flick down shorter than this is no flick
 	assistPast: 0.06,       // screens: the glide ends a little inside the catch line, or it never crosses it
 	glideFailsafeMs: 1800,
-	leaveUpFailsafeMs: 4000, // the header's way back takes about 2 s
 	// where the stage takes the page
 	catchAbove: 0.12,       // coming down: this much (screens) before the title's rest
 	catchBelow: 0.02,       // coming up: this much before the end of the zone
@@ -74,7 +71,7 @@ const inOutSine = (t: number) => 0.5 - 0.5 * Math.cos(Math.PI * t);
 const outCubic = (t: number) => 1 - (1 - t) ** 3;
 
 export function createWorkStage(host: WorkStageHost): WorkStage {
-	const { n, lenis, trigger, stop, unit, setPos, syncFromScroll, leaveUp } = host;
+	const { n, lenis, trigger, stop, unit, setPos, syncFromScroll, anchoredTop } = host;
 	const root = document.documentElement;
 	const vh = () => window.innerHeight;
 	const menuOpen = () => document.body.classList.contains('oxygen-menu-open');
@@ -166,11 +163,6 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 		glideTimer = window.setTimeout(endGlide, CFG.glideFailsafeMs);
 		// The page was held at the title's rest while the pictures changed, and the stage stands still over the whole zone: move
 		// the scroll to the edge of it at once (nothing on screen changes), so the glide starts moving the page immediately.
-		if (dir < 0 && leaveUp?.(() => { releaseLenis(); endGlide(); })) {
-			clearTimeout(glideTimer);
-			glideTimer = window.setTimeout(() => { releaseLenis(); endGlide(); }, CFG.leaveUpFailsafeMs);
-			return;
-		}
 		jumpTo(dir > 0 ? trigger.end - 1 : trigger.start + 1);
 		const target = dir > 0 ? trigger.end + CFG.leaveBelow * vh() : Math.max(0, trigger.start - CFG.leaveAbove * vh());
 		glideScroll(target, CFG.leaveMs, endGlide);
@@ -190,8 +182,11 @@ export function createWorkStage(host: WorkStageHost): WorkStage {
 	const stepBy = (dir: number) => {
 		const k = idx + dir;
 		if (k > n) { if (idx === n) leave(1); return; }
-		if (k < 0) { if (idx === 0) leave(-1); return; }
+		if (k < 0) { if (idx === 0 && !anchoredTop) leave(-1); return; }
 		idx = k;
+		// a zone that starts at the top of the page: at its first step the scroll position is the top itself (the stage is
+		// pinned, so moving there changes nothing on screen)
+		if (anchoredTop && k === 0) { lockY = stop(0); jumpTo(lockY); }
 		tweenTo(k);
 	};
 
