@@ -158,14 +158,16 @@ const slides = await Promise.all(
 	// the Zen Obasi defaults (Slider.jsx), unchanged except the grain a touch calmer
 	const CONFIG = {
 		breakpoints: { mobile: 600, tablet: 1000 },
-		fov: 45, distance: 5, maxPixelRatio: 2, textureSize: 1600,
+		// touch screens (phones, tablets): a lower pixel ratio and smaller textures and fluid, so the page does not starve
+		// the compositor (the menu beam and the page transition stuttered on a phone)
+		fov: 45, distance: 5, maxPixelRatio: matchMedia('(pointer: coarse)').matches ? 1.5 : 2, textureSize: matchMedia('(pointer: coarse)').matches ? 1200 : 1600,
 		slide: { aspect: { mobile: 2 / 3, desktop: 1.5 }, cornerRadius: 0.015, height: { mobile: 0.55, tablet: 0.5, desktop: 0.65 }, maxWidth: 0.75, gap: 0.05, span: 1.6, segments: [48, 1] },
 		scroll: { spring: 8, dragSpring: 45, friction: 2, coast: 1, snapDuration: 0.8, glideDuration: 2.4, minDuration: 0.2, wheel: 1.8, wheelMax: 160, drag: 1.3, snapThreshold: 0.05, snapDelay: 150, keySpring: 6.5, keyQueue: 4, keyKick: 0.7, tapDistance: 6, tapSpeed: 0.5 },
 		motion: { velocityMax: 10, velocityEase: 5, zoomOut: 0.5 },
 		panorama: { radius: 1, side: -1, scale: 1, speedRadius: 0.5 },
 		scene: { streak: 0.025, rgbShift: 0.025, parallax: 0.025, shading: 0.25, backside: 0.4, fogDepth: 8, fogStrength: 0.85, nearFade: 1.5 },
 		edges: { blur: { tablet: 0.02, desktop: 0.035 }, aberration: { tablet: 0.01, desktop: 0.035 }, zone: 0.35, shimmer: 0.0075, shimmerScale: 10, shimmerSpeed: 5, shimmerZone: 0.25 },
-		fluid: { brushSize: 25, brushStrength: 0.5, distortion: 120, decay: 0.98, trail: 0.8, stopDecay: 0.85, resolution: 0.5 },
+		fluid: { brushSize: 25, brushStrength: 0.5, distortion: 120, decay: 0.98, trail: 0.8, stopDecay: 0.85, resolution: matchMedia('(pointer: coarse)').matches ? 0.25 : 0.5 },
 		grain: { amount: 0.11, blend: 0.1 },
 		pointer: { parallax: 0.5, vertical: 0.6, image: 0.008, ease: 3 },
 		expand: { duration: 1.2, ease: 'power4.inOut', zoom: 1.4, skip: true },

@@ -870,6 +870,10 @@ const navLinks = [
   .hud-menu-spin-beam {
     position: absolute;
     inset: -200%;
+    /* its own compositor layer: the turn is then driven by the compositor and keeps going while the main thread is busy
+       (a page swap, a WebGL page starting up) */
+    will-change: transform;
+    backface-visibility: hidden;
     background: conic-gradient(from 0deg at 50% 50%,
       transparent 0deg,
       rgba(255,255,255,0.12) 30deg,

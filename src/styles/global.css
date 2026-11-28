@@ -170,11 +170,21 @@ html:active-view-transition .zoom-col {
    mid-way, so on Safari they faded with the page anyway. Show the (live)
    new one straight away; the group itself still morphs position/size. */
 ::view-transition-old(pt-logo),
-::view-transition-old(pt-menu-btn),
 ::view-transition-old(pt-location),
 ::view-transition-old(pt-clock) {
   animation: none;
   opacity: 0;
+}
+/* The menu button is never absent: its old snapshot stays up until the live new one is there to cover it (opacity 0 here
+   left a gap, with the beam gone and then caught up, whenever the swap took a moment). Plain blending, so the pair is not
+   added up. */
+::view-transition-old(pt-menu-btn) {
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+::view-transition-new(pt-menu-btn) {
+  mix-blend-mode: normal;
 }
 ::view-transition-new(pt-logo),
 ::view-transition-new(pt-menu-btn),
